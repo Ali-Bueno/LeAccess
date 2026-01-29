@@ -1,0 +1,98 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>LeAccess</AssemblyName>
+    <Product>Last Epoch Accessibility Mod</Product>
+    <Version>1.0.0</Version>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <RestoreAdditionalProjectSources>
+      https://api.nuget.org/v3/index.json;
+      https://nuget.bepinex.dev/v3/index.json;
+      https://nuget.samboy.dev/v3/index.json
+    </RestoreAdditionalProjectSources>
+    <RootNamespace>LeAccess</RootNamespace>
+
+    <!-- Game paths -->
+    <GameDir>D:\games\Last Epoch</GameDir>
+    <BepInExDir>$(GameDir)\BepInEx</BepInExDir>
+    <InteropDir>$(BepInExDir)\interop</InteropDir>
+    <PluginsDir>$(BepInExDir)\plugins</PluginsDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.*" IncludeAssets="compile" />
+    <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*" />
+  </ItemGroup>
+
+  <!-- Game interop references -->
+  <ItemGroup>
+    <Reference Include="LE">
+      <HintPath>$(InteropDir)\LE.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="LE.UI.Controls">
+      <HintPath>$(InteropDir)\LE.UI.Controls.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(InteropDir)\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(InteropDir)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(InteropDir)\UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>$(InteropDir)\UnityEngine.UIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(InteropDir)\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(InteropDir)\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>$(InteropDir)\Unity.TextMeshPro.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Il2CppInterop.Runtime">
+      <HintPath>$(BepInExDir)\core\Il2CppInterop.Runtime.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Il2Cppmscorlib">
+      <HintPath>$(InteropDir)\Il2Cppmscorlib.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Il2CppSystem.Core">
+      <HintPath>$(InteropDir)\Il2CppSystem.Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Tolk screen reader library -->
+  <ItemGroup>
+    <Reference Include="TolkDotNet">
+      <HintPath>..\references\tolk\TolkDotNet.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Copy DLL to plugins folder after build -->
+  <Target Name="CopyToPlugins" AfterTargets="Build">
+    <Copy SourceFiles="$(TargetDir)$(TargetFileName)" DestinationFolder="$(PluginsDir)\LeAccess" />
+    <Copy SourceFiles="$(TargetDir)TolkDotNet.dll" DestinationFolder="$(PluginsDir)\LeAccess" Condition="Exists('$(TargetDir)TolkDotNet.dll')" />
+    <!-- Copy native Tolk DLLs -->
+    <Copy SourceFiles="..\references\tolk\Tolk.dll" DestinationFolder="$(PluginsDir)\LeAccess" />
+    <Copy SourceFiles="..\references\tolk\nvdaControllerClient64.dll" DestinationFolder="$(PluginsDir)\LeAccess" />
+  </Target>
+
+</Project>

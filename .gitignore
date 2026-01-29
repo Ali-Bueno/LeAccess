@@ -1,0 +1,25 @@
+# Build outputs
+bin/
+obj/
+
+# IDE
+.vs/
+.idea/
+*.user
+*.suo
+
+# NuGet
+packages/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/
+
+# Game code (reference only, not part of the mod)
+last epoch code/
+
+# References (external DLLs)
+references/
