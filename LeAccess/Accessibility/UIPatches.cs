@@ -1,13 +1,11 @@
 using ChatView;
 using GraphicsBackend.Options;
 using HarmonyLib;
+using LE.Data;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-
-// Custom toggle components used by Last Epoch instead of Unity's Toggle
-// These are defined in LE.dll with no namespace
 
 namespace LeAccess.Accessibility;
 
@@ -97,6 +95,105 @@ public static class UIPatches
         public static bool Prefix(ref bool active) { active = false; return true; }
     }
 
+    // For class selection carousel monitoring
+    private static string _lastDetectedCenterClass;
+    private static float _lastClassCheckTime;
+
+    /// <summary>
+    /// Called from MenuAccessibility.Update to check for class changes in the carousel.
+    /// Uses ListNavigable "Select A Class Navigable" with _lastSelectedIndex to track selection.
+    /// </summary>
+    public static void CheckPendingClassAnnouncement()
+    {
+        // Periodically check for class changes when in class selection
+        if (Time.time - _lastClassCheckTime < 0.25f) return;
+        _lastClassCheckTime = Time.time;
+
+        try
+        {
+            // Check if we're in class selection mode
+            var charSelect = CharacterSelect.instance;
+            if (charSelect == null) return;
+            if (charSelect.currentState != CharacterSelect.CharacterSelectState.ClassSelection)
+            {
+                // Reset when leaving class selection
+                if (_lastDetectedCenterClass != null)
+                {
+                    _lastDetectedCenterClass = null;
+                }
+                return;
+            }
+
+            // Find the "Select A Class Navigable" ListNavigable
+            var allListNavs = UnityEngine.Object.FindObjectsOfType<ListNavigable>();
+            string classToAnnounce = null;
+
+            foreach (var nav in allListNavs)
+            {
+                if (nav == null) continue;
+                var children = nav._selectableChildren;
+                if (children == null || children.Count == 0) continue;
+
+                // Check if this ListNavigable has CharacterCreationSelection children
+                bool hasClassSelections = false;
+                for (int i = 0; i < children.Count && i < 3; i++)
+                {
+                    var child = children[i];
+                    if (child?.TryCast<CharacterCreationSelection>() != null)
+                    {
+                        hasClassSelections = true;
+                        break;
+                    }
+                }
+
+                if (hasClassSelections)
+                {
+                    var listNavIdx = nav._lastSelectedIndex;
+                    if (listNavIdx >= 0 && listNavIdx < children.Count)
+                    {
+                        var selectedChild = children[listNavIdx];
+                        var charCreation = selectedChild?.TryCast<CharacterCreationSelection>();
+                        if (charCreation != null)
+                        {
+                            // Try to find localized text in the UI hierarchy
+                            var textComponents = charCreation.GetComponentsInChildren<TMPro.TMP_Text>(true);
+                            if (textComponents != null)
+                            {
+                                foreach (var txt in textComponents)
+                                {
+                                    if (txt == null) continue;
+                                    var text = txt.text;
+                                    if (!string.IsNullOrEmpty(text) && text.Length > 1 && text.Length < 30)
+                                    {
+                                        classToAnnounce = text;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            // Fallback to className if no localized text found
+                            if (string.IsNullOrEmpty(classToAnnounce) && charCreation.characterClass != null)
+                            {
+                                classToAnnounce = charCreation.characterClass.className;
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(classToAnnounce) && classToAnnounce != _lastDetectedCenterClass)
+            {
+                _lastDetectedCenterClass = classToAnnounce;
+                ScreenReader.Speak(classToAnnounce);
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Plugin.Log.LogWarning($"Error checking class selection: {ex.Message}");
+        }
+    }
+
     [HarmonyPatch(typeof(EpochInputManager), nameof(EpochInputManager.VirtualMouseIsEnabled))]
     public static class VirtualMouseIsEnabledPatch
     {
@@ -137,15 +234,6 @@ public static class UIPatches
             if (toggle == null || toggle.gameObject == null) return;
 
             var instanceId = toggle.GetInstanceID();
-            var goName = toggle.gameObject.name;
-            var parentName = toggle.transform.parent?.name ?? "no-parent";
-
-            // DEBUG: Log toggles
-            if (parentName.Contains("Popup") || parentName.Contains("Move") || parentName.Contains("Attack") ||
-                parentName.Contains("social") || parentName.Contains("Social") || goName.Contains("Toggle"))
-            {
-                Plugin.Log.LogInfo($"[DEBUG] Toggle {source}: {goName}, parent={parentName}, value={value}, lastAnnounced={_lastAnnouncedInstanceId}, toggleId={instanceId}");
-            }
 
             // Check if value actually changed
             if (_togglePreviousStates.TryGetValue(instanceId, out var previousValue))
@@ -159,13 +247,6 @@ public static class UIPatches
             var toggleGo = toggle.gameObject;
             bool isCurrentlyFocused = IsRelatedToFocusedElement(toggleGo);
 
-            // DEBUG: Log for potential problem toggles
-            if (parentName.Contains("Popup") || parentName.Contains("Move") || parentName.Contains("Attack") ||
-                parentName.Contains("social") || parentName.Contains("Social"))
-            {
-                Plugin.Log.LogInfo($"[DEBUG] Toggle {goName}: isRelatedToFocused={isCurrentlyFocused}");
-            }
-
             if (!isCurrentlyFocused) return;
 
             // Re-announce the state change
@@ -177,7 +258,6 @@ public static class UIPatches
 
     /// <summary>
     /// Check if a GameObject is related to the currently focused element.
-    /// This checks if the object is an ancestor, descendant, or sibling of the focused element.
     /// </summary>
     private static bool IsRelatedToFocusedElement(GameObject go)
     {
@@ -187,7 +267,7 @@ public static class UIPatches
         if (go.GetInstanceID() == _lastAnnouncedInstanceId)
             return true;
 
-        // Check if go is an ancestor of focused element (go -> ... -> focused)
+        // Check if go is an ancestor of focused element
         var current = go.transform;
         for (int i = 0; i < 6 && current != null; i++)
         {
@@ -196,17 +276,15 @@ public static class UIPatches
             current = current.parent;
         }
 
-        // Check if go is a descendant of focused element (focused -> ... -> go)
-        // We need to find the focused element first, then check if go is under it
+        // Check if go is a descendant of focused element
         var focusedGo = FindGameObjectByInstanceId(_lastAnnouncedInstanceId, go.transform.root);
         if (focusedGo != null && go.transform.IsChildOf(focusedGo.transform))
             return true;
 
-        // Check if they share a common parent within 3 levels (siblings/cousins)
+        // Check if they share a common parent within 3 levels
         var goParent = go.transform.parent;
         for (int i = 0; i < 3 && goParent != null; i++)
         {
-            // Check if the focused element is a child of this parent
             if (focusedGo != null && focusedGo.transform.IsChildOf(goParent))
                 return true;
             goParent = goParent.parent;
@@ -215,19 +293,14 @@ public static class UIPatches
         return false;
     }
 
-    /// <summary>
-    /// Find a GameObject by instance ID within a hierarchy (cached search)
-    /// </summary>
     private static GameObject _cachedFocusedGo;
     private static int _cachedFocusedId;
 
     private static GameObject FindGameObjectByInstanceId(int instanceId, Transform searchRoot)
     {
-        // Use cache if valid
         if (_cachedFocusedId == instanceId && _cachedFocusedGo != null)
             return _cachedFocusedGo;
 
-        // Search in hierarchy
         var allTransforms = searchRoot.GetComponentsInChildren<Transform>(true);
         foreach (var t in allTransforms)
         {
@@ -243,7 +316,7 @@ public static class UIPatches
     }
 
     /// <summary>
-    /// Patch ChatToggleField.IsActive setter for chat options (custom toggle that doesn't use Unity Toggle)
+    /// Patch ChatToggleField.IsActive setter for chat options
     /// </summary>
     [HarmonyPatch(typeof(ChatToggleField), nameof(ChatToggleField.IsActive), MethodType.Setter)]
     public static class ChatToggleFieldIsActivePatch
@@ -256,7 +329,6 @@ public static class UIPatches
 
                 var instanceId = __instance.GetInstanceID();
 
-                // Check if value actually changed
                 if (_togglePreviousStates.TryGetValue(instanceId, out var previousValue))
                 {
                     if (previousValue == value) return;
@@ -264,12 +336,9 @@ public static class UIPatches
 
                 _togglePreviousStates[instanceId] = value;
 
-                // Check if related to focused element
                 bool isCurrentlyFocused = IsRelatedToFocusedElement(__instance.gameObject);
-
                 if (!isCurrentlyFocused) return;
 
-                // Re-announce the state change
                 var stateText = value ? "On" : "Off";
                 ScreenReader.Speak(stateText, true);
             }
@@ -287,12 +356,9 @@ public static class UIPatches
         {
             try
             {
-                Plugin.Log.LogInfo($"[DEBUG] PrioritizedNavigable.HandleSubmitInput called");
                 if (__instance == null) return;
 
-                // Get the currently active selectable
                 var activeSelectable = __instance.ActiveSelectable;
-                Plugin.Log.LogInfo($"[DEBUG] ActiveSelectable: {activeSelectable?.gameObject?.name ?? "null"}");
                 if (activeSelectable == null) return;
 
                 var go = activeSelectable.gameObject;
@@ -303,7 +369,6 @@ public static class UIPatches
                     ?? go.GetComponentInParent<ActiveWhileMoveToAttackEnabled>();
                 if (moveToAttack != null)
                 {
-                    Plugin.Log.LogInfo($"[DEBUG] Found MoveToAttack, state={moveToAttack.moveAttackEnabled}");
                     var stateText = moveToAttack.moveAttackEnabled ? "On" : "Off";
                     ScreenReader.Speak(stateText, true);
                     return;
@@ -313,7 +378,6 @@ public static class UIPatches
                     ?? go.GetComponentInParent<ActiveWhileFriendAddNotificationEnabled>();
                 if (friendNotification != null)
                 {
-                    Plugin.Log.LogInfo($"[DEBUG] Found FriendNotification, state={friendNotification.hideUnknownSocialRequests}");
                     var stateText = friendNotification.hideUnknownSocialRequests ? "On" : "Off";
                     ScreenReader.Speak(stateText, true);
                     return;
@@ -321,7 +385,7 @@ public static class UIPatches
             }
             catch (System.Exception ex)
             {
-                Plugin.Log.LogError($"[DEBUG] HandleSubmitInput error: {ex.Message}");
+                Plugin.Log.LogError($"HandleSubmitInput error: {ex.Message}");
             }
         }
     }
@@ -336,7 +400,6 @@ public static class UIPatches
         {
             try
             {
-                Plugin.Log.LogInfo($"[DEBUG] VerticalNavigable.HandleSubmitInput called");
                 if (__instance == null) return;
                 var selectables = __instance.selectables;
                 var idx = __instance.currentlySelectedIdx;
@@ -351,15 +414,10 @@ public static class UIPatches
         }
     }
 
-
-    /// <summary>
-    /// Common handler for submit input on a GameObject
-    /// </summary>
     private static void HandleSubmitForGameObject(GameObject go)
     {
         if (go == null) return;
 
-        // Check for custom toggle components
         var moveToAttack = go.GetComponent<ActiveWhileMoveToAttackEnabled>()
             ?? go.GetComponentInParent<ActiveWhileMoveToAttackEnabled>();
         if (moveToAttack != null)
@@ -392,15 +450,16 @@ public static class UIPatches
         _lastAnnouncedInstanceId = instanceId;
         _lastAnnounceTime = now;
 
-        // DEBUG: Log elements that might be the problematic options
+        // DEBUG: Log all element names to find what class selection uses
+        var debugParent = go.transform.parent?.name ?? "no-parent";
+        var hasCharCreation = go.GetComponentInParent<CharacterCreationSelection>() != null;
+        Plugin.Log.LogInfo($"[DEBUG Element] name={go.name}, parent={debugParent}, hasCharCreationInParent={hasCharCreation}");
+
+        // Check for custom toggle state changes
         var parentName = go.transform.parent?.name ?? "no-parent";
         if (parentName.Contains("Popup") || parentName.Contains("Move") || parentName.Contains("Attack") ||
             parentName.Contains("social") || parentName.Contains("Social") || parentName.Contains("Friend"))
         {
-            var toggle = go.GetComponentInChildren<Toggle>();
-            Plugin.Log.LogInfo($"[DEBUG] AnnounceElement: {go.name}, parent={parentName}, instanceId={instanceId}, hasToggleInChildren={toggle != null}");
-
-            // Check for custom toggle components
             var moveToAttack = go.GetComponent<ActiveWhileMoveToAttackEnabled>()
                 ?? go.GetComponentInParent<ActiveWhileMoveToAttackEnabled>()
                 ?? go.GetComponentInChildren<ActiveWhileMoveToAttackEnabled>();
@@ -412,12 +471,10 @@ public static class UIPatches
             if (moveToAttack != null)
             {
                 bool currentState = moveToAttack.moveAttackEnabled;
-                // Check if state changed since last time
                 if (_trackedMoveToAttack != null && _trackedMoveToAttack.Pointer == moveToAttack.Pointer)
                 {
                     if (currentState != _trackedMoveToAttackLastState)
                     {
-                        // State changed! Announce it and skip normal announcement
                         ScreenReader.Speak(currentState ? "On" : "Off", true);
                         stateChanged = true;
                     }
@@ -428,12 +485,10 @@ public static class UIPatches
             if (friendNotif != null)
             {
                 bool currentState = friendNotif.hideUnknownSocialRequests;
-                // Check if state changed since last time
                 if (_trackedFriendNotif != null && _trackedFriendNotif.Pointer == friendNotif.Pointer)
                 {
                     if (currentState != _trackedFriendNotifLastState)
                     {
-                        // State changed! Announce it and skip normal announcement
                         ScreenReader.Speak(currentState ? "On" : "Off", true);
                         stateChanged = true;
                     }
@@ -441,14 +496,15 @@ public static class UIPatches
                 _trackedFriendNotif = friendNotif;
                 _trackedFriendNotifLastState = currentState;
             }
-            // If state changed, skip normal announcement to avoid interrupting
             if (stateChanged)
                 return;
         }
 
         var text = BuildAnnouncementText(go);
         if (!string.IsNullOrWhiteSpace(text))
+        {
             ScreenReader.Speak(text);
+        }
     }
 
     private static string BuildAnnouncementText(GameObject go)
@@ -456,6 +512,28 @@ public static class UIPatches
         string label = null;
         string value = null;
         string description = null;
+
+        // Special case: Character creation selection
+        // Check in parents too, but exclude generic buttons that happen to be in the hierarchy
+        var elementName = go.name;
+        bool isGenericButton = elementName == "LeftButton" || elementName == "RightButton" ||
+                               elementName == "Button" || elementName == "BackButton" ||
+                               elementName == "ConfirmButton" || elementName == "CancelButton";
+
+        if (!isGenericButton)
+        {
+            var charCreation = go.GetComponent<CharacterCreationSelection>()
+                ?? go.GetComponentInParent<CharacterCreationSelection>();
+            if (charCreation != null && charCreation.gameObject.activeInHierarchy)
+            {
+                var charClass = charCreation.characterClass;
+                if (charClass != null && !string.IsNullOrEmpty(charClass.className))
+                {
+                    Plugin.Log.LogInfo($"[ClassSelect] Announcing class from BuildAnnouncementText: {charClass.className}, go={elementName}");
+                    return charClass.className;
+                }
+            }
+        }
 
         // Special case: Check if we're inside an expanded dropdown list
         var dropdownItemText = TryGetDropdownItemText(go);
@@ -468,34 +546,71 @@ public static class UIPatches
         // Layer 1: Try to get label from InfoForTooltip
         TryGetFromTooltipInfo(go, ref label, ref description);
 
-        // Check for color picker FIRST (Bug 2 fix) - these contain toggles but aren't boolean options
+        // Check if we're in character creation context
+        bool isInCharacterCreation = go.GetComponentInParent<CharacterCreationSelection>() != null
+            || go.GetComponentInParent<LocalCharacterSlots>() != null
+            || go.GetComponentInParent<MasteryPanel>() != null
+            || go.GetComponentInParent<CharacterSelect>() != null
+            || IsInCharacterCreationByName(go);
+
+        // Check for color picker
         var colorPicker = go.GetComponent<ColorPickerManager>() ?? go.GetComponentInParent<ColorPickerManager>();
         var ruleColorPicker = go.GetComponent<RuleColorPicker>() ?? go.GetComponentInParent<RuleColorPicker>();
         bool isColorPicker = colorPicker != null || ruleColorPicker != null;
 
-        // Check for ChatToggleField (custom toggle used in chat settings)
         var chatToggle = go.GetComponent<ChatToggleField>() ?? go.GetComponentInParent<ChatToggleField>();
 
-        // Detect control type and get value (search in go, parents, and children)
         var dropdown = go.GetComponent<TMP_Dropdown>() ?? go.GetComponentInParent<TMP_Dropdown>() ?? go.GetComponentInChildren<TMP_Dropdown>();
-        // Don't detect toggle if this is a color picker (Bug 2 fix)
-        Toggle toggle = null;
-        if (!isColorPicker)
-        {
-            toggle = go.GetComponent<Toggle>() ?? go.GetComponentInParent<Toggle>() ?? go.GetComponentInChildren<Toggle>();
-        }
         var slider = go.GetComponent<Slider>() ?? go.GetComponentInParent<Slider>() ?? go.GetComponentInChildren<Slider>();
         var button = go.GetComponent<Button>() ?? go.GetComponentInParent<Button>();
+        var inputField = go.GetComponent<TMP_InputField>() ?? go.GetComponentInParent<TMP_InputField>() ?? go.GetComponentInChildren<TMP_InputField>();
+
+        // For input fields
+        if (inputField != null)
+        {
+            var inputText = inputField.text;
+            var placeholderTmp = inputField.placeholder?.TryCast<TextMeshProUGUI>();
+            var placeholder = placeholderTmp != null ? CleanText(placeholderTmp.text) : null;
+
+            if (!string.IsNullOrEmpty(inputText))
+            {
+                if (!string.IsNullOrEmpty(placeholder))
+                    return $"{placeholder}: {inputText}";
+                return $"Text field: {inputText}";
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(placeholder))
+                    return $"{placeholder}: empty";
+                return "Text field: empty";
+            }
+        }
+
+        Toggle toggle = null;
+        if (!isColorPicker && !isInCharacterCreation && button == null)
+        {
+            toggle = go.GetComponent<Toggle>() ?? go.GetComponentInParent<Toggle>() ?? go.GetComponentInChildren<Toggle>();
+            if (toggle != null && toggle.group != null)
+            {
+                toggle = null;
+            }
+        }
+
+        // For buttons, just get their text directly
+        if (button != null)
+        {
+            var buttonText = GetTextFromHierarchy(button.gameObject);
+            if (!string.IsNullOrEmpty(buttonText))
+                return buttonText;
+        }
 
         // Get control value
         if (isColorPicker)
         {
-            // Color picker - indicate it's a color selector
             value = "Color selector";
         }
-        else if (chatToggle != null)
+        else if (chatToggle != null && !isInCharacterCreation)
         {
-            // ChatToggleField - custom toggle used in chat settings
             value = chatToggle.IsActive ? "On" : "Off";
         }
         else if (dropdown != null)
@@ -512,66 +627,60 @@ public static class UIPatches
             value = Mathf.RoundToInt(slider.value).ToString();
         }
 
-        // For buttons without value controls, just get their text directly
-        if (button != null && dropdown == null && toggle == null && slider == null)
-        {
-            var buttonText = GetTextFromHierarchy(button.gameObject);
-            if (!string.IsNullOrEmpty(buttonText))
-                return buttonText;
-        }
-
         // Layer 2: Try to get label from GraphicsOption components
         if (string.IsNullOrEmpty(label))
         {
             TryGetFromGraphicsOption(go, ref label);
         }
 
-        // Layer 3: Intelligent text search (limited to immediate option container)
+        // Layer 3: Intelligent text search
         if (string.IsNullOrEmpty(label))
         {
             var controlGo = dropdown?.gameObject ?? toggle?.gameObject ?? slider?.gameObject ?? go;
             FindLabelInImmediateContainer(controlGo, ref label, ref description, value);
         }
 
-        // Layer 3.5: If still no label, search more aggressively in parent hierarchy
+        // Layer 3.5: Aggressive search
         if (string.IsNullOrEmpty(label) || string.IsNullOrEmpty(description))
         {
             FindLabelAndDescriptionAggressive(go, value, ref label, ref description);
         }
 
-        // Layer 4: Last resort - search ANY text in parent hierarchy
+        // Layer 4: Last resort
         if (string.IsNullOrEmpty(label))
         {
             label = FindAnyTextInParents(go, value);
         }
 
-        // Layer 4.5: If we found a label but no value, try harder to find the control (Bug 3 fix)
-        if (!string.IsNullOrEmpty(label) && string.IsNullOrEmpty(value) && !isColorPicker)
+        // Layer 4.5: Try harder to find toggle
+        if (!string.IsNullOrEmpty(label) && string.IsNullOrEmpty(value) && !isColorPicker && !isInCharacterCreation)
         {
-            // First, try to find the option container and search within it
             var optionContainer = FindSingleOptionContainer(go);
             if (optionContainer != null)
             {
                 toggle = optionContainer.GetComponentInChildren<Toggle>();
                 if (toggle != null)
                 {
-                    value = toggle.isOn ? "On" : "Off";
+                    if (toggle.group == null)
+                        value = toggle.isOn ? "On" : "Off";
+                    else
+                        toggle = null;
                 }
             }
 
-            // If still no toggle, search in parents up to 6 levels (increased from 4)
             if (toggle == null)
             {
                 var current = go.transform.parent;
                 for (int i = 0; i < 6 && current != null; i++)
                 {
-                    // Search all children at this level, not just GetComponentInChildren
                     var toggles = current.GetComponentsInChildren<Toggle>(true);
                     foreach (var t in toggles)
                     {
-                        // Skip if this toggle belongs to a color picker
                         if (t.GetComponentInParent<ColorPickerManager>() != null ||
                             t.GetComponentInParent<RuleColorPicker>() != null)
+                            continue;
+
+                        if (t.group != null)
                             continue;
 
                         toggle = t;
@@ -585,7 +694,7 @@ public static class UIPatches
             }
         }
 
-        // Layer 5: Use GameObject name if nothing else works
+        // Layer 5: Use GameObject name
         if (string.IsNullOrEmpty(label) && string.IsNullOrEmpty(value))
         {
             var goName = CleanObjectName(go.name);
@@ -593,7 +702,6 @@ public static class UIPatches
                 label = goName;
         }
 
-        // If no specific control found and no label, try to get text directly
         if (string.IsNullOrEmpty(value) && string.IsNullOrEmpty(label))
         {
             var directText = GetTextFromHierarchy(go);
@@ -601,16 +709,11 @@ public static class UIPatches
                 return directText;
         }
 
-        // Build result in order: label, value, description
         return FormatAnnouncement(label, value, description, go, isDisabledOption);
     }
 
-    /// <summary>
-    /// Check if an option is disabled by the game developers (has "Disabled" in parent name)
-    /// </summary>
     private static bool IsDisabledOption(GameObject go)
     {
-        // Check parent names for "Disabled" marker
         var current = go.transform.parent;
         for (int i = 0; i < 3 && current != null; i++)
         {
@@ -622,16 +725,31 @@ public static class UIPatches
         return false;
     }
 
-    /// <summary>
-    /// Check if we're navigating inside an expanded dropdown list and get the item text
-    /// </summary>
+    private static bool IsInCharacterCreationByName(GameObject go)
+    {
+        var current = go.transform;
+        for (int i = 0; i < 15 && current != null; i++)
+        {
+            var name = current.name.ToLowerInvariant();
+            if (name.Contains("character") ||
+                name.Contains("class") ||
+                name.Contains("mastery") ||
+                name.Contains("newchar") ||
+                name.Contains("slot") ||
+                name.Contains("selection"))
+            {
+                return true;
+            }
+            current = current.parent;
+        }
+        return false;
+    }
+
     private static string TryGetDropdownItemText(GameObject go)
     {
-        // Check if this is a dropdown item (usually has Toggle component inside a Dropdown List)
         var toggle = go.GetComponent<Toggle>() ?? go.GetComponentInParent<Toggle>();
         if (toggle == null) return null;
 
-        // Check if we're inside a dropdown list by looking for parent names
         var current = go.transform;
         bool isInDropdownList = false;
         for (int i = 0; i < 6 && current != null; i++)
@@ -642,7 +760,6 @@ public static class UIPatches
                 isInDropdownList = true;
                 break;
             }
-            // Stop if we hit a scroll content - we're definitely in a list
             if (name.Contains("content") && current.parent?.name.ToLowerInvariant().Contains("viewport") == true)
             {
                 isInDropdownList = true;
@@ -653,7 +770,6 @@ public static class UIPatches
 
         if (!isInDropdownList) return null;
 
-        // Get the text from this item
         var itemText = GetTextFromHierarchy(go);
         if (!string.IsNullOrEmpty(itemText))
             return itemText;
@@ -661,9 +777,6 @@ public static class UIPatches
         return null;
     }
 
-    /// <summary>
-    /// Layer 1: Try to get label and description from InfoForTooltip component
-    /// </summary>
     private static void TryGetFromTooltipInfo(GameObject go, ref string label, ref string description)
     {
         try
@@ -671,7 +784,6 @@ public static class UIPatches
             var tooltip = go.GetComponent<InfoForTooltip>() ?? go.GetComponentInParent<InfoForTooltip>();
             if (tooltip == null) return;
 
-            // Call SetText to populate tooltipInfo
             tooltip.SetText();
 
             var info = tooltip.tooltipInfo;
@@ -689,14 +801,10 @@ public static class UIPatches
         catch { }
     }
 
-    /// <summary>
-    /// Layer 2: Try to get label from GraphicsOption components (ToggleOption, SliderOption)
-    /// </summary>
     private static void TryGetFromGraphicsOption(GameObject go, ref string label)
     {
         try
         {
-            // Try ToggleOption
             var toggleOption = go.GetComponent<ToggleOption>() ?? go.GetComponentInParent<ToggleOption>();
             if (toggleOption != null && !string.IsNullOrWhiteSpace(toggleOption.displayName))
             {
@@ -704,7 +812,6 @@ public static class UIPatches
                 return;
             }
 
-            // Try SliderOption
             var sliderOption = go.GetComponent<SliderOption>() ?? go.GetComponentInParent<SliderOption>();
             if (sliderOption != null && !string.IsNullOrWhiteSpace(sliderOption.displayName))
             {
@@ -714,10 +821,6 @@ public static class UIPatches
         catch { }
     }
 
-    /// <summary>
-    /// Layer 3.5: Find the single-option container and search for texts there
-    /// Key insight: option container has exactly ONE control, section container has MANY
-    /// </summary>
     private static void FindLabelAndDescriptionAggressive(GameObject go, string excludeValue, ref string label, ref string description)
     {
         var seen = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
@@ -728,12 +831,10 @@ public static class UIPatches
         if (!string.IsNullOrEmpty(description))
             seen.Add(description);
 
-        // Find the option container - the smallest container that has our control
         var optionContainer = FindSingleOptionContainer(go);
         if (optionContainer == null)
             return;
 
-        // Search all texts within this container
         var allTexts = optionContainer.GetComponentsInChildren<TextMeshProUGUI>();
         foreach (var tmp in allTexts)
         {
@@ -755,9 +856,6 @@ public static class UIPatches
         }
     }
 
-    /// <summary>
-    /// Layer 4: Last resort - find any text that looks like a label in parent hierarchy
-    /// </summary>
     private static string FindAnyTextInParents(GameObject go, string excludeValue)
     {
         var seen = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
@@ -766,15 +864,12 @@ public static class UIPatches
 
         var current = go.transform.parent;
 
-        // Search up to 5 levels, looking for any text
         for (int level = 0; level < 5 && current != null; level++)
         {
-            // Get all texts at this level (direct children only, not recursive)
             for (int i = 0; i < current.childCount; i++)
             {
                 var child = current.GetChild(i);
 
-                // Check the child itself
                 var tmp = child.GetComponent<TextMeshProUGUI>();
                 if (tmp != null && !string.IsNullOrWhiteSpace(tmp.text))
                 {
@@ -782,13 +877,11 @@ public static class UIPatches
                     if (!string.IsNullOrEmpty(text) && !seen.Contains(text))
                     {
                         var textType = ClassifyText(text);
-                        // Accept Label or Unknown (but not Value or Description)
                         if (textType == TextType.Label || textType == TextType.Unknown)
                             return text;
                     }
                 }
 
-                // Also check grandchildren (one level deeper)
                 for (int j = 0; j < child.childCount; j++)
                 {
                     var grandchild = child.GetChild(j);
@@ -806,7 +899,6 @@ public static class UIPatches
                 }
             }
 
-            // Stop at scroll content
             if (IsScrollContent(current))
                 break;
 
@@ -816,16 +908,12 @@ public static class UIPatches
         return null;
     }
 
-    /// <summary>
-    /// Find the container that holds exactly this one option (not a section with multiple options)
-    /// </summary>
     private static Transform FindSingleOptionContainer(GameObject controlGo)
     {
         var current = controlGo.transform.parent;
 
         for (int level = 0; level < 5 && current != null; level++)
         {
-            // Count how many controls are in this container
             int controlCount = 0;
             var toggles = current.GetComponentsInChildren<Toggle>(true);
             var sliders = current.GetComponentsInChildren<Slider>(true);
@@ -833,49 +921,35 @@ public static class UIPatches
 
             controlCount = toggles.Length + sliders.Length + dropdowns.Length;
 
-            // If this container has exactly 1 control, this is our option container
             if (controlCount == 1)
                 return current;
 
-            // If it has 0 controls, keep going up
             if (controlCount == 0)
             {
                 current = current.parent;
                 continue;
             }
 
-            // If it has multiple controls, we went too far - use previous level
-            // But first check if we're at level 0, then we need this container
             if (level == 0)
                 return current;
 
-            // Otherwise return null to use other methods
             return null;
         }
 
         return null;
     }
 
-    /// <summary>
-    /// Layer 3: Find label and description in the option's container
-    /// </summary>
     private static void FindLabelInImmediateContainer(GameObject controlGo, ref string label, ref string description, string excludeValue)
     {
-        // Go up to find the option row container (usually 1-3 levels)
         var parent = controlGo.transform.parent;
 
         for (int level = 0; level < 3 && parent != null; level++)
         {
-            var parentName = parent.name.ToLowerInvariant();
-
-            // Stop if we hit a scroll content container (has many option children)
             if (IsScrollContent(parent))
                 break;
 
-            // Look for text in siblings at this level
             FindTextsInSiblings(parent, controlGo, excludeValue, ref label, ref description, level);
 
-            // If we found a label, we can stop going up
             if (label != null)
                 break;
 
@@ -883,22 +957,16 @@ public static class UIPatches
         }
     }
 
-    /// <summary>
-    /// Check if this is a scroll content container (has many similar children)
-    /// </summary>
     private static bool IsScrollContent(Transform t)
     {
         var name = t.name.ToLowerInvariant();
 
-        // Direct name matches for scroll containers
         if (name == "content" || name == "viewport" || name.Contains("scroll"))
             return true;
 
-        // If parent is viewport, this is likely content
         if (t.parent != null && t.parent.name.ToLowerInvariant().Contains("viewport"))
             return true;
 
-        // If it has many children with similar structures, it's likely a list container
         if (t.childCount > 5)
         {
             int childrenWithControls = 0;
@@ -910,7 +978,6 @@ public static class UIPatches
                     child.GetComponentInChildren<TMP_Dropdown>() != null)
                     childrenWithControls++;
             }
-            // If multiple children have controls, this is a list of options
             if (childrenWithControls >= 3)
                 return true;
         }
@@ -918,9 +985,6 @@ public static class UIPatches
         return false;
     }
 
-    /// <summary>
-    /// Find label and description texts among siblings of the control
-    /// </summary>
     private static void FindTextsInSiblings(Transform parent, GameObject controlGo, string excludeValue,
         ref string label, ref string description, int level)
     {
@@ -928,26 +992,22 @@ public static class UIPatches
         if (!string.IsNullOrEmpty(excludeValue))
             seen.Add(excludeValue);
 
-        // Collect all texts first, then assign based on position and type
         var allTexts = new List<(string text, TextType type, int siblingIndex)>();
 
         for (int i = 0; i < parent.childCount; i++)
         {
             var sibling = parent.GetChild(i);
 
-            // Skip if the control is inside this sibling (but allow collecting from control's parent)
             if (controlGo.transform.IsChildOf(sibling) && sibling.gameObject != controlGo.transform.parent?.gameObject)
                 continue;
 
             CollectTextsFromTransform(sibling, controlGo, seen, allTexts, i, 0);
         }
 
-        // Find the control's sibling index (or its parent's index)
         int controlSiblingIndex = controlGo.transform.parent == parent
             ? controlGo.transform.GetSiblingIndex()
             : controlGo.transform.parent?.GetSiblingIndex() ?? 0;
 
-        // First pass: find label (prefer texts BEFORE the control, classified as Label)
         foreach (var (text, textType, siblingIndex) in allTexts)
         {
             if (label == null && textType == TextType.Label && siblingIndex <= controlSiblingIndex)
@@ -957,7 +1017,6 @@ public static class UIPatches
             }
         }
 
-        // If no label found before control, try any label
         if (label == null)
         {
             foreach (var (text, textType, siblingIndex) in allTexts)
@@ -970,7 +1029,6 @@ public static class UIPatches
             }
         }
 
-        // Find description (prefer texts AFTER the control)
         foreach (var (text, textType, siblingIndex) in allTexts)
         {
             if (description == null && textType == TextType.Description && siblingIndex >= controlSiblingIndex)
@@ -980,7 +1038,6 @@ public static class UIPatches
             }
         }
 
-        // If no description after control, try any description
         if (description == null)
         {
             foreach (var (text, textType, siblingIndex) in allTexts)
@@ -994,15 +1051,11 @@ public static class UIPatches
         }
     }
 
-    /// <summary>
-    /// Collect and classify texts from a transform and its children
-    /// </summary>
     private static void CollectTextsFromTransform(Transform t, GameObject controlGo, HashSet<string> seen,
         List<(string text, TextType type, int siblingIndex)> results, int siblingIndex, int depth)
     {
         if (depth > 2) return;
 
-        // Skip the control itself
         if (t.gameObject == controlGo) return;
 
         var tmp = t.GetComponent<TextMeshProUGUI>();
@@ -1017,11 +1070,9 @@ public static class UIPatches
             }
         }
 
-        // Recurse into children
         for (int i = 0; i < t.childCount; i++)
         {
             var child = t.GetChild(i);
-            // Don't recurse into the control
             if (child.gameObject == controlGo || controlGo.transform.IsChildOf(child))
                 continue;
             CollectTextsFromTransform(child, controlGo, seen, results, siblingIndex, depth + 1);
@@ -1036,41 +1087,28 @@ public static class UIPatches
         Unknown
     }
 
-    /// <summary>
-    /// Classify text as label, value, or description based on patterns
-    /// </summary>
     private static TextType ClassifyText(string text)
     {
         if (string.IsNullOrEmpty(text)) return TextType.Unknown;
 
-        // Check if it's a known value pattern (exact match)
         if (KnownValuePatterns.Contains(text))
             return TextType.Value;
 
-        // Check if it's numeric (value)
         if (int.TryParse(text, out _) || float.TryParse(text, out _))
             return TextType.Value;
 
-        // Check if it looks like a percentage or numeric value
         if (System.Text.RegularExpressions.Regex.IsMatch(text, @"^\d+%?$"))
             return TextType.Value;
 
-
-        // Description: text with sentence-like patterns (punctuation, specific words)
-        // Don't classify as description based on length alone
         if (IsDescriptionText(text))
             return TextType.Description;
 
-        // Label: text without sentence endings (can be any length if no punctuation)
         if (!text.EndsWith(".") && !text.EndsWith("!") && !text.EndsWith("?"))
             return TextType.Label;
 
         return TextType.Unknown;
     }
 
-    /// <summary>
-    /// Format the announcement in the correct order: label, value, description
-    /// </summary>
     private static string FormatAnnouncement(string label, string value, string description, GameObject go, bool isDisabled = false)
     {
         var result = new System.Text.StringBuilder();
@@ -1089,7 +1127,6 @@ public static class UIPatches
             result.Append(value);
         }
 
-        // Add disabled indicator
         if (isDisabled && result.Length > 0)
         {
             result.Append(" (Disabled)");
@@ -1101,7 +1138,6 @@ public static class UIPatches
             result.Append(description);
         }
 
-        // Layer 4: Fallback to GameObject name
         if (result.Length == 0)
         {
             var cleanName = CleanObjectName(go.name);
@@ -1116,9 +1152,6 @@ public static class UIPatches
         return result.ToString();
     }
 
-    /// <summary>
-    /// Gets text from element or its children
-    /// </summary>
     private static string GetTextFromHierarchy(GameObject go)
     {
         var tmp = go.GetComponent<TextMeshProUGUI>();
@@ -1140,23 +1173,17 @@ public static class UIPatches
         return null;
     }
 
-    /// <summary>
-    /// Checks if text looks like a description using ONLY universal patterns (no language-specific words)
-    /// </summary>
     private static bool IsDescriptionText(string text)
     {
         if (string.IsNullOrEmpty(text)) return false;
 
-        // Too short to be a description
         if (text.Length < 30) return false;
 
-        // Descriptions have sentence punctuation - this is universal across all languages
-        // Labels typically don't have periods, commas in the middle, or colons
-        if (text.Contains(". ") ||      // Period followed by space (sentence)
-            text.EndsWith(".") ||        // Ends with period
-            text.Contains(", ") ||       // Comma in sentence
-            text.Contains("; ") ||       // Semicolon
-            text.Contains("- "))         // Dash in explanation
+        if (text.Contains(". ") ||
+            text.EndsWith(".") ||
+            text.Contains(", ") ||
+            text.Contains("; ") ||
+            text.Contains("- "))
             return true;
 
         return false;

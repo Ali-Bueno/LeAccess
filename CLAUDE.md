@@ -38,6 +38,22 @@ DLL is copied to `D:\games\Last Epoch\BepInEx\plugins\LeAccess\`
 - `InfoForTooltip` - Tooltip component with `SetText()` and `tooltipInfo` (nameText, mainText)
 - `ToggleOption` / `SliderOption` - GraphicsOption subclasses with `displayName` property
 
+### Character Creation Classes
+- `CharacterCreationSelection` - Selectable for class selection, extends Unity's `Selectable`
+  - `characterClass` (CharacterClass) - Contains class info
+  - `characterContext` - `NewCharacter` or `ExistingCharacter`
+  - `positionState` - HIDDEN, IN_LINE, SELECTED, SINGLE_DISPLAY
+- `CharacterClass` - ScriptableObject with class data
+  - `className` (string) - Display name of the class
+  - `classID` (CharacterClassID) - Enum value
+  - `masteries` - Available masteries for the class
+- `CharacterClassID` - Enum: Primalist, Mage, Sentinel, Acolyte, Rogue
+- `CharacterData` (LE.Data namespace) - Character save data
+  - `CharacterName` - Character's name
+  - `Level` - Character level
+  - `CharacterClass` - Class ID as int
+- `SimpleCharacterInfoProvider` - Provides classID, level, subClassID
+
 ## Current Implementation
 
 ### Working
@@ -49,6 +65,9 @@ DLL is copied to `D:\games\Last Epoch\BepInEx\plugins\LeAccess\`
 - **Menu options reading**: Label, value, and description for most options
 - **Dropdown expanded items**: Reads individual items when navigating dropdown lists
 - **Buttons**: Read button text directly
+- **Class selection carousel**: Announces class name when navigating (Sentinel, Rogue, Mage, Primalist, Acolyte)
+  - Uses ListNavigable polling, not ControllerFocusCursor
+  - Currently reads English class names only (no localization)
 
 ### Menu Reading Strategy (UIPatches.cs)
 The menu reading uses a multi-layer approach:
@@ -65,6 +84,33 @@ The menu reading uses a multi-layer approach:
 - **Values**: Short universal words (on, off, yes, no, auto, low, medium, high, etc.)
 - **Descriptions**: Detected by punctuation only (". ", ", ", "; ", ends with ".")
 - **Labels**: Everything else that doesn't end with ".", "!" or "?"
+
+### Character Creation Reading Strategy
+The character creation reading is handled before other layers:
+
+1. **TryGetCharacterCreationText**: Check for `CharacterCreationSelection` component
+   - If found, get `characterClass.className` for the class name
+   - Check `characterContext` to determine if new or existing character
+   - For existing characters, attempt to find name/level from text elements
+2. **TryGetExistingCharacterFromHierarchy**: Fallback search for character slot containers
+   - Looks for parent containers named "character", "slot", or "card"
+   - Collects all text elements and combines them
+
+### Class Selection Carousel (IMPORTANT)
+The class carousel in character creation does NOT use ControllerFocusCursor for navigation.
+
+**Key Discovery**: The carousel is managed by a `ListNavigable` named **"Select A Class Navigable"**
+- Uses `_lastSelectedIndex` to track which class is currently selected
+- Has 5 children (one per class): Sentinel, Rogue, Mage, Primalist, Acolyte
+- The `CharacterCreationSelection` objects' positions/scales do NOT change during navigation
+- Must use periodic polling in `MenuAccessibility.Update()` to detect selection changes
+
+**Implementation** (in `CheckPendingClassAnnouncement`):
+1. Check if `CharacterSelect.instance.currentState == ClassSelection`
+2. Find the ListNavigable with CharacterCreationSelection children
+3. Get `_lastSelectedIndex` to find the selected class
+4. Read class name from `characterClass.className` (English only, no localization field found)
+5. Announce when selection changes
 
 ### Key Discoveries
 - Option containers typically have exactly 1 control (Toggle/Slider/Dropdown)
@@ -100,7 +146,12 @@ These game-specific components don't use Unity's Toggle system:
 - `ChatToggleField` - has `IsActive` property (used in chat settings)
 
 ## TODO
-- [ ] **Character creation menu accessibility**
+- [x] **Character creation menu accessibility** - Class selection carousel working
+  - [x] Class selection carousel (uses ListNavigable polling)
+  - [ ] Localized class names (currently English only)
+  - [ ] Existing character selection (name, level, class from CharacterData)
+  - [ ] Character name input field accessibility
+  - [ ] Mastery selection when creating character
 - [ ] Inventory item announcements (name, stats, rarity)
 - [ ] Skill tree navigation
 - [ ] Map navigation with audio cues
