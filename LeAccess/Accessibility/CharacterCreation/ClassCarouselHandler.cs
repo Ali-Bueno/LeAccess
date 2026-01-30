@@ -9,6 +9,7 @@ namespace LeAccess.Accessibility.CharacterCreation;
 public static class ClassCarouselHandler
 {
     private static string _lastDetectedCenterClass;
+    private static string _lastAnnouncedFullText;
     private static float _lastClassCheckTime;
 
     /// <summary>
@@ -97,12 +98,90 @@ public static class ClassCarouselHandler
             if (!string.IsNullOrEmpty(classToAnnounce) && classToAnnounce != _lastDetectedCenterClass)
             {
                 _lastDetectedCenterClass = classToAnnounce;
-                ScreenReader.Speak(classToAnnounce);
+
+                // Try to find class description
+                var description = FindClassDescription();
+                string fullText = classToAnnounce;
+                if (!string.IsNullOrEmpty(description))
+                {
+                    fullText = $"{classToAnnounce}. {description}";
+                }
+
+                // Only announce if the full text changed (avoids re-announcing same class)
+                if (fullText != _lastAnnouncedFullText)
+                {
+                    _lastAnnouncedFullText = fullText;
+                    ScreenReader.Speak(fullText);
+                }
             }
         }
         catch (System.Exception ex)
         {
             Plugin.Log.LogWarning($"Error checking class selection: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Finds the class description from the UI.
+    /// The description is usually displayed in a panel when a class is selected.
+    /// </summary>
+    private static string FindClassDescription()
+    {
+        try
+        {
+            var charSelect = CharacterSelect.instance;
+            if (charSelect == null) return null;
+
+            // Look for text elements that contain the class description
+            // The description is typically a longer text with sentences
+            var allTexts = charSelect.GetComponentsInChildren<TMPro.TMP_Text>(true);
+            if (allTexts == null) return null;
+
+            string bestDescription = null;
+
+            foreach (var txt in allTexts)
+            {
+                if (txt == null) continue;
+                if (!txt.gameObject.activeInHierarchy) continue;
+
+                var text = txt.text;
+                if (string.IsNullOrWhiteSpace(text)) continue;
+
+                // Skip short text (class names, buttons, etc.)
+                if (text.Length < 40) continue;
+
+                // Description should have sentence structure
+                if (!text.Contains(".") && !text.Contains(",")) continue;
+
+                // Skip text that looks like a class name (single word, no punctuation in middle)
+                var words = text.Split(' ');
+                if (words.Length < 5) continue;
+
+                // Check parent hierarchy to avoid button text
+                var parentName = txt.transform.parent?.name?.ToLowerInvariant() ?? "";
+                var grandparentName = txt.transform.parent?.parent?.name?.ToLowerInvariant() ?? "";
+
+                if (parentName.Contains("button") || grandparentName.Contains("button"))
+                    continue;
+
+                // Prefer longer descriptions
+                if (bestDescription == null || text.Length > bestDescription.Length)
+                {
+                    bestDescription = text.Trim();
+                }
+            }
+
+            if (!string.IsNullOrEmpty(bestDescription))
+            {
+                Plugin.Log.LogInfo($"[ClassCarousel] Found description: {bestDescription.Substring(0, System.Math.Min(50, bestDescription.Length))}...");
+            }
+
+            return bestDescription;
+        }
+        catch (System.Exception ex)
+        {
+            Plugin.Log.LogWarning($"Error finding class description: {ex.Message}");
+            return null;
         }
     }
 }

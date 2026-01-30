@@ -18,7 +18,8 @@ LeAccess/
     │   ├── TextDetector.cs     # Text detection strategies (FindLabel*, TryGet*)
     │   └── TextClassifier.cs   # Text classification (Label/Value/Description)
     ├── CharacterCreation/
-    │   └── ClassCarouselHandler.cs  # Class selection carousel polling
+    │   ├── ClassCarouselHandler.cs  # Class selection carousel polling
+    │   └── MasteryReader.cs         # Mastery name/description extraction
     └── Utils/
         └── TextUtils.cs        # Text cleaning and utility methods
 ```
@@ -62,6 +63,31 @@ DLL is copied to `D:\games\Last Epoch\BepInEx\plugins\LeAccess\`
   - `Level` - Character level
   - `CharacterClass` - Class ID as int
 - `SimpleCharacterInfoProvider` - Provides classID, level, subClassID
+
+### Mastery Classes
+- `MasteryPanel` - Panel showing mastery options
+  - `masteryButtons[]` - Array of mastery buttons
+  - `masteryButtonTMPs[]` - Array of TextMeshProUGUI for button text
+  - `characterClass` - The base class
+- `MasteryButton` - Individual mastery button in the panel
+  - `classDescription` - Description text for the mastery
+  - `classDescriptionLocalizationKey` - For localization
+  - `isMasteryClass` - True if mastery, false if base class
+  - `passiveBonuses` - List of passive bonuses
+- `MasteryButtonTooltip` - Tooltip component on mastery buttons
+  - `masteryName` - Name of the mastery
+  - `masteryBonuses` - List of bonus descriptions
+- `Mastery` - Mastery data object
+  - `name` - Internal name
+  - `LocalizedName` - Localized display name
+  - `localizationKey` - Key for localization
+- `ActorClass` - ScriptableObject with class descriptions
+  - `className` - Base class name
+  - `classDescription` - Base class description
+  - `subclasses[]` - Array of ActorSubclass
+- `ActorSubclass` - Mastery/subclass data
+  - `subClassName` - Mastery name
+  - `classDescription` - Mastery description
 
 ## Current Implementation
 
@@ -157,10 +183,11 @@ These game-specific components don't use Unity's Toggle system:
 ## TODO
 - [x] **Character creation menu accessibility** - Class selection carousel working
   - [x] Class selection carousel (uses ListNavigable polling)
+  - [x] Class description reading (searches UI for description text)
+  - [x] Mastery selection in skill tree (MasteryButton name + description)
   - [ ] Localized class names (currently English only)
   - [ ] Existing character selection (name, level, class from CharacterData)
   - [ ] Character name input field accessibility
-  - [ ] Mastery selection when creating character
 - [ ] Inventory item announcements (name, stats, rarity)
 - [ ] Skill tree navigation
 - [ ] Map navigation with audio cues

@@ -1,4 +1,5 @@
 using ChatView;
+using LeAccess.Accessibility.CharacterCreation;
 using LeAccess.Accessibility.Utils;
 using System.Collections.Generic;
 using TMPro;
@@ -246,6 +247,16 @@ public static class ElementAnnouncer
                     return charClass.className;
                 }
             }
+        }
+
+        // Special case: Mastery selection in skill tree
+        if (MasteryReader.TryGetMasteryInfo(go, out var masteryName, out var masteryDescription))
+        {
+            if (!string.IsNullOrEmpty(masteryDescription))
+            {
+                return $"{masteryName}. {masteryDescription}";
+            }
+            return masteryName;
         }
 
         // Special case: Check if we're inside an expanded dropdown list
