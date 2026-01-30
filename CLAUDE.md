@@ -73,27 +73,34 @@ The menu reading uses a multi-layer approach:
 - Labels are usually siblings BEFORE the control, descriptions AFTER
 - Some options use nested structures where control is not direct child
 
-## Known Bugs (Pending)
+## Recently Fixed Bugs
 
-### Bug 1: State not updating on toggle
-- **Option**: "Acercamiento automático a los enemigos fuera de alcance"
-- **Issue**: Reads state as "Off" but doesn't update when toggled
-- **Possible cause**: Reading cached value, need to re-read on interaction
+### Bug 1: State not updating on toggle (FIXED)
+- **Solution**: Added `Toggle.isOn` setter Harmony patch that detects state changes and re-announces "On"/"Off"
+- **Implementation**: `ToggleIsOnSetterPatch` tracks previous states and announces when focused toggle changes
 
-### Bug 2: Color picker options read incorrectly
-- **Options**: Color selectors for enemy bars, health, etc.
-- **Issue**: Reads as "Select Color: Off" instead of option name
-- **Possible cause**: Toggle detected but it's actually a color picker button
+### Bug 2: Color picker options read incorrectly (FIXED)
+- **Solution**: Detect `ColorPickerManager` and `RuleColorPicker` components before treating as toggle
+- **Implementation**: Elements with color picker components show "Color selector" instead of "On"/"Off"
 
-### Bug 3: Some toggles not reading state
-- **Options**: "Filtro de obscenidades", "Desactivar chat", "Ocultar ventanas emergentes..."
-- **Issue**: Reads label and description but not On/Off state
-- **Possible cause**: Toggle is in a different location in hierarchy, not found by current search
+### Bug 3: Some toggles not reading state (FIXED)
+- **Solution**: Improved toggle search using `FindSingleOptionContainer` and extended parent search to 6 levels
+- **Implementation**: Also filters out toggles that belong to color pickers
+
+### Bug 4: Custom toggle components not announcing state (PARTIAL FIX)
+- **Issue**: Options like "Move to Attack" and "Hide unknown social requests" use custom toggle components (`ActiveWhileMoveToAttackEnabled`, `ActiveWhileFriendAddNotificationEnabled`) instead of Unity's Toggle
+- **Solution**: Track these components when focused and detect state changes on subsequent focus events
+- **Implementation**: State change detection in `AnnounceElement` compares current vs tracked state and announces "On"/"Off"
+- **Note**: Works but timing can be inconsistent - state change is detected when focus cursor re-triggers
+
+## Custom Toggle Components
+These game-specific components don't use Unity's Toggle system:
+- `ActiveWhileMoveToAttackEnabled` - has `moveAttackEnabled` bool field
+- `ActiveWhileFriendAddNotificationEnabled` - has `hideUnknownSocialRequests` bool field
+- `ChatToggleField` - has `IsActive` property (used in chat settings)
 
 ## TODO
-- [ ] Fix toggle state update on interaction (Bug 1)
-- [ ] Handle color picker buttons differently from toggles (Bug 2)
-- [ ] Improve toggle finding for deeply nested options (Bug 3)
+- [ ] **Character creation menu accessibility**
 - [ ] Inventory item announcements (name, stats, rarity)
 - [ ] Skill tree navigation
 - [ ] Map navigation with audio cues

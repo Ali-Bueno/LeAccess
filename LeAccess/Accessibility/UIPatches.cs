@@ -1,9 +1,13 @@
+using ChatView;
 using GraphicsBackend.Options;
 using HarmonyLib;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+
+// Custom toggle components used by Last Epoch instead of Unity's Toggle
+// These are defined in LE.dll with no namespace
 
 namespace LeAccess.Accessibility;
 
@@ -15,6 +19,15 @@ public static class UIPatches
     private static int _lastAnnouncedInstanceId;
     private static float _lastAnnounceTime;
     private const float AnnounceCooldown = 0.15f;
+
+    // Track toggle changes to announce state updates
+    private static readonly Dictionary<int, bool> _togglePreviousStates = new();
+
+    // Track custom toggle components for state change detection
+    private static ActiveWhileMoveToAttackEnabled _trackedMoveToAttack;
+    private static bool _trackedMoveToAttackLastState;
+    private static ActiveWhileFriendAddNotificationEnabled _trackedFriendNotif;
+    private static bool _trackedFriendNotifLastState;
 
     // Known value patterns - only universal short values that appear in most games/languages
     private static readonly HashSet<string> KnownValuePatterns = new(System.StringComparer.OrdinalIgnoreCase)
@@ -90,6 +103,282 @@ public static class UIPatches
         public static bool Prefix(ref bool __result) { __result = false; return false; }
     }
 
+    /// <summary>
+    /// Patch Toggle.isOn setter to detect state changes and re-announce
+    /// </summary>
+    [HarmonyPatch(typeof(Toggle), nameof(Toggle.isOn), MethodType.Setter)]
+    public static class ToggleIsOnSetterPatch
+    {
+        public static void Postfix(Toggle __instance, bool value)
+        {
+            HandleToggleValueChange(__instance, value, "setter");
+        }
+    }
+
+    /// <summary>
+    /// Patch Toggle.SetIsOnWithoutNotify to detect state changes (some UI uses this instead of setter)
+    /// </summary>
+    [HarmonyPatch(typeof(Toggle), nameof(Toggle.SetIsOnWithoutNotify))]
+    public static class ToggleSetIsOnWithoutNotifyPatch
+    {
+        public static void Postfix(Toggle __instance, bool value)
+        {
+            HandleToggleValueChange(__instance, value, "SetIsOnWithoutNotify");
+        }
+    }
+
+    /// <summary>
+    /// Common handler for toggle value changes
+    /// </summary>
+    private static void HandleToggleValueChange(Toggle toggle, bool value, string source)
+    {
+        try
+        {
+            if (toggle == null || toggle.gameObject == null) return;
+
+            var instanceId = toggle.GetInstanceID();
+            var goName = toggle.gameObject.name;
+            var parentName = toggle.transform.parent?.name ?? "no-parent";
+
+            // DEBUG: Log toggles
+            if (parentName.Contains("Popup") || parentName.Contains("Move") || parentName.Contains("Attack") ||
+                parentName.Contains("social") || parentName.Contains("Social") || goName.Contains("Toggle"))
+            {
+                Plugin.Log.LogInfo($"[DEBUG] Toggle {source}: {goName}, parent={parentName}, value={value}, lastAnnounced={_lastAnnouncedInstanceId}, toggleId={instanceId}");
+            }
+
+            // Check if value actually changed
+            if (_togglePreviousStates.TryGetValue(instanceId, out var previousValue))
+            {
+                if (previousValue == value) return;
+            }
+
+            _togglePreviousStates[instanceId] = value;
+
+            // Only announce if this toggle is related to the currently focused element
+            var toggleGo = toggle.gameObject;
+            bool isCurrentlyFocused = IsRelatedToFocusedElement(toggleGo);
+
+            // DEBUG: Log for potential problem toggles
+            if (parentName.Contains("Popup") || parentName.Contains("Move") || parentName.Contains("Attack") ||
+                parentName.Contains("social") || parentName.Contains("Social"))
+            {
+                Plugin.Log.LogInfo($"[DEBUG] Toggle {goName}: isRelatedToFocused={isCurrentlyFocused}");
+            }
+
+            if (!isCurrentlyFocused) return;
+
+            // Re-announce the state change
+            var stateText = value ? "On" : "Off";
+            ScreenReader.Speak(stateText, true);
+        }
+        catch { }
+    }
+
+    /// <summary>
+    /// Check if a GameObject is related to the currently focused element.
+    /// This checks if the object is an ancestor, descendant, or sibling of the focused element.
+    /// </summary>
+    private static bool IsRelatedToFocusedElement(GameObject go)
+    {
+        if (go == null || _lastAnnouncedInstanceId == 0) return false;
+
+        // Direct match
+        if (go.GetInstanceID() == _lastAnnouncedInstanceId)
+            return true;
+
+        // Check if go is an ancestor of focused element (go -> ... -> focused)
+        var current = go.transform;
+        for (int i = 0; i < 6 && current != null; i++)
+        {
+            if (current.gameObject.GetInstanceID() == _lastAnnouncedInstanceId)
+                return true;
+            current = current.parent;
+        }
+
+        // Check if go is a descendant of focused element (focused -> ... -> go)
+        // We need to find the focused element first, then check if go is under it
+        var focusedGo = FindGameObjectByInstanceId(_lastAnnouncedInstanceId, go.transform.root);
+        if (focusedGo != null && go.transform.IsChildOf(focusedGo.transform))
+            return true;
+
+        // Check if they share a common parent within 3 levels (siblings/cousins)
+        var goParent = go.transform.parent;
+        for (int i = 0; i < 3 && goParent != null; i++)
+        {
+            // Check if the focused element is a child of this parent
+            if (focusedGo != null && focusedGo.transform.IsChildOf(goParent))
+                return true;
+            goParent = goParent.parent;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Find a GameObject by instance ID within a hierarchy (cached search)
+    /// </summary>
+    private static GameObject _cachedFocusedGo;
+    private static int _cachedFocusedId;
+
+    private static GameObject FindGameObjectByInstanceId(int instanceId, Transform searchRoot)
+    {
+        // Use cache if valid
+        if (_cachedFocusedId == instanceId && _cachedFocusedGo != null)
+            return _cachedFocusedGo;
+
+        // Search in hierarchy
+        var allTransforms = searchRoot.GetComponentsInChildren<Transform>(true);
+        foreach (var t in allTransforms)
+        {
+            if (t.gameObject.GetInstanceID() == instanceId)
+            {
+                _cachedFocusedGo = t.gameObject;
+                _cachedFocusedId = instanceId;
+                return t.gameObject;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Patch ChatToggleField.IsActive setter for chat options (custom toggle that doesn't use Unity Toggle)
+    /// </summary>
+    [HarmonyPatch(typeof(ChatToggleField), nameof(ChatToggleField.IsActive), MethodType.Setter)]
+    public static class ChatToggleFieldIsActivePatch
+    {
+        public static void Postfix(ChatToggleField __instance, bool value)
+        {
+            try
+            {
+                if (__instance == null || __instance.gameObject == null) return;
+
+                var instanceId = __instance.GetInstanceID();
+
+                // Check if value actually changed
+                if (_togglePreviousStates.TryGetValue(instanceId, out var previousValue))
+                {
+                    if (previousValue == value) return;
+                }
+
+                _togglePreviousStates[instanceId] = value;
+
+                // Check if related to focused element
+                bool isCurrentlyFocused = IsRelatedToFocusedElement(__instance.gameObject);
+
+                if (!isCurrentlyFocused) return;
+
+                // Re-announce the state change
+                var stateText = value ? "On" : "Off";
+                ScreenReader.Speak(stateText, true);
+            }
+            catch { }
+        }
+    }
+
+    /// <summary>
+    /// Patch PrioritizedNavigable.HandleSubmitInput to detect A/X button presses on custom toggles
+    /// </summary>
+    [HarmonyPatch(typeof(PrioritizedNavigable), nameof(PrioritizedNavigable.HandleSubmitInput))]
+    public static class PrioritizedNavigableHandleSubmitInputPatch
+    {
+        public static void Postfix(PrioritizedNavigable __instance)
+        {
+            try
+            {
+                Plugin.Log.LogInfo($"[DEBUG] PrioritizedNavigable.HandleSubmitInput called");
+                if (__instance == null) return;
+
+                // Get the currently active selectable
+                var activeSelectable = __instance.ActiveSelectable;
+                Plugin.Log.LogInfo($"[DEBUG] ActiveSelectable: {activeSelectable?.gameObject?.name ?? "null"}");
+                if (activeSelectable == null) return;
+
+                var go = activeSelectable.gameObject;
+                if (go == null) return;
+
+                // Check for custom toggle components
+                var moveToAttack = go.GetComponent<ActiveWhileMoveToAttackEnabled>()
+                    ?? go.GetComponentInParent<ActiveWhileMoveToAttackEnabled>();
+                if (moveToAttack != null)
+                {
+                    Plugin.Log.LogInfo($"[DEBUG] Found MoveToAttack, state={moveToAttack.moveAttackEnabled}");
+                    var stateText = moveToAttack.moveAttackEnabled ? "On" : "Off";
+                    ScreenReader.Speak(stateText, true);
+                    return;
+                }
+
+                var friendNotification = go.GetComponent<ActiveWhileFriendAddNotificationEnabled>()
+                    ?? go.GetComponentInParent<ActiveWhileFriendAddNotificationEnabled>();
+                if (friendNotification != null)
+                {
+                    Plugin.Log.LogInfo($"[DEBUG] Found FriendNotification, state={friendNotification.hideUnknownSocialRequests}");
+                    var stateText = friendNotification.hideUnknownSocialRequests ? "On" : "Off";
+                    ScreenReader.Speak(stateText, true);
+                    return;
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Plugin.Log.LogError($"[DEBUG] HandleSubmitInput error: {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Patch VerticalNavigable.HandleSubmitInput - settings panels often use this
+    /// </summary>
+    [HarmonyPatch(typeof(VerticalNavigable), nameof(VerticalNavigable.HandleSubmitInput))]
+    public static class VerticalNavigableHandleSubmitInputPatch
+    {
+        public static void Postfix(VerticalNavigable __instance)
+        {
+            try
+            {
+                Plugin.Log.LogInfo($"[DEBUG] VerticalNavigable.HandleSubmitInput called");
+                if (__instance == null) return;
+                var selectables = __instance.selectables;
+                var idx = __instance.currentlySelectedIdx;
+                if (selectables != null && idx >= 0 && idx < selectables.Length)
+                {
+                    var selected = selectables[idx];
+                    if (selected != null)
+                        HandleSubmitForGameObject(selected.gameObject);
+                }
+            }
+            catch { }
+        }
+    }
+
+
+    /// <summary>
+    /// Common handler for submit input on a GameObject
+    /// </summary>
+    private static void HandleSubmitForGameObject(GameObject go)
+    {
+        if (go == null) return;
+
+        // Check for custom toggle components
+        var moveToAttack = go.GetComponent<ActiveWhileMoveToAttackEnabled>()
+            ?? go.GetComponentInParent<ActiveWhileMoveToAttackEnabled>();
+        if (moveToAttack != null)
+        {
+            var stateText = moveToAttack.moveAttackEnabled ? "On" : "Off";
+            ScreenReader.Speak(stateText, true);
+            return;
+        }
+
+        var friendNotification = go.GetComponent<ActiveWhileFriendAddNotificationEnabled>()
+            ?? go.GetComponentInParent<ActiveWhileFriendAddNotificationEnabled>();
+        if (friendNotification != null)
+        {
+            var stateText = friendNotification.hideUnknownSocialRequests ? "On" : "Off";
+            ScreenReader.Speak(stateText, true);
+            return;
+        }
+    }
+
     public static void AnnounceElement(GameObject go)
     {
         if (go == null) return;
@@ -102,6 +391,60 @@ public static class UIPatches
 
         _lastAnnouncedInstanceId = instanceId;
         _lastAnnounceTime = now;
+
+        // DEBUG: Log elements that might be the problematic options
+        var parentName = go.transform.parent?.name ?? "no-parent";
+        if (parentName.Contains("Popup") || parentName.Contains("Move") || parentName.Contains("Attack") ||
+            parentName.Contains("social") || parentName.Contains("Social") || parentName.Contains("Friend"))
+        {
+            var toggle = go.GetComponentInChildren<Toggle>();
+            Plugin.Log.LogInfo($"[DEBUG] AnnounceElement: {go.name}, parent={parentName}, instanceId={instanceId}, hasToggleInChildren={toggle != null}");
+
+            // Check for custom toggle components
+            var moveToAttack = go.GetComponent<ActiveWhileMoveToAttackEnabled>()
+                ?? go.GetComponentInParent<ActiveWhileMoveToAttackEnabled>()
+                ?? go.GetComponentInChildren<ActiveWhileMoveToAttackEnabled>();
+            var friendNotif = go.GetComponent<ActiveWhileFriendAddNotificationEnabled>()
+                ?? go.GetComponentInParent<ActiveWhileFriendAddNotificationEnabled>()
+                ?? go.GetComponentInChildren<ActiveWhileFriendAddNotificationEnabled>();
+
+            bool stateChanged = false;
+            if (moveToAttack != null)
+            {
+                bool currentState = moveToAttack.moveAttackEnabled;
+                // Check if state changed since last time
+                if (_trackedMoveToAttack != null && _trackedMoveToAttack.Pointer == moveToAttack.Pointer)
+                {
+                    if (currentState != _trackedMoveToAttackLastState)
+                    {
+                        // State changed! Announce it and skip normal announcement
+                        ScreenReader.Speak(currentState ? "On" : "Off", true);
+                        stateChanged = true;
+                    }
+                }
+                _trackedMoveToAttack = moveToAttack;
+                _trackedMoveToAttackLastState = currentState;
+            }
+            if (friendNotif != null)
+            {
+                bool currentState = friendNotif.hideUnknownSocialRequests;
+                // Check if state changed since last time
+                if (_trackedFriendNotif != null && _trackedFriendNotif.Pointer == friendNotif.Pointer)
+                {
+                    if (currentState != _trackedFriendNotifLastState)
+                    {
+                        // State changed! Announce it and skip normal announcement
+                        ScreenReader.Speak(currentState ? "On" : "Off", true);
+                        stateChanged = true;
+                    }
+                }
+                _trackedFriendNotif = friendNotif;
+                _trackedFriendNotifLastState = currentState;
+            }
+            // If state changed, skip normal announcement to avoid interrupting
+            if (stateChanged)
+                return;
+        }
 
         var text = BuildAnnouncementText(go);
         if (!string.IsNullOrWhiteSpace(text))
@@ -119,17 +462,43 @@ public static class UIPatches
         if (dropdownItemText != null)
             return dropdownItemText;
 
+        // Check if this option is disabled by the game developers
+        bool isDisabledOption = IsDisabledOption(go);
+
         // Layer 1: Try to get label from InfoForTooltip
         TryGetFromTooltipInfo(go, ref label, ref description);
 
+        // Check for color picker FIRST (Bug 2 fix) - these contain toggles but aren't boolean options
+        var colorPicker = go.GetComponent<ColorPickerManager>() ?? go.GetComponentInParent<ColorPickerManager>();
+        var ruleColorPicker = go.GetComponent<RuleColorPicker>() ?? go.GetComponentInParent<RuleColorPicker>();
+        bool isColorPicker = colorPicker != null || ruleColorPicker != null;
+
+        // Check for ChatToggleField (custom toggle used in chat settings)
+        var chatToggle = go.GetComponent<ChatToggleField>() ?? go.GetComponentInParent<ChatToggleField>();
+
         // Detect control type and get value (search in go, parents, and children)
         var dropdown = go.GetComponent<TMP_Dropdown>() ?? go.GetComponentInParent<TMP_Dropdown>() ?? go.GetComponentInChildren<TMP_Dropdown>();
-        var toggle = go.GetComponent<Toggle>() ?? go.GetComponentInParent<Toggle>() ?? go.GetComponentInChildren<Toggle>();
+        // Don't detect toggle if this is a color picker (Bug 2 fix)
+        Toggle toggle = null;
+        if (!isColorPicker)
+        {
+            toggle = go.GetComponent<Toggle>() ?? go.GetComponentInParent<Toggle>() ?? go.GetComponentInChildren<Toggle>();
+        }
         var slider = go.GetComponent<Slider>() ?? go.GetComponentInParent<Slider>() ?? go.GetComponentInChildren<Slider>();
         var button = go.GetComponent<Button>() ?? go.GetComponentInParent<Button>();
 
         // Get control value
-        if (dropdown != null)
+        if (isColorPicker)
+        {
+            // Color picker - indicate it's a color selector
+            value = "Color selector";
+        }
+        else if (chatToggle != null)
+        {
+            // ChatToggleField - custom toggle used in chat settings
+            value = chatToggle.IsActive ? "On" : "Off";
+        }
+        else if (dropdown != null)
         {
             if (dropdown.captionText != null)
                 value = CleanText(dropdown.captionText.text);
@@ -176,20 +545,43 @@ public static class UIPatches
             label = FindAnyTextInParents(go, value);
         }
 
-        // Layer 4.5: If we found a label but no value, try harder to find the control
-        if (!string.IsNullOrEmpty(label) && string.IsNullOrEmpty(value))
+        // Layer 4.5: If we found a label but no value, try harder to find the control (Bug 3 fix)
+        if (!string.IsNullOrEmpty(label) && string.IsNullOrEmpty(value) && !isColorPicker)
         {
-            // Search in parents up to 4 levels for a toggle
-            var current = go.transform.parent;
-            for (int i = 0; i < 4 && current != null && toggle == null; i++)
+            // First, try to find the option container and search within it
+            var optionContainer = FindSingleOptionContainer(go);
+            if (optionContainer != null)
             {
-                toggle = current.GetComponentInChildren<Toggle>();
+                toggle = optionContainer.GetComponentInChildren<Toggle>();
                 if (toggle != null)
                 {
                     value = toggle.isOn ? "On" : "Off";
-                    break;
                 }
-                current = current.parent;
+            }
+
+            // If still no toggle, search in parents up to 6 levels (increased from 4)
+            if (toggle == null)
+            {
+                var current = go.transform.parent;
+                for (int i = 0; i < 6 && current != null; i++)
+                {
+                    // Search all children at this level, not just GetComponentInChildren
+                    var toggles = current.GetComponentsInChildren<Toggle>(true);
+                    foreach (var t in toggles)
+                    {
+                        // Skip if this toggle belongs to a color picker
+                        if (t.GetComponentInParent<ColorPickerManager>() != null ||
+                            t.GetComponentInParent<RuleColorPicker>() != null)
+                            continue;
+
+                        toggle = t;
+                        value = toggle.isOn ? "On" : "Off";
+                        break;
+                    }
+
+                    if (toggle != null) break;
+                    current = current.parent;
+                }
             }
         }
 
@@ -210,7 +602,24 @@ public static class UIPatches
         }
 
         // Build result in order: label, value, description
-        return FormatAnnouncement(label, value, description, go);
+        return FormatAnnouncement(label, value, description, go, isDisabledOption);
+    }
+
+    /// <summary>
+    /// Check if an option is disabled by the game developers (has "Disabled" in parent name)
+    /// </summary>
+    private static bool IsDisabledOption(GameObject go)
+    {
+        // Check parent names for "Disabled" marker
+        var current = go.transform.parent;
+        for (int i = 0; i < 3 && current != null; i++)
+        {
+            var parentName = current.name;
+            if (parentName.Contains("Disabled") || parentName.Contains("disabled"))
+                return true;
+            current = current.parent;
+        }
+        return false;
     }
 
     /// <summary>
@@ -662,7 +1071,7 @@ public static class UIPatches
     /// <summary>
     /// Format the announcement in the correct order: label, value, description
     /// </summary>
-    private static string FormatAnnouncement(string label, string value, string description, GameObject go)
+    private static string FormatAnnouncement(string label, string value, string description, GameObject go, bool isDisabled = false)
     {
         var result = new System.Text.StringBuilder();
 
@@ -680,6 +1089,12 @@ public static class UIPatches
             result.Append(value);
         }
 
+        // Add disabled indicator
+        if (isDisabled && result.Length > 0)
+        {
+            result.Append(" (Disabled)");
+        }
+
         if (!string.IsNullOrEmpty(description) && result.Length > 0)
         {
             result.Append(". ");
@@ -691,7 +1106,11 @@ public static class UIPatches
         {
             var cleanName = CleanObjectName(go.name);
             if (!IsGenericName(cleanName))
+            {
+                if (isDisabled)
+                    return cleanName + " (Disabled)";
                 return cleanName;
+            }
         }
 
         return result.ToString();
