@@ -11,7 +11,16 @@ LeAccess/
 └── Accessibility/
     ├── ScreenReader.cs         # Tolk wrapper (namespace: DavyKager)
     ├── MenuAccessibility.cs    # Monitors NavigationManager for selection changes
-    └── UIPatches.cs            # Harmony patches for UI events
+    ├── Patches/
+    │   └── HarmonyPatches.cs   # All Harmony patches (UIPanel, Toggle, Focus cursor, etc.)
+    ├── Announcements/
+    │   ├── ElementAnnouncer.cs # Main announcement logic (AnnounceElement, BuildAnnouncementText)
+    │   ├── TextDetector.cs     # Text detection strategies (FindLabel*, TryGet*)
+    │   └── TextClassifier.cs   # Text classification (Label/Value/Description)
+    ├── CharacterCreation/
+    │   └── ClassCarouselHandler.cs  # Class selection carousel polling
+    └── Utils/
+        └── TextUtils.cs        # Text cleaning and utility methods
 ```
 
 ## Building
@@ -69,8 +78,8 @@ DLL is copied to `D:\games\Last Epoch\BepInEx\plugins\LeAccess\`
   - Uses ListNavigable polling, not ControllerFocusCursor
   - Currently reads English class names only (no localization)
 
-### Menu Reading Strategy (UIPatches.cs)
-The menu reading uses a multi-layer approach:
+### Menu Reading Strategy (Announcements/)
+The menu reading uses a multi-layer approach (see `ElementAnnouncer.cs` and `TextDetector.cs`):
 
 1. **Layer 1 - InfoForTooltip**: Check for tooltip component, call `SetText()` to get `nameText` (label) and `mainText` (description)
 2. **Layer 2 - GraphicsOption**: Check for `ToggleOption`/`SliderOption` components which have `displayName`
@@ -80,7 +89,7 @@ The menu reading uses a multi-layer approach:
 6. **Layer 4.5 - Toggle search**: If label found but no value, search parents for Toggle
 7. **Layer 5 - GameObject name**: Use cleaned GameObject name as fallback
 
-### Text Classification (Language-Independent)
+### Text Classification (TextClassifier.cs)
 - **Values**: Short universal words (on, off, yes, no, auto, low, medium, high, etc.)
 - **Descriptions**: Detected by punctuation only (". ", ", ", "; ", ends with ".")
 - **Labels**: Everything else that doesn't end with ".", "!" or "?"
@@ -105,7 +114,7 @@ The class carousel in character creation does NOT use ControllerFocusCursor for 
 - The `CharacterCreationSelection` objects' positions/scales do NOT change during navigation
 - Must use periodic polling in `MenuAccessibility.Update()` to detect selection changes
 
-**Implementation** (in `CheckPendingClassAnnouncement`):
+**Implementation** (in `ClassCarouselHandler.CheckPendingClassAnnouncement`):
 1. Check if `CharacterSelect.instance.currentState == ClassSelection`
 2. Find the ListNavigable with CharacterCreationSelection children
 3. Get `_lastSelectedIndex` to find the selected class
@@ -123,7 +132,7 @@ The class carousel in character creation does NOT use ControllerFocusCursor for 
 
 ### Bug 1: State not updating on toggle (FIXED)
 - **Solution**: Added `Toggle.isOn` setter Harmony patch that detects state changes and re-announces "On"/"Off"
-- **Implementation**: `ToggleIsOnSetterPatch` tracks previous states and announces when focused toggle changes
+- **Implementation**: `HarmonyPatches.ToggleIsOnSetterPatch` tracks previous states and announces when focused toggle changes
 
 ### Bug 2: Color picker options read incorrectly (FIXED)
 - **Solution**: Detect `ColorPickerManager` and `RuleColorPicker` components before treating as toggle
@@ -136,7 +145,7 @@ The class carousel in character creation does NOT use ControllerFocusCursor for 
 ### Bug 4: Custom toggle components not announcing state (PARTIAL FIX)
 - **Issue**: Options like "Move to Attack" and "Hide unknown social requests" use custom toggle components (`ActiveWhileMoveToAttackEnabled`, `ActiveWhileFriendAddNotificationEnabled`) instead of Unity's Toggle
 - **Solution**: Track these components when focused and detect state changes on subsequent focus events
-- **Implementation**: State change detection in `AnnounceElement` compares current vs tracked state and announces "On"/"Off"
+- **Implementation**: State change detection in `ElementAnnouncer.AnnounceElement` compares current vs tracked state and announces "On"/"Off"
 - **Note**: Works but timing can be inconsistent - state change is detected when focus cursor re-triggers
 
 ## Custom Toggle Components

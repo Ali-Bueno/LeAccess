@@ -1,3 +1,4 @@
+using LeAccess.Accessibility.CharacterCreation;
 using UnityEngine;
 
 namespace LeAccess.Accessibility;
@@ -14,7 +15,7 @@ public class MenuAccessibility : MonoBehaviour
 
     void Update()
     {
-        UIPatches.CheckPendingClassAnnouncement();
+        ClassCarouselHandler.CheckPendingClassAnnouncement();
     }
 
     /// <summary>
