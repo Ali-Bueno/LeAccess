@@ -103,6 +103,9 @@ DLL is copied to `D:\games\Last Epoch\BepInEx\plugins\LeAccess\`
 - **Class selection carousel**: Announces class name when navigating (Sentinel, Rogue, Mage, Primalist, Acolyte)
   - Uses ListNavigable polling, not ControllerFocusCursor
   - Currently reads English class names only (no localization)
+- **ClassTab mastery selection**: Reads mastery names (localized) and descriptions
+  - Name read on navigation (from TMP_Text children)
+  - Description read on A/X submit (searches parent hierarchy for long text)
 
 ### Menu Reading Strategy (Announcements/)
 The menu reading uses a multi-layer approach (see `ElementAnnouncer.cs` and `TextDetector.cs`):
@@ -147,6 +150,24 @@ The class carousel in character creation does NOT use ControllerFocusCursor for 
 4. Read class name from `characterClass.className` (English only, no localization field found)
 5. Announce when selection changes
 
+### ClassTabs (Mastery Selection)
+After selecting a base class, the mastery selection screen shows ClassTabs (e.g., ClassTabPaladin, ClassTabVoidKnight, ClassTabForgeGuard, ClassTabBase).
+
+**Key Discoveries**:
+- ClassTabs are Selectables (not Buttons) inside `LeftColClassMenu` parent
+- They use `PrioritizedNavigable` for navigation (navigable name: "Name Creation Holder")
+- `ListNavigable` does NOT have a `HandleSubmitInput` method - don't try to patch it!
+- ClassTabs have localized names via TMP_Text children (e.g., "Paladín", "Caballero del vacío")
+
+**Implementation**:
+1. **Name reading** (on navigation): `TryGetClassTabInfo` in ElementAnnouncer.cs
+   - Gets localized name from `GetComponentInChildren<TextMeshProUGUI>().text`
+   - Fallback: Extract from GameObject name (ClassTabVoidKnight → "Void Knight")
+2. **Description reading** (on A/X press): `HandleClassTabSubmit` in ElementAnnouncer.cs
+   - Triggered via `PrioritizedNavigable.HandleSubmitInput` patch
+   - Searches parent hierarchy for long text (>50 chars containing ".")
+   - Descriptions are found at level 1-2 in parent hierarchy
+
 ### Key Discoveries
 - Option containers typically have exactly 1 control (Toggle/Slider/Dropdown)
 - Section containers have multiple controls - used to stop searching
@@ -185,7 +206,8 @@ These game-specific components don't use Unity's Toggle system:
   - [x] Class selection carousel (uses ListNavigable polling)
   - [x] Class description reading (searches UI for description text)
   - [x] Mastery selection in skill tree (MasteryButton name + description)
-  - [ ] Localized class names (currently English only)
+  - [x] ClassTab mastery selection (name on navigate, description on A/X submit)
+  - [ ] Localized class names (currently English only - but ClassTabs DO have localization!)
   - [ ] Existing character selection (name, level, class from CharacterData)
   - [ ] Character name input field accessibility
 - [ ] Inventory item announcements (name, stats, rarity)
@@ -201,6 +223,9 @@ These game-specific components don't use Unity's Toggle system:
 - Compare IL2CPP objects by `.Pointer` not reference equality
 - Avoid `FindObjectOfType` every frame - cache references
 - Use `GetInstanceID()` to track object identity
+- **IMPORTANT**: `Selectable.OnSubmit` does NOT exist in IL2CPP - use navigable `HandleSubmitInput` patches instead
+- **IMPORTANT**: `ListNavigable` does NOT have `HandleSubmitInput` - it inherits from PrioritizedNavigable but doesn't override it
+- When patching methods, check they exist first - a failed patch will prevent the entire plugin from loading
 
 ## Screen Reader (Tolk)
 - Namespace: `DavyKager`

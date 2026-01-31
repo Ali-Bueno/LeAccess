@@ -141,11 +141,42 @@ public static class ElementAnnouncer
     }
 
     /// <summary>
-    /// Handles submit input for custom toggle components.
+    /// Handles submit input for custom toggle components and ClassTabs.
     /// </summary>
     public static void HandleSubmitForGameObject(GameObject go)
     {
         if (go == null) return;
+
+        // Check for ClassTab - read description on submit
+        // Only check if NOT in class carousel (CharacterCreationSelection is for carousel)
+        var charCreation = go.GetComponent<CharacterCreationSelection>()
+            ?? go.GetComponentInParent<CharacterCreationSelection>();
+        if (charCreation != null)
+        {
+            // This is class carousel, not ClassTab - don't handle here
+            Plugin.Log.LogInfo($"[Submit] Skipping - this is CharacterCreationSelection (class carousel)");
+            return;
+        }
+
+        // Check for ClassTab by name
+        var goName = go.name;
+        if (goName.StartsWith("ClassTab"))
+        {
+            HandleClassTabSubmit(go, goName);
+            return;
+        }
+
+        // Check parents for ClassTab
+        var current = go.transform.parent;
+        for (int i = 0; i < 3 && current != null; i++)
+        {
+            if (current.name.StartsWith("ClassTab"))
+            {
+                HandleClassTabSubmit(current.gameObject, current.name);
+                return;
+            }
+            current = current.parent;
+        }
 
         var moveToAttack = go.GetComponent<ActiveWhileMoveToAttackEnabled>()
             ?? go.GetComponentInParent<ActiveWhileMoveToAttackEnabled>();
@@ -163,6 +194,61 @@ public static class ElementAnnouncer
             var stateText = friendNotification.hideUnknownSocialRequests ? "On" : "Off";
             ScreenReader.Speak(stateText, true);
             return;
+        }
+    }
+
+    /// <summary>
+    /// Handles submit on ClassTab elements - reads the class/mastery description.
+    /// </summary>
+    private static void HandleClassTabSubmit(GameObject go, string goName)
+    {
+        try
+        {
+            Plugin.Log.LogInfo($"[ClassTab Submit] Detected submit on {goName}");
+
+            // Find the description in the parent hierarchy
+            // ClassTabs are in LeftColClassMenu, descriptions are usually in a sibling or parent container
+            var parent = go.transform.parent;
+            if (parent == null) return;
+
+            // Search in parent and grandparent for description text
+            string description = null;
+            for (int level = 0; level < 3 && parent != null; level++)
+            {
+                var allTexts = parent.GetComponentsInChildren<TextMeshProUGUI>(true);
+                foreach (var txt in allTexts)
+                {
+                    if (txt == null || !txt.gameObject.activeInHierarchy) continue;
+                    var text = txt.text;
+                    if (string.IsNullOrWhiteSpace(text)) continue;
+
+                    // Description is longer text with punctuation
+                    if (text.Length > 50 && text.Contains("."))
+                    {
+                        description = TextUtils.CleanText(text);
+                        Plugin.Log.LogInfo($"[ClassTab Submit] Found description at level {level}: {description.Substring(0, System.Math.Min(50, description.Length))}...");
+                        break;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(description))
+                    break;
+
+                parent = parent.parent;
+            }
+
+            if (!string.IsNullOrEmpty(description))
+            {
+                ScreenReader.Speak(description, false);
+            }
+            else
+            {
+                Plugin.Log.LogInfo("[ClassTab Submit] No description found");
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Plugin.Log.LogError($"HandleClassTabSubmit error: {ex.Message}");
         }
     }
 
@@ -246,6 +332,16 @@ public static class ElementAnnouncer
                     Plugin.Log.LogInfo($"[ClassSelect] Announcing class from BuildAnnouncementText: {charClass.className}, go={elementName}");
                     return charClass.className;
                 }
+            }
+        }
+
+        // Special case: Class tabs in character creation (ClassTabVoidKnight, ClassTabPaladin, etc.)
+        if (elementName.StartsWith("ClassTab"))
+        {
+            var classTabResult = TryGetClassTabInfo(go, elementName);
+            if (!string.IsNullOrEmpty(classTabResult))
+            {
+                return classTabResult;
             }
         }
 
@@ -434,6 +530,47 @@ public static class ElementAnnouncer
         }
 
         return FormatAnnouncement(label, value, description, go, isDisabledOption);
+    }
+
+    /// <summary>
+    /// Extracts class/mastery info from ClassTab elements in character creation.
+    /// </summary>
+    private static string TryGetClassTabInfo(GameObject go, string elementName)
+    {
+        string className = null;
+
+        // First, try to get visible text from the tab (localized name)
+        var tmpText = go.GetComponentInChildren<TextMeshProUGUI>();
+        if (tmpText != null && !string.IsNullOrWhiteSpace(tmpText.text))
+        {
+            className = tmpText.text.Trim();
+        }
+
+        // Fallback: extract from GameObject name (ClassTabVoidKnight -> Void Knight)
+        if (string.IsNullOrEmpty(className))
+        {
+            var rawName = elementName.Substring(8); // "ClassTab".Length = 8
+
+            if (rawName == "Base")
+            {
+                className = "Base Class";
+            }
+            else
+            {
+                // Insert spaces before capital letters (VoidKnight -> Void Knight)
+                className = System.Text.RegularExpressions.Regex.Replace(rawName, "([a-z])([A-Z])", "$1 $2");
+            }
+        }
+
+        if (string.IsNullOrEmpty(className))
+            return null;
+
+        // Log components for debugging
+        var button = go.GetComponent<Button>();
+        var selectable = go.GetComponent<Selectable>();
+        Plugin.Log.LogInfo($"[ClassTab] name={className}, hasButton={button != null}, hasSelectable={selectable != null}");
+
+        return className;
     }
 
     private static bool IsDisabledOption(GameObject go)

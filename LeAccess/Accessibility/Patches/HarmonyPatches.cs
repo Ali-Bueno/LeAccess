@@ -2,7 +2,9 @@ using ChatView;
 using HarmonyLib;
 using LeAccess.Accessibility.Announcements;
 using LeAccess.Accessibility.Utils;
+using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace LeAccess.Accessibility.Patches;
@@ -134,7 +136,7 @@ public static class HarmonyPatches
     }
 
     /// <summary>
-    /// Patch PrioritizedNavigable.HandleSubmitInput to detect A/X button presses on custom toggles.
+    /// Patch PrioritizedNavigable.HandleSubmitInput to detect A/X button presses.
     /// </summary>
     [HarmonyPatch(typeof(PrioritizedNavigable), nameof(PrioritizedNavigable.HandleSubmitInput))]
     public static class PrioritizedNavigableHandleSubmitInputPatch
@@ -151,24 +153,8 @@ public static class HarmonyPatches
                 var go = activeSelectable.gameObject;
                 if (go == null) return;
 
-                // Check for custom toggle components
-                var moveToAttack = go.GetComponent<ActiveWhileMoveToAttackEnabled>()
-                    ?? go.GetComponentInParent<ActiveWhileMoveToAttackEnabled>();
-                if (moveToAttack != null)
-                {
-                    var stateText = moveToAttack.moveAttackEnabled ? "On" : "Off";
-                    ScreenReader.Speak(stateText, true);
-                    return;
-                }
-
-                var friendNotification = go.GetComponent<ActiveWhileFriendAddNotificationEnabled>()
-                    ?? go.GetComponentInParent<ActiveWhileFriendAddNotificationEnabled>();
-                if (friendNotification != null)
-                {
-                    var stateText = friendNotification.hideUnknownSocialRequests ? "On" : "Off";
-                    ScreenReader.Speak(stateText, true);
-                    return;
-                }
+                Plugin.Log.LogInfo($"[Submit] PrioritizedNavigable submit on: {go.name}, navigable={__instance.name}");
+                ElementAnnouncer.HandleSubmitForGameObject(go);
             }
             catch (System.Exception ex)
             {
@@ -194,10 +180,14 @@ public static class HarmonyPatches
                 {
                     var selected = selectables[idx];
                     if (selected != null)
+                    {
+                        Plugin.Log.LogInfo($"[Submit] VerticalNavigable submit on: {selected.gameObject.name}, navigable={__instance.name}");
                         ElementAnnouncer.HandleSubmitForGameObject(selected.gameObject);
+                    }
                 }
             }
             catch { }
         }
     }
+
 }

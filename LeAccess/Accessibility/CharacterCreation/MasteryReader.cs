@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace LeAccess.Accessibility.CharacterCreation;
 
@@ -18,72 +19,215 @@ public static class MasteryReader
 
         if (go == null) return false;
 
-        // Check for MasteryButton component
-        var masteryButton = go.GetComponent<MasteryButton>()
+        // Check if we're in a MasteryPanel context
+        var masteryPanel = go.GetComponentInParent<MasteryPanel>();
+
+        // If not in parent, check if there's an active MasteryPanel and we might be its child
+        if (masteryPanel == null)
+        {
+            var panels = Object.FindObjectsOfType<MasteryPanel>();
+            foreach (var panel in panels)
+            {
+                if (panel != null && panel.gameObject.activeInHierarchy)
+                {
+                    // Check if the current go is within this panel's hierarchy
+                    if (go.transform.IsChildOf(panel.transform))
+                    {
+                        masteryPanel = panel;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (masteryPanel != null && masteryPanel.gameObject.activeInHierarchy)
+        {
+            Plugin.Log.LogInfo($"[MasteryReader] Found MasteryPanel, checking buttons...");
+
+            // Find the Button or Selectable component we're on
+            var button = go.GetComponent<Button>() ?? go.GetComponentInParent<Button>();
+            var selectable = go.GetComponent<Selectable>() ?? go.GetComponentInParent<Selectable>();
+
+            // Get the arrays from MasteryPanel
+            var buttons = masteryPanel.masteryButtons;
+            var tmps = masteryPanel.masteryButtonTMPs;
+
+            if (buttons != null)
+            {
+                Plugin.Log.LogInfo($"[MasteryReader] Panel has {buttons.Length} buttons");
+
+                for (int i = 0; i < buttons.Length; i++)
+                {
+                    if (buttons[i] == null) continue;
+
+                    // Check if this is the button we're on
+                    bool isMatch = false;
+
+                    if (button != null && buttons[i].Pointer == button.Pointer)
+                    {
+                        isMatch = true;
+                    }
+                    else if (selectable != null && buttons[i].Pointer == selectable.Pointer)
+                    {
+                        isMatch = true;
+                    }
+                    else
+                    {
+                        // Also check if go is a child of the button
+                        if (go.transform.IsChildOf(buttons[i].transform))
+                        {
+                            isMatch = true;
+                        }
+                    }
+
+                    if (isMatch)
+                    {
+                        Plugin.Log.LogInfo($"[MasteryReader] Matched button at index {i}");
+
+                        // Get name from TMP at same index
+                        if (tmps != null && i < tmps.Length && tmps[i] != null)
+                        {
+                            var tmpText = tmps[i].text;
+                            if (!string.IsNullOrWhiteSpace(tmpText))
+                            {
+                                name = tmpText.Trim();
+                                Plugin.Log.LogInfo($"[MasteryReader] Got name from TMP: {name}");
+                            }
+                        }
+
+                        // Get MasteryButton component for description
+                        var masteryButton = buttons[i].GetComponent<MasteryButton>();
+                        if (masteryButton != null)
+                        {
+                            if (!string.IsNullOrEmpty(masteryButton.classDescription))
+                            {
+                                description = masteryButton.classDescription;
+                                Plugin.Log.LogInfo($"[MasteryReader] Got description from MasteryButton");
+                            }
+
+                            // If no name from TMP, try MasteryButtonTooltip
+                            if (string.IsNullOrEmpty(name))
+                            {
+                                var tooltip = masteryButton.GetComponent<MasteryButtonTooltip>()
+                                    ?? masteryButton.GetComponentInChildren<MasteryButtonTooltip>();
+                                if (tooltip != null && !string.IsNullOrEmpty(tooltip.masteryName))
+                                {
+                                    name = tooltip.masteryName;
+                                    Plugin.Log.LogInfo($"[MasteryReader] Got name from tooltip: {name}");
+                                }
+                            }
+
+                            // Try to get name from CharacterClass.masteries array
+                            if (string.IsNullOrEmpty(name))
+                            {
+                                var charClass = masteryPanel.characterClass;
+                                if (charClass != null)
+                                {
+                                    // Index 0 is usually base class, others are masteries
+                                    // The button index may correspond to mastery index
+                                    if (masteryButton.isMasteryClass)
+                                    {
+                                        // This is a mastery, not base class
+                                        var masteries = charClass.masteries;
+                                        if (masteries != null)
+                                        {
+                                            // Mastery buttons are typically indices 1-3 (after base class at 0)
+                                            int masteryIdx = i - 1;
+                                            if (masteryIdx >= 0 && masteryIdx < masteries.Length)
+                                            {
+                                                var mastery = masteries[masteryIdx];
+                                                if (mastery != null)
+                                                {
+                                                    // Try localized name first, then fallback to internal name
+                                                    try
+                                                    {
+                                                        var localizedName = mastery.LocalizedName;
+                                                        if (!string.IsNullOrEmpty(localizedName))
+                                                        {
+                                                            name = localizedName;
+                                                            Plugin.Log.LogInfo($"[MasteryReader] Got localized name from masteries[{masteryIdx}]: {name}");
+                                                        }
+                                                    }
+                                                    catch
+                                                    {
+                                                        // LocalizedName property might fail
+                                                    }
+
+                                                    if (string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(mastery.name))
+                                                    {
+                                                        name = mastery.name;
+                                                        Plugin.Log.LogInfo($"[MasteryReader] Got internal name from masteries[{masteryIdx}]: {name}");
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        // This is the base class
+                                        if (!string.IsNullOrEmpty(charClass.className))
+                                        {
+                                            name = charClass.className;
+                                            Plugin.Log.LogInfo($"[MasteryReader] Got base class name: {name}");
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Final fallback: find any text in button
+                            if (string.IsNullOrEmpty(name))
+                            {
+                                name = FindMasteryNameFromUI(masteryButton.gameObject);
+                                if (!string.IsNullOrEmpty(name))
+                                {
+                                    Plugin.Log.LogInfo($"[MasteryReader] Got name from UI search: {name}");
+                                }
+                            }
+                        }
+
+                        if (!string.IsNullOrEmpty(name))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Direct MasteryButton check (for cases outside MasteryPanel context)
+        var directMasteryButton = go.GetComponent<MasteryButton>()
             ?? go.GetComponentInParent<MasteryButton>()
             ?? go.GetComponentInChildren<MasteryButton>();
 
-        if (masteryButton != null)
+        if (directMasteryButton != null)
         {
-            // Get name from MasteryButtonTooltip if available
-            var tooltip = go.GetComponent<MasteryButtonTooltip>()
-                ?? go.GetComponentInParent<MasteryButtonTooltip>()
-                ?? go.GetComponentInChildren<MasteryButtonTooltip>();
+            Plugin.Log.LogInfo($"[MasteryReader] Found direct MasteryButton");
+
+            // Try MasteryButtonTooltip first
+            var tooltip = directMasteryButton.GetComponent<MasteryButtonTooltip>()
+                ?? directMasteryButton.GetComponentInChildren<MasteryButtonTooltip>();
 
             if (tooltip != null && !string.IsNullOrEmpty(tooltip.masteryName))
             {
                 name = tooltip.masteryName;
             }
 
-            // Fallback: try to find name from UI text
+            // Fallback: find name from UI text within the button
             if (string.IsNullOrEmpty(name))
             {
-                name = FindMasteryNameFromUI(masteryButton.gameObject);
+                name = FindMasteryNameFromUI(directMasteryButton.gameObject);
             }
 
-            // Get description from MasteryButton
-            if (!string.IsNullOrEmpty(masteryButton.classDescription))
+            // Get description
+            if (!string.IsNullOrEmpty(directMasteryButton.classDescription))
             {
-                description = masteryButton.classDescription;
+                description = directMasteryButton.classDescription;
             }
 
-            // If we have at least a name, return success
             if (!string.IsNullOrEmpty(name))
             {
-                Plugin.Log.LogInfo($"[Mastery] Found: name={name}, hasDesc={!string.IsNullOrEmpty(description)}, isMastery={masteryButton.isMasteryClass}");
+                Plugin.Log.LogInfo($"[MasteryReader] Direct MasteryButton result: name={name}, hasDesc={!string.IsNullOrEmpty(description)}");
                 return true;
-            }
-        }
-
-        // Also check if we're in a MasteryPanel context
-        var masteryPanel = go.GetComponentInParent<MasteryPanel>();
-        if (masteryPanel != null)
-        {
-            // Try to find mastery info from the focused button
-            var button = go.GetComponent<UnityEngine.UI.Button>()
-                ?? go.GetComponentInParent<UnityEngine.UI.Button>();
-
-            if (button != null)
-            {
-                // Find which mastery button this corresponds to
-                var buttons = masteryPanel.masteryButtons;
-                var tmps = masteryPanel.masteryButtonTMPs;
-
-                if (buttons != null && tmps != null)
-                {
-                    for (int i = 0; i < buttons.Length && i < tmps.Length; i++)
-                    {
-                        if (buttons[i] != null && buttons[i].gameObject == button.gameObject)
-                        {
-                            if (tmps[i] != null && !string.IsNullOrEmpty(tmps[i].text))
-                            {
-                                name = tmps[i].text;
-                                Plugin.Log.LogInfo($"[Mastery] Found from panel TMPs: name={name}");
-                                return true;
-                            }
-                        }
-                    }
-                }
             }
         }
 
@@ -91,31 +235,30 @@ public static class MasteryReader
     }
 
     /// <summary>
-    /// Finds mastery name from UI text elements.
+    /// Finds mastery name from UI text elements within a GameObject hierarchy.
     /// </summary>
     private static string FindMasteryNameFromUI(GameObject go)
     {
-        // Look for TMP_Text in the mastery button hierarchy
         var texts = go.GetComponentsInChildren<TMPro.TMP_Text>(true);
-        if (texts != null)
+        if (texts == null) return null;
+
+        foreach (var txt in texts)
         {
-            foreach (var txt in texts)
-            {
-                if (txt == null) continue;
-                var text = txt.text;
+            if (txt == null) continue;
+            var text = txt.text;
 
-                // Skip empty, numbers, and very short text
-                if (string.IsNullOrWhiteSpace(text)) continue;
-                if (text.Length < 3 || text.Length > 30) continue;
+            if (string.IsNullOrWhiteSpace(text)) continue;
+            if (text.Length < 3 || text.Length > 30) continue;
 
-                // Skip level indicators like "0" or "25"
-                if (int.TryParse(text.Trim(), out _)) continue;
+            // Skip level indicators like "0" or "25"
+            if (int.TryParse(text.Trim(), out _)) continue;
 
-                // Skip "MASTERED" text
-                if (text.ToUpperInvariant() == "MASTERED") continue;
+            // Skip common non-name texts
+            var upper = text.ToUpperInvariant().Trim();
+            if (upper == "MASTERED" || upper == "LOCKED" || upper == "UNLOCKED")
+                continue;
 
-                return text.Trim();
-            }
+            return text.Trim();
         }
 
         return null;
@@ -128,15 +271,9 @@ public static class MasteryReader
     {
         if (charCreationGo == null) return null;
 
-        // Look for description text in the character selection UI
-        // The description is usually in a separate panel that shows when a class is selected
-
-        // First, try to find the description panel in the CharacterSelect
         var charSelect = CharacterSelect.instance;
         if (charSelect == null) return null;
 
-        // Try to find text elements that might contain the description
-        // Usually the description is a longer text (30+ chars) with punctuation
         var allTexts = charSelect.GetComponentsInChildren<TMPro.TMP_Text>(true);
         if (allTexts == null) return null;
 
@@ -152,12 +289,10 @@ public static class MasteryReader
             // Description criteria: long text with punctuation
             if (text.Length > 50 && (text.Contains(".") || text.Contains(",") || text.Contains("!")))
             {
-                // Skip if it's a known non-description element
                 var parentName = txt.transform.parent?.name?.ToLowerInvariant() ?? "";
                 if (parentName.Contains("button") || parentName.Contains("header") || parentName.Contains("title"))
                     continue;
 
-                // Prefer longer descriptions
                 if (bestDescription == null || text.Length > bestDescription.Length)
                 {
                     bestDescription = text.Trim();
