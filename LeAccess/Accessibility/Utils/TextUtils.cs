@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using LeAccess.Accessibility.Announcements;
 
 namespace LeAccess.Accessibility.Utils;
 
@@ -62,30 +63,20 @@ public static class TextUtils
     /// </summary>
     public static string GetTextFromHierarchy(GameObject go)
     {
-        var tmp = go.GetComponent<TextMeshProUGUI>();
-        if (tmp != null && !string.IsNullOrWhiteSpace(tmp.text))
-            return CleanText(tmp.text);
-
-        tmp = go.GetComponentInChildren<TextMeshProUGUI>();
-        if (tmp != null && !string.IsNullOrWhiteSpace(tmp.text))
-            return CleanText(tmp.text);
-
-        var text = go.GetComponent<Text>();
-        if (text != null && !string.IsNullOrWhiteSpace(text.text))
-            return CleanText(text.text);
-
-        text = go.GetComponentInChildren<Text>();
-        if (text != null && !string.IsNullOrWhiteSpace(text.text))
-            return CleanText(text.text);
-
+        if (!UiVisibility.IsVisible(go)) return null;
+        foreach (var tmp in go.GetComponentsInChildren<TMP_Text>(false))
+            if (IsVisibleLabel(tmp) && !string.IsNullOrWhiteSpace(tmp.text)) return CleanText(tmp.text);
+        foreach (var text in go.GetComponentsInChildren<Text>(false))
+            if (text is not null && !text.WasCollected && text != null && text.isActiveAndEnabled &&
+                text.color.a > 0 && UiVisibility.IsVisible(text.gameObject) && !string.IsNullOrWhiteSpace(text.text))
+                return CleanText(text.text);
         return null;
     }
 
-    /// <summary>
-    /// Disables the virtual mouse cursor.
-    /// </summary>
-    public static void DisableVirtualMouse()
-    {
-        try { EpochInputManager.SetActiveVirtualMouse(false); } catch { }
-    }
+    internal static bool IsVisibleLabel(TMP_Text label) =>
+        label is not null && !label.WasCollected && label != null && label.isActiveAndEnabled &&
+        label.alpha > 0 && UiVisibility.IsVisible(label.gameObject) &&
+        (label.canvasRenderer is null || !label.canvasRenderer.WasCollected &&
+            (label.canvasRenderer == null || !label.canvasRenderer.cull));
+
 }

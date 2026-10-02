@@ -1,0 +1,74 @@
+using System;
+using LeAccess.Accessibility.WorldCues;
+
+namespace LeAccess.Accessibility.Audio;
+
+internal static class WorldCueSynthesizer
+{
+    internal const int SampleRate = 48000;
+    internal const int Channels = 2;
+    // Sound-design values: two high chimes, one metallic strike, and a rising two-note prompt.
+    private const double CoinsHz = 2100;
+    private const double EquipmentHz = 1250;
+    private const double InteractableHz = 420;
+    private const double RearPitch = 0.8;
+    private const double Level = 0.24;
+    private const double AttackSeconds = 0.004;
+    private const double ReleaseSeconds = 0.015;
+
+    internal static double Duration(WorldCueCategory category) => category switch
+    {
+        WorldCueCategory.Coins => 0.16,
+        WorldCueCategory.Equipment => 0.14,
+        WorldCueCategory.Interactable => 0.24,
+        _ => throw new ArgumentOutOfRangeException(nameof(category))
+    };
+
+    internal static float[] Synthesize(WorldCueCategory category, float pan, float forward, float gain)
+    {
+        double duration = Duration(category);
+        double safeGain = float.IsFinite(gain) ? Math.Clamp(gain, 0, 1) : 0;
+        double rightAxis = float.IsFinite(pan) ? Math.Clamp(pan, -1, 1) : 0;
+        double frontAxis = float.IsFinite(forward) ? Math.Clamp(forward, -1, 1) : 1;
+        double pitch = 1 + (RearPitch - 1) * Math.Clamp(-frontAxis, 0, 1);
+        double left = Math.Sqrt((1 - rightAxis) / 2), right = Math.Sqrt((1 + rightAxis) / 2);
+        int frames = (int)Math.Round(duration * SampleRate);
+        var samples = new float[frames * Channels];
+        for (int frame = 0; frame < frames; frame++)
+        {
+            double t = (double)frame / SampleRate;
+            double part = t, frequency, decay;
+            double pulseDuration = duration;
+            if (category == WorldCueCategory.Coins)
+            {
+                pulseDuration = duration / 2;
+                part = t % pulseDuration;
+                frequency = CoinsHz * (t < pulseDuration ? 1 : 1.25);
+                decay = 0.022;
+            }
+            else if (category == WorldCueCategory.Equipment)
+            {
+                frequency = EquipmentHz;
+                decay = 0.032;
+            }
+            else
+            {
+                pulseDuration = duration / 2;
+                part = t % pulseDuration;
+                frequency = InteractableHz * (t < pulseDuration ? 1 : 1.5);
+                decay = 0.085;
+            }
+            double phase = 2 * Math.PI * frequency * pitch * part;
+            double tone = Math.Sin(phase);
+            if (category == WorldCueCategory.Equipment)
+                tone = (tone + 0.5 * Math.Sin(phase * 2.76) + 0.25 * Math.Sin(phase * 4.07)) / 1.75;
+            double envelope = Math.Clamp(part / AttackSeconds, 0, 1)
+                * Math.Clamp((pulseDuration - part - 1.0 / SampleRate) / ReleaseSeconds, 0, 1)
+                * Math.Exp(-part / decay);
+            double sample = Level * safeGain * envelope * tone;
+            samples[frame * Channels] = (float)(sample * left);
+            samples[frame * Channels + 1] = (float)(sample * right);
+        }
+        return samples;
+    }
+}

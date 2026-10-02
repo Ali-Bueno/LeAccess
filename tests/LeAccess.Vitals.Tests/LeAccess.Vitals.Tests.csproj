@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+  <Import Project="../LocalizationSources.props" />
+  <ItemGroup>
+    <Compile Include="../../LeAccess/Accessibility/Vitals/VitalsAccessibility.cs" Link="VitalsAccessibility.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Vitals/VitalsAnnouncementState.cs" Link="VitalsAnnouncementState.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
+  </ItemGroup>
+</Project>

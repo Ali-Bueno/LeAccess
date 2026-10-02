@@ -1,5 +1,12 @@
 # LeAccess - Last Epoch Accessibility Mod
 
+> **Shared accessibility playbook:** this mod follows the shared playbook at `D:\code\modding projects`
+> (`PRINCIPLES.md` engineering ground rules + `reference/` library — PRISM integration, audio-navigation,
+> UI specs, per-engine screen-reader transport). The file below holds the game-specific rules for Last Epoch.
+> Progress and next steps live in this repo's `STATUS.md` — open it first.
+
+> **Steam 1.5 port:** current loader, API changes and runtime limits are in [STATUS.md](STATUS.md) and [reference/steam-port.md](reference/steam-port.md). Detailed API notes below include the earlier game build; verify against the replaced `last epoch code/` before adding hooks.
+
 ## Project Overview
 BepInEx 6 IL2CPP plugin that adds accessibility features to Last Epoch for screen reader users.
 
@@ -17,6 +24,8 @@ LeAccess/
     │   ├── ElementAnnouncer.cs # Main announcement logic (AnnounceElement, BuildAnnouncementText)
     │   ├── TextDetector.cs     # Text detection strategies (FindLabel*, TryGet*)
     │   └── TextClassifier.cs   # Text classification (Label/Value/Description)
+    ├── Audio/
+    │   └── WallSonar.cs        # Directional wall audio cues (NAudio)
     ├── CharacterCreation/
     │   ├── ClassCarouselHandler.cs  # Class selection carousel polling
     │   └── MasteryReader.cs         # Mastery name/description extraction
@@ -29,10 +38,10 @@ LeAccess/
 cd LeAccess
 dotnet build
 ```
-DLL is copied to `D:\games\Last Epoch\BepInEx\plugins\LeAccess\`
+DLL is copied to `D:\games\steam\steamapps\common\Last Epoch\BepInEx\plugins\LeAccess\`
 
 ## Game References
-- Interop DLLs: `D:\games\Last Epoch\BepInEx\interop\`
+- Interop DLLs: `D:\games\steam\steamapps\common\Last Epoch\BepInEx\interop\`
 - Main assembly: `LE.dll`, `LE.UI.Controls.dll`
 - Decompiled code reference: `last epoch code/` (not in repo)
 - Tolk DLLs: `references/tolk/` (not in repo)
@@ -47,6 +56,19 @@ DLL is copied to `D:\games\Last Epoch\BepInEx\plugins\LeAccess\`
 - `EpochInputManager` - Input system, `SetActiveVirtualMouse()` to disable virtual cursor
 - `InfoForTooltip` - Tooltip component with `SetText()` and `tooltipInfo` (nameText, mainText)
 - `ToggleOption` / `SliderOption` - GraphicsOption subclasses with `displayName` property
+
+### Notification Classes
+- `ControllerNotification` - Main notification popup system (title + message)
+  - `instance` - Static singleton
+  - `title` (TMP_Text) - Notification title
+  - `text` (TMP_Text) - Notification message
+  - `ShowNotification(Notification)` - Display a notification
+  - `EnqueueNotification(Notification)` - Add to queue
+  - `Notification` struct: `title`, `message`, `duration`
+- `UIQuickNotificationText` - Quick hint/feedback messages (temporary text)
+  - `_label` (TMP_Text) - The notification text
+  - `Show(string text, Color? color)` - Display quick notification
+  - Used for hints like "Press RT to submit"
 
 ### Character Creation Classes
 - `CharacterCreationSelection` - Selectable for class selection, extends Unity's `Selectable`
@@ -106,6 +128,18 @@ DLL is copied to `D:\games\Last Epoch\BepInEx\plugins\LeAccess\`
 - **ClassTab mastery selection**: Reads mastery names (localized) and descriptions
   - Name read on navigation (from TMP_Text children)
   - Description read on A/X submit (searches parent hierarchy for long text)
+- **Popup notifications**: Announces system notifications with title and message
+  - `ControllerNotification.ShowNotification` patch - "You are offline", connection messages, etc.
+  - `UIQuickNotificationText.Show` patch - Quick hints like "Press RT to submit"
+- **Wall sonar audio cues**: Directional tones for nearby walls during gameplay
+  - Uses NAudio (NuGet) for audio generation (Unity AudioModule doesn't work for procedural audio in IL2CPP)
+  - Physics.Raycast in 4 directions relative to player facing
+  - Front wall: 880 Hz (high pitch), center pan
+  - Back wall: 220 Hz (low pitch), center pan
+  - Left wall: 440 Hz, panned left
+  - Right wall: 440 Hz, panned right
+  - Volume scales with proximity (closer = louder)
+  - Automatically muted when UI panels are open (menus, inventory, settings)
 
 ### Menu Reading Strategy (Announcements/)
 The menu reading uses a multi-layer approach (see `ElementAnnouncer.cs` and `TextDetector.cs`):
@@ -212,7 +246,7 @@ These game-specific components don't use Unity's Toggle system:
   - [ ] Character name input field accessibility
 - [ ] Inventory item announcements (name, stats, rarity)
 - [ ] Skill tree navigation
-- [ ] Map navigation with audio cues
+- [x] Map navigation with audio cues (WallSonar - NAudio directional tones)
 - [ ] Combat feedback
 - [ ] Quest log reading
 - [ ] Configurable verbosity

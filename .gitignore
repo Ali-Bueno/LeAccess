@@ -15,6 +15,12 @@ packages/
 .DS_Store
 Thumbs.db
 
+# Local shell artifacts and Python caches
+/nul
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
 # Claude Code
 .claude/
 

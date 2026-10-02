@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Runtime.InteropServices;
 using DavyKager;
 
 namespace LeAccess.Accessibility;
@@ -11,6 +13,10 @@ public static class ScreenReader
 {
     private static bool _initialized;
     private static bool _available;
+    private static int _lastSpeechFrame = -1;
+    private static IntPtr _nvdaClient;
+
+    internal static bool SpokeThisFrame => _lastSpeechFrame == UnityEngine.Time.frameCount;
 
     public static string DetectedScreenReader { get; private set; } = "None";
 
@@ -23,6 +29,12 @@ public static class ScreenReader
 
         try
         {
+            // Tolk loads this client by basename; Unity's working directory is
+            // the game root, while our bundled DLL belongs beside this plugin.
+            string client = Path.Combine(Path.GetDirectoryName(typeof(ScreenReader).Assembly.Location),
+                "nvdaControllerClient64.dll");
+            if (_nvdaClient == IntPtr.Zero && File.Exists(client))
+                _nvdaClient = NativeLibrary.Load(client);
             Tolk.Load();
             _initialized = true;
 
@@ -65,6 +77,7 @@ public static class ScreenReader
         try
         {
             Tolk.Output(text, interrupt);
+            _lastSpeechFrame = UnityEngine.Time.frameCount;
         }
         catch (Exception ex)
         {
@@ -141,11 +154,11 @@ public static class ScreenReader
     /// </summary>
     public static void Shutdown()
     {
-        if (!_initialized) return;
+        if (!_initialized && _nvdaClient == IntPtr.Zero) return;
 
         try
         {
-            Tolk.Unload();
+            if (_initialized) Tolk.Unload();
         }
         catch (Exception ex)
         {
@@ -154,5 +167,10 @@ public static class ScreenReader
 
         _initialized = false;
         _available = false;
+        if (_nvdaClient != IntPtr.Zero)
+        {
+            NativeLibrary.Free(_nvdaClient);
+            _nvdaClient = IntPtr.Zero;
+        }
     }
 }

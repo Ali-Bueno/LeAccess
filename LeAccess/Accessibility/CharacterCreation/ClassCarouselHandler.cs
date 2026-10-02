@@ -1,187 +1,68 @@
+using LeAccess.Accessibility.Announcements;
+using LeAccess.Accessibility.ControllerMenus;
+using LeAccess.Accessibility.Dialogue;
+using LeAccess.Accessibility.ScreenContent;
 using UnityEngine;
+using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.CharacterCreation;
 
-/// <summary>
-/// Handles class selection carousel announcements in character creation.
-/// Uses ListNavigable polling since the carousel doesn't trigger ControllerFocusCursor.
-/// </summary>
+/// <summary>Announces the current class or mastery once its localized content settles.</summary>
 public static class ClassCarouselHandler
 {
-    private static string _lastDetectedCenterClass;
-    private static string _lastAnnouncedFullText;
-    private static float _lastClassCheckTime;
+    private static readonly ScreenContentTracker Tracker = new();
+    private static string _key;
+    private static string _lastFailure;
+    internal static bool HasActiveContent { get; private set; }
+    internal static bool HasPendingContent { get; private set; }
 
-    /// <summary>
-    /// Called from MenuAccessibility.Update to check for class changes in the carousel.
-    /// Uses ListNavigable "Select A Class Navigable" with _lastSelectedIndex to track selection.
-    /// </summary>
-    public static void CheckPendingClassAnnouncement()
+    internal static bool TryHandleFocus(GameObject go)
     {
-        // Periodically check for class changes when in class selection
-        if (Time.time - _lastClassCheckTime < 0.25f) return;
-        _lastClassCheckTime = Time.time;
-
         try
         {
-            // Check if we're in class selection mode
-            var charSelect = CharacterSelect.instance;
-            if (charSelect == null) return;
-            if (charSelect.currentState != CharacterSelect.CharacterSelectState.ClassSelection)
-            {
-                // Reset when leaving class selection
-                if (_lastDetectedCenterClass != null)
-                {
-                    _lastDetectedCenterClass = null;
-                }
-                return;
-            }
-
-            // Find the "Select A Class Navigable" ListNavigable
-            var allListNavs = Object.FindObjectsOfType<ListNavigable>();
-            string classToAnnounce = null;
-
-            foreach (var nav in allListNavs)
-            {
-                if (nav == null) continue;
-                var children = nav._selectableChildren;
-                if (children == null || children.Count == 0) continue;
-
-                // Check if this ListNavigable has CharacterCreationSelection children
-                bool hasClassSelections = false;
-                for (int i = 0; i < children.Count && i < 3; i++)
-                {
-                    var child = children[i];
-                    if (child?.TryCast<CharacterCreationSelection>() != null)
-                    {
-                        hasClassSelections = true;
-                        break;
-                    }
-                }
-
-                if (hasClassSelections)
-                {
-                    var listNavIdx = nav._lastSelectedIndex;
-                    if (listNavIdx >= 0 && listNavIdx < children.Count)
-                    {
-                        var selectedChild = children[listNavIdx];
-                        var charCreation = selectedChild?.TryCast<CharacterCreationSelection>();
-                        if (charCreation != null)
-                        {
-                            // Try to find localized text in the UI hierarchy
-                            var textComponents = charCreation.GetComponentsInChildren<TMPro.TMP_Text>(true);
-                            if (textComponents != null)
-                            {
-                                foreach (var txt in textComponents)
-                                {
-                                    if (txt == null) continue;
-                                    var text = txt.text;
-                                    if (!string.IsNullOrEmpty(text) && text.Length > 1 && text.Length < 30)
-                                    {
-                                        classToAnnounce = text;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            // Fallback to className if no localized text found
-                            if (string.IsNullOrEmpty(classToAnnounce) && charCreation.characterClass != null)
-                            {
-                                classToAnnounce = charCreation.characterClass.className;
-                            }
-                        }
-                    }
-                    break;
-                }
-            }
-
-            if (!string.IsNullOrEmpty(classToAnnounce) && classToAnnounce != _lastDetectedCenterClass)
-            {
-                _lastDetectedCenterClass = classToAnnounce;
-
-                // Try to find class description
-                var description = FindClassDescription();
-                string fullText = classToAnnounce;
-                if (!string.IsNullOrEmpty(description))
-                {
-                    fullText = $"{classToAnnounce}. {description}";
-                }
-
-                // Only announce if the full text changed (avoids re-announcing same class)
-                if (fullText != _lastAnnouncedFullText)
-                {
-                    _lastAnnouncedFullText = fullText;
-                    ScreenReader.Speak(fullText);
-                }
-            }
+            return CanRead() && ClassSelectionReader.TryRead(out var selection) &&
+                IsAlive(go) && go.transform.IsChildOf(selection.Root.transform);
         }
-        catch (System.Exception ex)
-        {
-            Plugin.Log.LogWarning($"Error checking class selection: {ex.Message}");
-        }
+        catch (System.Exception ex) { ReportFailure(ex); return false; }
     }
 
-    /// <summary>
-    /// Finds the class description from the UI.
-    /// The description is usually displayed in a panel when a class is selected.
-    /// </summary>
-    private static string FindClassDescription()
+    public static void CheckPendingClassAnnouncement()
     {
         try
         {
-            var charSelect = CharacterSelect.instance;
-            if (charSelect == null) return null;
-
-            // Look for text elements that contain the class description
-            // The description is typically a longer text with sentences
-            var allTexts = charSelect.GetComponentsInChildren<TMPro.TMP_Text>(true);
-            if (allTexts == null) return null;
-
-            string bestDescription = null;
-
-            foreach (var txt in allTexts)
-            {
-                if (txt == null) continue;
-                if (!txt.gameObject.activeInHierarchy) continue;
-
-                var text = txt.text;
-                if (string.IsNullOrWhiteSpace(text)) continue;
-
-                // Skip short text (class names, buttons, etc.)
-                if (text.Length < 40) continue;
-
-                // Description should have sentence structure
-                if (!text.Contains(".") && !text.Contains(",")) continue;
-
-                // Skip text that looks like a class name (single word, no punctuation in middle)
-                var words = text.Split(' ');
-                if (words.Length < 5) continue;
-
-                // Check parent hierarchy to avoid button text
-                var parentName = txt.transform.parent?.name?.ToLowerInvariant() ?? "";
-                var grandparentName = txt.transform.parent?.parent?.name?.ToLowerInvariant() ?? "";
-
-                if (parentName.Contains("button") || grandparentName.Contains("button"))
-                    continue;
-
-                // Prefer longer descriptions
-                if (bestDescription == null || text.Length > bestDescription.Length)
-                {
-                    bestDescription = text.Trim();
-                }
-            }
-
-            if (!string.IsNullOrEmpty(bestDescription))
-            {
-                Plugin.Log.LogInfo($"[ClassCarousel] Found description: {bestDescription.Substring(0, System.Math.Min(50, bestDescription.Length))}...");
-            }
-
-            return bestDescription;
+            if (!CanRead() || !ClassSelectionReader.TryRead(out var selection) ||
+                ScreenContentAnnouncer.HasActiveContent && !ScreenContentAnnouncer.OwnsFocus(selection.Root))
+            { Reset(); return; }
+            if (_key != selection.Key) { Tracker.Reset(); _key = selection.Key; }
+            HasActiveContent = true;
+            string text = string.IsNullOrWhiteSpace(selection.Name) ? null :
+                ScreenContentTracker.Combine(new[] { selection.Name, selection.Description });
+            HasPendingContent = Tracker.Observe(1, text, ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame &&
+                !ScreenContentAnnouncer.HasPendingContent, out string announcement);
+            if (announcement == null) return;
+            HasPendingContent = false;
+            ScreenReader.Speak(announcement, interrupt: true);
+            Plugin.Log.LogInfo($"[Class] {announcement}");
+            _lastFailure = null;
         }
-        catch (System.Exception ex)
-        {
-            Plugin.Log.LogWarning($"Error finding class description: {ex.Message}");
-            return null;
-        }
+        catch (System.Exception ex) { Reset(); ReportFailure(ex); }
+    }
+
+    private static bool CanRead() => Application.isFocused && !LE.UI.LoadingScreen.IsVisible &&
+        !DialogueAnnouncer.HasActiveContent && !ControllerMenuAccessibility.HasActiveContent;
+
+    public static void Reset()
+    {
+        Tracker.Reset();
+        _key = null;
+        HasActiveContent = HasPendingContent = false;
+        ClassSelectionReader.Reset();
+    }
+
+    private static void ReportFailure(System.Exception ex)
+    {
+        if (_lastFailure == ex.Message) return;
+        _lastFailure = ex.Message;
+        Plugin.Log.LogWarning($"Class feedback unavailable: {ex}");
     }
 }

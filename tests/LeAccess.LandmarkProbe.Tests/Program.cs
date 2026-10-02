@@ -1,0 +1,113 @@
+using LeAccess.Accessibility.Landmarks;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using EHG.Multiplayer;
+
+int checks=0;
+void Check(bool value,string label){checks++;if(!value)throw new Exception(label);}
+var actor=new Actor();
+PlayerFinder.player=actor.gameObject; PlayerFinder.playerActorComponent=actor;
+WorldObjectClickListener Add(string name,float x)
+{
+    var listener=new WorldObjectClickListener {hoverTagOnMouseOver=new HoverTagOnMouseOver {hoverText=name}};
+    listener.transform.position=new Vector3{x=x};
+    WorldObjectClickListener.allListener.Items.Add(listener); return listener;
+}
+var farther=Add("Farther",4);
+var nearest=Add("<b>Puente</b>\n norte",2);
+Check(LandmarkProbe.TryRead(out var result)&&result.Name=="Puente norte","nearest native signpost cleaned");
+Check(result.InstanceId==nearest.GetInstanceID(),"identity supplied");
+long session=result.Session;
+var tied=Add("Tie",2);
+Check(LandmarkProbe.TryRead(out result)&&result.InstanceId==nearest.GetInstanceID(),"lower ID equal-distance tie");
+nearest.interactionRange=1;
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Tie","native range enforced");
+tied.interactionRange=float.NaN;
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","invalid range ignored");
+farther.Allowed=false;
+Check(!LandmarkProbe.TryRead(out _),"availability enforced");
+nearest.interactionRange=5; farther.Allowed=true;
+nearest.transform.position=new Vector3{x=2,y=20};
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","vertical distance normally counted");
+nearest.controllerTargetingUsePlayerY=true;
+Check(LandmarkProbe.TryRead(out result)&&result.InstanceId==nearest.GetInstanceID(),"native player Y behavior");
+nearest.hoverTagOnMouseOver.hoverText=" ";
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","blank label ignored");
+nearest.hoverTagOnMouseOver.hoverText="Other";
+foreach(var type in new[]{HoverTagOnMouseOver.HoverTargetType.NPC,HoverTagOnMouseOver.HoverTargetType.OTHER,
+    HoverTagOnMouseOver.HoverTargetType.SAME_SCENE_TRANSITION,HoverTagOnMouseOver.HoverTargetType.LOCALIZATION_KEY})
+{
+    nearest.hoverTagOnMouseOver.hoverTargetType=type;
+    Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","unsupported type excluded "+type);
+}
+var tag=nearest.hoverTagOnMouseOver;
+tag.hoverTargetType=HoverTagOnMouseOver.HoverTargetType.ZONE_TRANSITION;
+tag.hoverText="Stale rendered destination";
+tag.sceneInteraction=new TransitionOrGateInteraction {sceneName="zone"};
+SceneList.Scenes["zone"]=new SceneDetails {LocalizedName="Nueva zona"};
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Nueva zona","current destination beats stale hover text");
+SceneList.Scenes["zone"].LocalizedName=" ";
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","blank known destination skipped");
+tag.sceneInteraction.sceneName="unknown";
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","unknown destination no current-scene fallback");
+tag.sceneInteraction=null;
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","missing destination skipped");
+tag.hoverTargetType=HoverTagOnMouseOver.HoverTargetType.DUNGEON_TRANSITION;
+tag.dungeonTransitionInteraction=new TransitionOrGateInteraction{sceneName="dungeon"};
+SceneList.Scenes["dungeon"]=new SceneDetails{LocalizedName="Mazmorra"};
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Mazmorra","dungeon localized source");
+tag.dungeonTransitionInteraction.WasCollected=true;
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","collected destination skipped");
+tag.hoverTargetType=HoverTagOnMouseOver.HoverTargetType.SIGNPOST;tag.hoverText="Sign";
+tag.gameObject.scene=new Scene{handle=9,isLoaded=true};
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","stale hover scene excluded");
+tag.gameObject.scene=SceneManager.Active;tag.Destroyed=true;
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","destroyed hover excluded");
+tag.Destroyed=false;nearest.isActiveAndEnabled=false;
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","disabled listener excluded");
+nearest.isActiveAndEnabled=true;nearest.gameObject.scene=new Scene{handle=9,isLoaded=true};
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","stale listener scene excluded");
+nearest.gameObject.scene=SceneManager.Active;nearest.Broken=true;
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther"&&LandmarkProbe.LastFailure.Contains("broken"),"bad listener cannot hide good one");
+nearest.Broken=false;
+Check(LandmarkProbe.TryRead(out _)&&LandmarkProbe.LastFailure is null,"scan failure cleared next pass");
+nearest.hoverTagOnMouseOver=null;
+var ownedTag=new HoverTagOnMouseOver {gameObject=nearest.gameObject,
+    hoverTargetType=HoverTagOnMouseOver.HoverTargetType.ZONE_TRANSITION,
+    hoverText="Stale Maj'elka",sceneInteraction=new TransitionOrGateInteraction{sceneName="Z22"}};
+nearest.gameObject.Components.Add(ownedTag);
+SceneList.Scenes["Z22"]=new SceneDetails{LocalizedName="Bosque en llamas"};
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Bosque en llamas","installed Z12 null field exact owner transition");
+ownedTag.sceneInteraction.sceneName="Z12";
+SceneList.Scenes["Z12"]=new SceneDetails{LocalizedName="Camino ancestral"};
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Camino ancestral","installed Z22 current return destination");
+ownedTag.isActiveAndEnabled=false;
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","owned disabled tag rejected");
+ownedTag.isActiveAndEnabled=true;ownedTag.sceneInteraction.isActiveAndEnabled=false;
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","owned disabled transition rejected");
+ownedTag.sceneInteraction.isActiveAndEnabled=true;
+nearest.hoverTagOnMouseOver=tag;tag.Destroyed=true;
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","stale explicit association never replaced");
+tag.Destroyed=false;tag.hoverText="Explicit";
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Explicit","explicit live association retains precedence");
+nearest.hoverTagOnMouseOver=null;nearest.gameObject.Components.Clear();
+var sibling=new GameObject();sibling.Components.Add(ownedTag);sibling.transform.parent=nearest.transform;
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","nearby descendant tag never borrowed");
+nearest.hoverTagOnMouseOver=tag;
+actor.Dead=true;Check(!LandmarkProbe.TryRead(out _),"offline death excluded");actor.Dead=false;
+PlayerFinder.player=new GameObject();Check(!LandmarkProbe.TryRead(out _),"offline current owner mismatch excluded");
+PlayerFinder.player=actor.gameObject;
+var child=new GameObject();child.transform.parent=actor.transform;PlayerFinder.player=child;
+Check(LandmarkProbe.TryRead(out _),"explicit player child hierarchy accepted");
+PlayerFinder.player=actor.gameObject;
+SceneManager.Active=new Scene{handle=1,isLoaded=false};Check(!LandmarkProbe.TryRead(out _),"loading scene excluded");
+SceneManager.Active=new Scene{handle=1,isLoaded=true};
+GameplayEnvironment.IsOnlineClient=true;
+var visuals=new ActorVisuals();PlayerFinder.playerActorVisuals=visuals;PlayerFinder.player=visuals.gameObject;
+Check(LandmarkProbe.TryRead(out result)&&result.Session!=session,"online current player session");
+visuals.dead=true;Check(!LandmarkProbe.TryRead(out _),"online death excluded");visuals.dead=false;
+visuals.WasCollected=true;Check(!LandmarkProbe.TryRead(out _),"online collected player excluded");visuals.WasCollected=false;
+var visualChild=new GameObject();visualChild.transform.parent=visuals.transform;PlayerFinder.player=visualChild;
+Check(LandmarkProbe.TryRead(out _),"online explicit hierarchy accepted");
+PlayerFinder.player=actor.gameObject;Check(!LandmarkProbe.TryRead(out _),"online stale owner excluded");
+Console.WriteLine($"Passed {checks} landmark probe checks.");

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <NoWarn>CS0649</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../LeAccess/Accessibility/Players/*.cs" Link="%(Filename)%(Extension)" />
+    <Compile Include="../../LeAccess/Accessibility/Npcs/NpcNameAnnouncementState.cs" Link="NpcNameAnnouncementState.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Npcs/NpcCueTiming.cs" Link="NpcCueTiming.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
+  </ItemGroup>
+</Project>

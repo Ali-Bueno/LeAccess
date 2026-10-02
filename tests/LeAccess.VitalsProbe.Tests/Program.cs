@@ -1,0 +1,107 @@
+using LeAccess.Accessibility.Vitals;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using EHG.Multiplayer;
+
+int checks = 0;
+void Check(bool condition, string label) { checks++; if (!condition) throw new Exception(label); }
+BaseHealth Health(GameObject owner, Actor actor = null) => new() { gameObject = owner, actor = actor };
+BaseMana Mana(GameObject owner) => new() { gameObject = owner };
+var actor = new Actor();
+actor.health = Health(actor.gameObject, actor);
+actor.mana = Mana(actor.gameObject);
+PlayerFinder.playerActorComponent = actor;
+Check(VitalsProbe.TryRead(out var snapshot), "offline valid");
+Check(snapshot.Health == 76.5 && snapshot.MaxHealth == 100 && snapshot.Mana == 40.5 && snapshot.MaxMana == 80,
+    "offline raw fractional fields");
+long offlineSession = snapshot.Session;
+actor.health.currentHealth = 0;
+Check(VitalsProbe.TryRead(out snapshot) && snapshot.Health == 0, "death zero still readable");
+actor.mana.currentMana = -15.5f;
+Check(VitalsProbe.TryRead(out snapshot) && snapshot.Mana == -15.5, "negative mana retained");
+actor.mana.currentMana = 130;
+Check(VitalsProbe.TryRead(out snapshot) && snapshot.Mana == 130 && snapshot.MaxMana == 80, "overcharge not capped");
+actor.mana.Replaced = true;
+Check(VitalsProbe.TryRead(out snapshot) && snapshot.ManaReplaced && double.IsNaN(snapshot.Mana) &&
+    double.IsNaN(snapshot.MaxMana), "rage not called mana");
+actor.health.actor = new Actor();
+Check(VitalsProbe.TryRead(out snapshot) && double.IsNaN(snapshot.Health) && snapshot.ManaReplaced,
+    "foreign offline health owner excluded, partial replacement retained");
+actor.health.actor = actor;
+actor.mana.Replaced = false;
+actor.health.WasCollected = true;
+Check(VitalsProbe.TryRead(out snapshot) && double.IsNaN(snapshot.Health) && snapshot.Mana == 130,
+    "collected health permits mana");
+actor.health.WasCollected = false; actor.mana.Destroyed = true;
+Check(VitalsProbe.TryRead(out snapshot) && double.IsNaN(snapshot.Mana) && snapshot.Health == 0,
+    "destroyed mana permits health");
+actor.health.Destroyed = true;
+Check(!VitalsProbe.TryRead(out _), "both lost excluded");
+actor.health.Destroyed = false; actor.mana.Destroyed = false;
+actor.mana.gameObject = new GameObject();
+Check(VitalsProbe.TryRead(out snapshot) && double.IsNaN(snapshot.Mana), "foreign resource hierarchy excluded");
+actor.mana.gameObject = new GameObject(); actor.mana.transform.parent = actor.transform;
+Check(VitalsProbe.TryRead(out snapshot) && snapshot.Mana == 130, "owned child component allowed");
+actor.mana.gameObject.scene = new Scene { handle = 9, isLoaded = true };
+Check(VitalsProbe.TryRead(out snapshot) && double.IsNaN(snapshot.Mana), "old resource scene excluded");
+actor.gameObject.scene = new Scene { handle = 9, isLoaded = true };
+Check(!VitalsProbe.TryRead(out _), "old player scene excluded");
+actor.gameObject.scene = SceneManager.Active;
+actor.isActiveAndEnabled = false;
+Check(!VitalsProbe.TryRead(out _), "disabled actor excluded");
+actor.isActiveAndEnabled = true; actor.WasCollected = true;
+Check(!VitalsProbe.TryRead(out _), "collected registry actor excluded");
+actor.WasCollected = false; actor.Destroyed = true;
+Check(!VitalsProbe.TryRead(out _), "destroyed registry actor excluded");
+actor.Destroyed = false;
+SceneManager.Active = new Scene { handle = 1, isLoaded = false };
+Check(!VitalsProbe.TryRead(out _), "unloaded scene excluded");
+SceneManager.Active = new Scene { handle = 1, isLoaded = true };
+GameplayEnvironment.IsOnlineClient = true;
+var local = new LocalPlayer();
+local.playerHealth = Health(local.gameObject);
+local.playerMana = Mana(local.gameObject);
+var sync = new PlayerActorSync { localPlayer = local };
+local.actorSync = sync;
+var visuals = new ActorVisuals { actorSync = sync };
+PlayerFinder.Local = local; PlayerFinder.playerActorVisuals = visuals;
+Check(VitalsProbe.TryRead(out snapshot) && snapshot.Health == 76.5 && snapshot.Mana == 40.5,
+    "online exact local components");
+Check(snapshot.Session != offlineSession, "online player session distinct");
+local.playerHealth.currentHealth = 0;
+Check(VitalsProbe.TryRead(out snapshot) && snapshot.Health == 0, "online death zero");
+local.playerMana.currentMana = -12;
+Check(VitalsProbe.TryRead(out snapshot) && snapshot.Mana == -12, "online signed mana");
+local.actorSync = new PlayerActorSync { localPlayer = local };
+Check(!VitalsProbe.TryRead(out _), "mismatched sync excluded");
+local.actorSync = sync; sync.localPlayer = new LocalPlayer();
+Check(!VitalsProbe.TryRead(out _), "wrong back pointer excluded");
+sync.localPlayer = local; sync.WasCollected = true;
+Check(!VitalsProbe.TryRead(out _), "collected sync excluded");
+sync.WasCollected = false; sync.Destroyed = true;
+Check(!VitalsProbe.TryRead(out _), "destroyed sync excluded");
+sync.Destroyed = false;
+visuals.gameObject.scene = new Scene { handle = 2, isLoaded = true };
+Check(!VitalsProbe.TryRead(out _), "stale visuals scene excluded");
+visuals.gameObject.scene = SceneManager.Active;
+local.gameObject.scene = new Scene { handle = 2, isLoaded = true };
+Check(!VitalsProbe.TryRead(out _), "stale local scene excluded");
+local.gameObject.scene = SceneManager.Active;
+local.playerHealth = null;
+Check(VitalsProbe.TryRead(out snapshot) && double.IsNaN(snapshot.Health) && snapshot.Mana == -12,
+    "online missing health permits mana");
+local.playerHealth = Health(new GameObject());
+Check(VitalsProbe.TryRead(out snapshot) && double.IsNaN(snapshot.Health), "online foreign component rejected");
+local.playerHealth = Health(local.gameObject);
+local.playerMana = null;
+Check(VitalsProbe.TryRead(out snapshot) && double.IsNaN(snapshot.Mana), "online missing mana permits health");
+local.playerHealth.isActiveAndEnabled = false;
+Check(!VitalsProbe.TryRead(out _), "online both unavailable");
+local.playerHealth.isActiveAndEnabled = true; local.isActiveAndEnabled = false;
+Check(!VitalsProbe.TryRead(out _), "disabled local rejected");
+local.isActiveAndEnabled = true; visuals.isActiveAndEnabled = false;
+Check(!VitalsProbe.TryRead(out _), "disabled visuals rejected");
+visuals.isActiveAndEnabled = true;
+PlayerFinder.playerActorVisuals = null;
+Check(!VitalsProbe.TryRead(out _), "online never falls back to offline registry");
+Console.WriteLine($"Passed {checks} vitals probe checks.");

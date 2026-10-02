@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="900" viewBox="0 0 800 900"><rect width="800" height="900" fill="white"/><text x="25" y="30">Z12: extracted walkable collider unions (X-Z world units)</text>
+<polygon points="410.71,661.26 477.92,695.68 447.60,713.29 452.94,716.49 413.79,735.93 375.12,763.77 366.69,760.28 292.68,803.27 225.48,768.85" fill="#a9d8f5" stroke="black"/>
+<text x="361.06" y="745.52">Bridge 1; nav floor 0.074841</text>
+<polygon points="174.00,159.72 274.55,161.07 273.45,185.39 277.15,185.60 272.28,211.36 272.05,216.54 276.90,249.14 270.56,249.42 267.89,308.62 167.33,307.26" fill="#c5edb1" stroke="black"/>
+<text x="246.66" y="244.28">Bridge 2; nav floor -1.925159</text>
+</svg>

@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net6.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><CheckEolTargetFramework>false</CheckEolTargetFramework></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../LeAccess/Accessibility/MapSections/RuntimeMapPlaces.cs" Link="RuntimeMapPlaces.cs" />
+    <Compile Include="../../LeAccess/Accessibility/MapSections/RuntimePlaceNames.cs" Link="RuntimePlaceNames.cs" />
+    <Compile Include="../../LeAccess/Accessibility/MapSections/MapPlayerFloor.cs" Link="MapPlayerFloor.cs" />
+    <Compile Include="../../LeAccess/Accessibility/MapSections/MapPlaceDiagnostics.cs" Link="MapPlaceDiagnostics.cs" />
+  </ItemGroup>
+</Project>

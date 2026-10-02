@@ -1,0 +1,13 @@
+{
+  "maps": [{
+    "scene": "GeneratedCatalog", "scenePath": "Assets/GeneratedCatalog.unity", "buildHash": "verified-build",
+    "anchors": [],
+    "sections": [{"id":"stairs","textKey":"map.section.stairs","speechGroup":"map.section.stairs","priority":0,
+      "components":[{"minY":0,"maxY":10,"polygon":[{"x":0,"z":0},{"x":4,"z":0},{"x":4,"z":4},{"x":0,"z":4}]}]}]
+  }, {
+    "scene": "ControlledCourtyard", "scenePath": "Assets/ControlledCourtyard.unity", "buildHash": "verified-build",
+    "anchors": [],
+    "sections": [{"id":"courtyard-floor","textKey":"map.section.walkway","speechGroup":"map.section.walkway","priority":0,
+      "components":[{"minY":0,"maxY":10,"polygon":[{"x":0,"z":0},{"x":4,"z":0},{"x":4,"z":4},{"x":0,"z":4}]}]}]
+  }]
+}

@@ -1,11 +1,15 @@
+using LeAccess.I18n;
 using ChatView;
 using HarmonyLib;
 using LeAccess.Accessibility.Announcements;
+using LeAccess.Accessibility.Audio;
 using LeAccess.Accessibility.Utils;
+using LeAccess.Accessibility.ScreenContent;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Il2CppSystem;
 
 namespace LeAccess.Accessibility.Patches;
 
@@ -17,15 +21,18 @@ public static class HarmonyPatches
     [HarmonyPatch(typeof(UIPanel), nameof(UIPanel.Open))]
     public static class UIPanelOpenPatch
     {
-        public static void Postfix(UIPanel __instance)
+        public static void Prefix(UIPanel __instance, out bool __state)
+        {
+            __state = __instance?.isOpen == true;
+        }
+
+        public static void Postfix(UIPanel __instance, bool __state)
         {
             try
             {
-                if (__instance?.instance == null) return;
-                var cleanName = TextUtils.CleanPanelName(__instance.instance.name);
-                if (!string.IsNullOrEmpty(cleanName))
-                    ScreenReader.Speak($"{cleanName} opened");
-                TextUtils.DisableVirtualMouse();
+                if (__state || __instance?.isOpen != true || __instance.instance == null ||
+                    !UiVisibility.IsVisible(__instance.instance)) return;
+                ElementAnnouncer.ResetFocusIfOwned(__instance.instance);
             }
             catch { }
         }
@@ -34,14 +41,17 @@ public static class HarmonyPatches
     [HarmonyPatch(typeof(UIPanel), nameof(UIPanel.Close))]
     public static class UIPanelClosePatch
     {
-        public static void Prefix(UIPanel __instance)
+        public static void Prefix(UIPanel __instance, out bool __state)
+        {
+            __state = __instance?.isOpen == true;
+        }
+
+        public static void Postfix(UIPanel __instance, bool __state)
         {
             try
             {
-                if (__instance?.isOpen != true) return;
-                var cleanName = TextUtils.CleanPanelName(__instance?.instance?.name);
-                if (!string.IsNullOrEmpty(cleanName))
-                    ScreenReader.Speak($"{cleanName} closed");
+                if (!__state || __instance == null || __instance.isOpen) return;
+                ElementAnnouncer.ResetFocusIfOwned(__instance.instance);
             }
             catch { }
         }
@@ -66,18 +76,6 @@ public static class HarmonyPatches
             if (element != null)
                 ElementAnnouncer.AnnounceElement(element.gameObject);
         }
-    }
-
-    [HarmonyPatch(typeof(EpochInputManager), nameof(EpochInputManager.SetActiveVirtualMouse))]
-    public static class DisableVirtualMousePatch
-    {
-        public static bool Prefix(ref bool active) { active = false; return true; }
-    }
-
-    [HarmonyPatch(typeof(EpochInputManager), nameof(EpochInputManager.VirtualMouseIsEnabled))]
-    public static class VirtualMouseIsEnabledPatch
-    {
-        public static bool Prefix(ref bool __result) { __result = false; return false; }
     }
 
     /// <summary>
@@ -128,38 +126,10 @@ public static class HarmonyPatches
                 bool isCurrentlyFocused = ElementAnnouncer.IsRelatedToFocusedElement(__instance.gameObject);
                 if (!isCurrentlyFocused) return;
 
-                var stateText = value ? "On" : "Off";
+                var stateText = ModText.Get(value ? "state.on" : "state.off");
                 ScreenReader.Speak(stateText, true);
             }
             catch { }
-        }
-    }
-
-    /// <summary>
-    /// Patch PrioritizedNavigable.HandleSubmitInput to detect A/X button presses.
-    /// </summary>
-    [HarmonyPatch(typeof(PrioritizedNavigable), nameof(PrioritizedNavigable.HandleSubmitInput))]
-    public static class PrioritizedNavigableHandleSubmitInputPatch
-    {
-        public static void Postfix(PrioritizedNavigable __instance)
-        {
-            try
-            {
-                if (__instance == null) return;
-
-                var activeSelectable = __instance.ActiveSelectable;
-                if (activeSelectable == null) return;
-
-                var go = activeSelectable.gameObject;
-                if (go == null) return;
-
-                Plugin.Log.LogInfo($"[Submit] PrioritizedNavigable submit on: {go.name}, navigable={__instance.name}");
-                ElementAnnouncer.HandleSubmitForGameObject(go);
-            }
-            catch (System.Exception ex)
-            {
-                Plugin.Log.LogError($"HandleSubmitInput error: {ex.Message}");
-            }
         }
     }
 
@@ -188,6 +158,71 @@ public static class HarmonyPatches
             }
             catch { }
         }
+    }
+
+    /// <summary>
+    /// Patch ControllerNotification.ShowNotification to announce popups with title and message.
+    /// Examples: "You are offline", "Connection lost", etc.
+    /// </summary>
+    [HarmonyPatch(typeof(ControllerNotification), nameof(ControllerNotification.ShowNotification))]
+    public static class ControllerNotificationShowPatch
+    {
+        public static void Postfix(ControllerNotification __instance) => NotificationAnnouncer.TrackController(__instance);
+    }
+
+    /// <summary>
+    /// Patch UIQuickNotificationText.Show to announce quick hints.
+    /// Examples: "Press RT to submit", "Hold A to confirm", etc.
+    /// </summary>
+    [HarmonyPatch(typeof(UIQuickNotificationText), nameof(UIQuickNotificationText.Show))]
+    public static class UIQuickNotificationTextShowPatch
+    {
+        public static void Postfix(UIQuickNotificationText __instance) => NotificationAnnouncer.TrackQuick(__instance);
+    }
+
+    /// <summary>
+    /// Patch ScreenKeyboardManager.OnAppeared to announce when the on-screen keyboard appears.
+    /// </summary>
+    [HarmonyPatch(typeof(ScreenKeyboardManager), nameof(ScreenKeyboardManager.OnAppeared))]
+    public static class ScreenKeyboardManagerOnAppearedPatch
+    {
+        public static void Postfix(ScreenKeyboardManager __instance)
+        {
+            try
+            {
+                // Get placeholder text if available
+                string placeholder = __instance?._substitutePlaceholderText?.text;
+                string announcement = ModText.Get("keyboard.open");
+
+                if (!string.IsNullOrEmpty(placeholder))
+                    announcement = ModText.Format("keyboard.open_named", placeholder);
+
+                Plugin.Log.LogInfo($"[ScreenKeyboard] {announcement}");
+                ScreenReader.Speak(announcement, true);
+            }
+            catch (System.Exception ex)
+            {
+                Plugin.Log.LogError($"ScreenKeyboardManager error: {ex.Message}");
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(MultiButtonsActionPrompt), nameof(MultiButtonsActionPrompt.UpdatePrompt), typeof(bool))]
+    public static class MultiButtonsActionPromptUpdatePatch
+    {
+        public static void Postfix(MultiButtonsActionPrompt __instance) => ButtonPromptAnnouncer.Track(__instance);
+    }
+
+    [HarmonyPatch(typeof(MultiButtonsActionPrompt), nameof(MultiButtonsActionPrompt.OnEnable))]
+    public static class MultiButtonsActionPromptEnablePatch
+    {
+        public static void Postfix(MultiButtonsActionPrompt __instance) => ButtonPromptAnnouncer.Track(__instance);
+    }
+
+    [HarmonyPatch(typeof(MultiButtonsActionPrompt), nameof(MultiButtonsActionPrompt.OnDestroy))]
+    public static class MultiButtonsActionPromptDestroyPatch
+    {
+        public static void Prefix(MultiButtonsActionPrompt __instance) => ButtonPromptAnnouncer.Remove(__instance);
     }
 
 }

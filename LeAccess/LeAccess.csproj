@@ -13,17 +13,21 @@
       https://nuget.samboy.dev/v3/index.json
     </RestoreAdditionalProjectSources>
     <RootNamespace>LeAccess</RootNamespace>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 
     <!-- Game paths -->
-    <GameDir>D:\games\Last Epoch</GameDir>
+    <GameDir Condition="'$(GameDir)' == ''">D:\games\steam\steamapps\common\Last Epoch</GameDir>
     <BepInExDir>$(GameDir)\BepInEx</BepInExDir>
     <InteropDir>$(BepInExDir)\interop</InteropDir>
     <PluginsDir>$(BepInExDir)\plugins</PluginsDir>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.*" IncludeAssets="compile" />
+    <ProjectReference Include="..\LeAccess.InteropRepair\LeAccess.InteropRepair.csproj"
+                      ReferenceOutputAssembly="false" AdditionalProperties="GameDir=$(GameDir)" />
+    <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.788" IncludeAssets="compile" />
     <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
   </ItemGroup>
 
   <!-- Game interop references -->
@@ -34,6 +38,35 @@
     </Reference>
     <Reference Include="LE.UI.Controls">
       <HintPath>$(InteropDir)\LE.UI.Controls.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="LE.PCG">
+      <HintPath>$(InteropDir)\LE.PCG.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.Mathematics">
+      <HintPath>$(InteropDir)\Unity.Mathematics.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Rewired_Core">
+      <HintPath>$(InteropDir)\Rewired_Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="FmodShared">
+      <HintPath>$(InteropDir)\FmodShared.dll</HintPath>
+      <Private>false</Private>
+      <Aliases>FmodGame</Aliases>
+    </Reference>
+    <Reference Include="Sirenix.Serialization">
+      <HintPath>$(InteropDir)\Sirenix.Serialization.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UniTask">
+      <HintPath>$(InteropDir)\UniTask.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="DialogueSystem">
+      <HintPath>$(InteropDir)\DialogueSystem.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine">
@@ -76,6 +109,14 @@
       <HintPath>$(InteropDir)\Il2CppSystem.Core.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>$(InteropDir)\UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AIModule">
+      <HintPath>$(InteropDir)\UnityEngine.AIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
 
   <!-- Tolk screen reader library -->
@@ -86,13 +127,30 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Translations\*.json" LogicalName="LeAccess.Translations.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="MapSections\*.json" LogicalName="LeAccess.MapSections.%(Filename)%(Extension)" />
+    <None Update="Translations\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!-- Copy DLL to plugins folder after build -->
-  <Target Name="CopyToPlugins" AfterTargets="Build">
+  <Target Name="CopyToPlugins" AfterTargets="Build" Condition="'$(SkipPluginDeployment)' != 'true'">
     <Copy SourceFiles="$(TargetDir)$(TargetFileName)" DestinationFolder="$(PluginsDir)\LeAccess" />
+    <!-- Keep user-edited catalogs; bundled resources provide new default keys. -->
+    <ItemGroup>
+      <PluginTranslation Include="$(TargetDir)Translations\*.json" />
+    </ItemGroup>
+    <Copy SourceFiles="@(PluginTranslation)" DestinationFolder="$(PluginsDir)\LeAccess\Translations"
+          Condition="!Exists('$(PluginsDir)\LeAccess\Translations\%(PluginTranslation.Filename)%(PluginTranslation.Extension)')" />
     <Copy SourceFiles="$(TargetDir)TolkDotNet.dll" DestinationFolder="$(PluginsDir)\LeAccess" Condition="Exists('$(TargetDir)TolkDotNet.dll')" />
     <!-- Copy native Tolk DLLs -->
     <Copy SourceFiles="..\references\tolk\Tolk.dll" DestinationFolder="$(PluginsDir)\LeAccess" />
     <Copy SourceFiles="..\references\tolk\nvdaControllerClient64.dll" DestinationFolder="$(PluginsDir)\LeAccess" />
+    <!-- Copy NAudio DLLs -->
+    <Copy SourceFiles="$(TargetDir)NAudio.dll" DestinationFolder="$(PluginsDir)\LeAccess" Condition="Exists('$(TargetDir)NAudio.dll')" />
+    <Copy SourceFiles="$(TargetDir)NAudio.Core.dll" DestinationFolder="$(PluginsDir)\LeAccess" Condition="Exists('$(TargetDir)NAudio.Core.dll')" />
+    <Copy SourceFiles="$(TargetDir)NAudio.Wasapi.dll" DestinationFolder="$(PluginsDir)\LeAccess" Condition="Exists('$(TargetDir)NAudio.Wasapi.dll')" />
+    <Copy SourceFiles="$(TargetDir)NAudio.WinMM.dll" DestinationFolder="$(PluginsDir)\LeAccess" Condition="Exists('$(TargetDir)NAudio.WinMM.dll')" />
   </Target>
 
 </Project>

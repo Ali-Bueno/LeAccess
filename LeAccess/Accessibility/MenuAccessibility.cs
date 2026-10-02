@@ -1,4 +1,25 @@
+using LeAccess.Accessibility.Audio;
+using LeAccess.Accessibility.Announcements;
 using LeAccess.Accessibility.CharacterCreation;
+using LeAccess.Accessibility.Combat;
+using LeAccess.Accessibility.Navigation;
+using LeAccess.Accessibility.ScreenContent;
+using LeAccess.Accessibility.Dialogue;
+using LeAccess.Accessibility.Inventory;
+using LeAccess.Accessibility.Items;
+using LeAccess.Accessibility.Npcs;
+using LeAccess.Accessibility.Players;
+using LeAccess.Accessibility.ControllerMenus;
+using LeAccess.Accessibility.Zones;
+using LeAccess.Accessibility.Skills;
+using LeAccess.Accessibility.WorldCues;
+using LeAccess.Accessibility.Passives;
+using LeAccess.Accessibility.Quests;
+using LeAccess.Accessibility.Vitals;
+using LeAccess.Accessibility.Landmarks;
+using LeAccess.Accessibility.MapSections;
+using LeAccess.Accessibility.Login;
+using LeAccess.I18n;
 using UnityEngine;
 
 namespace LeAccess.Accessibility;
@@ -8,14 +29,101 @@ namespace LeAccess.Accessibility;
 /// </summary>
 public class MenuAccessibility : MonoBehaviour
 {
+    private int _lastPolledSelection;
+    private string _focusFailure;
+
     void Awake()
     {
         Plugin.Log.LogInfo("MenuAccessibility component initialized");
     }
 
+    void LateUpdate()
+    {
+        if (GameLocale.Refresh())
+        {
+            _lastPolledSelection = 0;
+            ElementAnnouncer.ResetFocus();
+        }
+        LoginTransitionGuard.Update();
+        PauseMenuFocusRecovery.Update();
+        ScreenContentAnnouncer.Update();
+        DialogueAnnouncer.Update();
+        ControllerMenuAccessibility.Update();
+        PassiveAccessibility.Update();
+        QuestAccessibility.Update();
+        SkillAccessibility.Update();
+        ClassCarouselHandler.CheckPendingClassAnnouncement();
+        PollSelectedControl();
+        ElementAnnouncer.FlushPendingFocus();
+        CharacterNameAccessibility.Update();
+        InventoryAccessibility.Update();
+        ZoneAnnouncer.Update();
+        VisibleSubtitleAnnouncer.Update(ScreenReader.SpokeThisFrame || ZoneAnnouncer.HasPendingContent ||
+            InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
+            SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent);
+        MapSectionAccessibility.Update(ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
+            InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
+            SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent,
+            ZoneAnnouncer.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent);
+        GroundLootAccessibility.Update(ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent);
+        NpcSounds.Update(ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent);
+        NearbyPlayerAccessibility.Update(ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent ||
+            VisibleSubtitleAnnouncer.HasPendingContent || GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName);
+        WorldCueSounds.Update();
+        LandmarkAccessibility.Update(ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
+            InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
+            SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent,
+            ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent ||
+            GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent);
+        NotificationAnnouncer.Update(DialogueAnnouncer.HasActiveContent || InventoryAccessibility.HasActiveContent ||
+            PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent || CharacterNameAccessibility.HasPendingContent ||
+            ControllerMenuAccessibility.HasActiveContent || SkillAccessibility.HasActiveContent || ClassCarouselHandler.HasActiveContent || ZoneAnnouncer.HasPendingContent ||
+            GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || LandmarkAccessibility.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent);
+        ButtonPromptAnnouncer.Update(InventoryAccessibility.HasPendingContent || GroundLootAccessibility.HasPendingContent ||
+            PassiveAccessibility.HasPendingContent || QuestAccessibility.HasPendingContent || CharacterNameAccessibility.HasPendingContent ||
+            ControllerMenuAccessibility.HasPendingContent || SkillAccessibility.HasPendingContent || ClassCarouselHandler.HasPendingContent ||
+            ZoneAnnouncer.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || LandmarkAccessibility.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent);
+        CombatAccessibility.Update(PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent || VisibleSubtitleAnnouncer.HasPendingContent);
+        VitalsAccessibility.Update(ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
+            InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
+            SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent);
+    }
+
+    // Some current menus change ActiveSelectable without showing the controller
+    // cursor. Read that same game-owned focus; never search the scene for a label.
+    private void PollSelectedControl()
+    {
+        try
+        {
+            if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible)
+            { _lastPolledSelection = 0; return; }
+            var navigation = NavigationManager.currentlySelected;
+            var prioritized = navigation is null || navigation.WasCollected
+                ? null : navigation.TryCast<PrioritizedNavigable>();
+            if (!NavigationObjectLifetime.IsAlive(prioritized) || !prioritized.isActiveAndEnabled)
+            { _lastPolledSelection = 0; return; }
+            var selected = prioritized.ActiveSelectable;
+            if (!NavigationObjectLifetime.IsAlive(selected) || !selected.isActiveAndEnabled ||
+                !UiVisibility.IsVisible(selected.gameObject))
+            { _lastPolledSelection = 0; return; }
+            int id = selected.GetInstanceID();
+            if (id == _lastPolledSelection) return;
+            _lastPolledSelection = id;
+            ElementAnnouncer.AnnounceElement(selected.gameObject, interrupt: true);
+        }
+        catch (System.Exception ex)
+        {
+            if (_focusFailure == ex.Message) return;
+            _focusFailure = ex.Message;
+            Plugin.Log.LogWarning($"Menu focus unavailable: {ex}");
+        }
+    }
+
     void Update()
     {
-        ClassCarouselHandler.CheckPendingClassAnnouncement();
+        NavigationAudioState.Refresh();
+        ReactiveRadar.Update();
+        WallSonar.Update();
     }
 
     /// <summary>

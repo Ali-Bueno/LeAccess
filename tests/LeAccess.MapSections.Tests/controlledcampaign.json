@@ -1,0 +1,36 @@
+{
+  "maps": [
+    {
+      "scene": "ControlledTown",
+      "scenePath": "Assets/ControlledTown.unity",
+      "buildHash": "verified-build",
+      "anchors": [
+        { "path": "Root/A", "x": 0, "y": 0, "z": 0, "tolerance": 0.01 },
+        { "path": "Root/B", "x": 1, "y": 0, "z": 0, "tolerance": 0.01 },
+        { "path": "Root/C", "x": 0, "y": 0, "z": 1, "tolerance": 0.01 }
+      ],
+      "sections": [
+        {
+          "id": "bridge1", "textKey": "map.section.oldroad_bridge_1", "priority": 0, "minY": 0, "maxY": 10,
+          "polygon": [{"x":0,"z":0},{"x":4,"z":0},{"x":4,"z":4},{"x":0,"z":4}]
+        },
+        {
+          "id": "bridge2", "textKey": "map.section.oldroad_bridge_2", "priority": 0, "minY": 0, "maxY": 10,
+          "polygon": [{"x":4.25,"z":0},{"x":8,"z":0},{"x":8,"z":4},{"x":4.25,"z":4}]
+        }
+      ]
+    },
+    {
+      "scene": "ControlledOther",
+      "scenePath": "Assets/ControlledOther.unity",
+      "buildHash": "verified-build",
+      "anchors": [],
+      "sections": [
+        {
+          "id": "other", "textKey": "map.section.oldroad_bridge_2", "priority": 0, "minY": 0, "maxY": 10,
+          "polygon": [{"x":20,"z":20},{"x":24,"z":20},{"x":24,"z":24},{"x":20,"z":24}]
+        }
+      ]
+    }
+  ]
+}

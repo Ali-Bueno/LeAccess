@@ -1,6 +1,14 @@
+using LeAccess.I18n;
 using ChatView;
 using LeAccess.Accessibility.CharacterCreation;
 using LeAccess.Accessibility.Utils;
+using LeAccess.Accessibility.ScreenContent;
+using LeAccess.Accessibility.Dialogue;
+using LeAccess.Accessibility.Inventory;
+using LeAccess.Accessibility.ControllerMenus;
+using LeAccess.Accessibility.Skills;
+using LeAccess.Accessibility.Passives;
+using LeAccess.Accessibility.Quests;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -15,16 +23,12 @@ public static class ElementAnnouncer
 {
     private static int _lastAnnouncedInstanceId;
     private static float _lastAnnounceTime;
+    private static string _lastAnnouncementText;
+    private static GameObject _pendingFocus;
     private const float AnnounceCooldown = 0.15f;
 
     // Track toggle changes to announce state updates
     internal static readonly Dictionary<int, bool> TogglePreviousStates = new();
-
-    // Track custom toggle components for state change detection
-    private static ActiveWhileMoveToAttackEnabled _trackedMoveToAttack;
-    private static bool _trackedMoveToAttackLastState;
-    private static ActiveWhileFriendAddNotificationEnabled _trackedFriendNotif;
-    private static bool _trackedFriendNotifLastState;
 
     // Cache for focused element lookup
     private static GameObject _cachedFocusedGo;
@@ -35,77 +39,76 @@ public static class ElementAnnouncer
     /// </summary>
     public static int LastAnnouncedInstanceId => _lastAnnouncedInstanceId;
 
+    internal static void ResetFocus()
+    {
+        _lastAnnouncedInstanceId = 0;
+        _lastAnnouncementText = null;
+        _pendingFocus = null;
+        _cachedFocusedGo = null;
+        _cachedFocusedId = 0;
+    }
+
     /// <summary>
     /// Announces a UI element to the screen reader.
     /// </summary>
-    public static void AnnounceElement(GameObject go)
+    public static void AnnounceElement(GameObject go, bool interrupt = true)
     {
-        if (go == null) return;
+        if (!Application.isFocused || !UiVisibility.IsVisible(go) || LE.UI.LoadingScreen.IsVisible) return;
+        bool popupActive = ScreenContentAnnouncer.HasActiveContent;
+        bool dialogueActive = !popupActive && DialogueAnnouncer.HasActiveContent;
+        if (popupActive || dialogueActive)
+        {
+            bool owns = popupActive ? ScreenContentAnnouncer.OwnsFocus(go) : DialogueAnnouncer.OwnsFocus(go);
+            if (!owns) return;
+            bool pending = popupActive ? ScreenContentAnnouncer.HasPendingContent : DialogueAnnouncer.HasPendingContent;
+            // Response focus can arrive on the same frame as its conversation body.
+            if (pending || dialogueActive && interrupt && ScreenReader.SpokeThisFrame)
+            { _pendingFocus = go; return; }
+        }
+
+        if (ControllerMenuAccessibility.TryHandleFocus(go) || InventoryAccessibility.TryHandleFocus(go) ||
+            PassiveAccessibility.TryHandleFocus(go) || QuestAccessibility.TryHandleFocus(go) ||
+            SkillAccessibility.TryHandleFocus(go) || ClassCarouselHandler.TryHandleFocus(go)) return;
 
         var instanceId = go.GetInstanceID();
-        var now = Time.time;
+        var now = Time.unscaledTime;
 
         if (instanceId == _lastAnnouncedInstanceId && (now - _lastAnnounceTime) < AnnounceCooldown)
             return;
 
+        if (instanceId != _lastAnnouncedInstanceId) _lastAnnouncementText = null;
         _lastAnnouncedInstanceId = instanceId;
         _lastAnnounceTime = now;
+        _cachedFocusedGo = go;
+        _cachedFocusedId = instanceId;
 
         // DEBUG: Log all element names to find what class selection uses
         var debugParent = go.transform.parent?.name ?? "no-parent";
         var hasCharCreation = go.GetComponentInParent<CharacterCreationSelection>() != null;
-        Plugin.Log.LogInfo($"[DEBUG Element] name={go.name}, parent={debugParent}, hasCharCreationInParent={hasCharCreation}");
+        Plugin.Log.LogDebug($"[Element] name={go.name}, parent={debugParent}, hasCharCreationInParent={hasCharCreation}");
 
-        // Check for custom toggle state changes
-        var parentName = go.transform.parent?.name ?? "no-parent";
-        if (parentName.Contains("Popup") || parentName.Contains("Move") || parentName.Contains("Attack") ||
-            parentName.Contains("social") || parentName.Contains("Social") || parentName.Contains("Friend"))
+        var text = BuildAnnouncementText(go, popupActive || dialogueActive);
+        if (!string.IsNullOrWhiteSpace(text) && text != _lastAnnouncementText)
         {
-            var moveToAttack = go.GetComponent<ActiveWhileMoveToAttackEnabled>()
-                ?? go.GetComponentInParent<ActiveWhileMoveToAttackEnabled>()
-                ?? go.GetComponentInChildren<ActiveWhileMoveToAttackEnabled>();
-            var friendNotif = go.GetComponent<ActiveWhileFriendAddNotificationEnabled>()
-                ?? go.GetComponentInParent<ActiveWhileFriendAddNotificationEnabled>()
-                ?? go.GetComponentInChildren<ActiveWhileFriendAddNotificationEnabled>();
-
-            bool stateChanged = false;
-            if (moveToAttack != null)
-            {
-                bool currentState = moveToAttack.moveAttackEnabled;
-                if (_trackedMoveToAttack != null && _trackedMoveToAttack.Pointer == moveToAttack.Pointer)
-                {
-                    if (currentState != _trackedMoveToAttackLastState)
-                    {
-                        ScreenReader.Speak(currentState ? "On" : "Off", true);
-                        stateChanged = true;
-                    }
-                }
-                _trackedMoveToAttack = moveToAttack;
-                _trackedMoveToAttackLastState = currentState;
-            }
-            if (friendNotif != null)
-            {
-                bool currentState = friendNotif.hideUnknownSocialRequests;
-                if (_trackedFriendNotif != null && _trackedFriendNotif.Pointer == friendNotif.Pointer)
-                {
-                    if (currentState != _trackedFriendNotifLastState)
-                    {
-                        ScreenReader.Speak(currentState ? "On" : "Off", true);
-                        stateChanged = true;
-                    }
-                }
-                _trackedFriendNotif = friendNotif;
-                _trackedFriendNotifLastState = currentState;
-            }
-            if (stateChanged)
-                return;
+            _lastAnnouncementText = text;
+            ScreenReader.Speak(text, interrupt);
         }
+    }
 
-        var text = BuildAnnouncementText(go);
-        if (!string.IsNullOrWhiteSpace(text))
-        {
-            ScreenReader.Speak(text);
-        }
+    internal static void FlushPendingFocus()
+    {
+        if (_pendingFocus is null) return;
+        bool popup = ScreenContentAnnouncer.HasActiveContent;
+        bool dialogue = !popup && DialogueAnnouncer.HasActiveContent;
+        if (popup && ScreenContentAnnouncer.HasPendingContent || dialogue && DialogueAnnouncer.HasPendingContent) return;
+        var pending = _pendingFocus;
+        _pendingFocus = null;
+        if (!UiVisibility.IsVisible(pending) ||
+            !(popup ? ScreenContentAnnouncer.OwnsFocus(pending) : dialogue && DialogueAnnouncer.OwnsFocus(pending))) return;
+        // The initial selection follows the body; subsequent deliberate navigation may interrupt it.
+        _lastAnnouncedInstanceId = 0;
+        _lastAnnouncementText = null;
+        AnnounceElement(pending, interrupt: false);
     }
 
     /// <summary>
@@ -134,227 +137,50 @@ public static class ElementAnnouncer
             if (!isCurrentlyFocused) return;
 
             // Re-announce the state change
-            var stateText = value ? "On" : "Off";
+            var stateText = ModText.Get(value ? "state.on" : "state.off");
             ScreenReader.Speak(stateText, true);
         }
         catch { }
     }
 
-    /// <summary>
-    /// Handles submit input for custom toggle components and ClassTabs.
-    /// </summary>
+    // Class content is read by the same settled selection path after submit.
     public static void HandleSubmitForGameObject(GameObject go)
     {
-        if (go == null) return;
-
-        // Check for ClassTab - read description on submit
-        // Only check if NOT in class carousel (CharacterCreationSelection is for carousel)
-        var charCreation = go.GetComponent<CharacterCreationSelection>()
-            ?? go.GetComponentInParent<CharacterCreationSelection>();
-        if (charCreation != null)
-        {
-            // This is class carousel, not ClassTab - don't handle here
-            Plugin.Log.LogInfo($"[Submit] Skipping - this is CharacterCreationSelection (class carousel)");
-            return;
-        }
-
-        // Check for ClassTab by name
-        var goName = go.name;
-        if (goName.StartsWith("ClassTab"))
-        {
-            HandleClassTabSubmit(go, goName);
-            return;
-        }
-
-        // Check parents for ClassTab
-        var current = go.transform.parent;
-        for (int i = 0; i < 3 && current != null; i++)
-        {
-            if (current.name.StartsWith("ClassTab"))
-            {
-                HandleClassTabSubmit(current.gameObject, current.name);
-                return;
-            }
-            current = current.parent;
-        }
-
-        var moveToAttack = go.GetComponent<ActiveWhileMoveToAttackEnabled>()
-            ?? go.GetComponentInParent<ActiveWhileMoveToAttackEnabled>();
-        if (moveToAttack != null)
-        {
-            var stateText = moveToAttack.moveAttackEnabled ? "On" : "Off";
-            ScreenReader.Speak(stateText, true);
-            return;
-        }
-
-        var friendNotification = go.GetComponent<ActiveWhileFriendAddNotificationEnabled>()
-            ?? go.GetComponentInParent<ActiveWhileFriendAddNotificationEnabled>();
-        if (friendNotification != null)
-        {
-            var stateText = friendNotification.hideUnknownSocialRequests ? "On" : "Off";
-            ScreenReader.Speak(stateText, true);
-            return;
-        }
+        if (UiVisibility.IsVisible(go) && MasteryReader.TryGetMasteryInfo(go, out _, out _))
+            AnnounceElement(go);
     }
-
-    /// <summary>
-    /// Handles submit on ClassTab elements - reads the class/mastery description.
-    /// </summary>
-    private static void HandleClassTabSubmit(GameObject go, string goName)
-    {
-        try
-        {
-            Plugin.Log.LogInfo($"[ClassTab Submit] Detected submit on {goName}");
-
-            // Find the description in the parent hierarchy
-            // ClassTabs are in LeftColClassMenu, descriptions are usually in a sibling or parent container
-            var parent = go.transform.parent;
-            if (parent == null) return;
-
-            // Search in parent and grandparent for description text
-            string description = null;
-            for (int level = 0; level < 3 && parent != null; level++)
-            {
-                var allTexts = parent.GetComponentsInChildren<TextMeshProUGUI>(true);
-                foreach (var txt in allTexts)
-                {
-                    if (txt == null || !txt.gameObject.activeInHierarchy) continue;
-                    var text = txt.text;
-                    if (string.IsNullOrWhiteSpace(text)) continue;
-
-                    // Description is longer text with punctuation
-                    if (text.Length > 50 && text.Contains("."))
-                    {
-                        description = TextUtils.CleanText(text);
-                        Plugin.Log.LogInfo($"[ClassTab Submit] Found description at level {level}: {description.Substring(0, System.Math.Min(50, description.Length))}...");
-                        break;
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(description))
-                    break;
-
-                parent = parent.parent;
-            }
-
-            if (!string.IsNullOrEmpty(description))
-            {
-                ScreenReader.Speak(description, false);
-            }
-            else
-            {
-                Plugin.Log.LogInfo("[ClassTab Submit] No description found");
-            }
-        }
-        catch (System.Exception ex)
-        {
-            Plugin.Log.LogError($"HandleClassTabSubmit error: {ex.Message}");
-        }
-    }
-
     /// <summary>
     /// Check if a GameObject is related to the currently focused element.
     /// </summary>
     public static bool IsRelatedToFocusedElement(GameObject go)
     {
-        if (go == null || _lastAnnouncedInstanceId == 0) return false;
+        if (!UiVisibility.IsVisible(go) || _lastAnnouncedInstanceId == 0) return false;
+        if (ScreenContentAnnouncer.HasActiveContent && !ScreenContentAnnouncer.OwnsFocus(go)) return false;
+        if (!ScreenContentAnnouncer.HasActiveContent && DialogueAnnouncer.HasActiveContent &&
+            !DialogueAnnouncer.OwnsFocus(go)) return false;
 
-        // Direct match
-        if (go.GetInstanceID() == _lastAnnouncedInstanceId)
-            return true;
-
-        // Check if go is an ancestor of focused element
-        var current = go.transform;
-        for (int i = 0; i < 6 && current != null; i++)
-        {
-            if (current.gameObject.GetInstanceID() == _lastAnnouncedInstanceId)
-                return true;
-            current = current.parent;
-        }
-
-        // Check if go is a descendant of focused element
-        var focusedGo = FindGameObjectByInstanceId(_lastAnnouncedInstanceId, go.transform.root);
-        if (focusedGo != null && go.transform.IsChildOf(focusedGo.transform))
-            return true;
-
-        // Check if they share a common parent within 3 levels
-        var goParent = go.transform.parent;
-        for (int i = 0; i < 3 && goParent != null; i++)
-        {
-            if (focusedGo != null && focusedGo.transform.IsChildOf(goParent))
-                return true;
-            goParent = goParent.parent;
-        }
-
-        return false;
+        var focused = _cachedFocusedGo;
+        if (!UiVisibility.IsVisible(focused) || _cachedFocusedId != _lastAnnouncedInstanceId) return false;
+        if (go.transform.IsChildOf(focused.transform) || focused.transform.IsChildOf(go.transform)) return true;
+        var container = TextDetector.FindSingleOptionContainer(focused);
+        return container != null && go.transform.IsChildOf(container);
     }
 
-    private static GameObject FindGameObjectByInstanceId(int instanceId, Transform searchRoot)
+    internal static void ResetFocusIfOwned(GameObject root)
     {
-        if (_cachedFocusedId == instanceId && _cachedFocusedGo != null)
-            return _cachedFocusedGo;
-
-        var allTransforms = searchRoot.GetComponentsInChildren<Transform>(true);
-        foreach (var t in allTransforms)
-        {
-            if (t.gameObject.GetInstanceID() == instanceId)
-            {
-                _cachedFocusedGo = t.gameObject;
-                _cachedFocusedId = instanceId;
-                return t.gameObject;
-            }
-        }
-
-        return null;
+        if (_cachedFocusedGo is not null && !_cachedFocusedGo.WasCollected && _cachedFocusedGo != null &&
+            root is not null && !root.WasCollected && root != null &&
+            _cachedFocusedGo.transform.IsChildOf(root.transform)) ResetFocus();
     }
-
-    private static string BuildAnnouncementText(GameObject go)
+    private static string BuildAnnouncementText(GameObject go, bool restrictToControl = false)
     {
         string label = null;
         string value = null;
         string description = null;
 
-        // Special case: Character creation selection
-        var elementName = go.name;
-        bool isGenericButton = elementName == "LeftButton" || elementName == "RightButton" ||
-                               elementName == "Button" || elementName == "BackButton" ||
-                               elementName == "ConfirmButton" || elementName == "CancelButton";
-
-        if (!isGenericButton)
-        {
-            var charCreation = go.GetComponent<CharacterCreationSelection>()
-                ?? go.GetComponentInParent<CharacterCreationSelection>();
-            if (charCreation != null && charCreation.gameObject.activeInHierarchy)
-            {
-                var charClass = charCreation.characterClass;
-                if (charClass != null && !string.IsNullOrEmpty(charClass.className))
-                {
-                    Plugin.Log.LogInfo($"[ClassSelect] Announcing class from BuildAnnouncementText: {charClass.className}, go={elementName}");
-                    return charClass.className;
-                }
-            }
-        }
-
-        // Special case: Class tabs in character creation (ClassTabVoidKnight, ClassTabPaladin, etc.)
-        if (elementName.StartsWith("ClassTab"))
-        {
-            var classTabResult = TryGetClassTabInfo(go, elementName);
-            if (!string.IsNullOrEmpty(classTabResult))
-            {
-                return classTabResult;
-            }
-        }
-
-        // Special case: Mastery selection in skill tree
-        if (MasteryReader.TryGetMasteryInfo(go, out var masteryName, out var masteryDescription))
-        {
-            if (!string.IsNullOrEmpty(masteryDescription))
-            {
-                return $"{masteryName}. {masteryDescription}";
-            }
-            return masteryName;
-        }
-
+        if (ClassSelectionReader.TryReadControl(go, out var classSelection))
+            return string.IsNullOrWhiteSpace(classSelection.Name) ? null :
+                ScreenContentTracker.Combine(new[] { classSelection.Name, classSelection.Description });
         // Special case: Check if we're inside an expanded dropdown list
         var dropdownItemText = TextDetector.TryGetDropdownItemText(go);
         if (dropdownItemText != null)
@@ -374,9 +200,9 @@ public static class ElementAnnouncer
             || IsInCharacterCreationByName(go);
 
         // Check for color picker
-        var colorPicker = go.GetComponent<ColorPickerManager>() ?? go.GetComponentInParent<ColorPickerManager>();
-        var ruleColorPicker = go.GetComponent<RuleColorPicker>() ?? go.GetComponentInParent<RuleColorPicker>();
-        bool isColorPicker = colorPicker != null || ruleColorPicker != null;
+        var colorPicker = go.GetComponent<UnityEngine.UI.Extensions.ColorPicker.ColorPickerControl>() ?? go.GetComponentInParent<UnityEngine.UI.Extensions.ColorPicker.ColorPickerControl>();
+
+        bool isColorPicker = colorPicker != null;
 
         var chatToggle = go.GetComponent<ChatToggleField>() ?? go.GetComponentInParent<ChatToggleField>();
 
@@ -395,14 +221,14 @@ public static class ElementAnnouncer
             if (!string.IsNullOrEmpty(inputText))
             {
                 if (!string.IsNullOrEmpty(placeholder))
-                    return $"{placeholder}: {inputText}";
-                return $"Text field: {inputText}";
+                    return ModText.Format("control.field_value", placeholder, inputText);
+                return ModText.Format("control.field_value", ModText.Get("control.text_field"), inputText);
             }
             else
             {
                 if (!string.IsNullOrEmpty(placeholder))
-                    return $"{placeholder}: empty";
-                return "Text field: empty";
+                    return ModText.Format("control.empty_field", placeholder);
+                return ModText.Format("control.empty_field", ModText.Get("control.text_field"));
             }
         }
 
@@ -421,17 +247,17 @@ public static class ElementAnnouncer
         {
             var buttonText = TextUtils.GetTextFromHierarchy(button.gameObject);
             if (!string.IsNullOrEmpty(buttonText))
-                return buttonText;
+                return ScreenContentTracker.Combine(new[] { buttonText, description });
         }
 
         // Get control value
         if (isColorPicker)
         {
-            value = "Color selector";
+            value = ModText.Get("control.color_selector");
         }
         else if (chatToggle != null && !isInCharacterCreation)
         {
-            value = chatToggle.IsActive ? "On" : "Off";
+            value = ModText.Get(chatToggle.IsActive ? "state.on" : "state.off");
         }
         else if (dropdown != null)
         {
@@ -440,17 +266,21 @@ public static class ElementAnnouncer
         }
         else if (toggle != null)
         {
-            value = toggle.isOn ? "On" : "Off";
+            value = ModText.Get(toggle.isOn ? "state.on" : "state.off");
         }
         else if (slider != null)
         {
             value = Mathf.RoundToInt(slider.value).ToString();
         }
 
-        // Layer 2: Try to get label from GraphicsOption components
-        if (string.IsNullOrEmpty(label))
+        if (restrictToControl)
         {
-            TextDetector.TryGetFromGraphicsOption(go, ref label);
+            // A popup's body belongs to its content reader, not to an icon-only button's ancestors.
+            string controlText = ScreenContentReader.Read(go, null, null);
+            if (string.IsNullOrWhiteSpace(controlText))
+                controlText = go.GetComponent<InfoForTooltip>() != null && !string.IsNullOrWhiteSpace(label)
+                    ? label : TextUtils.CleanObjectName(go.name);
+            return ScreenContentTracker.Combine(new[] { controlText, value });
         }
 
         // Layer 3: Intelligent text search
@@ -482,36 +312,12 @@ public static class ElementAnnouncer
                 if (toggle != null)
                 {
                     if (toggle.group == null)
-                        value = toggle.isOn ? "On" : "Off";
+                        value = ModText.Get(toggle.isOn ? "state.on" : "state.off");
                     else
                         toggle = null;
                 }
             }
 
-            if (toggle == null)
-            {
-                var current = go.transform.parent;
-                for (int i = 0; i < 6 && current != null; i++)
-                {
-                    var toggles = current.GetComponentsInChildren<Toggle>(true);
-                    foreach (var t in toggles)
-                    {
-                        if (t.GetComponentInParent<ColorPickerManager>() != null ||
-                            t.GetComponentInParent<RuleColorPicker>() != null)
-                            continue;
-
-                        if (t.group != null)
-                            continue;
-
-                        toggle = t;
-                        value = toggle.isOn ? "On" : "Off";
-                        break;
-                    }
-
-                    if (toggle != null) break;
-                    current = current.parent;
-                }
-            }
         }
 
         // Layer 5: Use GameObject name
@@ -530,47 +336,6 @@ public static class ElementAnnouncer
         }
 
         return FormatAnnouncement(label, value, description, go, isDisabledOption);
-    }
-
-    /// <summary>
-    /// Extracts class/mastery info from ClassTab elements in character creation.
-    /// </summary>
-    private static string TryGetClassTabInfo(GameObject go, string elementName)
-    {
-        string className = null;
-
-        // First, try to get visible text from the tab (localized name)
-        var tmpText = go.GetComponentInChildren<TextMeshProUGUI>();
-        if (tmpText != null && !string.IsNullOrWhiteSpace(tmpText.text))
-        {
-            className = tmpText.text.Trim();
-        }
-
-        // Fallback: extract from GameObject name (ClassTabVoidKnight -> Void Knight)
-        if (string.IsNullOrEmpty(className))
-        {
-            var rawName = elementName.Substring(8); // "ClassTab".Length = 8
-
-            if (rawName == "Base")
-            {
-                className = "Base Class";
-            }
-            else
-            {
-                // Insert spaces before capital letters (VoidKnight -> Void Knight)
-                className = System.Text.RegularExpressions.Regex.Replace(rawName, "([a-z])([A-Z])", "$1 $2");
-            }
-        }
-
-        if (string.IsNullOrEmpty(className))
-            return null;
-
-        // Log components for debugging
-        var button = go.GetComponent<Button>();
-        var selectable = go.GetComponent<Selectable>();
-        Plugin.Log.LogInfo($"[ClassTab] name={className}, hasButton={button != null}, hasSelectable={selectable != null}");
-
-        return className;
     }
 
     private static bool IsDisabledOption(GameObject go)
@@ -626,7 +391,9 @@ public static class ElementAnnouncer
 
         if (isDisabled && result.Length > 0)
         {
-            result.Append(" (Disabled)");
+            string disabledText = ModText.Format("control.disabled", result.ToString());
+            result.Clear();
+            result.Append(disabledText);
         }
 
         if (!string.IsNullOrEmpty(description) && result.Length > 0)
@@ -641,7 +408,7 @@ public static class ElementAnnouncer
             if (!TextUtils.IsGenericName(cleanName))
             {
                 if (isDisabled)
-                    return cleanName + " (Disabled)";
+                    return ModText.Format("control.disabled", cleanName);
                 return cleanName;
             }
         }

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../LeAccess/Accessibility/Audio/WorldAudioReservation.cs" Link="WorldAudioReservation.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/RadarModel.cs" Link="RadarModel.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/RadarEngine.cs" Link="RadarEngine.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/RadarCueQueue.cs" Link="RadarCueQueue.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/RadarCueSynthesizer.cs" Link="RadarCueSynthesizer.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationAudioState.cs" Link="NavigationAudioState.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/RadarWorldProbe.cs" Link="RadarWorldProbe.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/ReactiveRadar.cs" Link="ReactiveRadar.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/RadarDiagnostics.cs" Link="RadarDiagnostics.cs" />
+  </ItemGroup>
+</Project>

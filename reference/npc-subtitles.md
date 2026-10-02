@@ -1,0 +1,180 @@
+# Visible NPC subtitles — Steam 1.5.0.1
+
+## Burning corpses examination follow-up (2026-10-02)
+
+The user confirms that **Cadáveres ardientes** is named on approach, but its
+examination description remained silent. The session ending 10:27:34 records
+`[NPC name]` at lines 470/482/494/500/516. Dialogue attaches successfully, but
+lines 504/507/510 report `visible=False`, including `responses=True` at 507.
+This rules out failed UI discovery and identifies a still-unread displayed body.
+The log is preserved in `%TEMP%/LeAccess-offline-stall-20261002/` as
+`BepInEx-inspection-102734.log`.
+
+Installed Z22's Burning Corpses listener 15147 and relay 15270 point to child
+trigger 14991, external conversation **658**, `Burning Corpses Inspect`. Node 1
+is the NPC description from actor 311; node 2 is the player's ellipsis response,
+with empty dialogue text. There is no custom UI or conversation setting override.
+Its standard response menu retains the NPC statement in a separate subtitle
+reminder, which the reader previously omitted.
+
+`PermaLoad.bundle`'s `TextMeshProDialogueUI` has these distinct rendered sources:
+
+| Field | Serialized source |
+| --- | --- |
+| `dialogue.npcSubtitle.line` | 2473897409730845878, ordinary NPC line |
+| `dialogue.responseMenu.subtitleReminder.line` | 4507152227624626032, NPC Subtitle Reminder Line TextMeshPro |
+| Shared `portraitName` | 8206214548290545209 |
+| Outer `dialogue.panel` | 8262438308549710308 |
+
+Both `responseMenu.panel` and `subtitleReminder.panel` are **null** in the
+installed prefab. The reminder and response layout belong to the outer Dialogue
+Panel. Native `AbstractUIResponseMenuControls.ShowResponses` (RVA `0x620AB0`)
+calls the reminder's `ShowSubtitle(subtitle)` at `0x620AF6`, before populating
+response buttons. `TextMeshProSubtitleControls.SetActive` (`0x1AEF780`) activates
+the owned line at `0x1AEF874`; a separate reminder panel is unnecessary.
+
+The reader now prefers the visible reminder while the native response menu is
+visible, using its actual label and the outer panel's visibility. Null response
+panels also use that same owned outer panel for focus ownership. Hidden, culled,
+transparent, collected, closed and ended sources remain silent. Moving one
+subtitle between ordinary and reminder controls preserves its delivered identity,
+so the same statement is not repeated. Existing pending-focus handling queues the
+initial response after the body; the body reader never enumerates response text.
+Both installed labels have a `TextMeshProTypewriterEffect`. The reminder also
+pairs its visible prefix with the current native localized full line. A later
+unrelated response state cannot replace or reset that retained statement.
+The bounded diagnostic now identifies reminder selection and the label's failed
+visibility gate, without logging hidden text. No hook was added.
+
+The source-linked dialogue suite now passes **63 checks**, including this exact
+null-panel layout, reminder-only body, visibility and lifecycle gates, opening
+without a subtitle hook, pending cancellation, and ordinary/reminder transitions
+with typewriter prefixes and subsequent unrelated model states.
+Main build passes without warnings/errors. Reading during an actual examination
+remains to be verified by the user; no game was launched.
+
+## Earlier ambient subtitle coverage
+
+The reported campaign session had no `[Dialogue]` entries. The previous reader
+covered only `TextMeshProDialogueUI`, leaving the game's floating NPC barks and
+`CinematicSubtitlePanel` outside its scope. This change reads their actual
+displayed localized labels without enabling subtitles or consuming raw voice
+signals.
+
+`VisibleSubtitleAnnouncer` polls the known cinematic singleton and keeps a small
+registry populated by postfixes on the two `FloatingBark.Bark` overloads. The
+`FloatingBark.Hide` postfix removes that occurrence. No scene scans are used.
+Two matching observations settle text; expired, collected, disabled or invisible
+labels are discarded. Label opacity, culling, hierarchy visibility and cinematic
+canvas opacity must permit rendering. A cinematic also requires `IsActive`.
+The floating source requires positive finite native `secondsLeft`, so old text
+cannot wait indefinitely after its display expires.
+
+The reader yields to interactive dialogue, modal screen content and the caller's
+current speech priority. Cinematic labels precede floating barks; at most one
+line is queued per update. These sources do not own focus or gameplay input.
+Only pending undelivered visible content participates in ordinary speech
+priority, and focus loss/loading/reset clears tracked barks. Existing dialogue
+response reading remains separate and unchanged. Delivered lines log
+`[Dialogue]`; output uses the central `ScreenReader`, without interruption.
+
+## Native evidence
+
+Installed `GameAssembly.dll` and generated interop expose:
+
+| Method | RVA | Observed behavior |
+|---|---|---|
+| `FloatingBark.Bark(string,string)` | `0x173A070` | Creates its UI if absent, checks `IsPlayerVisible`, writes `FloatingUI.textComponent`, assigns display time. |
+| `FloatingBark.Bark(Subtitle)` | `0x173A1E0` | Same visibility gate; calls `LocalizationDialogue.GetActorName` at `0x173A301` and `GetContent` at `0x173A37D`, writes the rendered label at `0x173A3D0`. |
+| `FloatingBark.Hide` | `0x173A740` | Hides the owned floating UI. |
+| `FloatingBark.OnUpdate` | `0x173A850` | Advances the native lifetime and updates floating UI visibility. |
+| `CinematicSubtitlePanel.OnVoiceLine` | `0x2873960` | Requires `IsActive`, resolves localized content into `_subtitleText`, updates target opacity. |
+| `CinematicSubtitlePanel.Show` | `0x2873AB0` | Activates/subscribes the panel. |
+
+The mod never calls these setters, `Show`, or localization/voice callbacks.
+Hooks inspect only `__instance` after native execution and ignore text arguments.
+The three new native targets have unique bodies in the installed address map;
+the full hook safety audit passes 31 regression checks and 48 declarations across
+47 native targets, including unrelated existing hooks.
+
+Native reproduction uses `MethodAddressToToken.db` with installed interop metadata
+to resolve the RVAs, then Capstone disassembly of the installed DLL. Existing
+scratch helpers are in `%TEMP%/LeAccess-landmark-runtime-20261002/` (`disasm.py`,
+`map.json`); inspect the methods above, not synthetic decompiled method bodies.
+
+## Validation and limits
+
+`dotnet run --project tests/LeAccess.VisibleSubtitles.Tests` passes 38 source-linked
+checks covering displayed Spanish text, hidden/disabled/cull gates, cinematic
+activation and alpha, changed deferred content, expiry, same-occurrence dedup,
+rearming, multiple barks, modal/dialogue priority and lifecycle cleanup. Existing
+dialogue tests pass 23 checks. The main no-deploy build has zero warnings/errors.
+
+No game was launched and no listening result is claimed. This reads only the
+listed rendered sources; voice lines without visible subtitles remain silent.
+Real campaign playback must confirm NPC/cinematic delivery with subtitles both
+enabled and disabled, including scene transitions and simultaneous narration.
+
+## Interactive NPC conversation follow-up
+
+The later reported session (log last written 09:46:33) reaches native
+`conversation active` states at lines 515, 528 and 534 but contains no delivered
+`[Dialogue]` lines. This establishes that interaction reaches a conversation,
+not which previous rendering gate rejected its text.
+
+Actual `PermaLoad.bundle` contains `DialogueSystemController` path ID
+`7888734422435858511` and `TextMeshProDialogueUI` path ID
+`8560887158985721276`. Its controller enables NPC subtitles both during lines
+and with responses. The owned NPC subtitle has **null panel** and TMP line path
+ID `2473897409730845878`; the conversation's outer panel remains its visibility
+boundary. This is the existing PixelCrushers UI, not a newly invented LE.Dialog
+panel. `LE.Dialog.LEConversationTrigger` is a conversation trigger.
+
+`DialogueAnnouncer.Update` now discovers the authoritative UI through the raw
+lowercase `PixelCrushers.DialogueSystem.DialogueManager.instance` field and
+`currentDialogueUI`, guarded by its current `conversationController.IsActive`.
+It does not call the uppercase singleton getter, `FindOrCreateInstance`, or
+setters. It reads current subtitle controls, or the same UI's rendered NPC
+subtitle when responses retain it. Native UI replacement/end discards the old
+source; the outer conversation panel must remain visible. A `HideSubtitle`
+callback does not clear a statement that the active native conversation still
+renders. The selected responses retain their existing focus reader, without
+enumerating all choices.
+
+Native `StartConversationInteraction.Interaction` RVA `0x18842B0` closes
+appropriate UI, obtains the player and sends the conversation interaction at
+`0x18844A3`. `TextMeshProDialogueUI.ShowSubtitle` RVA `0x1AE65F0` assigns the
+chosen owned subtitle controls at `0x1AE673A` before delegating its display.
+Interop exposes the raw manager field at `DialogueManager.cs:160`, the raw
+current UI at `DialogueSystemController.cs:1203`, and owned NPC subtitle at
+`TextMeshProDialogueControls.cs:127`. Reading these sources requires no new
+hook. Bounded changed-only `[DialogueStatus]` logs distinguish attachment,
+availability, subtitle visibility, responses and modal priority on the next
+session, at most once per five seconds.
+
+Interactive tests now pass 41 checks, including discovery without show hooks,
+the installed null-panel structure, retained statements after hide callbacks,
+response focus ownership, current text changes, hidden outer panels, native
+end/replacement and discarded deferred content. Actual listening remains
+unverified; the log does not prove which hook or visibility condition failed in
+the previous build. The fix removes hook-only discovery and preserves the
+installed retained-text behavior instead of relaxing visibility.
+
+The generic focus reader also defers an interrupting response announcement when
+the dialogue body has just spoken in the same frame. Its existing pending-focus
+flush queues that initial response without cutting the body. Later deliberate
+response navigation still interrupts. Three source-linked menu regressions cover
+this ordering, bringing that suite to 44 checks.
+
+Discovery also reads `ConversationController.state.subtitle.formattedText` only
+when paired with the active UI's current subtitle controls and a visible matching
+prefix. Native `TextMeshProSubtitleControls.ShowSubtitle` (`0x1AEFB70`) calls
+`LocalizationDialogue.GetContent` at `0x1AEFC53` and writes the localized content
+back into that subtitle's formatted text at `0x1AEFC76`, before display. Thus the
+current model carries the game's rendered localization rather than requiring the
+mod to translate raw database text. Different-language/nonmatching text is never
+substituted for the label. A new native subtitle identity clears the old full
+line, preventing consecutive same-speaker prefix lines from reusing prior text.
+Retained NPC fallback text is not paired with a later player-response state.
+Tests include two-frame stable typewriter prefixes, consecutive shared prefixes,
+localized rendered text differing from raw English and retained response text.

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net6.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../LeAccess/Accessibility/MapSections/MapSection.cs" Link="MapSection.cs" />
+    <Compile Include="../../LeAccess/Accessibility/MapSections/MapSectionCatalog.cs" Link="MapSectionCatalog.cs" />
+    <Compile Include="../../LeAccess/Accessibility/MapSections/MapSectionState.cs" Link="MapSectionState.cs" />
+    <EmbeddedResource Include="../../LeAccess/MapSections/campaign.json" LogicalName="LeAccess.MapSections.campaign.json" />
+    <EmbeddedResource Include="../../LeAccess/MapSections/generated.json" LogicalName="LeAccess.MapSections.generated.json" />
+  </ItemGroup>
+  <Import Project="../LocalizationSources.props" />
+</Project>

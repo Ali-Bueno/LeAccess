@@ -1,0 +1,128 @@
+{
+  "maps": [
+    {
+      "scene": "Z12",
+      "scenePath": "Assets/BundledScenes/Z12.unity",
+      "buildHash": "c8576b3db279ad61f09835dd69cc9d589e5a5cbe",
+      "anchors": [
+        {
+          "path": "SceneObjects/Visuals/Foreground/Deco Folder/BoardedBridge",
+          "x": -26.77,
+          "y": -0.17,
+          "z": 22.040009,
+          "tolerance": 0.01
+        },
+        {
+          "path": "SceneObjects/Visuals/Foreground/Deco Folder/BoardedBridge (1)",
+          "x": -31.970001,
+          "y": -2.17,
+          "z": 63.809998,
+          "tolerance": 0.01
+        },
+        {
+          "path": "SceneObjects/Visuals/Foreground/MicroVerse/Terrain",
+          "x": -91,
+          "y": -6,
+          "z": -76.699997,
+          "tolerance": 0.01
+        }
+      ],
+      "sections": [
+        {
+          "id": "oldroad_bridge_1",
+          "textKey": "map.section.oldroad_bridge_1",
+          "priority": 0,
+          "minY": -0.325159,
+          "maxY": 0.474841,
+          "polygon": [
+            {
+              "x": -24.058425,
+              "z": 29.061709
+            },
+            {
+              "x": -21.003851,
+              "z": 26.193154
+            },
+            {
+              "x": -22.381834,
+              "z": 24.725811
+            },
+            {
+              "x": -22.139113,
+              "z": 24.459235
+            },
+            {
+              "x": -23.918613,
+              "z": 22.838976
+            },
+            {
+              "x": -25.676224,
+              "z": 20.519239
+            },
+            {
+              "x": -26.05951,
+              "z": 20.809646
+            },
+            {
+              "x": -29.423611,
+              "z": 17.22739
+            },
+            {
+              "x": -32.478186,
+              "z": 20.095945
+            }
+          ]
+        },
+        {
+          "id": "oldroad_bridge_2",
+          "textKey": "map.section.oldroad_bridge_2",
+          "priority": 0,
+          "minY": -2.325159,
+          "maxY": -1.525159,
+          "polygon": [
+            {
+              "x": -34.818323,
+              "z": 70.857039
+            },
+            {
+              "x": -30.247619,
+              "z": 70.744416
+            },
+            {
+              "x": -30.297572,
+              "z": 68.717134
+            },
+            {
+              "x": -30.129399,
+              "z": 68.699779
+            },
+            {
+              "x": -30.350882,
+              "z": 66.553607
+            },
+            {
+              "x": -30.361519,
+              "z": 66.12189
+            },
+            {
+              "x": -30.141048,
+              "z": 63.405009
+            },
+            {
+              "x": -30.42904,
+              "z": 63.381639
+            },
+            {
+              "x": -30.550589,
+              "z": 58.448665
+            },
+            {
+              "x": -35.121293,
+              "z": 58.561288
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

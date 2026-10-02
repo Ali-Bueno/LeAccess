@@ -1,0 +1,167 @@
+[
+  {
+    "Name": "Werebear",
+    "PathID": 1238810075477330306,
+    "Guid": {
+      "Data1": -464779962,
+      "Data2": 1330587081,
+      "Data3": 1136592536,
+      "Data4": -1656447045
+    },
+    "EventPath": "event:/Abilities/Druid/Druid_Forms/sfx_combat_druidform_werebear_steps"
+  },
+  {
+    "Name": "Snow",
+    "PathID": 2407956786127121379,
+    "Guid": {
+      "Data1": 887160494,
+      "Data2": 1076243030,
+      "Data3": 1257745840,
+      "Data4": 1069063323
+    },
+    "EventPath": "event:/Combat/John's/Footsteps/sfx_footsteps_snow"
+  },
+  {
+    "Name": "Armour",
+    "PathID": 2585082794774443993,
+    "Guid": {
+      "Data1": 19329027,
+      "Data2": 1282285115,
+      "Data3": -134869363,
+      "Data4": 1269063558
+    },
+    "EventPath": "event:/Combat/John's/Footsteps/sfx_footsteps_armour"
+  },
+  {
+    "Name": "Wood",
+    "PathID": 4224608582414540689,
+    "Guid": {
+      "Data1": -1599689582,
+      "Data2": 1211331962,
+      "Data3": 1259039645,
+      "Data4": 693955642
+    },
+    "EventPath": "event:/Combat/John's/Footsteps/sfx_footsteps_wood"
+  },
+  {
+    "Name": "Spriggan",
+    "PathID": 4406994145432839730,
+    "Guid": {
+      "Data1": 1143546359,
+      "Data2": 1210180966,
+      "Data3": -966131792,
+      "Data4": -1892308764
+    },
+    "EventPath": "event:/Abilities/Druid/Druid_Forms/sfx_combat_druidform_sprigganform_steps"
+  },
+  {
+    "Name": "Mud",
+    "PathID": 4909982931930653279,
+    "Guid": {
+      "Data1": -1774636125,
+      "Data2": 1078812808,
+      "Data3": -1665080694,
+      "Data4": 1776409609
+    },
+    "EventPath": "event:/Combat/John's/Footsteps/sfx_footsteps_mud"
+  },
+  {
+    "Name": "Ice",
+    "PathID": 6229388724561835359,
+    "Guid": {
+      "Data1": -921771577,
+      "Data2": 1145676817,
+      "Data3": -27846493,
+      "Data4": -1889599482
+    },
+    "EventPath": "event:/Combat/John's/Footsteps/sfx_footsteps_ice"
+  },
+  {
+    "Name": "Sand",
+    "PathID": 6418464174638514564,
+    "Guid": {
+      "Data1": -1651031364,
+      "Data2": 1263018041,
+      "Data3": 1950930355,
+      "Data4": 680759971
+    },
+    "EventPath": "event:/Combat/John's/Footsteps/sfx_footsteps_sand"
+  },
+  {
+    "Name": "Concrete",
+    "PathID": 6481628078800709198,
+    "Guid": {
+      "Data1": -1232125423,
+      "Data2": 1174426010,
+      "Data3": -830846533,
+      "Data4": 148521210
+    },
+    "EventPath": "event:/Combat/John's/Footsteps/sfx_footsteps_concrete"
+  },
+  {
+    "Name": "Water_Heavy",
+    "PathID": 7267416408089382036,
+    "Guid": {
+      "Data1": 875980879,
+      "Data2": 1198802404,
+      "Data3": -949527367,
+      "Data4": -1243303349
+    },
+    "EventPath": "event:/Combat/John's/Footsteps/sfx_footsteps_water_heavy"
+  },
+  {
+    "Name": "Grass",
+    "PathID": 7618841358611768670,
+    "Guid": {
+      "Data1": 1422184698,
+      "Data2": 1315540948,
+      "Data3": 1827935151,
+      "Data4": 1868116228
+    },
+    "EventPath": "event:/Combat/John's/Footsteps/sfx_footsteps_grass"
+  },
+  {
+    "Name": "Gravel",
+    "PathID": 8091279170748383977,
+    "Guid": {
+      "Data1": -1694723251,
+      "Data2": 1234617459,
+      "Data3": 998535565,
+      "Data4": -59455498
+    },
+    "EventPath": "event:/Combat/John's/Footsteps/sfx_footsteps_gravel"
+  },
+  {
+    "Name": "Metal",
+    "PathID": 8576247495394533386,
+    "Guid": {
+      "Data1": 1156031969,
+      "Data2": 1198785631,
+      "Data3": 1008576413,
+      "Data4": 1037585669
+    },
+    "EventPath": "event:/Combat/John's/Footsteps/sfx_footsteps_metal"
+  },
+  {
+    "Name": "Water_Light",
+    "PathID": 9028734250022286606,
+    "Guid": {
+      "Data1": 1352783415,
+      "Data2": 1321329726,
+      "Data3": -1257089116,
+      "Data4": -471361175
+    },
+    "EventPath": "event:/Combat/John's/Footsteps/sfx_footsteps_water_light"
+  },
+  {
+    "Name": "Dirt",
+    "PathID": 9167230981946177424,
+    "Guid": {
+      "Data1": -657236694,
+      "Data2": 1163284407,
+      "Data3": 873296268,
+      "Data4": 1716095648
+    },
+    "EventPath": "event:/Combat/John's/Footsteps/sfx_footsteps_dirt"
+  }
+]

@@ -1,4 +1,3 @@
-using GraphicsBackend.Options;
 using LeAccess.Accessibility.Utils;
 using System.Collections.Generic;
 using TMPro;
@@ -34,29 +33,6 @@ public static class TextDetector
                 var mainText = info.mainText;
                 if (!string.IsNullOrWhiteSpace(mainText))
                     description = TextUtils.CleanText(mainText);
-            }
-        }
-        catch { }
-    }
-
-    /// <summary>
-    /// Tries to get label from GraphicsOption components (ToggleOption, SliderOption).
-    /// </summary>
-    public static void TryGetFromGraphicsOption(GameObject go, ref string label)
-    {
-        try
-        {
-            var toggleOption = go.GetComponent<ToggleOption>() ?? go.GetComponentInParent<ToggleOption>();
-            if (toggleOption != null && !string.IsNullOrWhiteSpace(toggleOption.displayName))
-            {
-                label = TextUtils.CleanText(toggleOption.displayName);
-                return;
-            }
-
-            var sliderOption = go.GetComponent<SliderOption>() ?? go.GetComponentInParent<SliderOption>();
-            if (sliderOption != null && !string.IsNullOrWhiteSpace(sliderOption.displayName))
-            {
-                label = TextUtils.CleanText(sliderOption.displayName);
             }
         }
         catch { }
@@ -102,20 +78,9 @@ public static class TextDetector
     /// </summary>
     public static void FindLabelInImmediateContainer(GameObject controlGo, ref string label, ref string description, string excludeValue)
     {
-        var parent = controlGo.transform.parent;
-
-        for (int level = 0; level < 3 && parent != null; level++)
-        {
-            if (IsScrollContent(parent))
-                break;
-
-            FindTextsInSiblings(parent, controlGo, excludeValue, ref label, ref description, level);
-
-            if (label != null)
-                break;
-
-            parent = parent.parent;
-        }
+        var container = FindSingleOptionContainer(controlGo);
+        if (container != null)
+            FindTextsInSiblings(container, controlGo, excludeValue, ref label, ref description, 0);
     }
 
     /// <summary>
@@ -138,7 +103,7 @@ public static class TextDetector
         var allTexts = optionContainer.GetComponentsInChildren<TextMeshProUGUI>();
         foreach (var tmp in allTexts)
         {
-            if (tmp == null || string.IsNullOrWhiteSpace(tmp.text)) continue;
+            if (!TextUtils.IsVisibleLabel(tmp) || string.IsNullOrWhiteSpace(tmp.text)) continue;
 
             var text = TextUtils.CleanText(tmp.text);
             if (string.IsNullOrEmpty(text) || seen.Contains(text)) continue;
@@ -165,49 +130,16 @@ public static class TextDetector
         if (!string.IsNullOrEmpty(excludeValue))
             seen.Add(excludeValue);
 
-        var current = go.transform.parent;
-
-        for (int level = 0; level < 5 && current != null; level++)
+        var container = FindSingleOptionContainer(go);
+        if (container == null) return null;
+        foreach (var tmp in container.GetComponentsInChildren<TextMeshProUGUI>(false))
         {
-            for (int i = 0; i < current.childCount; i++)
-            {
-                var child = current.GetChild(i);
-
-                var tmp = child.GetComponent<TextMeshProUGUI>();
-                if (tmp != null && !string.IsNullOrWhiteSpace(tmp.text))
-                {
-                    var text = TextUtils.CleanText(tmp.text);
-                    if (!string.IsNullOrEmpty(text) && !seen.Contains(text))
-                    {
-                        var textType = TextClassifier.ClassifyText(text);
-                        if (textType == TextType.Label || textType == TextType.Unknown)
-                            return text;
-                    }
-                }
-
-                for (int j = 0; j < child.childCount; j++)
-                {
-                    var grandchild = child.GetChild(j);
-                    tmp = grandchild.GetComponent<TextMeshProUGUI>();
-                    if (tmp != null && !string.IsNullOrWhiteSpace(tmp.text))
-                    {
-                        var text = TextUtils.CleanText(tmp.text);
-                        if (!string.IsNullOrEmpty(text) && !seen.Contains(text))
-                        {
-                            var textType = TextClassifier.ClassifyText(text);
-                            if (textType == TextType.Label || textType == TextType.Unknown)
-                                return text;
-                        }
-                    }
-                }
-            }
-
-            if (IsScrollContent(current))
-                break;
-
-            current = current.parent;
+            if (!TextUtils.IsVisibleLabel(tmp)) continue;
+            string text = TextUtils.CleanText(tmp.text);
+            if (string.IsNullOrWhiteSpace(text) || seen.Contains(text)) continue;
+            var kind = TextClassifier.ClassifyText(text);
+            if (kind == TextType.Label || kind == TextType.Unknown) return text;
         }
-
         return null;
     }
 
@@ -216,33 +148,26 @@ public static class TextDetector
     /// </summary>
     public static Transform FindSingleOptionContainer(GameObject controlGo)
     {
-        var current = controlGo.transform.parent;
+        GameObject setting = null;
+        var boolean = controlGo.GetComponentInParent<LE.Settings.BoolSettingUI>();
+        if (boolean != null) setting = boolean._settingContainer;
+        var numeric = controlGo.GetComponentInParent<LE.Settings.NumericSettingUI>();
+        if (setting == null && numeric != null) setting = numeric._settingContainer;
+        var spinner = controlGo.GetComponentInParent<LE.Settings.SpinnerSettingUI>();
+        if (setting == null && spinner != null) setting = spinner._settingContainer;
+        var flag = controlGo.GetComponentInParent<LE.Settings.EnumToggleSettingUI>();
+        if (setting == null && flag != null) setting = flag._settingContainer;
+        if (UiVisibility.IsVisible(setting) && controlGo.transform.IsChildOf(setting.transform)) return setting.transform;
 
-        for (int level = 0; level < 5 && current != null; level++)
+        Transform result = null;
+        for (var current = controlGo.transform; current != null; current = current.parent)
         {
-            int controlCount = 0;
-            var toggles = current.GetComponentsInChildren<Toggle>(true);
-            var sliders = current.GetComponentsInChildren<Slider>(true);
-            var dropdowns = current.GetComponentsInChildren<TMP_Dropdown>(true);
-
-            controlCount = toggles.Length + sliders.Length + dropdowns.Length;
-
-            if (controlCount == 1)
-                return current;
-
-            if (controlCount == 0)
-            {
-                current = current.parent;
-                continue;
-            }
-
-            if (level == 0)
-                return current;
-
-            return null;
+            if (IsScrollContent(current)) break;
+            var controls = current.GetComponentsInChildren<Selectable>(true);
+            if (controls.Length > 1) break;
+            if (controls.Length == 1) result = current;
         }
-
-        return null;
+        return result;
     }
 
     /// <summary>
@@ -345,12 +270,12 @@ public static class TextDetector
     private static void CollectTextsFromTransform(Transform t, GameObject controlGo, HashSet<string> seen,
         List<(string text, TextType type, int siblingIndex)> results, int siblingIndex, int depth)
     {
-        if (depth > 2) return;
+        if (depth > 2 || !UiVisibility.IsVisible(t.gameObject)) return;
 
         if (t.gameObject == controlGo) return;
 
         var tmp = t.GetComponent<TextMeshProUGUI>();
-        if (tmp != null && !string.IsNullOrWhiteSpace(tmp.text))
+        if (TextUtils.IsVisibleLabel(tmp) && !string.IsNullOrWhiteSpace(tmp.text))
         {
             var text = TextUtils.CleanText(tmp.text);
             if (!string.IsNullOrEmpty(text) && !seen.Contains(text))

@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net6.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
+  <ItemGroup><Compile Include="../../LeAccess/Accessibility/MapSections/PcgMapSections.cs" Link="PcgMapSections.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../../LeAccess/Accessibility/MapSections/MapPlayerFloor.cs" Link="MapPlayerFloor.cs" /></ItemGroup>
+</Project>
