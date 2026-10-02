@@ -49,6 +49,16 @@ internal class MasteryBanner : Component
 { internal CharacterClassID characterClassID; internal Il2CppSystem.Collections.Generic.List<MasteryButton> masteryButtons; }
 internal class MasteryTabButton : Component { internal TabButton _tabButton; }
 internal class TabButton : Component { internal int SelectedIndex; }
+internal class TabUIElement : Selectable
+{ internal TabUIController controller; internal int elementID; }
+internal class TabUIController : Component
+{ internal Il2CppSystem.Collections.Generic.List<GameObject> tabContents; }
+namespace UnityEngine.Localization.Components
+{
+    internal class LocalizeStringEvent : Component { internal LocalizedString StringReference; }
+    internal class LocalizedString : NativeObject { internal EntryReference TableEntryReference; }
+    internal class EntryReference : NativeObject { internal string Key; }
+}
 internal class PassivePanelData
 {
     internal class MasteryData : NativeObject

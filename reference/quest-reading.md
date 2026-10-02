@@ -4,7 +4,9 @@ Implemented 2026-10-02 for Steam 1.5.0.1, build 25663618. Game remained closed;
 controller reachability and listening validation are pending.
 
 `QuestAccessibility` follows the current navigation component or its active
-selectable to a `QuestButton`, `QuestButtonGenerator`, or `QuestPanel`. It caches
+selectable to a `QuestButton`, `QuestButtonGenerator`, or `QuestPanel`, and follows
+the declared `WorldMapPanel._mapPanel.questPanel.buttonGenerator` chain while
+the map owns quest navigation. It caches
 the declared generator and uses it only while enabled, visible navigation belongs to that
 generator, panel, or its declared `QuestInformation`. There are no scene-wide
 searches or new native hooks. Active/pending flags are cached during Update;
@@ -33,6 +35,18 @@ filter and nested pin controls retain ordinary focus announcements.
 
 ## Native ownership evidence
 
+The follow-up controller audit found a missed navigation owner: the map itself
+handles quest changes. `WorldMapPanel.HandleNavigateInput` RVA `0x207DF40`
+delegates to `_mapPanel`; `MapPanel.HandleNavigateInput` RVA `0x1760920` calls
+`QuestPanel.SelectNextQuest` / `SelectPreviousQuest` without selecting a descendant
+of the quest panel. The old ancestor-only check therefore rejected native map
+navigation even with a correct selected quest. The reader now accepts these typed
+map links, checks enabled/visible map owners and reciprocal generator/panel
+identity, and retains all selected-content guards. A cold `QuestInformation`
+selection can resolve the registered `WORLD_MAP_PANEL` only when that map's
+generator explicitly references this exact information component. This avoids
+depending on a previous quest-button focus or a particular UI hierarchy.
+
 Current installed `MethodAddressToToken.db` and `LE.dll` metadata identify the
 following original `GameAssembly.dll` bodies. Read-only Capstone disassembly
 confirmed their relationships; runtime code uses typed interop fields rather
@@ -55,7 +69,7 @@ Analysis used the existing metadata-map/disassembly workflow, copied into
 ## Validation and limits
 
 `dotnet run --project tests/LeAccess.Quests.Tests/LeAccess.Quests.Tests.csproj`
-passes 77 checks against source-linked production readers/state and small game
+passes 88 checks against source-linked production readers/state and small game
 doubles. Cases cover structured content, stale quest/title/sentinel rejection,
 foreign/hidden rows, pin/completion changes, switching while pending, duplicate
 speech, lifecycle and priority gates, unavailable speech, English/Spanish
@@ -69,9 +83,10 @@ build was installed with its hash recorded in `STATUS.md`.
 The selected button's visible title is required; no scene text or asset-name
 guess supplies missing identity. If details are hidden or lag behind selection,
 the reader announces the current title/state and waits for safely owned details.
-A cold opening focused directly on an information widget outside all discoverable
-panel/generator hierarchies needs a subsequent quest-button focus to establish
-the cached owner. Actual scene hierarchy still needs controller testing.
+A cold information widget must have a discoverable declared owner through the
+registered map or panel hierarchy. The new regressions cover map-owned navigation,
+separate information roots, disabled/foreign/missing owners and hidden journals.
+Actual controller/listening behavior still needs testing.
 
 QuestPanel's passive-point/idol counters describe campaign totals, so they are
 not presented as selected-quest rewards. Rewards use the information widget's

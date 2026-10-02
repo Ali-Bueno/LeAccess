@@ -1,6 +1,6 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-02. The user confirms Cadáveres ardientes is named, but its examination body was silent. The response-menu reminder is now read. A separate early offline click failed during native startup; mode selection now waits for native readiness. Both fixes are deployed; listening remains required. Keep the game closed.
+**Updated:** 2026-10-02. User confirms the latest character-name editing fix works: typing and returning with Circle now preserve the name. Earlier menu, tooltip, quest, portal and subtitle improvements remain installed. Next menu issues await the user's description. Keep the game closed.
 
 **Repository snapshot:** Steam port, accessibility readers, en/es catalogs,
 runtime map data, extraction tools, tests and investigation references are
@@ -20,7 +20,7 @@ User-confirmed behavior and unverified follow-up fixes remain distinguished belo
 
 ## Next step / blocker
 
-**Next check:** examine Cadáveres ardientes and hear its complete description before the response. The [owned dialogue reminder](reference/npc-subtitles.md) was missing from the reader. Also test an early "Jugar sin conexión" press: the [startup guard](reference/offline-startup.md) retains that choice until loading ends, instead of entering the recorded invalid transition. NPC approach names are now user-confirmed. **Do not open the game: the user tests independently.**
+**Next task:** investigate the remaining menu issues once the user describes them. The latest [character-name fix](reference/character-name-reading.md) is user-confirmed. Other [menu](reference/creation-menu-reading.md), [manual-detail](reference/skill-inventory-buttons.md), world and subtitle listening checks remain pending. **Do not open the game: the user tests independently.**
 
 English/Spanish mod speech now follows the game's language, with editable catalogs
 and English fallback. [Language testing](reference/localization.md) is pending.
@@ -57,22 +57,22 @@ establish local junction coverage. Connection counts do not prove open passages.
 | Area | Current evidence / remaining work |
 |---|---|
 | Steam port | Loader/NVDA and InGame in Camino ancestral verified. Feature validation remains incomplete. |
-| Native hook safety | 31 checks; 50 declarations / 49 distinct native targets validated against original. |
+| Native hook safety | 31 checks; 59 declarations / 58 distinct native targets validated against installed game. |
 | Early online/offline selection | User's mode click deferred until native Login is ready; observed SystemLoading transition failure preserved in logs. 49 checks; fresh startup listening pending. |
 | Menus/focus | Owned labels/settings and focus polling; initial dialogue response no longer interrupts same-frame body. 44 checks. |
 | Mod localization | Automatic game language, en/es catalogs, override and per-key fallback; 216 checks including startup waiting speech. |
 | Return from Start | Character creation owner/control restored after pause closes; 134 checks. User confirms it works. |
 | Internal panel chatter | Removed; background Forge/Skill Tree opening or closing no longer speaks object names. |
 | Tutorials/popups/terms | Current bindings added to identified tutorial notices; passive tutorials do not own gameplay input. 71 checks. |
-| Visible subtitles | Owned response reminder now covers examination descriptions with null panels and typewriter effects. 63 dialogue + 38 ambient/cinematic checks; listening pending. |
+| Visible subtitles | Added localized NPC-message/player narrative path, including full offline; deduplicates floating lines. 63 dialogue + 69 ambient/cinematic checks. Audio-only vocalizations have no transcript. |
 | Hints/notifications | Gameplay HUD bar silent; menu actions deduplicated across device changes. 76 binding/prompt and 27 announcement checks; notification checks previously 47. |
 | Controller menu/zones | Announces opening with neutral stick, then selected localized option with interruption; 38 checks. Listening pending. |
-| Classes/masteries | Current typed selection, localized descriptions/bonuses and interruption on navigation. 47 checks. Original ClassTab hierarchy and carousel description availability still need runtime verification. |
-| Skills/assigned buttons | Descriptions user-confirmed; equipped status/current buttons included. First late tooltip appends only new details without interrupting. 100 checks; listening pending. |
+| Classes/masteries | Installed prefab's 20 tabs supply five class and fifteen mastery descriptions. 67 checks; controller/listening pending. |
+| Skills/assigned buttons | Right-stick-up reread refreshes displayed stats; native sibling labels now accompany values. 109 checks; listening pending. |
 | Passive nodes | Native-verified cell selection, localized name/points/details/requirements; 54 checks. Controller/listening pending. |
-| Quest journal | Selected title/chapter, completion/pin states, owned objectives/rewards; 77 checks. Controller/listening pending. |
-| Character name errors | Owned visible creation/local-slot validation messages, deduplication and keyboard/modal gates; 38 checks. Editing behavior still needs testing. |
-| Inventory | Owned modern tooltip includes visible usable actions with current buttons/hold/overrides; 64 checks. Listening pending. |
+| Quest journal | Map-owned selection and direct description focus now resolve the real quest owner. 88 checks; controller/listening pending. |
+| Character name editing | User confirms the latest typing/return fix works. Circle keeps the name; physical entry and owned device transitions retain focus. Eight hooks, 160 checks. |
+| Inventory | Right-stick-up details use visible tooltip or native item-formatting fallback. 72 service + 50 model checks; listening pending. |
 | Ground loot | New targeting API, brief current-item names; 67 checks. Listening pending. |
 | Radar | Consistent sampled NavMesh origin, gameplay/death gates, 100 ms buffering retained; 357 navigation checks. Listening pending. |
 | NPC/world sounds | Repeating gold/equipment/interactable cues; removed invalid loot click-listener requirement; 112 checks. Equipment filter rejection now distinguished in logs. |
@@ -81,32 +81,34 @@ establish local junction coverage. Connection counts do not prove open passages.
 | Quest ping | Removed as requested. Continuous sonar remains opt-in. |
 | Nearest enemy | Owned visual display/ActorData; 136 checks. Latest log announces Reptador chamuscado and Ojo de Rahyeh offline. Audible results still need confirmation. |
 | Life/mana | D2R percentage bands, critical priority, R/Back/View manual report, offline/online sources and typed-input gates; 379 checks. Online hierarchy, controller mapping and listening pending. |
-| Nearby landmarks | Missing listener reference now resolves exact same-object tag, as installed Z12/Z22 exits require; 95 checks. Listening pending. |
+| Nearby landmarks | Added explicitly owned modern portal labels, retaining listener/range/destination guards. 107 checks; listening pending. |
 | Spatial map sections | 750 guarded sections across 58 layouts, including 16 Monolith layouts. Entry overview defaults off. Listening pending. |
 | Live map places | Latest Z22 log confirms rig ownership and floor contact, but visited Plane/Terrain names lack specific place semantics. 136 checks; broader named-place coverage remains unverified. |
 | Generated rooms | Native rooms and tagged passages, entrance/exit and design connections; 66 adapter checks. Edges/ambiguous floors omitted; listening pending. |
 | Ground descriptions | Optional, disabled by default per user request. Verified material research retained; 61 adapter checks. |
-| Other gaps | Remaining character input interaction failures; full stash/vendor/crafting coverage needs controller checks; transitions without WorldObjectClickListener. |
+| Other gaps | Further menu issues await the user's report; full stash/vendor/crafting coverage needs controller checks; transitions without WorldObjectClickListener. |
 
 ## References
 
-**Pre-publication validation:** all **42 standalone C# suites pass**, totaling
-**54,861 checks** (including 51,088 catalog checks), with zero failures. The native
-audit passes 31 regressions and validates 50 declarations / 49 targets against
-the installed game. All 20 Python navigation-extraction tests also pass.
-The full mod builds without warnings/errors with deployment
-disabled. No game or audio device was opened for this validation. Individual
-feature results and remaining listening limits are recorded in the linked references.
+**Previous pre-publication baseline:** all **42 standalone C# suites passed**, totaling
+**54,861 checks** (including 51,088 catalog checks), with zero failures. All 20
+Python navigation-extraction tests also passed. That baseline predates this follow-up.
 
-Build/deploy completed with zero warnings/errors. Installed and built DLL hashes
-match; existing config hash stayed unchanged. The game remained closed. The
-10:27 user log confirms the corpse name and attached dialogue UI with an unread
-response reminder; the earlier failed startup survives in the preserved Unity
-Player-prev log. These two fixes have not yet been heard in a live session.
-Broader live map coverage and multiplayer proximity also remain unverified.
-Installed main DLL SHA256: `2AEF1C43D3EF567746800E345D3446701938C683EBCE2375B7F22BBEF80275CC`.
+**Keyboard follow-up validation:** **369 checks** across name editing (160),
+pause focus (134), menu reading (44) and native safety (31). All 59 declarations /
+58 distinct native targets validate. Main build/deploy has zero warnings/errors;
+installed and built hashes match, config unchanged. No game was opened.
+The earlier menu/subtitle baseline passed 1,461 checks across 20 suites before
+this close/focus follow-up.
 
-Follow-up listening: examination body and early offline selection first, then
+The earlier 11:06 gameplay log contains the full corpse examination and some ambient lines;
+the newly covered native paths still require listening. Inventory's exact visual
+rejection remains undetermined; [manual model details](reference/item-tooltip-model.md)
+provide a separate verified source without weakening those visual guards.
+Broader live map coverage and multiplayer proximity remain unverified.
+Installed main DLL SHA256: `871A8B856292AC138AE6CD614C080D67949D23F7B116BA7BDA1B2BBECC46E5E9`.
+
+Follow-up listening: the remaining menu/manual-detail checks above, then
 skill repetition, NVDA keyboard commands while using the controller, nearby
 player names online, repeated world cues, menu bindings and map places. Detailed
 checks and remaining coverage gaps are in each feature's linked reference.
@@ -139,6 +141,8 @@ room number, entrance/exit and connection count; a connection can still be block
 - [Mod localization and translator instructions](reference/localization.md)
 - [Additional menu reading audit](reference/menu-reading-audit.md)
 - [Additional tooltip reading audit](reference/tooltip-reading-audit.md)
+- [Creation class/mastery descriptions and installed prefab](reference/creation-menu-reading.md)
+- [Manual item details from native presentation data](reference/item-tooltip-model.md)
 - [Skill tooltip implementation](reference/skill-details.md)
 - [Passive node implementation and native evidence](reference/passive-reading.md)
 - [Quest journal implementation and native evidence](reference/quest-reading.md)

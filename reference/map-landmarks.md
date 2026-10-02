@@ -20,13 +20,24 @@ equal distances use instance ID for a stable choice. Dead players and stale
 scene/player objects are rejected. No global scene search, new native hook or
 dependency is involved.
 
-Only three explicit `HoverTagOnMouseOver.HoverTargetType` values are read:
+The following explicit `HoverTagOnMouseOver.HoverTargetType` values are read:
 
 | Type | Authoritative text |
 |---|---|
 | `SIGNPOST` | The game's authored `hoverText`, cleaned of formatting. |
 | `ZONE_TRANSITION` | Live `sceneInteraction.sceneName`, resolved through known scene metadata and `LocalizedName`. |
 | `DUNGEON_TRANSITION` | Live `dungeonTransitionInteraction.sceneName`, resolved the same way. |
+| `OTHER` / `LOCALIZATION_KEY` on an owned modern portal | The native initialized portal's localized `hoverText`, including its destination or player name. |
+
+Modern portals were previously silent because their native initialization uses
+`OTHER` and `LOCALIZATION_KEY`, neither of which the landmark reader accepted.
+These types now require an enabled current-scene `PortalVisualController` whose
+`mouseListenerObj` is exactly the candidate listener's GameObject and whose
+`hoverTag` is exactly the tag being read. The declared portal tag also resolves
+a null listener association when no same-object tag exists. A generic tag, nearby
+portal, stale explicit association or different listener cannot supply identity.
+The native `isNonInteractableByPlayer()` check and the listener's existing
+`CanInteract()` and range checks must all permit the candidate.
 
 The reader uses the listener's explicit `hoverTagOnMouseOver` association. When
 that optional field is null, it reads the tag on the **exact same GameObject**;
@@ -90,6 +101,18 @@ the owning scene's name, not the destination room.
 
 ## Native label evidence
 
+Follow-up read-only disassembly of the same installed build identifies
+`PortalVisualController._InitializeAsync_d__25.MoveNext` RVA `0x190C750`.
+It initially assigns `OTHER` at `0x190D6C9`, then branches by portal type to
+initialize localized labels. Destination branches call
+`SceneList.TryGetNonDefaultSceneDetails`, `SceneDetails.LocalizedName` and
+`HoverTagOnMouseOver.SetHoverText` (examples at `0x190D8EE` / `0x190D9F3` /
+`0x190DA0A` and `0x190DB28` / `0x190DC06` / `0x190DC1D`). These branches
+assign `LOCALIZATION_KEY` at `0x190D996` / `0x190DBAF`. The tag's native setter
+stores the localized result back into `hoverText`; the mod reads it without
+calling the setter. Personal/return/town portal variants use this explicit modern
+owner path. Older or collider-only portal implementations remain unverified.
+
 `HoverTagOnMouseOver.SetHoverText()` RVA `0x1150960` dispatches on the named
 type enum. Signposts render `hoverText` directly. Zone/dungeon cases resolve
 their interaction's destination through `SceneList.GetSceneDisplayName`.
@@ -132,7 +155,7 @@ Reproduction evidence is in
 records prove installed ownership, not that the patched reader was heard in a
 running game.
 
-Two source-linked suites pass 95 checks: probe 41 and service 54. Current-scene
+Two source-linked suites pass 107 checks: probe 53 and service 54. Current-scene
 ownership, ranges, nearest selection, stale destination text, per-listener
 failure isolation, menu/lifecycle handling, deduplication, speech priority and
 real en/es formatting are covered with host doubles. Four existing suites also

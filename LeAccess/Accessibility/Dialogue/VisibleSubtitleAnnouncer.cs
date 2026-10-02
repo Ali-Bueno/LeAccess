@@ -14,10 +14,22 @@ internal static class VisibleSubtitleAnnouncer
     private static readonly Dictionary<int, FloatingBark> Barks = new();
     private static readonly ScreenContentTracker BarkTracker = new();
     private static readonly ScreenContentTracker CinematicTracker = new();
+    private static readonly SubmittedSubtitleTracker Submitted = new();
+    private static readonly object SubmissionLock = new();
     private static readonly List<int> Expired = new();
     private static int _cinematicId;
     private static string _lastFailure;
     internal static bool HasPendingContent { get; private set; }
+
+    internal static void NpcMessageSubmitted(string content, string sender)
+    {
+        try
+        {
+            lock (SubmissionLock)
+                Submitted.Submit(TextUtils.CleanText(content), TextUtils.CleanText(sender), Now);
+        }
+        catch (Exception ex) { ReportFailure(ex); }
+    }
 
     internal static void BarkShown(FloatingBark bark)
     {
@@ -27,6 +39,7 @@ internal static class VisibleSubtitleAnnouncer
             int id = bark.GetInstanceID();
             Barks[id] = bark;
             BarkTracker.Hide(id);
+            lock (SubmissionLock) Submitted.ForgetRendered(id);
         }
         catch (Exception ex) { ReportFailure(ex); }
     }
@@ -39,6 +52,7 @@ internal static class VisibleSubtitleAnnouncer
             int id = bark.GetInstanceID();
             Barks.Remove(id);
             BarkTracker.Hide(id);
+            lock (SubmissionLock) Submitted.ForgetRendered(id);
         }
         catch (Exception ex) { ReportFailure(ex); }
     }
@@ -68,12 +82,23 @@ internal static class VisibleSubtitleAnnouncer
                         canSpeak && !cinematicVisible, out string announcement);
                     HasPendingContent |= pending && announcement == null;
                     if (announcement == null) continue;
-                    Speak(announcement);
-                    canSpeak = false;
+                    if (SpeakRendered(pair.Key, announcement)) canSpeak = false;
                 }
                 catch (Exception ex) { Expired.Add(pair.Key); ReportFailure(ex); }
             }
-            foreach (int id in Expired) { Barks.Remove(id); BarkTracker.Hide(id); }
+            foreach (int id in Expired)
+            {
+                Barks.Remove(id); BarkTracker.Hide(id);
+                lock (SubmissionLock) Submitted.ForgetRendered(id);
+            }
+            string submitted;
+            lock (SubmissionLock)
+            {
+                if (DialogueAnnouncer.HasActiveContent || ScreenContentAnnouncer.HasActiveContent)
+                    Submitted.DiscardPending();
+                HasPendingContent |= Submitted.TryTake(canSpeak && !cinematicVisible, Now, out submitted);
+            }
+            if (submitted != null) Speak(submitted, "DialogueNpcMessage");
         }
         catch (Exception ex) { Reset(); ReportFailure(ex); }
     }
@@ -85,11 +110,15 @@ internal static class VisibleSubtitleAnnouncer
             IsAlive(panel._canvasGroup) && panel._canvasGroup.alpha > 0 &&
             UiVisibility.IsVisible(panel.gameObject) ? Read(panel._subtitleText) : null;
         int id = text != null ? panel.GetInstanceID() : 0;
-        if (_cinematicId != id) { CinematicTracker.Reset(); _cinematicId = id; }
+        if (_cinematicId != id)
+        {
+            lock (SubmissionLock) Submitted.ForgetRendered(_cinematicId);
+            CinematicTracker.Reset(); _cinematicId = id;
+        }
         if (id == 0) return false;
         bool pending = CinematicTracker.Observe(id, text, canSpeak, out string announcement);
         HasPendingContent |= pending && announcement == null;
-        if (announcement != null) Speak(announcement);
+        if (announcement != null) SpeakRendered(id, announcement);
         return true;
     }
 
@@ -102,15 +131,27 @@ internal static class VisibleSubtitleAnnouncer
         return string.IsNullOrWhiteSpace(text) ? null : text;
     }
 
-    private static void Speak(string text)
+    private static void Speak(string text, string source = "Dialogue")
     {
         ScreenReader.Speak(text, interrupt: false);
-        Plugin.Log.LogInfo($"[Dialogue] {text}");
+        Plugin.Log.LogInfo($"[{source}] {text}");
     }
+
+    private static bool SpeakRendered(int id, string text)
+    {
+        lock (SubmissionLock)
+            if (Submitted.ObserveRendered(id, text, Now)) return false;
+        Speak(text);
+        return true;
+    }
+
+    private static double Now => (double)System.Diagnostics.Stopwatch.GetTimestamp() /
+        System.Diagnostics.Stopwatch.Frequency;
 
     internal static void Reset()
     {
         Barks.Clear(); Expired.Clear(); BarkTracker.Reset(); CinematicTracker.Reset();
+        lock (SubmissionLock) Submitted.Reset();
         _cinematicId = 0; HasPendingContent = false;
     }
 

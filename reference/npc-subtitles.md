@@ -1,5 +1,56 @@
 # Visible NPC subtitles — Steam 1.5.0.1
 
+## Ambient speech and the offline NPC channel (2026-10-02)
+
+The later installed `BepInEx/LogOutput.log`, last written 11:06:42 local,
+records the complete Burning Corpses description at line 755, Grael's dialogue
+at 1016–1033, and ambient lines such as “Fuego... por todas partes...” at 1669
+and “No es seguro volver.” at 1676. This confirms delivery through some existing
+rendered subtitle paths; it does not establish complete NPC/player coverage.
+
+Native inspection found another speech route that has **no floating label**:
+`VoiceLineHandlerBase.TryPlayLineInternal` (RVA `0x2835890`) plays its selected
+voice, checks native proximity, localizes text at `0x2835C57` and actor name at
+`0x2835CB7`, then submits an NPC message through `SystemMessageService`.
+`NpcBarkInChat.Interaction` (`0x187A920`) also submits localized NPC text.
+`ActorBarkHandler.BarkImpl` (`0x27742E0`) publishes both a floating bark and that
+message, so the two paths must be deduplicated.
+
+`LE.Chat.Common.ChannelCategory.NpcDialogue` identifies this authored channel.
+Crucially, `LE.Chat.FullOfflineChatSystem.SubmitNpcMessage` is the shared empty
+native body at `0x3D2F40` (`ret 0`): polling chat labels cannot recover these lines
+in full offline mode. The reader now observes a postfix on the unique upstream
+`LE.Services.SystemMessageService.SubmitNpcMessage(string content, string sender)`
+at `0x1C9AB00`. It consumes the game's already localized submission, never raw
+voice assets, ordinary player chat, or hidden conversation database entries.
+This additional path intentionally does not require a visible chat window.
+The shared empty offline method is **not hooked**.
+
+The callback captures only cleaned managed strings. A locked queue drains on the
+existing subtitle update, uses noninterrupting centralized speech, and yields to
+cinematic/current speech. Interactive dialogue and modal content discard queued
+ambient lines; focus loss/loading/reset clear them. `SubmittedSubtitleTracker`
+uses explicit accessibility backlog limits of 16 pending lines and ten seconds,
+so a burst cannot build an unbounded or stale narration queue. These are mod
+scheduling limits, not inferred game durations. Duplicate submissions and the
+same floating/cinematic occurrence are suppressed in either delivery order.
+Later repeated lines can speak again. New-source delivery logs
+`[DialogueNpcMessage]`; rendered sources retain `[Dialogue]`.
+
+Authored player narrative is included when the game sends it through this NPC
+channel or one of the existing subtitle surfaces. This does **not** transcribe
+every player vocalization: `PlayerVoiceEventManager.EventVoiceLine` carries FMOD
+events without subtitle text; its `play` native body (`0x15B3B00`) invokes voice
+playback without publishing an NPC line. Combat/error barks with no authored
+text remain outside subtitle reading.
+
+The source-linked suite passes **69 checks** (38 prior + 31 new), including
+offline/no-UI delivery, localization, priority, lifecycle, empty content, bounded
+backlog, expiration, repeated speech and both duplicate orders. The installed
+native audit passes 31 regressions and **51 declarations / 50 targets**, including
+the new hook. Listening to the added path and player narrative still requires
+the user's next session; no game was launched for this work.
+
 ## Burning corpses examination follow-up (2026-10-02)
 
 The user confirms that **Cadáveres ardientes** is named on approach, but its

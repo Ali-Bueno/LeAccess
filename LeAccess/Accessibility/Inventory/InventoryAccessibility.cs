@@ -34,7 +34,7 @@ internal static class InventoryAccessibility
         catch (Exception ex) { ReportFailure(ex); return false; }
     }
 
-    internal static void Update()
+    internal static void Update(bool readDetails = false)
     {
         try
         {
@@ -42,6 +42,8 @@ internal static class InventoryAccessibility
             if (!IsAlive(container)) { Announcements.Reset(); return; }
             var entry = container.currentlySelectedItem;
             string key, text;
+            ItemData selectedData = null;
+            bool hasTooltip = false;
             if (entry is null || entry.WasCollected)
             {
                 var slot = container.currentFocusSlot;
@@ -51,14 +53,15 @@ internal static class InventoryAccessibility
             else
             {
                 var data = entry.data;
+                selectedData = data;
                 var itemPointer = data is not null && !data.WasCollected ? data.Pointer : IntPtr.Zero;
                 key = $"{container.GetInstanceID()}:item:{entry.Pointer}:{itemPointer}";
                 text = null;
-                if (data is not null && !data.WasCollected &&
-                    !ItemTooltipReader.TryReadForItem(data, container.gameObject, out text))
+                if (data is not null && !data.WasCollected)
                 {
+                    hasTooltip = ItemTooltipReader.TryReadForItem(data, container.gameObject, out text);
                     // A stalled tooltip must not withhold the selected item's own localized identity.
-                    var unpacked = data.getAsUnpacked();
+                    var unpacked = hasTooltip ? null : data.getAsUnpacked();
                     if (unpacked is not null && !unpacked.WasCollected)
                         text = ScreenContentTracker.Combine(new[]
                         {
@@ -66,10 +69,30 @@ internal static class InventoryAccessibility
                         });
                 }
             }
-            if (!Announcements.Observe(key, text, ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame,
-                out string announcement)) return;
+            string requestedText = text;
+            if (readDetails && !hasTooltip && selectedData is not null && !selectedData.WasCollected)
+            {
+                if (!ItemTooltipModelReader.TryRead(selectedData, container, out requestedText))
+                {
+                    requestedText = ScreenContentTracker.Combine(new[] { text, ModText.Get("inventory.details_unavailable") });
+                    string failure = ItemTooltipModelReader.LastFailure;
+                    if (failure != null && failure != _lastFailure)
+                    {
+                        _lastFailure = failure;
+                        Plugin.Log.LogWarning($"Manual inventory details unavailable: {failure}");
+                    }
+                }
+            }
+            bool announced = Announcements.Observe(key, text,
+                ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame, out string announcement);
+            if (readDetails && ScreenReader.IsAvailable() && !string.IsNullOrWhiteSpace(requestedText))
+            {
+                Announcements.Observe(key, text, true, out _);
+                announcement = requestedText;
+            }
+            else if (!announced) return;
             ScreenReader.Speak(announcement, interrupt: true);
-            Plugin.Log.LogInfo($"[Inventory] {announcement}");
+            Plugin.Log.LogInfo($"[{(readDetails ? "Inventory details" : "Inventory")}] {announcement}");
         }
         catch (Exception ex) { Announcements.Reset(); ReportFailure(ex); }
     }

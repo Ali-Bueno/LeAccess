@@ -48,11 +48,10 @@ Common.GetClass/GetMastery (RVAs 0x193BE00/0x193BE70) remain appropriate for raw
 definition names: they pass the original input as the localization fallback.
 The class suite has 47 checks, including preserving an already localized title.
 
-Carousel descriptions require a MasteryBanner for the selected class ID. The
-presence and hierarchy of the old ClassTabPaladin/VoidKnight/Base objects have not
-been verified in the original installation: their generic visible labels remain
-readable, but typed description coverage needs the user's later test. No internal
-object name or longest ancestor paragraph is used to fabricate a description.
+The [subsequent installed-prefab investigation](creation-menu-reading.md) confirmed
+that character creation uses TabUIElement/content links and has no MasteryBanner.
+The new typed creation reader covers those actual class/mastery descriptions;
+the class suite now has 67 checks. Controller/listening validation remains pending.
 
 ## Nearest enemy
 

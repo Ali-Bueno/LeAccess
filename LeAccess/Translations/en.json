@@ -12,6 +12,7 @@
   "keyboard.open_named": "Screen keyboard: {0}",
   "controller.menu": "Controller menu",
   "inventory.empty_slot": "Empty slot",
+  "inventory.details_unavailable": "Item details are unavailable.",
   "node.points": "{0} of {1} points allocated",
   "node.requirement_met": "{0}, requirement met",
   "node.requirement_unmet": "{0}, requirement not met",

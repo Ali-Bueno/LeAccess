@@ -1,5 +1,16 @@
 # Menu reading audit — Steam 1.5.0.1
 
+## Native/prefab follow-up (2026-10-02)
+
+The latest user report led to verified fixes for [creation tabs and class
+descriptions](creation-menu-reading.md), [explicit name-keyboard activation](character-name-reading.md),
+[map-owned quest selection](quest-reading.md), [modern portal labels](map-landmarks.md),
+[manual right-stick item/skill details](skill-inventory-buttons.md),
+[ability stat labels](skill-details.md) and [additional ambient/player subtitle
+events](npc-subtitles.md). These follow-ups supersede the earlier audit's affected
+gaps below. Native and host tests establish the sources and guards; controller
+listening remains pending. No game was launched during this investigation.
+
 ## Listening follow-up: repeated HUD controls (2026-10-02)
 
 The later session (log last written 09:46:33) repeatedly spoke the persistent

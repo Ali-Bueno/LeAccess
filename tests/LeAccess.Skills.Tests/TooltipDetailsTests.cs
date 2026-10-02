@@ -95,6 +95,34 @@ internal static class TooltipDetailsTests
         ability.minionTagsText.alpha = 0;
         check(SkillTooltipDetailsReader.ReadAbility(ability) == "Fuego, hechizo",
             "Hidden stat groups and transparent minion tags are omitted");
+        var labeledAbility = new GameObject().Add(new UITooltipAbility { statFields = new() });
+        var statLabels = new List<TMP_Text>();
+        var statValues = new List<TMP_Text>();
+        foreach (var pair in new[] { ("DPS (estimado):", "39,2"), ("Coste de maná:", "12"),
+            ("Recarga:", "10s"), ("Coste de canalización:", "20") })
+        {
+            var root = labeledAbility.gameObject.Child();
+            statLabels.Add(Text(root.Child(), pair.Item1));
+            var value = Text(root, pair.Item2);
+            statValues.Add(value);
+            labeledAbility.statFields.Add(new UITooltipAbility.BigStatField { obj = root, textField = value });
+        }
+        Text(labeledAbility.gameObject, "Unrelated ability action");
+        details = SkillTooltipDetailsReader.ReadAbility(labeledAbility);
+        check(details == "DPS (estimado): 39,2. Coste de maná: 12. Recarga: 10s. Coste de canalización: 20",
+            "Installed stat layout reads localized sibling labels before values and retains native units");
+        check(!details.Contains("Unrelated"), "Ability stat scope excludes unrelated tooltip sections");
+        statValues[0].alpha = 0;
+        details = SkillTooltipDetailsReader.ReadAbility(labeledAbility);
+        check(!details.Contains("DPS") && !details.Contains("39,2") && details.Contains("Recarga: 10s"),
+            "Invisible stat value does not announce a detached label or affect adjacent stats");
+        statValues[0].alpha = 1;
+        statLabels[0].text = "Estimated damage per second:";
+        check(SkillTooltipDetailsReader.ReadAbility(labeledAbility).StartsWith("Estimated damage per second: 39,2"),
+            "Changed game localization is read directly without a stat index or mod translation table");
+        statValues[2].canvasRenderer.cull = true;
+        check(!SkillTooltipDetailsReader.ReadAbility(labeledAbility).Contains("Recarga"),
+            "Culled cooldown value does not leak through visible stat siblings");
         var legacy = new GameObject().Add(new NodeTooltipManager());
         legacy.requirementQuestText = Text(legacy.gameObject, "Completa la misión");
         legacy.altText = Text(legacy.gameObject, "Detalle alternativo");

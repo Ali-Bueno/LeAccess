@@ -46,6 +46,7 @@ internal static class ClassSelectionReader
     {
         selection = default;
         if (!UiVisibility.IsVisible(go)) return false;
+        if (CreationClassTabReader.TryRead(go, out selection)) return true;
         var tab = go.GetComponentInParent<MasteryTabButton>();
         if (IsAlive(tab))
         {
@@ -96,6 +97,8 @@ internal static class ClassSelectionReader
 
     private static string ReadBaseDescription(CharacterSelect character, CharacterClassID classId)
     {
+        string creationDescription = CreationClassTabReader.ReadBaseDescription(character, classId);
+        if (!string.IsNullOrWhiteSpace(creationDescription)) return creationDescription;
         if (!IsAlive(_character) || _character.Pointer != character.Pointer)
         {
             _character = character;
@@ -113,5 +116,5 @@ internal static class ClassSelectionReader
         return null;
     }
 
-    internal static void Reset() { _character = null; _banners = null; }
+    internal static void Reset() { _character = null; _banners = null; CreationClassTabReader.Reset(); }
 }

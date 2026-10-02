@@ -75,7 +75,10 @@ internal static class SkillTooltipDetailsReader
         if (stats is not null && !stats.WasCollected)
             foreach (var stat in stats)
                 if (stat is not null && !stat.WasCollected && IsAlive(stat.obj) && UiVisibility.IsVisible(stat.obj))
-                    fragments.Add(Read(stat.textField));
+                {
+                    // The localized stat name is a sibling of the numeric text in the owned stat box.
+                    if (!string.IsNullOrWhiteSpace(Read(stat.textField))) fragments.Add(Read(stat.obj));
+                }
         fragments.Add(Read(tooltip.scalingTagsText));
         fragments.Add(Read(tooltip.minionTagsText));
         var scaling = tooltip.scalingInfoFields;

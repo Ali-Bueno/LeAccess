@@ -6,6 +6,8 @@ internal class NativeObject
 namespace UnityEngine
 {
     internal class Object : NativeObject { }
+    internal struct Vector2 { public float x, y; }
+    internal static class Application { internal static bool isFocused = true; }
     internal enum KeyCode { None, R, LeftControl, RightControl, LeftAlt, RightAlt, LeftShift, RightShift }
     internal static class Input
     {
@@ -29,7 +31,10 @@ namespace Il2CppSystem.Collections.Generic
 namespace Rewired
 {
     internal sealed class IControllerTemplateButton : NativeObject { internal bool justPressed; internal bool Held; }
-    internal sealed class IGamepadTemplate : NativeObject { internal IControllerTemplateButton back; }
+    internal sealed class IControllerTemplateThumbStick : NativeObject
+    { internal UnityEngine.Vector2 value, valuePrev; }
+    internal sealed class IGamepadTemplate : NativeObject
+    { internal IControllerTemplateButton back; internal IControllerTemplateThumbStick rightStick; }
     internal sealed class Joystick : NativeObject
     {
         internal IGamepadTemplate Template;
@@ -47,6 +52,7 @@ namespace Rewired
 }
 internal sealed class EpochInputManager : UnityEngine.Object
 { internal static EpochInputManager instance; internal Rewired.Player rewiredPlayer; }
+namespace LE.UI { internal static class LoadingScreen { internal static bool IsVisible; } }
 namespace LeAccess
 {
     internal static class Plugin { internal static Logger Log = new(); }

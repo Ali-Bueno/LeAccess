@@ -1,6 +1,7 @@
 using System;
 using EHG.Multiplayer;
 using LeAccess.Accessibility.Utils;
+using Networking.Multiplayer.Interactables.Portals;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
@@ -56,6 +57,17 @@ internal static class LandmarkProbe
                     tag = listener.gameObject.GetComponent<HoverTagOnMouseOver>();
                     if (IsAlive(tag)) ownedTags++;
                 }
+                PortalVisualController portal = null;
+                if (tag is null || IsAlive(tag) &&
+                    (tag.hoverTargetType == HoverTagOnMouseOver.HoverTargetType.OTHER ||
+                     tag.hoverTargetType == HoverTagOnMouseOver.HoverTargetType.LOCALIZATION_KEY))
+                {
+                    portal = listener.gameObject.GetComponentInParent<PortalVisualController>();
+                    if (!Available(portal, scene) || !IsAlive(portal.mouseListenerObj) ||
+                        portal.mouseListenerObj.Pointer != listener.gameObject.Pointer)
+                        portal = null;
+                    if (tag is null && IsAlive(portal)) tag = portal.hoverTag;
+                }
                 if (!Available(tag, scene)) continue;
                 tags++;
                 float range = listener.interactionRange;
@@ -67,7 +79,7 @@ internal static class LandmarkProbe
                 inRange++;
                 int id = listener.GetInstanceID();
                 if (found && (distance > nearest || distance == nearest && id >= target.InstanceId)) continue;
-                string name = ReadName(tag, scene);
+                string name = ReadName(tag, scene, portal);
                 if (!string.IsNullOrWhiteSpace(name)) named++;
                 if (string.IsNullOrWhiteSpace(name) || !listener.CanInteract()) continue;
                 target = new LandmarkTarget(session, id, name);
@@ -81,10 +93,19 @@ internal static class LandmarkProbe
         return found;
     }
 
-    private static string ReadName(HoverTagOnMouseOver tag, Scene scene)
+    private static string ReadName(HoverTagOnMouseOver tag, Scene scene, PortalVisualController portal)
     {
         if (tag.hoverTargetType == HoverTagOnMouseOver.HoverTargetType.SIGNPOST)
             return TextUtils.CleanText(tag.hoverText);
+        if (tag.hoverTargetType == HoverTagOnMouseOver.HoverTargetType.OTHER ||
+            tag.hoverTargetType == HoverTagOnMouseOver.HoverTargetType.LOCALIZATION_KEY)
+        {
+            // Native portal initialization localizes this text; other generic tags
+            // are not evidence of a portal. See reference/map-landmarks.md.
+            if (!IsAlive(portal) || !IsAlive(portal.hoverTag) || portal.hoverTag.Pointer != tag.Pointer ||
+                portal.isNonInteractableByPlayer()) return null;
+            return TextUtils.CleanText(tag.hoverText);
+        }
         TransitionOrGateInteraction interaction;
         if (tag.hoverTargetType == HoverTagOnMouseOver.HoverTargetType.ZONE_TRANSITION)
             interaction = tag.sceneInteraction;

@@ -3,6 +3,7 @@ using LeAccess.Accessibility.Announcements;
 using LeAccess.Accessibility.ControllerMenus;
 using LeAccess.Accessibility.Dialogue;
 using LeAccess.Accessibility.ScreenContent;
+using LE.UI.PanelSystem;
 using UnityEngine;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
@@ -65,13 +66,41 @@ internal static class QuestAccessibility
         var prioritized = navigation.TryCast<PrioritizedNavigable>();
         if (IsAlive(prioritized) && IsAlive(prioritized.ActiveSelectable))
             RememberGenerator(prioritized.ActiveSelectable.gameObject);
+        var mapGenerator = GetMapGenerator(component.gameObject);
+        if (IsAlive(mapGenerator)) _generator = mapGenerator;
+        // QuestInformation can receive focus before a quest button does.
+        var currentInfo = navigation.TryCast<QuestInformation>();
+        var manager = NavigationManager.instance;
+        if (IsAlive(currentInfo) && IsAlive(manager) &&
+            manager.GetNavigableFromID(NavigableID.WORLD_MAP_PANEL, out var mapNavigation) &&
+            mapNavigation is not null && !mapNavigation.WasCollected)
+        {
+            var mapComponent = mapNavigation.TryCast<Behaviour>();
+            var owner = IsAlive(mapComponent) ? GetMapGenerator(mapComponent.gameObject) : null;
+            if (IsAlive(owner) && IsAlive(owner.questInformation) && owner.questInformation.Pointer == currentInfo.Pointer)
+                _generator = owner;
+        }
         if (!IsAlive(_generator)) return null;
         var panel = _generator.questPanel;
         var info = _generator.questInformation;
-        bool ownsNavigation = QuestSelectionReader.IsOwned(component.gameObject, _generator.transform) ||
+        bool ownsNavigation = IsAlive(mapGenerator) && mapGenerator.Pointer == _generator.Pointer ||
+            QuestSelectionReader.IsOwned(component.gameObject, _generator.transform) ||
             IsAlive(panel) && !panel.questsHidden && QuestSelectionReader.IsOwned(component.gameObject, panel.transform) ||
             IsAlive(info) && QuestSelectionReader.IsOwned(component.gameObject, info.transform);
         return ownsNavigation ? _generator : null;
+    }
+
+    private static QuestButtonGenerator GetMapGenerator(GameObject element)
+    {
+        var worldMap = element.GetComponentInParent<WorldMapPanel>();
+        var map = IsAlive(worldMap) ? worldMap._mapPanel : element.GetComponentInParent<MapPanel>();
+        if (IsAlive(worldMap) && (!worldMap.isActiveAndEnabled || !UiVisibility.IsVisible(worldMap.gameObject))) return null;
+        if (!IsAlive(map) || !map.isActiveAndEnabled || !UiVisibility.IsVisible(map.gameObject)) return null;
+        var panel = map.questPanel;
+        if (!IsAlive(panel)) return null;
+        var generator = panel.buttonGenerator;
+        return IsAlive(generator) && IsAlive(generator.questPanel) && generator.questPanel.Pointer == panel.Pointer
+            ? generator : null;
     }
 
     private static void RememberGenerator(GameObject element)
@@ -81,7 +110,7 @@ internal static class QuestAccessibility
         var generator = element.GetComponentInParent<QuestButtonGenerator>();
         if (IsAlive(generator)) { _generator = generator; return; }
         var panel = element.GetComponentInParent<QuestPanel>();
-        if (IsAlive(panel) && IsAlive(panel.buttonGenerator)) _generator = panel.buttonGenerator;
+        if (IsAlive(panel) && IsAlive(panel.buttonGenerator)) { _generator = panel.buttonGenerator; return; }
     }
 
     internal static void Reset() { Announcements.Reset(); _generator = null; _lastFailure = null; HasActiveContent = false; }

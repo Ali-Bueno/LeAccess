@@ -76,6 +76,7 @@ public class Plugin : BasePlugin
         LeAccess.Accessibility.CharacterCreation.PauseMenuFocusRecovery.Reset();
         LeAccess.Accessibility.CharacterCreation.ClassCarouselHandler.Reset();
         LeAccess.Accessibility.CharacterCreation.CharacterNameAccessibility.Reset();
+        LeAccess.Accessibility.CharacterCreation.CharacterNameKeyboard.Reset();
         LeAccess.Accessibility.ScreenContent.ScreenContentAnnouncer.Reset();
         LeAccess.Accessibility.Dialogue.DialogueAnnouncer.Reset();
         LeAccess.Accessibility.Dialogue.VisibleSubtitleAnnouncer.Reset();

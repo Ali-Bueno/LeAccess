@@ -69,4 +69,60 @@ foreach(string gate in new[]{"dialogue","modal","focus","loading"})
 Reset();Bark("A");Bark("B");Tick();Tick();Check(ScreenReader.Messages.Count==1,"one bark delivered per update");
 Tick();Check(ScreenReader.Messages.Count==2,"second current bark delivered subsequently");
 VisibleSubtitleAnnouncer.Reset();Tick();Check(!VisibleSubtitleAnnouncer.HasPendingContent,"cleanup pending reset");
+
+Reset();VisibleSubtitleAnnouncer.NpcMessageSubmitted("No hay vuelta atrás.","Centinela");Tick();
+Check(ScreenReader.Messages.Single().Text=="Centinela: No hay vuelta atrás.","localized player narrative without floating UI or online chat");
+Check(!ScreenReader.Messages[0].Interrupt&&!VisibleSubtitleAnnouncer.HasPendingContent,"submitted narrative queued without interruption");
+Tick();Check(ScreenReader.Messages.Count==1,"submitted event consumed once");
+Reset();VisibleSubtitleAnnouncer.NpcMessageSubmitted("Sigamos.","Grael");Tick(true);
+Check(ScreenReader.Messages.Count==0&&VisibleSubtitleAnnouncer.HasPendingContent,"submitted line yields to current speech");
+Tick();Check(ScreenReader.Messages.Count==1,"submitted line resumes when speech priority permits");
+foreach(string gate in new[]{"dialogue","modal","focus","loading"})
+{
+    Reset();VisibleSubtitleAnnouncer.NpcMessageSubmitted("Old line","Grael");
+    DialogueAnnouncer.HasActiveContent=gate=="dialogue";ScreenContentAnnouncer.HasActiveContent=gate=="modal";
+    Application.isFocused=gate!="focus";LE.UI.LoadingScreen.IsVisible=gate=="loading";Tick();
+    Check(ScreenReader.Messages.Count==0&&!VisibleSubtitleAnnouncer.HasPendingContent,"submitted lifecycle gate "+gate);
+    Application.isFocused=true;LE.UI.LoadingScreen.IsVisible=false;
+    DialogueAnnouncer.HasActiveContent=ScreenContentAnnouncer.HasActiveContent=false;Tick();
+    Check(ScreenReader.Messages.Count==0,"discarded submission does not become history "+gate);
+}
+Reset();bark=Bark("Grael: Sigamos.");Tick();
+VisibleSubtitleAnnouncer.NpcMessageSubmitted("Sigamos.","Grael");Tick();Tick();
+Check(ScreenReader.Messages.Count==1,"bark and submitted NPC text delivered once");
+VisibleSubtitleAnnouncer.NpcMessageSubmitted("Sigamos.","Grael");Tick();
+Check(ScreenReader.Messages.Count==1,"late submission matches current delivered bark");
+VisibleSubtitleAnnouncer.BarkHidden(bark);VisibleSubtitleAnnouncer.NpcMessageSubmitted("Sigamos.","Grael");Tick();
+Check(ScreenReader.Messages.Count==2,"hidden prior bark permits new repeated line");
+Reset();VisibleSubtitleAnnouncer.NpcMessageSubmitted("Sigamos.","Grael");Tick();bark=Bark("Grael: Sigamos.");Tick();Tick();
+Check(ScreenReader.Messages.Count==1,"late floating label does not repeat submitted narration");
+VisibleSubtitleAnnouncer.BarkHidden(bark);VisibleSubtitleAnnouncer.BarkShown(bark);Tick();Tick();
+Check(ScreenReader.Messages.Count==2,"duplicate suppression consumes only one bark occurrence");
+Reset();VisibleSubtitleAnnouncer.NpcMessageSubmitted(" ","Grael");Tick();
+Check(ScreenReader.Messages.Count==0,"empty event never announces speaker alone");
+VisibleSubtitleAnnouncer.NpcMessageSubmitted("Aquí.",null);Tick();
+Check(ScreenReader.Messages.Single().Text=="Aquí.","unnamed authored speech preserves body");
+
+var submittedTracker=new SubmittedSubtitleTracker();
+submittedTracker.Submit("Expired","Grael",0);
+Check(!submittedTracker.TryTake(true,SubmittedSubtitleTracker.MaximumDelaySeconds,out var submittedText)&&submittedText==null,
+    "expired priority-deferred narration discarded");
+submittedTracker.Submit("Again","Grael",20);submittedTracker.Submit("Again","Grael",20);
+Check(!submittedTracker.TryTake(true,20,out submittedText)&&submittedText=="Grael: Again","duplicate pending callback collapsed");
+submittedTracker.Submit("Again","Grael",21);
+Check(!submittedTracker.TryTake(true,21,out submittedText)&&submittedText=="Grael: Again","new spoken occurrence is not globally suppressed");
+submittedTracker.Submit("Again","Grael",22);
+Check(!submittedTracker.ObserveRendered(1,"Grael: Again",22),"old delivery cannot suppress a new submitted-and-rendered occurrence");
+Check(!submittedTracker.TryTake(true,22,out submittedText)&&submittedText==null,"new rendered occurrence consumes only its submission");
+submittedTracker.Reset();submittedTracker.Submit("Line","A",0);submittedTracker.TryTake(true,0,out _);
+Check(!submittedTracker.ObserveRendered(1,"B: Line",0),"different named actor not suppressed");
+Check(submittedTracker.ObserveRendered(2,"A: Line",0),"matching named actor suppressed once");
+submittedTracker.ForgetRendered(2);submittedTracker.Submit("Line","A",1);
+submittedTracker.TryTake(true,1,out submittedText);Check(submittedText=="A: Line","forgotten rendered owner permits repeat");
+submittedTracker.Reset();submittedTracker.Submit("Old","A",0);submittedTracker.TryTake(true,0,out _);
+Check(!submittedTracker.ObserveRendered(1,"A: Old",SubmittedSubtitleTracker.MaximumDelaySeconds),"old submitted occurrence cannot suppress later bark");
+submittedTracker.Reset();
+for(int i=0;i<=SubmittedSubtitleTracker.MaximumPendingLines;i++)submittedTracker.Submit("Line "+i,null,0);
+Check(submittedTracker.TryTake(true,0,out submittedText)&&submittedText=="Line 1","bounded backlog discards oldest pending line");
+submittedTracker.Reset();Check(!submittedTracker.TryTake(true,0,out submittedText)&&submittedText==null,"reset discards pending and dedup state");
 Console.WriteLine($"Passed {checks} visible subtitle checks.");

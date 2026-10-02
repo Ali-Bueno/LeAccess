@@ -1,5 +1,19 @@
 using LeAccess.Accessibility.ScreenContent;
 
+namespace LeAccess.Accessibility.Items
+{
+    internal static class ItemTooltipModelReader
+    {
+        internal static string Text;
+        internal static string LastFailure => null;
+        internal static int Reads;
+        internal static ItemData LastItem;
+        internal static ItemContainerUI LastContainer;
+        internal static bool TryRead(ItemData item, ItemContainerUI container, out string text)
+        { Reads++; LastItem = item; LastContainer = container; text = Text; return text != null; }
+    }
+}
+
 internal class NativeObject
 {
     private static int _nextPointer;

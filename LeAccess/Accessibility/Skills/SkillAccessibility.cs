@@ -38,7 +38,7 @@ internal static class SkillAccessibility
         catch (Exception ex) { ReportFailure(ex); return false; }
     }
 
-    internal static void Update()
+    internal static void Update(bool readDetails = false)
     {
         try
         {
@@ -53,7 +53,7 @@ internal static class SkillAccessibility
 
             // Refresh remaps while focused without traversing hotbar glyphs every frame.
             double now = Time.unscaledTimeAsDouble;
-            if (now >= _nextBindingRefresh)
+            if (readDetails || now >= _nextBindingRefresh)
             {
                 _nextBindingRefresh = now + BindingRefreshSeconds;
                 _binding = null;
@@ -67,7 +67,7 @@ internal static class SkillAccessibility
 
             // Keep fluctuating DPS/cost readouts from continuously interrupting menu speech.
             if (!string.IsNullOrWhiteSpace(selection.LiveDetails) &&
-                (!LiveSnapshots.TryGetValue(selection.DetailsSource, out var snapshot) || snapshot.Basis != selection.Details))
+                (readDetails || !LiveSnapshots.TryGetValue(selection.DetailsSource, out var snapshot) || snapshot.Basis != selection.Details))
                 LiveSnapshots[selection.DetailsSource] = (selection.Details, selection.LiveDetails);
             string liveDetails = !string.IsNullOrWhiteSpace(selection.LiveDetails) &&
                 LiveSnapshots.TryGetValue(selection.DetailsSource, out var currentSnapshot) && currentSnapshot.Basis == selection.Details
@@ -91,7 +91,7 @@ internal static class SkillAccessibility
             // acknowledged, without reusing it for a changed name or assigned control.
             bool reducedDetails = (int)selection.DetailsSource < (int)_spokenDetailsSource &&
                 selection.Name == _spokenName && _binding == _spokenBinding;
-            if (reducedDetails)
+            if (reducedDetails && !readDetails)
             {
                 if (!ReducedDetails.TryGetValue(selection.DetailsSource, out string baseline))
                     ReducedDetails[selection.DetailsSource] = baseline = text;
@@ -99,6 +99,12 @@ internal static class SkillAccessibility
             }
             HasPendingContent = Tracker.Observe(1, text,
                 ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame, out string announcement);
+            if (readDetails && ScreenReader.IsAvailable() && !string.IsNullOrWhiteSpace(text))
+            {
+                Tracker.Observe(1, text, true, out _);
+                announcement = text;
+                _initialTooltipBase = null;
+            }
             if (announcement == null) return;
             HasPendingContent = false;
             bool lateTooltip = _initialTooltipBase != null && selection.Name == _spokenName && _binding == _spokenBinding;

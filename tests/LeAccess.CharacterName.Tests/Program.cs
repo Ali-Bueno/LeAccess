@@ -135,4 +135,5 @@ Check(ScreenReader.Messages.Single().Text == "Validator refreshed on reopen", "R
 form = Reset(); Tick(); form.newCharacterError.text = "Segundo error"; Tick(); Tick();
 Check(ScreenReader.Messages.Single().Text == "Segundo error", "Rapid error changes discard the unsettled previous error");
 if (failures.Count != 0) throw new InvalidOperationException(string.Join(Environment.NewLine, failures));
+checks += KeyboardTests.Run();
 Console.WriteLine($"Character name tests passed: {checks} checks.");

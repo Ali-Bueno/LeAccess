@@ -120,11 +120,34 @@ namespace TMPro
         internal UnityEngine.CanvasRenderer canvasRenderer = new();
     }
     internal sealed class TextMeshProUGUI : TMP_Text { }
-    internal sealed class TMP_InputField : UnityEngine.Behaviour { }
+    internal sealed class TMP_InputField : UnityEngine.UI.Selectable
+    {
+        internal string text;
+        internal bool ActivationPending { get => m_ShouldActivateNextUpdate; set => m_ShouldActivateNextUpdate = value; }
+        internal bool m_ShouldActivateNextUpdate, m_isSelectAll, isFocused;
+        internal bool m_OnFocusSelectAll = true;
+        internal int caretPosition, stringPosition;
+        internal void ActivateInputField() => ActivationPending = true;
+        internal void ActivateInputFieldInternal() { isFocused = true; m_isSelectAll = m_OnFocusSelectAll; }
+        internal void ForceLabelUpdate() { }
+        internal bool PhysicalType(char letter)
+        {
+            if (!isFocused || UnityEngine.EventSystems.EventSystem.current?.currentSelectedGameObject != gameObject) return false;
+            if (m_isSelectAll) { text = ""; caretPosition = stringPosition = 0; }
+            text = text.Insert(stringPosition, letter.ToString());
+            caretPosition++; stringPosition++;
+            return true;
+        }
+        internal bool readOnly;
+        internal bool Interactable = true;
+        internal bool IsInteractable() => Interactable;
+        internal void OnSubmit() { }
+        internal void OnPointerClick() { }
+    }
 }
 namespace UnityEngine.UI
 {
-    internal class Selectable : UnityEngine.Component { }
+    internal class Selectable : UnityEngine.Behaviour { }
     internal sealed class Text : UnityEngine.Component
     { internal string text { get; set; } internal UnityEngine.Color color = new() { a = 1 }; }
     internal sealed class InputField : UnityEngine.Component { }

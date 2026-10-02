@@ -24,6 +24,14 @@ The startup guard retains an early online/offline button press until the game's
 loading transition has finished. Menu reading preserves native control mappings;
 HUD button hints remain silent during exploration.
 
+In inventory and skill menus, push the **right stick up** to reread the selected
+object or skill's details. Return the stick to neutral before repeating the
+gesture. Skill rereading also refreshes the current displayed combat statistics.
+Item inspection can use the game's tooltip formatter when the visual tooltip is
+unavailable, including modifiers, lore and requirements.
+Character-name screen keyboards require an explicit click or submit on the name
+field; moving focus to it does not start editing.
+
 ## Requirements and build
 
 - A local Last Epoch installation with the matching generated interop assemblies.
@@ -88,10 +96,12 @@ These development tools are separate from the plugin's runtime dependencies.
 
 ## Known limits
 
-This is an active development snapshot. Examination dialogue and early startup
-fixes still need listening confirmation. Other-player naming needs live online
-validation. Character text entry and complete stash/vendor/crafting navigation
-remain areas for testing.
+This is an active development snapshot. The latest character-name typing and
+return fixes are user-confirmed. Other menu, manual inspection and ambient
+subtitle changes still need controller/listening checks.
+Speech events with authored text are readable; audio-only character vocalizations
+have no transcript. Other-player naming needs live online validation, and complete
+stash/vendor/crafting navigation remains an area for testing.
 
 Map descriptions are partial: the catalog covers 750 guarded sections across
 58 layouts, with additional runtime readers. This does not establish complete

@@ -258,4 +258,37 @@ Check(ItemTooltipReader.TryReadForItem(item, container.gameObject, out var actio
     "Matched modern item reading includes its visible action button names");
 system._activeItemTooltipInfo = new() { _Item_k__BackingField = item };
 Check(!ItemTooltipReader.TryReadForItem(item, container.gameObject, out _), "Mismatched pooled tooltip info cannot contribute actions for another item");
+system._activeItemTooltipInfo = modern._info;
+container.currentlySelectedItem = entry;
+NavigationManager.currentlySelected = container;
+InventoryAccessibility.Reset(); ScreenReader.Messages.Clear();
+UpdateTwice();
+InventoryAccessibility.Update(readDetails: true);
+Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last() == actionDetails,
+    "Manual stick gesture rereads the complete current item tooltip and its actions");
+UpdateTwice();
+Check(ScreenReader.Messages.Count == 2, "Manual item read cannot cause a second automatic replay");
+container.currentlySelectedItem = null;
+InventoryAccessibility.Update(readDetails: true);
+Check(ScreenReader.Messages.Last() == "Empty slot", "Manual read on empty slot cannot replay previous equipment");
+int beforeBlockedRead = ScreenReader.Messages.Count;
+ScreenContentAnnouncer.HasActiveContent = true;
+InventoryAccessibility.Update(readDetails: true);
+Check(ScreenReader.Messages.Count == beforeBlockedRead, "Manual inventory details respect foreground ownership");
+ScreenContentAnnouncer.HasActiveContent = false;
+container.currentlySelectedItem = entry;
+system.IsItemTooltipReady = false;
+ScreenReader.Messages.Clear(); InventoryAccessibility.Reset();
+ItemTooltipModelReader.Text = "Espada. Rare. +20 daño cuerpo a cuerpo. Requires level 12";
+UpdateTwice();
+Check(ItemTooltipModelReader.Reads == 0, "Automatic inventory reading never builds hidden tooltip models");
+InventoryAccessibility.Update(readDetails: true);
+Check(ScreenReader.Messages.Last() == ItemTooltipModelReader.Text && ItemTooltipModelReader.LastItem == item &&
+    ItemTooltipModelReader.LastContainer == container, "Manual details use the selected item model when visual tooltip is missing");
+int afterManualModel = ScreenReader.Messages.Count;
+UpdateTwice();
+Check(ScreenReader.Messages.Count == afterManualModel, "Automatic title fallback cannot interrupt manually read full properties");
+ItemTooltipModelReader.Text = null;
+InventoryAccessibility.Update(readDetails: true);
+Check(ScreenReader.Messages.Last().Contains("Item details are unavailable"), "Unavailable manual data gives clear feedback instead of only repeating a name");
 Console.WriteLine($"Inventory tests passed: {checks} checks.");

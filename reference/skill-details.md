@@ -1,7 +1,29 @@
 # Skill tooltip details — Steam 1.5
 
 Implemented 2026-10-02 against 1.5.0.1 interop; gameplay listening is pending.
-The game remained closed. No new hooks or input behavior were added.
+The game remained closed. These readers add no native hooks. See
+[manual details](skill-inventory-buttons.md#manual-details-2026-10-02) for the
+right-stick-up reread command.
+
+## Localized ability stat names (2026-10-02 follow-up)
+
+The session log ending 11:06:42 reads Aullido as `39,2. 10s` at line 1005.
+The reader used only `BigStatField.textField`, which is the numeric value.
+Installed `PermaLoad.bundle`'s `UITooltipAbility` (path ID
+`8398561638648025117`) stores each value in a `Stat Value` child and its localized
+name in the sibling `StatDescription/StatText`. The four stat boxes hold the
+game's DPS estimate, mana cost, cooldown and channel cost labels; each label has
+its own `LocalizeStringEvent`. Their TMP path IDs are respectively
+`8684854497167753235`, `8602185316988926608`, `5754680594566309451` and
+`683888024483248820`.
+
+The reader now consumes the entire owned `BigStatField.obj` section when its
+value is visible, retaining localized label, number and native units. It does
+not infer stat kinds from array positions or add translation keys. Hidden,
+transparent or culled values suppress the corresponding stat, and unrelated
+tooltip sections stay excluded. Five source-linked regressions cover the actual
+sibling layout, source scope, visibility and changed localization. Runtime
+listening remains pending.
 
 ## Reading and ownership
 

@@ -141,4 +141,5 @@ var actualName = first.gameObject.Child().Add(new TextMeshProUGUI { text = "Maes
 Frame(); Frame(); Check(ScreenReader.Messages.Single().Text == "Maestro de las bestias. Body exists before name", "unique owned label arrives and complete content speaks");
 first.gameObject.Child().Add(new TextMeshProUGUI { text = "Unrelated ambiguous label" });
 Check(!MasteryReader.TryGetMasteryInfo(first.gameObject, out _, out _), "ambiguous untyped labels never guessed");
+checks += CreationTabTests.Run(Reset);
 Console.WriteLine($"Classes: {checks} checks passed.");

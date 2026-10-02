@@ -79,7 +79,17 @@ public class QuestInformation : UnityEngine.Behaviour
 public class QuestViewObjectiveUI : UnityEngine.Behaviour { public TMPro.TextMeshProUGUI text; public UnityEngine.GameObject check; }
 public class RewardViewObjectUI : UnityEngine.Behaviour { public TMPro.TextMeshProUGUI text; }
 public class PrioritizedNavigable : UnityEngine.Behaviour { public UnityEngine.Behaviour ActiveSelectable; }
-public static class NavigationManager { public static UnityEngine.Object currentlySelected; }
+public class MapPanel : UnityEngine.Behaviour { public QuestPanel questPanel; }
+public enum NavigableID { WORLD_MAP_PANEL }
+public class NavigationManager : UnityEngine.Behaviour
+{
+    public static UnityEngine.Object currentlySelected;
+    public static NavigationManager instance;
+    public UnityEngine.Object RegisteredMap;
+    public bool GetNavigableFromID(NavigableID id, out UnityEngine.Object navigation)
+    { navigation = RegisteredMap; return navigation != null; }
+}
+namespace LE.UI.PanelSystem { public class WorldMapPanel : UnityEngine.Behaviour { public MapPanel _mapPanel; } }
 namespace LE.UI { public static class LoadingScreen { public static bool IsVisible; } }
 namespace LeAccess.Accessibility.Utils
 {

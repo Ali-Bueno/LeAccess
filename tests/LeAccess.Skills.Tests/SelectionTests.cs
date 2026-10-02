@@ -252,6 +252,13 @@ internal static class SelectionTests
         liveValue.text = "Daño por segundo: 81"; Tick(); Tick();
         liveValue.text = "Daño por segundo: 82"; Tick(); Tick();
         check(ScreenReader.Messages.Count == 1, "Continuously fluctuating DPS cannot replay an unchanged focused ability");
+        SkillAccessibility.Update(readDetails: true);
+        check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Interrupt &&
+            ScreenReader.Messages.Last().Text.Contains("Bola de fuego") && ScreenReader.Messages.Last().Text.Contains("82"),
+            "Manual skill details replay the current tooltip with fresh combat stats");
+        Tick(); Tick();
+        check(ScreenReader.Messages.Count == 2, "Manual detail snapshot is acknowledged without automatic repetition");
+        ScreenReader.Messages.RemoveAt(1);
         fixture.Tooltip.descriptionText.text = "Nueva mejora de fuego"; Tick(); Tick();
         check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text.Contains("82"),
             "Real stable detail change refreshes the visible combat-stat snapshot");
@@ -288,6 +295,14 @@ internal static class SelectionTests
         modernSystem._nodeTooltipRequiresLayout = true;
         check(SkillSelectionReader.TryRead(out selection) && selection.Name == "Nombre local" &&
             selection.Details == "Descripción local", "Unsettled modern node falls back to current node data, never retained legacy text");
+        SkillAccessibility.Update(readDetails: true);
+        check(ScreenReader.Messages.Last().Text.Contains("Descripción local") &&
+            !ScreenReader.Messages.Last().Text.Contains("Detalle moderno"), "Manual read also rejects stale node details");
+        int beforeModal = ScreenReader.Messages.Count;
+        ScreenContentAnnouncer.HasActiveContent = true;
+        SkillAccessibility.Update(readDetails: true);
+        check(ScreenReader.Messages.Count == beforeModal, "Manual skill gesture cannot read behind a modal");
+        ScreenContentAnnouncer.HasActiveContent = false;
         SkillAccessibility.Reset();
     }
 }

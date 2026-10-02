@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/ClassSelectionReader.cs" Link="ClassSelectionReader.cs" />
+    <Compile Include="../../LeAccess/Accessibility/CharacterCreation/CreationClassTabReader.cs" Link="CreationClassTabReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/ClassCarouselHandler.cs" Link="ClassCarouselHandler.cs" />
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/MasteryReader.cs" Link="MasteryReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentTracker.cs" Link="ScreenContentTracker.cs" />

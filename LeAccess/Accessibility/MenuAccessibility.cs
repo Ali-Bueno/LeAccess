@@ -49,14 +49,15 @@ public class MenuAccessibility : MonoBehaviour
         ScreenContentAnnouncer.Update();
         DialogueAnnouncer.Update();
         ControllerMenuAccessibility.Update();
+        bool readDetails = MenuDetailInput.ReadRequested();
         PassiveAccessibility.Update();
         QuestAccessibility.Update();
-        SkillAccessibility.Update();
+        SkillAccessibility.Update(readDetails);
         ClassCarouselHandler.CheckPendingClassAnnouncement();
         PollSelectedControl();
         ElementAnnouncer.FlushPendingFocus();
         CharacterNameAccessibility.Update();
-        InventoryAccessibility.Update();
+        InventoryAccessibility.Update(readDetails);
         ZoneAnnouncer.Update();
         VisibleSubtitleAnnouncer.Update(ScreenReader.SpokeThisFrame || ZoneAnnouncer.HasPendingContent ||
             InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||

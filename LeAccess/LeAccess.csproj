@@ -52,6 +52,10 @@
       <HintPath>$(InteropDir)\Rewired_Core.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="Heathen.ScreenKeyboard">
+      <HintPath>$(InteropDir)\Heathen.ScreenKeyboard.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="FmodShared">
       <HintPath>$(InteropDir)\FmodShared.dll</HintPath>
       <Private>false</Private>
@@ -95,6 +99,14 @@
     </Reference>
     <Reference Include="Unity.TextMeshPro">
       <HintPath>$(InteropDir)\Unity.TextMeshPro.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.Localization">
+      <HintPath>$(InteropDir)\Unity.Localization.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIElementsModule">
+      <HintPath>$(InteropDir)\UnityEngine.UIElementsModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Il2CppInterop.Runtime">

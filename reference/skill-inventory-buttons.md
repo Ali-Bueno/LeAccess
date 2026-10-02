@@ -1,5 +1,33 @@
 # Equipped skills and inventory action buttons
 
+## Manual details (2026-10-02)
+
+Right-stick up now rereads the selected inventory item or skill, including skill
+tree nodes, without requiring a selection change. This mirrors the local D2R
+mod's `src/interaction_reader.cpp:ReadDetail` gesture. `MenuDetailInput` reads the
+assigned Rewired gamepad template's `rightStick.value` and `valuePrev`; the
+half-travel threshold matches D2R's explicit gesture policy on normalized axes.
+Holding or rotating the stick does not repeat speech until it returns below the
+threshold. Native input mappings and native scrolling are unchanged.
+
+The existing readers resolve ownership again on every request: hidden menus,
+modals, loading, empty slots and mismatched tooltips cannot replay the previous
+selection. A skill request refreshes bindings and the displayed combat-stat
+snapshot; ordinary focus reading continues to suppress fluctuating DPS. Both
+readers acknowledge the manual read to avoid an immediate automatic duplicate.
+Input and source-linked reader regressions cover those behaviors. Real controller
+and listening checks remain required; the game was not opened for this change.
+
+When an inventory tooltip cannot be read, explicit inspection falls back to the
+[native item presentation model](item-tooltip-model.md). This includes the item's
+localized properties and requirements without opening UI. Ordinary focus polling
+does not build models. Its brief-name fallback stays acknowledged so it cannot
+interrupt the manual body on the next frame. Failed manual reads give localized
+unavailable feedback. Validation: 72 inventory service, 50 item-model, 109 skill
+and 36 combined vitals/menu-input checks pass.
+
+## Equipped status and actions
+
 Skill announcements now distinguish equipped skills from available skills and
 say the current assigned button after the skill name. Matching uses the current
 player's `AbilityBarIcon.all`, including `correspondingAbility` for transformed

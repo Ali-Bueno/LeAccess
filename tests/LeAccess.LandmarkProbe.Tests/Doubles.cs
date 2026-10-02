@@ -29,6 +29,12 @@ namespace UnityEngine
         internal Transform transform;
         internal readonly List<Object> Components = new();
         internal T GetComponent<T>() where T : class => Components.OfType<T>().FirstOrDefault();
+        internal T GetComponentInParent<T>() where T : class
+        {
+            for (var t = transform; t != null; t = t.parent)
+            { var result = t.gameObject.GetComponent<T>(); if (result != null) return result; }
+            return null;
+        }
         internal GameObject() => transform = new Transform { gameObject = this };
     }
     internal sealed class Transform
@@ -103,6 +109,16 @@ internal sealed class HoverTagOnMouseOver : UnityEngine.Behaviour
     internal TransitionOrGateInteraction sceneInteraction, dungeonTransitionInteraction;
 }
 internal sealed class TransitionOrGateInteraction : UnityEngine.Behaviour { internal string sceneName; }
+namespace Networking.Multiplayer.Interactables.Portals
+{
+    internal sealed class PortalVisualController : UnityEngine.Behaviour
+    {
+        internal HoverTagOnMouseOver hoverTag;
+        internal UnityEngine.GameObject mouseListenerObj;
+        internal bool Blocked;
+        internal bool isNonInteractableByPlayer() => Blocked;
+    }
+}
 internal sealed class SceneDetails : UnityEngine.Object { internal string LocalizedName; }
 internal static class SceneList
 {

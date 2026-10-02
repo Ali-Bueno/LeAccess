@@ -12,6 +12,7 @@
   "keyboard.open_named": "Teclado en pantalla: {0}",
   "controller.menu": "Menú del mando",
   "inventory.empty_slot": "Espacio vacío",
+  "inventory.details_unavailable": "Los detalles del objeto no están disponibles.",
   "node.points": "{0} de {1} puntos asignados",
   "node.requirement_met": "{0}, requisito cumplido",
   "node.requirement_unmet": "{0}, requisito no cumplido",
