@@ -2,11 +2,14 @@ namespace LeAccess.Accessibility.MapSections;
 
 internal sealed class MapSectionState
 {
+    private readonly bool _confirmArrival;
     private long _session;
     private bool _hasSession, _hasCandidate;
     private string _candidateId, _candidateText, _currentId;
     private string _spoken;
     internal bool HasPendingContent { get; private set; }
+
+    internal MapSectionState(bool confirmArrival = true) => _confirmArrival = confirmArrival;
 
     internal bool Observe(long session, MapSection section, bool canSpeak, out string textKey)
         => Observe(session, section?.SpeechGroup, section?.TextKey, canSpeak, out textKey);
@@ -23,7 +26,7 @@ internal sealed class MapSectionState
         // Replace obsolete pending content immediately, including the first outside observation.
         HasPendingContent = sectionId != null && !string.IsNullOrWhiteSpace(text) &&
             (sectionId != _currentId || text != _spoken);
-        if (!stable) return false;
+        if (!stable && (_confirmArrival || sectionId == null)) return false;
         if (sectionId != _currentId)
         {
             _currentId = sectionId;

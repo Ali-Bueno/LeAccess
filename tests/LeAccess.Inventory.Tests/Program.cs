@@ -77,29 +77,30 @@ Check(InventoryAccessibility.HasPendingContent && ScreenReader.Messages.Count ==
     "Matching live tooltip initialization reserves title priority over action hints");
 manager.activeInitializationStage = TooltipItemManager.TooltipInitializationStage.Completed;
 InventoryAccessibility.Update();
-Check(InventoryAccessibility.HasPendingContent && ScreenReader.Messages.Count == 0, "Inventory suppresses competing hints while selected body settles");
+Check(!InventoryAccessibility.HasPendingContent && ScreenReader.Messages.Count == 1, "Item identity settles independently of late tooltip rendering");
 InventoryAccessibility.Update();
-Check(ScreenReader.Messages.Single() == full && !InventoryAccessibility.HasPendingContent, "Focused complete inventory detail speaks once");
+Check(ScreenReader.Messages.Single() == "Espada. Espada de una mano" && !InventoryAccessibility.HasPendingContent,
+    "Focus reads the item name and type without tooltip stats");
 UpdateTwice();
 Check(ScreenReader.Messages.Count == 1, "Steady focus cannot spam inventory stats");
 tooltip.content.Text = "+20 daño cuerpo a cuerpo. +8 fuerza";
 UpdateTwice();
-Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Contains("+20"), "Same selected entry refreshes changed visible stats");
+Check(ScreenReader.Messages.Count == 1, "Changed visible tooltip stats stay silent until requested");
 container.currentlySelectedItem = null;
 UpdateTwice();
-Check(ScreenReader.Messages.Count == 3 && ScreenReader.Messages.Last() == "Empty slot", "Empty selection never reads stale open item tooltip");
+Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last() == "Empty slot", "Empty selection never reads stale open item tooltip");
 container.currentlySelectedItem = entry;
 manager.active = false;
 UpdateTwice();
-Check(ScreenReader.Messages.Count == 4 && ScreenReader.Messages.Last() == "Espada. Espada de una mano",
+Check(ScreenReader.Messages.Count == 3 && ScreenReader.Messages.Last() == "Espada. Espada de una mano",
     "Unavailable tooltip uses actual localized item identity without guessing rarity");
 ScreenContentAnnouncer.HasActiveContent = true;
 UpdateTwice();
-Check(!InventoryAccessibility.HasActiveContent && ScreenReader.Messages.Count == 4, "Foreground tutorial blocks inventory background speech");
+Check(!InventoryAccessibility.HasActiveContent && ScreenReader.Messages.Count == 3, "Foreground tutorial blocks inventory background speech");
 ScreenContentAnnouncer.HasActiveContent = false;
 NavigationManager.currentlySelected = null;
 UpdateTwice();
-Check(!InventoryAccessibility.HasActiveContent && ScreenReader.Messages.Count == 4, "Leaving inventory discards retained selection");
+Check(!InventoryAccessibility.HasActiveContent && ScreenReader.Messages.Count == 3, "Leaving inventory discards retained selection");
 NavigationManager.currentlySelected = container;
 container.WasCollected = true;
 UpdateTwice();
@@ -187,15 +188,16 @@ UpdateTwice();
 Check(ScreenReader.Messages.Count == 1, "Stalled preparation does not repeat the fallback item name");
 system.IsItemTooltipReady = true;
 UpdateTwice();
+Check(ScreenReader.Messages.Count == 1, "Late V2 tooltip cannot add unsolicited details");
+InventoryAccessibility.Update(readDetails: true);
 Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last() == modernText,
-    "Once ready, complete V2 item details replace the brief fallback");
+    "Ready V2 item details are read on the manual request");
 prefix.text = "+25 daño cuerpo a cuerpo";
 UpdateTwice();
-Check(ScreenReader.Messages.Count == 3 && ScreenReader.Messages.Last().Contains("+25"),
-    "Same selected entry reads changed primary V2 stats after settling");
+Check(ScreenReader.Messages.Count == 2, "Changed primary V2 stats remain silent automatically");
 LeAccess.Accessibility.ControllerMenus.ControllerMenuAccessibility.HasActiveContent = true;
 UpdateTwice();
-Check(!InventoryAccessibility.HasActiveContent && ScreenReader.Messages.Count == 3,
+Check(!InventoryAccessibility.HasActiveContent && ScreenReader.Messages.Count == 2,
     "Controller wheel owns the foreground even if inventory navigation remains cached");
 LeAccess.Accessibility.ControllerMenus.ControllerMenuAccessibility.HasActiveContent = false;
 system.WasCollected = true;
@@ -224,21 +226,21 @@ actionPrompt._label = new TMPro.TMP_Text { text = "Equipar" };
 actionPrompt._label.transform.parent = actionPrompt.transform;
 actionPrompt._panelAction = new() { ActionName = "equip-selected" };
 LeAccess.Accessibility.Announcements.InputBindingText.Bindings["equip-selected"] = "A";
-Check(LeAccess.Accessibility.Inventory.InventoryActionReader.Read(modern).Single() == "Equipar: A",
+Check(LeAccess.Accessibility.Inventory.InventoryActionReader.Read(modern).Single() == "A, Equipar",
     "Modern current-item action pairs its displayed localized verb with authoritative binding");
 LeAccess.Accessibility.Announcements.InputBindingText.Bindings["equip-selected"] = "Y";
-Check(LeAccess.Accessibility.Inventory.InventoryActionReader.Read(modern).Single() == "Equipar: Y",
+Check(LeAccess.Accessibility.Inventory.InventoryActionReader.Read(modern).Single() == "Y, Equipar",
     "Inventory action bindings follow remaps without fixed Xbox assignments");
 actionPrompt._panelAction.GamepadButtonNamesOverride = new() { Values = new[] { "LT", "X" } };
-Check(LeAccess.Accessibility.Inventory.InventoryActionReader.Read(modern).Single() == "Equipar: LT + X",
+Check(LeAccess.Accessibility.Inventory.InventoryActionReader.Read(modern).Single() == "LT + X, Equipar",
     "Explicit gamepad overrides take priority over the ordinary action mapping");
 actionPrompt._panelAction.MouseAndKeyboardButtonNamesOverride = new() { Values = new[] { "Shift", "Click" } };
 EpochInputManager.IsControllerActive = false;
-Check(LeAccess.Accessibility.Inventory.InventoryActionReader.Read(modern).Single() == "Equipar: Shift + Click",
+Check(LeAccess.Accessibility.Inventory.InventoryActionReader.Read(modern).Single() == "Shift + Click, Equipar",
     "Device changes select the actual keyboard override rather than retained controller hints");
 EpochInputManager.IsControllerActive = true;
 actionPrompt._panelAction.IsHoldAction = true;
-Check(LeAccess.Accessibility.Inventory.InventoryActionReader.Read(modern).Single() == "Equipar: Hold LT + X",
+Check(LeAccess.Accessibility.Inventory.InventoryActionReader.Read(modern).Single() == "Hold LT + X, Equipar",
     "Inventory hold actions retain their native hold semantics");
 actionPrompt._panelAction.CanUse = false;
 Check(!LeAccess.Accessibility.Inventory.InventoryActionReader.Read(modern).Any(), "Unavailable item actions do not claim an executable button");
@@ -254,7 +256,7 @@ Check(!LeAccess.Accessibility.Inventory.InventoryActionReader.Read(modern).Any()
 actionPrompt._label.alpha = 1;
 actionPrompt._panelAction.GamepadButtonNamesOverride = null;
 actionPrompt._panelAction.IsHoldAction = false;
-Check(ItemTooltipReader.TryReadForItem(item, container.gameObject, out var actionDetails) && actionDetails.Contains("Equipar: Y"),
+Check(ItemTooltipReader.TryReadForItem(item, container.gameObject, out var actionDetails) && actionDetails.Contains("Y, Equipar"),
     "Matched modern item reading includes its visible action button names");
 system._activeItemTooltipInfo = new() { _Item_k__BackingField = item };
 Check(!ItemTooltipReader.TryReadForItem(item, container.gameObject, out _), "Mismatched pooled tooltip info cannot contribute actions for another item");
@@ -291,4 +293,13 @@ Check(ScreenReader.Messages.Count == afterManualModel, "Automatic title fallback
 ItemTooltipModelReader.Text = null;
 InventoryAccessibility.Update(readDetails: true);
 Check(ScreenReader.Messages.Last().Contains("Item details are unavailable"), "Unavailable manual data gives clear feedback instead of only repeating a name");
+InventoryAccessibility.Reset(); ScreenReader.Messages.Clear();
+InventoryAccessibility.Update(readDetails: true); UpdateTwice();
+Check(ScreenReader.Messages.Count == 1, "Immediate manual inspection suppresses pending automatic identity speech");
+container.identifier = ContainerID.EQ_WEAPON; UpdateTwice();
+Check(ScreenReader.Messages.Last().EndsWith("Equipped"), "An actual equipment container identifies the selected item as equipped");
+container.identifier = ContainerID.INVENTORY; UpdateTwice();
+Check(!ScreenReader.Messages.Last().Contains("Equipped"), "Returning item to inventory clears equipped status");
+InventoryPromptTests.Run(Check);
+InventoryActionTests.Run(Check);
 Console.WriteLine($"Inventory tests passed: {checks} checks.");

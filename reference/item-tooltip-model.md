@@ -18,9 +18,11 @@ no partial result; `LastFailure` records the reason for diagnostics.
 Exact owned native tooltip parameters preserve the game's current slot and display
 mode. If no such parameters exist, the reader maps the actual container's
 `ContainerType.INVENTORY`, `EQUIPPED` or `STASH` to their corresponding native
-tooltip slots and explicitly requests `TooltipMode.DefaultInfo`. Other container
-types require owned native parameters, because vendor/crafting variants have
-additional native context. Ground, undefined and foreign parameters cannot supply
+tooltip slots and explicitly requests `TooltipMode.DefaultInfo`. The open ordinary
+merchant's exact shop and buyback containers also map to `SlotType.SHOP`; see
+[merchant ownership and pricing](merchant-reading.md). Other container types
+require owned native parameters because specialized vendors and crafting have
+additional context. Ground, undefined and foreign parameters cannot supply
 that context. The never-opened fallback intentionally reads default details,
 without assuming an Alt/Ctrl or comparison mode.
 
@@ -29,8 +31,9 @@ and attack rate, implicits, both modifiers of each prefix/suffix/sealed affix,
 unique modifiers, set items and required set counts, added affixes, eligible item
 types, lore and requirements. Tier, stat, lore and faction text remain game-localized.
 Unidentified items expose only their game-provided name/type strings. The model
-fallback excludes comparison deltas, prices and UI action prompts: those require
-the current visible UI context. Specialized decorative header labels are still
+fallback excludes comparison deltas and UI action prompts. Current merchant prices
+are appended only when the open shop and selected item establish ownership.
+Specialized decorative header labels are still
 best represented by the visible reader.
 
 ## Native and installed-asset evidence
@@ -78,7 +81,8 @@ native mapping/disassembly helpers are in
 ## Validation
 
 `dotnet run --project tests/LeAccess.ItemTooltipModel.Tests/LeAccess.ItemTooltipModel.Tests.csproj`
-passes **50 checks** against source-linked production logic. Coverage includes
+passes **92 checks** against source-linked production logic, including the
+[merchant item and tab regressions](merchant-reading.md). Coverage includes
 game-formatted sections and both affix modifiers, lore/faction text, native slot
 mapping, exact owned parameters, unknown/foreign context rejection, unidentified
 item filtering, collected lists/rows, formatter exceptions, packed/unpacked

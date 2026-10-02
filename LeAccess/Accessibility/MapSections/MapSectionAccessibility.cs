@@ -15,6 +15,8 @@ internal static class MapSectionAccessibility
     private static readonly MapSectionState State = new();
     private static readonly MapSectionState OverviewState = new();
     private static readonly MapSectionState SurfaceState = new();
+    // An owned, reachable model is already validated; waiting another tick loses short passes.
+    private static readonly MapSectionState SceneryState = new(confirmArrival: false);
     private static ConfigEntry<bool> _enabled, _describeMaps, _surfaces;
     private static MapSectionCatalog _catalog;
     private static string _buildHash;
@@ -27,7 +29,7 @@ internal static class MapSectionAccessibility
     internal static void Initialize(ConfigFile config)
     {
         _enabled = config.Bind("Map sections", "AnnounceSections", true,
-            "Announce structures at your feet and verified map sections or generated rooms as you reach them.");
+            "Announce structures at your feet, nearby authored scenery, and verified map sections or generated rooms as you reach them.");
         _describeMaps = config.Bind("Map sections", "DescribeMapOnEntry", false,
             "Briefly list the verified landmark types in a mapped scene after its name is announced.");
         _surfaces = config.Bind("Map sections", "AnnounceSurfaceChanges", false,
@@ -88,10 +90,22 @@ internal static class MapSectionAccessibility
                 ScreenReader.Speak(announcement, interrupt: false);
                 Plugin.Log.LogInfo($"[Map section] scene={world.SceneName} section={_sectionIdentity ?? id}: {announcement}");
             }
+            bool sceneryKnown = RuntimeSceneryPlaces.TryRead(world, out var scenery);
+            string sceneryText = sceneryKnown ? ModText.Format("landmark.nearby", ModText.Get(scenery.TextKey)) : null;
+            bool scenerySpoken = SceneryState.Observe(world.Session, sceneryKnown ? scenery.SpeechGroup : null, sceneryText,
+                canSpeak && !HasPendingContent && !summarySpoken && !announce, out string nearbyText);
+            HasPendingContent |= SceneryState.HasPendingContent;
+            if (scenerySpoken)
+            {
+                ScreenReader.Speak(nearbyText, interrupt: false);
+                Plugin.Log.LogInfo($"[Map scenery] scene={world.SceneName} source={scenery.Identity}: {nearbyText}");
+            }
+            else if (sceneryKnown && SceneryState.HasPendingContent)
+                MapPlaceDiagnostics.Report("scenery-deferred", $"source={scenery.Identity}, canSpeak={canSpeak}, otherSpeech={otherSpeechPending}, sectionPending={State.HasPendingContent}, sectionSpoken={announce}, overviewPending={summaryPending}");
             string surface = _surfaces.Value && MapSurfaceProbe.TryRead(world, out string key) ? ModText.Get(key) : null;
             // Unknown samples cancel pending text but retain the last known surface to avoid footstep chatter.
             bool groundSpoken = SurfaceState.Observe(world.Session, "surface", surface,
-                canSpeak && !HasPendingContent && !summarySpoken && !announce, out string groundText);
+                canSpeak && !HasPendingContent && !summarySpoken && !announce && !scenerySpoken, out string groundText);
             HasPendingContent |= SurfaceState.HasPendingContent;
             if (groundSpoken)
             {
@@ -191,6 +205,7 @@ internal static class MapSectionAccessibility
     {
         State.Reset();
         OverviewState.Reset();
+        SceneryState.Reset();
         _session = 0;
         _previousSection = null;
         _sectionIdentity = null;
@@ -206,6 +221,7 @@ internal static class MapSectionAccessibility
         MapSectionOverview.Reset();
         MapSurfaceProbe.Reset();
         RuntimeMapPlaces.Reset();
+        RuntimeSceneryPlaces.Reset();
         SurfaceState.Reset();
         _nextPoll = 0;
     }

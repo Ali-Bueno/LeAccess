@@ -1,4 +1,6 @@
+using System;
 using LeAccess.Accessibility.Utils;
+using LeAccess.I18n;
 using PixelCrushers.DialogueSystem;
 using UnityEngine;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
@@ -8,6 +10,15 @@ namespace LeAccess.Accessibility.Npcs;
 internal static class NpcNameReader
 {
     internal static string Read(WorldObjectClickListener listener, out string source)
+    {
+        string name = ReadName(listener, out source);
+        string serviceKey = WorldServiceReader.ReadServiceKey(listener);
+        if (serviceKey is null) return name;
+        source = string.IsNullOrWhiteSpace(source) ? "native service" : source + " + native service";
+        return AppendLabel(name, ModText.Get(serviceKey));
+    }
+
+    private static string ReadName(WorldObjectClickListener listener, out string source)
     {
         source = null;
         string name = ReadScope(listener, listener, ref source);
@@ -91,7 +102,18 @@ internal static class NpcNameReader
         string name = TextUtils.CleanText(string.IsNullOrWhiteSpace(tooltip.TopTextKey)
             ? tooltip.TopText : Localization.GetText(tooltip.TopTextKey, tooltip.TopText));
         if (!string.IsNullOrWhiteSpace(name)) source = "NPC tooltip";
-        return name;
+        if (string.IsNullOrWhiteSpace(name)) return null;
+        string subtitle = TextUtils.CleanText(string.IsNullOrWhiteSpace(tooltip.BottomTextKey)
+            ? tooltip.BottomText : Localization.GetText(tooltip.BottomTextKey, tooltip.BottomText));
+        return AppendLabel(name, subtitle);
+    }
+
+    private static string AppendLabel(string name, string detail)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return detail;
+        if (string.IsNullOrWhiteSpace(detail) || string.Equals(name, detail, StringComparison.OrdinalIgnoreCase) ||
+            name.EndsWith(". " + detail, StringComparison.OrdinalIgnoreCase)) return name;
+        return name + ". " + detail;
     }
 
     private static string ReadDisplay(BaseDisplayInformation display, ref string source)

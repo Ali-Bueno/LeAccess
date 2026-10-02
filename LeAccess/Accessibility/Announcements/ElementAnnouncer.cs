@@ -51,7 +51,7 @@ public static class ElementAnnouncer
     /// <summary>
     /// Announces a UI element to the screen reader.
     /// </summary>
-    public static void AnnounceElement(GameObject go, bool interrupt = true)
+    public static void AnnounceElement(GameObject go, bool interrupt = true, string context = null)
     {
         if (!Application.isFocused || !UiVisibility.IsVisible(go) || LE.UI.LoadingScreen.IsVisible) return;
         bool popupActive = ScreenContentAnnouncer.HasActiveContent;
@@ -73,7 +73,8 @@ public static class ElementAnnouncer
         var instanceId = go.GetInstanceID();
         var now = Time.unscaledTime;
 
-        if (instanceId == _lastAnnouncedInstanceId && (now - _lastAnnounceTime) < AnnounceCooldown)
+        bool hasContext = !string.IsNullOrWhiteSpace(context);
+        if (!hasContext && instanceId == _lastAnnouncedInstanceId && (now - _lastAnnounceTime) < AnnounceCooldown)
             return;
 
         if (instanceId != _lastAnnouncedInstanceId) _lastAnnouncementText = null;
@@ -82,16 +83,13 @@ public static class ElementAnnouncer
         _cachedFocusedGo = go;
         _cachedFocusedId = instanceId;
 
-        // DEBUG: Log all element names to find what class selection uses
-        var debugParent = go.transform.parent?.name ?? "no-parent";
-        var hasCharCreation = go.GetComponentInParent<CharacterCreationSelection>() != null;
-        Plugin.Log.LogDebug($"[Element] name={go.name}, parent={debugParent}, hasCharCreationInParent={hasCharCreation}");
-
         var text = BuildAnnouncementText(go, popupActive || dialogueActive);
-        if (!string.IsNullOrWhiteSpace(text) && text != _lastAnnouncementText)
+        if (hasContext || !string.IsNullOrWhiteSpace(text) && text != _lastAnnouncementText)
         {
+            var debugParent = go.transform.parent?.name ?? "no-parent";
+            Plugin.Log.LogDebug($"[Element] name={go.name}, parent={debugParent}");
             _lastAnnouncementText = text;
-            ScreenReader.Speak(text, interrupt);
+            ScreenReader.Speak(ScreenContentTracker.Combine(new[] { context, text }), interrupt);
         }
     }
 
@@ -136,6 +134,10 @@ public static class ElementAnnouncer
 
             if (!isCurrentlyFocused) return;
 
+            if (Settings.SettingsFocusReader.TryRead(out var setting) && UiVisibility.IsVisible(setting.Selected) &&
+                (toggleGo.transform.IsChildOf(setting.Selected.transform) || setting.Selected.transform.IsChildOf(toggleGo.transform)))
+                return;
+
             // Re-announce the state change
             var stateText = ModText.Get(value ? "state.on" : "state.off");
             ScreenReader.Speak(stateText, true);
@@ -172,15 +174,38 @@ public static class ElementAnnouncer
             root is not null && !root.WasCollected && root != null &&
             _cachedFocusedGo.transform.IsChildOf(root.transform)) ResetFocus();
     }
-    private static string BuildAnnouncementText(GameObject go, bool restrictToControl = false)
+
+    internal static bool TryReadDetails(GameObject go, out string text)
+    {
+        text = null;
+        if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible || !UiVisibility.IsVisible(go)) return false;
+        if (ScreenContentAnnouncer.HasActiveContent && !ScreenContentAnnouncer.OwnsFocus(go) ||
+            DialogueAnnouncer.HasActiveContent && !DialogueAnnouncer.OwnsFocus(go)) return false;
+        if (go.GetComponent<TMP_InputField>() != null || go.GetComponentInParent<TMP_InputField>() != null) return false;
+        bool restricted = ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent;
+        string brief = BuildAnnouncementText(go, restricted);
+        text = BuildAnnouncementText(go, restricted, includeDetails: true);
+        if (string.IsNullOrWhiteSpace(text) || text == brief) { text = null; return false; }
+        _lastAnnouncedInstanceId = go.GetInstanceID();
+        _lastAnnounceTime = Time.unscaledTime;
+        _lastAnnouncementText = brief;
+        _cachedFocusedGo = go;
+        _cachedFocusedId = _lastAnnouncedInstanceId;
+        _pendingFocus = null;
+        return true;
+    }
+
+    private static string BuildAnnouncementText(GameObject go, bool restrictToControl = false, bool includeDetails = false)
     {
         string label = null;
         string value = null;
         string description = null;
 
+        if (!restrictToControl && Items.MerchantMenuReader.TryReadTab(go, out string merchantTab))
+            return merchantTab;
         if (ClassSelectionReader.TryReadControl(go, out var classSelection))
             return string.IsNullOrWhiteSpace(classSelection.Name) ? null :
-                ScreenContentTracker.Combine(new[] { classSelection.Name, classSelection.Description });
+                ScreenContentTracker.Combine(new[] { classSelection.Name, includeDetails ? classSelection.Description : null });
         // Special case: Check if we're inside an expanded dropdown list
         var dropdownItemText = TextDetector.TryGetDropdownItemText(go);
         if (dropdownItemText != null)
@@ -209,7 +234,8 @@ public static class ElementAnnouncer
         var dropdown = go.GetComponent<TMP_Dropdown>() ?? go.GetComponentInParent<TMP_Dropdown>() ?? go.GetComponentInChildren<TMP_Dropdown>();
         var slider = go.GetComponent<Slider>() ?? go.GetComponentInParent<Slider>() ?? go.GetComponentInChildren<Slider>();
         var button = go.GetComponent<Button>() ?? go.GetComponentInParent<Button>();
-        var inputField = go.GetComponent<TMP_InputField>() ?? go.GetComponentInParent<TMP_InputField>() ?? go.GetComponentInChildren<TMP_InputField>();
+        var inputField = go.GetComponent<TMP_InputField>() ?? go.GetComponentInParent<TMP_InputField>() ??
+            (slider == null ? go.GetComponentInChildren<TMP_InputField>() : null);
 
         // For input fields
         if (inputField != null)
@@ -217,6 +243,13 @@ public static class ElementAnnouncer
             var inputText = inputField.text;
             var placeholderTmp = inputField.placeholder?.TryCast<TextMeshProUGUI>();
             var placeholder = placeholderTmp != null ? TextUtils.CleanText(placeholderTmp.text) : null;
+
+            if (!restrictToControl && inputField.GetComponentInParent<LE.Settings.NumericSettingUI>() != null)
+            {
+                TextDetector.FindLabelInImmediateContainer(inputField.gameObject, ref label, ref description, inputText);
+                if (!string.IsNullOrWhiteSpace(label))
+                    return FormatAnnouncement(label, inputText, includeDetails ? description : null, go, isDisabledOption);
+            }
 
             if (!string.IsNullOrEmpty(inputText))
             {
@@ -247,7 +280,7 @@ public static class ElementAnnouncer
         {
             var buttonText = TextUtils.GetTextFromHierarchy(button.gameObject);
             if (!string.IsNullOrEmpty(buttonText))
-                return ScreenContentTracker.Combine(new[] { buttonText, description });
+                return ScreenContentTracker.Combine(new[] { buttonText, includeDetails ? description : null });
         }
 
         // Get control value
@@ -270,7 +303,7 @@ public static class ElementAnnouncer
         }
         else if (slider != null)
         {
-            value = Mathf.RoundToInt(slider.value).ToString();
+            value = Settings.SettingsValueReader.ReadSlider(slider) ?? Mathf.RoundToInt(slider.value).ToString();
         }
 
         if (restrictToControl)
@@ -335,7 +368,7 @@ public static class ElementAnnouncer
                 return directText;
         }
 
-        return FormatAnnouncement(label, value, description, go, isDisabledOption);
+        return FormatAnnouncement(label, value, includeDetails ? description : null, go, isDisabledOption);
     }
 
     private static bool IsDisabledOption(GameObject go)

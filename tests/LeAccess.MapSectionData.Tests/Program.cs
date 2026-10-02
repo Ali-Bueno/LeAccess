@@ -11,12 +11,14 @@ string json = new StreamReader(embedded).ReadToEnd();
 using var document = JsonDocument.Parse(json);
 Check(document.RootElement.GetProperty("maps").GetArrayLength() == 1, "Pilot ships exactly one evidence-backed fixed map");
 var catalog = MapSectionCatalog.Parse(json);
-const string build = "c8576b3db279ad61f09835dd69cc9d589e5a5cbe";
+const string build = SceneEvidence.BuildHash;
 var map = catalog.Find("Z12",build);
 Check(map is not null && map.Scene == "Z12" && map.ScenePath == "Assets/BundledScenes/Z12.unity" && map.BuildHash == build,
     "Actual profile matches independently recorded scene, serialized asset path and installed build");
 Check(catalog.Find("Z12","other-build") == null && catalog.Find("OtherScene",build) == null,
     "Actual profile does not match another scene or build");
+Check(catalog.Find("Z12",SceneEvidence.PreviousBuildHash) == null,
+    "Refreshed pilot does not silently accept the previous installation build");
 Check(map.Sections.Count == 2 && map.Sections.Select(s=>s.Id).Distinct().Count() == 2,
     "Actual data contains two distinct bridge union sections");
 Check(map.Anchors.Length == 3 && map.Anchors.Select(a=>a.Path).Distinct().Count() == 3,

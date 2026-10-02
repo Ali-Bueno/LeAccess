@@ -22,6 +22,7 @@ internal static class Program
             PopupPriorityDoesNotReplayExpiredNotices();
             DialoguePriorityDoesNotReplayExpiredNotices();
             ScreenReaderAvailabilityDefersVisibleContent();
+            MenuFeedbackFollowsBriefSelection();
             Console.WriteLine($"Notification tests passed: {_checks} checks.");
             return 0;
         }
@@ -250,6 +251,19 @@ internal static class Program
     {
         root ??= new GameObject();
         return new GameObject().Add(new UIQuickNotificationText { _label = root.Add(new TMP_Text { text = text }) });
+    }
+    private static void MenuFeedbackFollowsBriefSelection()
+    {
+        Reset();
+        var notice = Quick("No puedes equipar este objeto: requiere nivel 12");
+        NotificationAnnouncer.TrackQuick(notice);
+        Tick(true); Tick(true);
+        Check(ScreenReader.Messages.Count == 0, "Pending menu selection has priority over equipment rejection text");
+        Tick(false);
+        Check(ScreenReader.Messages.Single().Text.Contains("requiere nivel 12"),
+            "Once the brief settles, the still-visible rejection speaks without closing the menu");
+        Tick(false);
+        Check(ScreenReader.Messages.Count == 1, "An unchanged equipment rejection is not repeated every frame");
     }
     private static void Tick(bool otherContentActive = false)
     {

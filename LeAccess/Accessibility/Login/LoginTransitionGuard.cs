@@ -60,8 +60,9 @@ internal static class LoginTransitionGuard
         try
         {
             var request = _pending;
-            if (!StillOwned(request) || !TryPhase(out var phase, out bool transitioning) ||
-                phase != ClientAppStateType.SystemLoading && phase != ClientAppStateType.Login)
+            if (!StillOwned(request)) { Discard(); return; }
+            if (!TryPhase(out var phase, out bool transitioning)) return;
+            if (phase != ClientAppStateType.SystemLoading && phase != ClientAppStateType.Login)
             { Discard(); return; }
             if (phase != ClientAppStateType.Login || transitioning || !Application.isFocused || LoadingScreen.IsVisible)
                 return;
@@ -72,7 +73,8 @@ internal static class LoginTransitionGuard
             if (request.Online) request.Panel.OnPlayOnlineClicked();
             else request.Panel.OnPlayOfflineClicked();
         }
-        catch (Exception ex) { _pending = null; Report(ex); }
+        // Observation failures preserve intent; dispatch clears it before any native side effect.
+        catch (Exception ex) { Report(ex); }
     }
 
     private static Request Capture(LandingZonePanel panel, bool online)
@@ -113,10 +115,7 @@ internal static class LoginTransitionGuard
     private static bool TryPhase(out ClientAppStateType phase, out bool transitioning)
     {
         phase = ClientStateManager.CurrentClientAppStateType;
-        var transition = ClientStateManager._activeTransition;
-        transitioning = false;
-        if (transition is null || transition.WasCollected) return false;
-        transitioning = transition.HasValue;
+        transitioning = LoginTransitionState.IsTransitioning();
         return true;
     }
 
@@ -131,7 +130,7 @@ internal static class LoginTransitionGuard
         string failure = $"{error.GetType().Name}: {error.Message}";
         if (_lastFailure == failure) return;
         _lastFailure = failure;
-        Plugin.Log.LogWarning($"[StartupMode] {failure}");
+        Plugin.Log.LogWarning($"[StartupMode] {error}");
     }
 
     internal static void Reset() { _pending = null; _lastFailure = null; }

@@ -15,6 +15,8 @@ internal static class InventoryAccessibility
 {
     private static readonly InventoryAnnouncementState Announcements = new();
     private static string _lastFailure;
+    private static string _contextKey, _context;
+    private static float _nextContextRead;
 
     internal static bool HasPendingContent => HasActiveContent && Announcements.HasPendingContent;
 
@@ -39,7 +41,7 @@ internal static class InventoryAccessibility
         try
         {
             var container = GetFocusedContainer();
-            if (!IsAlive(container)) { Announcements.Reset(); return; }
+            if (!IsAlive(container)) { Reset(); return; }
             var entry = container.currentlySelectedItem;
             string key, text;
             ItemData selectedData = null;
@@ -59,17 +61,33 @@ internal static class InventoryAccessibility
                 text = null;
                 if (data is not null && !data.WasCollected)
                 {
-                    hasTooltip = ItemTooltipReader.TryReadForItem(data, container.gameObject, out text);
-                    // A stalled tooltip must not withhold the selected item's own localized identity.
-                    var unpacked = hasTooltip ? null : data.getAsUnpacked();
+                    var unpacked = data.getAsUnpacked();
                     if (unpacked is not null && !unpacked.WasCollected)
                         text = ScreenContentTracker.Combine(new[]
                         {
-                            TextUtils.CleanText(unpacked.FullName), TextUtils.CleanText(unpacked.LocalisedBaseTypeName)
+                            TextUtils.CleanText(unpacked.FullName), TextUtils.CleanText(unpacked.LocalisedBaseTypeName),
+                            IsEquipmentSlot(container.identifier) ? ModText.Get("inventory.equipped") : null
                         });
                 }
             }
+            if (selectedData is not null && !selectedData.WasCollected)
+            {
+                if (_contextKey != key || readDetails || Time.unscaledTime >= _nextContextRead)
+                {
+                    _contextKey = key;
+                    _nextContextRead = Time.unscaledTime + 0.2f;
+                    _context = ScreenContentTracker.Combine(new[]
+                    {
+                        MerchantItemReader.ReadContext(selectedData, container),
+                        ScreenContentTracker.Combine(InventoryActionReader.ReadForItem(selectedData, container))
+                    });
+                }
+                text = ScreenContentTracker.Combine(new[] { text, _context });
+            }
+            else { _contextKey = _context = null; }
             string requestedText = text;
+            if (readDetails && selectedData is not null && !selectedData.WasCollected)
+                hasTooltip = ItemTooltipReader.TryReadForItem(selectedData, container.gameObject, out requestedText);
             if (readDetails && !hasTooltip && selectedData is not null && !selectedData.WasCollected)
             {
                 if (!ItemTooltipModelReader.TryRead(selectedData, container, out requestedText))
@@ -97,6 +115,11 @@ internal static class InventoryAccessibility
         catch (Exception ex) { Announcements.Reset(); ReportFailure(ex); }
     }
 
+    private static bool IsEquipmentSlot(ContainerID id) => id is
+        ContainerID.EQ_HELMET or ContainerID.EQ_ARMOR or ContainerID.EQ_WEAPON or ContainerID.EQ_OFFHAND or
+        ContainerID.EQ_GLOVES or ContainerID.EQ_BELT or ContainerID.EQ_BOOTS or ContainerID.EQ_RIGHTRING or
+        ContainerID.EQ_LEFTRING or ContainerID.EQ_AMULET or ContainerID.EQ_RELIC;
+
     private static ItemContainerUI GetFocusedContainer()
     {
         if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible ||
@@ -109,7 +132,11 @@ internal static class InventoryAccessibility
             ? container : null;
     }
 
-    internal static void Reset() { Announcements.Reset(); _lastFailure = null; }
+    internal static void Reset()
+    {
+        Announcements.Reset(); _lastFailure = null;
+        _contextKey = _context = null; _nextContextRead = 0;
+    }
 
     private static void ReportFailure(Exception ex)
     {

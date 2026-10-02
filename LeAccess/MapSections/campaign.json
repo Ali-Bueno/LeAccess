@@ -3,7 +3,7 @@
     {
       "scene": "Z12",
       "scenePath": "Assets/BundledScenes/Z12.unity",
-      "buildHash": "c8576b3db279ad61f09835dd69cc9d589e5a5cbe",
+      "buildHash": "bf5a46c674908886ecdabb6e9906b8a3bf81ec5b",
       "anchors": [
         {
           "path": "SceneObjects/Visuals/Foreground/Deco Folder/BoardedBridge",
@@ -21,8 +21,8 @@
         },
         {
           "path": "SceneObjects/Visuals/Foreground/MicroVerse/Terrain",
-          "x": -91,
-          "y": -6,
+          "x": -91.0,
+          "y": -6.0,
           "z": -76.699997,
           "tolerance": 0.01
         }

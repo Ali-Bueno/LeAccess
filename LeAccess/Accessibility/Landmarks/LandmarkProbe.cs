@@ -1,6 +1,8 @@
 using System;
 using EHG.Multiplayer;
 using LeAccess.Accessibility.Utils;
+using LeAccess.Accessibility.Npcs;
+using LeAccess.I18n;
 using Networking.Multiplayer.Interactables.Portals;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -42,6 +44,7 @@ internal static class LandmarkProbe
         bool found = false;
         float nearest = float.PositiveInfinity;
         int active = 0, tags = 0, ownedTags = 0, inRange = 0, named = 0;
+        string candidateStatus = "none";
         for (int index = 0; index < listeners.Count; index++)
         {
             try
@@ -68,8 +71,8 @@ internal static class LandmarkProbe
                         portal = null;
                     if (tag is null && IsAlive(portal)) tag = portal.hoverTag;
                 }
-                if (!Available(tag, scene)) continue;
-                tags++;
+                bool hasTag = Available(tag, scene);
+                if (hasTag) tags++;
                 float range = listener.interactionRange;
                 if (!float.IsFinite(range) || range <= 0) continue;
                 Vector3 destination = listener.transform.position;
@@ -79,7 +82,17 @@ internal static class LandmarkProbe
                 inRange++;
                 int id = listener.GetInstanceID();
                 if (found && (distance > nearest || distance == nearest && id >= target.InstanceId)) continue;
-                string name = ReadName(tag, scene, portal);
+                string nameStatus = "no_tag";
+                string name = hasTag ? ReadName(tag, scene, portal, out nameStatus) : null;
+                string service = WorldServiceReader.ReadServiceKey(listener);
+                if (service is not null)
+                {
+                    // NPC speech owns named services; landmarks cover objects such as the stash and waypoint.
+                    if (WorldServiceReader.IsNpc(listener)) continue;
+                    name = ModText.Get(service);
+                    nameStatus = service;
+                }
+                candidateStatus = $"{id}:{(hasTag ? tag.hoverTargetType.ToString() : "no_tag")}:{nameStatus}";
                 if (!string.IsNullOrWhiteSpace(name)) named++;
                 if (string.IsNullOrWhiteSpace(name) || !listener.CanInteract()) continue;
                 target = new LandmarkTarget(session, id, name);
@@ -89,12 +102,14 @@ internal static class LandmarkProbe
             catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
         }
         LastStatus = $"listeners={listeners.Count} active={active} tags={tags} owned_tags={ownedTags} " +
-            $"in_range={inRange} named={named} target={(found ? target.InstanceId : 0)}";
+            $"in_range={inRange} named={named} target={(found ? target.InstanceId : 0)} candidate={candidateStatus}";
         return found;
     }
 
-    private static string ReadName(HoverTagOnMouseOver tag, Scene scene, PortalVisualController portal)
+    private static string ReadName(HoverTagOnMouseOver tag, Scene scene, PortalVisualController portal,
+        out string status)
     {
+        status = "authored_label";
         if (tag.hoverTargetType == HoverTagOnMouseOver.HoverTargetType.SIGNPOST)
             return TextUtils.CleanText(tag.hoverText);
         if (tag.hoverTargetType == HoverTagOnMouseOver.HoverTargetType.OTHER ||
@@ -102,19 +117,28 @@ internal static class LandmarkProbe
         {
             // Native portal initialization localizes this text; other generic tags
             // are not evidence of a portal. See reference/map-landmarks.md.
+            status = "portal_unavailable";
             if (!IsAlive(portal) || !IsAlive(portal.hoverTag) || portal.hoverTag.Pointer != tag.Pointer ||
                 portal.isNonInteractableByPlayer()) return null;
+            status = "owned_portal_label";
             return TextUtils.CleanText(tag.hoverText);
         }
+        status = "unsupported_type";
         TransitionOrGateInteraction interaction;
         if (tag.hoverTargetType == HoverTagOnMouseOver.HoverTargetType.ZONE_TRANSITION)
             interaction = tag.sceneInteraction;
         else if (tag.hoverTargetType == HoverTagOnMouseOver.HoverTargetType.DUNGEON_TRANSITION)
             interaction = tag.dungeonTransitionInteraction;
         else return null;
-        if (!Available(interaction, scene) || string.IsNullOrWhiteSpace(interaction.sceneName)) return null;
+        status = "destination_metadata_unavailable";
+        // Native hover labels read these typed references even when their
+        // metadata GameObject is inactive; availability belongs to the listener.
+        if (!IsAlive(interaction) || (int)interaction.gameObject.scene.handle != (int)scene.handle ||
+            string.IsNullOrWhiteSpace(interaction.sceneName)) return null;
+        status = $"unknown_destination:{interaction.sceneName}";
         if (!SceneList.TryGetNonDefaultSceneDetails(interaction.sceneName, out var details) ||
             details is null || details.WasCollected) return null;
+        status = $"destination:{interaction.sceneName}:metadata_active={interaction.isActiveAndEnabled}";
         return TextUtils.CleanText(details.LocalizedName);
     }
 

@@ -1,8 +1,8 @@
 # LeAccess
 
 LeAccess is a screen-reader accessibility mod for **Last Epoch**, built as a
-BepInEx 6 IL2CPP plugin for Windows. The current target is Steam **1.5.0.1**,
-build **25663618**, with Unity **6000.4.8f1**.
+BepInEx 6 IL2CPP plugin for Windows. The current target is Steam **1.5.1**,
+build **25672295**, with Unity **6000.4.8f1**.
 
 See [STATUS.md](STATUS.md) for confirmed behavior, pending listening checks and
 the latest installed build. Technical findings and reproduction notes live in
@@ -24,13 +24,28 @@ The startup guard retains an early online/offline button press until the game's
 loading transition has finished. Menu reading preserves native control mappings;
 HUD button hints remain silent during exploration.
 
-In inventory and skill menus, push the **right stick up** to reread the selected
-object or skill's details. Return the stick to neutral before repeating the
-gesture. Skill rereading also refreshes the current displayed combat statistics.
+Menu navigation reads brief names and states. Push the **right stick up** to read
+the selected tooltip: inventory, skills, passive nodes, class/mastery/realm
+choices, quest details and supported ordinary menu descriptions. Return the stick
+to neutral before repeating. Skill inspection refreshes current displayed stats.
+Quests also announce their current objective and state during navigation.
+Earlier completed or failed objectives appear only in manual details, clearly
+labeled as that quest's history.
+Items announce their available actions with the button first; merchant items
+include purchase, sale or repurchase prices. Skills announce learned state and
+their declared level or passive-point requirement.
 Item inspection can use the game's tooltip formatter when the visual tooltip is
 unavailable, including modifiers, lore and requirements.
 Character-name screen keyboards require an explicit click or submit on the name
 field; moving focus to it does not start editing.
+Settings announce the tab and each control's name/value, including sound sliders
+and visible challenge states when no button is available. Descriptions remain
+available with right-stick-up.
+
+Ambient NPC subtitles are read when their text is visible on screen or the NPC
+is within interaction range. Nearby world services and supported scenery models
+can be announced separately from the ground beneath the player, including camp
+tents, wagons, gateways and the statue of Eterra.
 
 ## Requirements and build
 
@@ -73,6 +88,14 @@ dotnet build LeAccess/LeAccess.csproj -p:SkipPluginDeployment=true
 Settings are stored in `BepInEx/config/LeAccess.cfg`. Translation overrides are in
 the plugin's `Translations/` directory; builds preserve existing catalogs.
 See [localization instructions](reference/localization.md).
+
+A complete copy-to-game-folder test ZIP can be assembled with the pinned loader,
+bundled runtime, plugin and repair preloader. See [test packaging](reference/test-package.md).
+Its first launch generates matching interop and may download Unity base libraries.
+It contains no saved games, account data or personal configuration.
+Generated test ZIPs are kept locally in the repository root and excluded from Git.
+Extract the package beside `Last Epoch.exe`, open NVDA, and launch through Steam;
+no BAT launcher is required.
 
 ## Validation
 

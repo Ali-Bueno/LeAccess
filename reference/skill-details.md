@@ -1,6 +1,13 @@
 # Skill tooltip details — Steam 1.5
 
 Implemented 2026-10-02 against 1.5.0.1 interop; gameplay listening is pending.
+Navigation now reads only the name, current binding/state and node points.
+The [assignment and learning reader](skill-assignment.md) also supplies declared
+weapon-variant assignment, learned state, required level/passive points and the
+destination button while equipping a skill. Its follow-up uses Steam build
+25672295 interop and native evidence.
+All descriptions and tooltip content require right-stick-up; late tooltip
+rendering and native expansion alone stay silent.
 The game remained closed. These readers add no native hooks. See
 [manual details](skill-inventory-buttons.md#manual-details-2026-10-02) for the
 right-stick-up reread command.
@@ -51,11 +58,12 @@ definition fallback. `SkillTooltipDetailsReader` adds:
   effects. Speech uses visible localized widgets, including the game's units,
   rather than synthesizing costs or DPS from raw numeric fields.
 
-Ability combat stats occupy `SkillSelection.LiveDetails`, separate from stable
-name/description/requirements. The announcement layer snapshots this portion
-for the current selection/detail mode so fluctuating DPS or cooldown values do
-not restart speech every frame. A stable description change or closing/reopening
-the selection permits a fresh snapshot. Node point/detail changes remain live.
+Ability combat stats occupy `SkillSelection.LiveDetails`. Manual inspection
+refreshes them from current visible widgets; automatic selection reading skips
+tooltip traversal entirely. The brief tracking snapshot uses the selected
+definition's name, so a differently worded tooltip title cannot cause another
+automatic announcement. Node point changes remain live without reading their
+full description again.
 
 ## API evidence
 
@@ -85,8 +93,8 @@ Source-linked tests exercise modern/legacy selection priority, mismatched info
 and node identities, unfinished layout, hidden/collected widgets, section scope,
 localized stat/tag reading, rapid navigation and suppression of fluctuating DPS.
 Main project compiled against installed interop without launching the game.
-Final skills suite: 85 checks. Integrated build installed; `STATUS.md` records
-the final DLL hash and regression totals.
+Final skills suite after assignment/learning follow-up: 143 checks. The follow-up
+built without deployment; `STATUS.md` records integrated installation status.
 
 Tomorrow: select adjacent specialized skill nodes; compare modifiers, alternate
 details, requirements, bonus and refund text. Allocate/refund a point and check

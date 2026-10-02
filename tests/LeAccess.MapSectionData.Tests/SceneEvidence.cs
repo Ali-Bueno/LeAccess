@@ -1,5 +1,8 @@
 internal static class SceneEvidence
 {
+    // Independently recorded build_hash.txt after regenerating all shipped profiles; reference/map-section-build-25672295.json.
+    internal const string BuildHash = "bf5a46c674908886ecdabb6e9906b8a3bf81ec5b";
+    internal const string PreviousBuildHash = "c8576b3db279ad61f09835dd69cc9d589e5a5cbe";
     // Source: sceneassets_Z12 NavMeshData 6429231270748307022, VAND v16 float3 vertices; reference/map-section-data.md.
     internal static readonly (double X,double Y,double Z)[] FirstDeck =
     {

@@ -16,14 +16,7 @@ internal static class ItemTooltipReader
         if (UsesModernTooltip(system))
             return IsModernVisible(system) && TryReadModern(system, expectedItem, expectedContainer, null, null, out text);
         if (!TryGetVisible(out var manager, out var tooltip)) return false;
-        var parameters = manager.activeParameters;
-        if (parameters is null || parameters.WasCollected ||
-            parameters._SlotType_k__BackingField == TooltipItemManager.SlotType.GROUND ||
-            !MatchesItem(parameters._Item_k__BackingField, expectedItem)) return false;
-        var opener = parameters._Opener_k__BackingField;
-        if (!IsAlive(opener) || !IsAlive(expectedContainer) ||
-            !IsAlive(opener.transform) || !IsAlive(expectedContainer.transform) ||
-            !opener.transform.IsChildOf(expectedContainer.transform)) return false;
+        if (!MatchesItemOwner(manager.activeParameters, expectedItem, expectedContainer)) return false;
         text = Read(tooltip);
         return !string.IsNullOrWhiteSpace(text);
     }
@@ -70,7 +63,11 @@ internal static class ItemTooltipReader
         actual is not null && !actual.WasCollected && expected is not null && !expected.WasCollected &&
         (actual.Pointer == expected.Pointer || actual.IdEquals(expected));
 
-    private static bool TryGetVisible(out TooltipItemManager manager, out UITooltipItem tooltip)
+    internal static bool MatchesItemOwner(TooltipItemManager.ItemTooltipParameters parameters,
+        ItemData item, GameObject container) => item is not null && !item.WasCollected &&
+        MatchesParameters(parameters, item, container, null, null);
+
+    internal static bool TryGetVisible(out TooltipItemManager manager, out UITooltipItem tooltip)
     {
         var system = GetSystem();
         manager = IsAlive(system) ? system._tooltipItemManager : null;

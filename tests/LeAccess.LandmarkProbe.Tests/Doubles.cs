@@ -28,6 +28,7 @@ namespace UnityEngine
         internal SceneManagement.Scene scene = SceneManagement.SceneManager.Active;
         internal Transform transform;
         internal readonly List<Object> Components = new();
+        internal readonly List<GameObject> Children = new();
         internal T GetComponent<T>() where T : class => Components.OfType<T>().FirstOrDefault();
         internal T GetComponentInParent<T>() where T : class
         {
@@ -55,11 +56,29 @@ namespace UnityEngine
         internal float sqrMagnitude => x*x + y*y + z*z;
         public static Vector3 operator -(Vector3 a, Vector3 b) => new() { x=a.x-b.x, y=a.y-b.y, z=a.z-b.z };
     }
-    internal class Behaviour : Object
+    internal class Component : Object
     {
         internal GameObject gameObject = new();
         internal Transform transform => gameObject.transform;
-        internal bool isActiveAndEnabled = true;
+        internal T GetComponent<T>() where T : class => gameObject.GetComponent<T>();
+        internal T GetComponentInParent<T>(bool inactive = false) where T : class => gameObject.GetComponentInParent<T>();
+        internal List<T> GetComponentsInChildren<T>(bool inactive) where T : class
+        {
+            var result = new List<T>();
+            void Read(GameObject root)
+            {
+                if (!inactive && !root.activeInHierarchy) return;
+                result.AddRange(root.Components.OfType<T>());
+                foreach (var child in root.Children) Read(child);
+            }
+            Read(gameObject);
+            return result;
+        }
+    }
+    internal class Behaviour : Component
+    {
+        internal bool enabled = true;
+        internal bool isActiveAndEnabled { get => enabled && gameObject.activeInHierarchy; set => enabled = value; }
     }
 }
 namespace EHG.Multiplayer
@@ -97,9 +116,36 @@ internal sealed class WorldObjectClickListener : UnityEngine.Behaviour
 {
     internal static NativeList<WorldObjectClickListener> allListener = new();
     internal HoverTagOnMouseOver hoverTagOnMouseOver;
+    internal RelayNPCInteraction _NPCinteraction;
+    internal LEConversationTrigger _leConversationTrigger;
     internal float interactionRange = 5;
     internal bool controllerTargetingUsePlayerY, Broken, Allowed = true;
     internal bool CanInteract() { if (Broken) throw new InvalidOperationException("broken listener"); return Allowed; }
+}
+internal class NPCInteraction : UnityEngine.Behaviour { }
+internal sealed class RelayNPCInteraction : NPCInteraction { internal ServiceList<ConditionHandler> otherInteractables = new(); }
+internal sealed class ServiceList<T> : List<T> { internal bool WasCollected; }
+internal sealed class ConditionHandler : UnityEngine.Behaviour { }
+internal sealed class NpcNameTooltip : UnityEngine.Behaviour { }
+internal sealed class LEConversationTrigger : UnityEngine.Behaviour { }
+internal sealed class OpenShop : UnityEngine.Behaviour { }
+internal sealed class OpenStash : UnityEngine.Behaviour { }
+internal sealed class OpenMenuInteraction : UnityEngine.Behaviour
+{
+    internal enum MenuToOpen { Map, Stash, CraftingPanel, MtxShop }
+    internal MenuToOpen menu;
+}
+internal sealed class EnableWaypointInteraction : UnityEngine.Behaviour { }
+namespace LeAccess.I18n
+{
+    internal static class ModText
+    {
+        internal static string Get(string key) => key switch
+        {
+            "service.merchant" => "Mercader", "service.stash" => "Alijo",
+            "service.forge" => "Forja", "service.waypoint" => "Punto de viaje", _ => key
+        };
+    }
 }
 internal sealed class HoverTagOnMouseOver : UnityEngine.Behaviour
 {

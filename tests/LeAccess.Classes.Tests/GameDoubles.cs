@@ -48,6 +48,13 @@ internal class MasteryPanel : Component
 internal class MasteryBanner : Component
 { internal CharacterClassID characterClassID; internal Il2CppSystem.Collections.Generic.List<MasteryButton> masteryButtons; }
 internal class MasteryTabButton : Component { internal TabButton _tabButton; }
+internal class PassiveTreeNavigable : Component { }
+internal class PassiveTreeBannerNavigable : Component
+{
+    internal bool IsDescriptionSelected;
+    internal Button CurrentButton;
+    internal RectTransform descriptionContainer;
+}
 internal class TabButton : Component { internal int SelectedIndex; }
 internal class TabUIElement : Selectable
 { internal TabUIController controller; internal int elementID; }
@@ -72,6 +79,7 @@ namespace LE.UI.PanelSystem
 {
     internal class FullScreenPanelPassiveTree : Component
     {
+        internal NativeObject ActiveChildNavigable;
         internal Il2CppSystem.Collections.Generic.List<MasteryTabButton> _masteryTabButtons;
         internal Il2CppSystem.Collections.Generic.List<PassivePanelData.MasteryData> _masteryDataList;
         internal int _currentMasteryIndex;

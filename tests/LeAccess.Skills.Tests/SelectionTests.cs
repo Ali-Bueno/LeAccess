@@ -38,6 +38,7 @@ internal static class SelectionTests
         NodeTooltipManager.instance = null;
         UIBase.instance = null;
         LeAccess.Plugin.Log.Warnings.Clear();
+        LeAccess.Plugin.Log.Information.Clear();
         var panel = new GameObject().Add(new SkillsPanelManager());
         var control = panel.gameObject.Child().Add(new Selectable());
         var ability = new Ability { abilityName = "Internal Fireball" };
@@ -138,38 +139,32 @@ internal static class SelectionTests
         BindingTests.Icon(fixture.Ability, "cast"); BindingTests.Bind("cast", EpochInputManager.InputActions.Ability1, "A");
         Tick();
         check(ScreenReader.Messages.Count == 0 && SkillAccessibility.HasPendingContent,
-            "Selected skill body settles before reading and owns pending priority");
+            "Selected name settles before reading");
         Tick();
-        check(ScreenReader.Messages.Single().Text.StartsWith("Bola de fuego. Equipped: A.") && ScreenReader.Messages[0].Interrupt,
-            "Focused skill announces its name then actual assigned button then details");
-        Tick(); Tick();
-        check(ScreenReader.Messages.Count == 1 && !SkillAccessibility.HasPendingContent,
-            "Unchanged selected skill does not repeat with focus callbacks or frame updates");
+        check(ScreenReader.Messages.Single() == ("Bola de fuego. Equipped: A. Learned", true),
+            "Navigation reads only name and assignment, without description or tooltip");
         check(SkillAccessibility.TryHandleFocus(fixture.Control.gameObject.Child()) &&
-            !SkillAccessibility.TryHandleFocus(new GameObject()),
-            "Skill focus ownership covers only the selected control and its descendants");
+            !SkillAccessibility.TryHandleFocus(new GameObject()), "Focus ownership stays with the selected control");
+        fixture.Tooltip.descriptionText.text = "Inflige 36 de daño de fuego.";
+        fixture.Tooltip.moreInfoObj.Active = false;
+        Tick(); Tick();
+        check(ScreenReader.Messages.Count == 1, "Tooltip changes cannot restart automatic navigation speech");
         BindingTests.Bind("cast", EpochInputManager.InputActions.Ability1, "RB"); Tick(0.21); Tick();
-        check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text.Contains(". Equipped: RB."),
-            "Remapping while focus stays on one skill is refreshed after the binding cache interval");
-        fixture.Tooltip.descriptionText.text = "Inflige 30 de daño de fuego."; Tick(); Tick();
-        check(ScreenReader.Messages.Count == 3 && ScreenReader.Messages.Last().Text.Contains("30"),
-            "Actual changed skill stats are read without moving selection");
-        fixture.Tooltip.moreInfoObj.Active = false; Tick(); Tick();
-        check(ScreenReader.Messages.Count == 3, "Closing expanded information does not replay the reduced basic tooltip");
-        fixture.Tooltip.descriptionText.text = "Inflige 36 de daño de fuego."; Tick(); Tick();
-        check(ScreenReader.Messages.Count == 4 && ScreenReader.Messages.Last().Text.Contains("36"),
-            "Real description changes remain audible while the tooltip stays in basic mode");
+        check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text == "Bola de fuego. Equipped: RB. Learned",
+            "Live remapping updates the brief assigned button");
+        SkillAccessibility.Update(readDetails: true);
+        check(ScreenReader.Messages.Last().Text.Contains("36") && ScreenReader.Messages.Last().Text.Contains("Equipped: RB"),
+            "Right stick requests current full details and assignment");
         int spoken = ScreenReader.Messages.Count;
-        fixture.Tooltip.content.Active = false; Tick(); Tick();
-        check(ScreenReader.Messages.Count == spoken,
-            "Transient tooltip disappearance must not interrupt the same selected skill with reduced fallback text");
-        fixture.Tooltip.content.Active = true; Tick(); Tick();
-        check(ScreenReader.Messages.Count == spoken, "Restoring the same tooltip does not replay already-spoken detail");
+        Tick(); Tick();
+        fixture.Tooltip.moreInfoObj.Active = true; Tick(); Tick();
+        check(ScreenReader.Messages.Count == spoken, "Automatic focus and native expansion cannot repeat manually spoken details");
+        SkillAccessibility.Update(readDetails: true);
+        check(ScreenReader.Messages.Last().Text.Contains("inteligencia"), "Manual request includes currently expanded details");
         fixture.Tooltip.content.Active = false;
-        BindingTests.Bind("cast", EpochInputManager.InputActions.Ability1, "LB"); Tick(0.21); Tick();
-        check(ScreenReader.Messages.Count == spoken + 1 && ScreenReader.Messages.Last().Text.Contains(". Equipped: LB.") &&
-            !ScreenReader.Messages.Last().Text.Contains("36"),
-            "Changed binding while tooltip is hidden cannot inherit retained old visible stats");
+        SkillAccessibility.Update(readDetails: true);
+        check(ScreenReader.Messages.Last().Text.Contains("Lanza") && !ScreenReader.Messages.Last().Text.Contains("36"),
+            "Manual request rejects retained hidden tooltip stats");
 
         fixture = Reset(); Tick();
         var second = fixture.Panel.gameObject.Child().Add(new Selectable());
@@ -177,7 +172,7 @@ internal static class SelectionTests
         fixture.Cells[1, 2] = second; Tick();
         check(ScreenReader.Messages.Count == 0, "Rapid navigation discards the unsettled previous skill");
         Tick();
-        check(ScreenReader.Messages.Single().Text == "Escudo de hielo", "Only the latest stable selected skill is announced");
+        check(ScreenReader.Messages.Single().Text == "Escudo de hielo. Not equipped", "Only latest stable skill and assignment are announced");
         foreach (string gate in new[] { "popup", "dialogue", "radial menu", "loading", "focus" })
         {
             fixture = Reset(); Tick();
@@ -186,90 +181,42 @@ internal static class SelectionTests
             if (gate == "radial menu") ControllerMenuAccessibility.HasActiveContent = true;
             if (gate == "loading") LE.UI.LoadingScreen.IsVisible = true;
             if (gate == "focus") Application.isFocused = false;
-            Tick(); Tick();
+            Tick(); SkillAccessibility.Update(readDetails: true);
             check(ScreenReader.Messages.Count == 0 && !SkillAccessibility.HasActiveContent && !SkillAccessibility.HasPendingContent,
-                $"{gate} discards background skill speech and focus ownership");
+                $"{gate} blocks background automatic and manual speech");
         }
-        fixture = Reset(); PromptsInfoProvider.Instance.Throw = true;
-        BindingTests.Icon(fixture.Ability, "cast"); BindingTests.Bind("cast", EpochInputManager.InputActions.Ability1, "A");
-        Tick(); Tick();
-        check(ScreenReader.Messages.Single().Text.StartsWith("Bola de fuego") &&
-            !ScreenReader.Messages[0].Text.Contains(". A."),
-            "Unavailable binding never suppresses the selected skill's real name or invents an unassigned claim");
-        NavigationManager.currentlySelected = null; Tick();
-        check(!SkillAccessibility.HasActiveContent && !SkillAccessibility.HasPendingContent,
-            "Closing the panel clears selected skill ownership and pending content");
-        NavigationManager.currentlySelected = fixture.Panel; Tick(); Tick();
-        check(ScreenReader.Messages.Count == 2, "Reopening the same skill announces it again after close reset");
         fixture = Reset();
         BindingTests.Icon(fixture.Ability, "cast"); BindingTests.Bind("cast", EpochInputManager.InputActions.Ability1, "A");
+        PromptsInfoProvider.Instance.Throw = true;
         Tick(); Tick();
-        check(ScreenReader.Messages.Count == 1 && ScreenReader.Messages[0].Interrupt,
-            "The initial owned name, equipped button and description remain immediate");
-        for (int i = 0; i < 5; i++) Tick();
-        Tooltip(fixture);
-        fixture.Tooltip.moreInfoObj.Active = false;
-        fixture.Tooltip.descriptionText.text = "Lanza una bola ardiente.";
-        fixture.Tooltip.statFields = new();
-        var delayedRoot = fixture.Tooltip.content.Child();
-        var delayedDps = Text(delayedRoot, "Daño por segundo: 80");
-        fixture.Tooltip.statFields.Add(new UITooltipAbility.BigStatField { obj = delayedRoot, textField = delayedDps });
-        fixture.Tooltip.activeInitializationStage = UITooltipAbility.TooltipInitializationStage.SetContent;
-        Tick(); Tick();
-        check(ScreenReader.Messages.Count == 1, "Native incomplete tooltip stage cannot emit partially rendered additions");
-        fixture.Tooltip.activeInitializationStage = UITooltipAbility.TooltipInitializationStage.Completed;
-        Tick(); Tick();
-        check(ScreenReader.Messages.Count == 2 && !ScreenReader.Messages.Last().Interrupt &&
-            ScreenReader.Messages.Last().Text.Contains("Hechizo") && ScreenReader.Messages.Last().Text.Contains("80"),
-            "Late completed tooltip appends all new definition and stats without interrupting initial speech");
-        check(!ScreenReader.Messages.Last().Text.Contains("Bola de fuego") && !ScreenReader.Messages.Last().Text.Contains("Equipped") &&
-            !ScreenReader.Messages.Last().Text.Contains("Lanza"), "Late additions do not replay name, binding or existing description");
-        delayedDps.text = "Daño por segundo: 81"; Tick(); Tick();
-        check(ScreenReader.Messages.Count == 2, "Late-tooltip DPS retains the existing fluctuation freeze");
-        fixture.Tooltip.content.Active = false; Tick(); Tick();
-        fixture.Tooltip.content.Active = true; Tick(); Tick();
-        check(ScreenReader.Messages.Count == 2, "Hiding and restoring enriched tooltip does not repeat either fragment set");
-        fixture.Tooltip.moreInfoObj.Active = true; Tick(); Tick();
-        check(ScreenReader.Messages.Count == 3 && ScreenReader.Messages.Last().Interrupt &&
-            ScreenReader.Messages.Last().Text.Contains("inteligencia"), "Deliberate expanded details remain a full interrupting requested read");
+        check(ScreenReader.Messages.Single().Text == "Bola de fuego. Equipped. Learned",
+            "Unavailable binding preserves known equipped status");
         NavigationManager.currentlySelected = null; Tick();
+        check(!SkillAccessibility.HasActiveContent && !SkillAccessibility.HasPendingContent, "Closing resets ownership");
         NavigationManager.currentlySelected = fixture.Panel; Tick(); Tick();
-        check(ScreenReader.Messages.Count == 4 && ScreenReader.Messages.Last().Interrupt &&
-            ScreenReader.Messages.Last().Text.Contains("Bola de fuego"), "Reselection resets enrichment identity and reads the full current skill");
-        check(SkillAnnouncementDelta.NewFragments("Skill. Description.", "Skill. Description. DPS: 3.5. Cost: 8") == "DPS: 3.5. Cost: 8",
-            "Delta preserves decimal values while eliminating already delivered sentence fragments");
-        check(SkillAnnouncementDelta.NewFragments("Skill. Description!", "Skill. Definition. Description! Cost: 8") == "Definition. Cost: 8",
-            "Non-period description punctuation does not cause duplicate base speech");
+        check(ScreenReader.Messages.Count == 2, "Reopening reads the brief selection again");
 
-        fixture = Reset(); Tooltip(fixture);
+        fixture = Reset(); Tick(); Tick();
+        Tooltip(fixture);
         fixture.Tooltip.statFields = new();
         var liveRoot = fixture.Tooltip.content.Child();
         var liveValue = Text(liveRoot, "Daño por segundo: 80");
         fixture.Tooltip.statFields.Add(new UITooltipAbility.BigStatField { obj = liveRoot, textField = liveValue });
         Tick(); Tick();
-        check(ScreenReader.Messages.Single().Text.Contains("Daño por segundo: 80"),
-            "Settled ability speech includes current localized visible combat stats");
-        liveValue.text = "Daño por segundo: 81"; Tick(); Tick();
-        liveValue.text = "Daño por segundo: 82"; Tick(); Tick();
-        check(ScreenReader.Messages.Count == 1, "Continuously fluctuating DPS cannot replay an unchanged focused ability");
+        check(ScreenReader.Messages.Count == 1, "Late tooltip never adds unsolicited fragments to initial speech");
         SkillAccessibility.Update(readDetails: true);
-        check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Interrupt &&
-            ScreenReader.Messages.Last().Text.Contains("Bola de fuego") && ScreenReader.Messages.Last().Text.Contains("82"),
-            "Manual skill details replay the current tooltip with fresh combat stats");
-        Tick(); Tick();
-        check(ScreenReader.Messages.Count == 2, "Manual detail snapshot is acknowledged without automatic repetition");
-        ScreenReader.Messages.RemoveAt(1);
-        fixture.Tooltip.descriptionText.text = "Nueva mejora de fuego"; Tick(); Tick();
-        check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text.Contains("82"),
-            "Real stable detail change refreshes the visible combat-stat snapshot");
-        NavigationManager.currentlySelected = null; Tick();
-        liveValue.text = "Daño por segundo: 100";
-        NavigationManager.currentlySelected = fixture.Panel; Tick(); Tick();
-        check(ScreenReader.Messages.Last().Text.Contains("100"), "Reopening selection refreshes combat stats after snapshot reset");
-        liveRoot.Active = false;
-        fixture.Tooltip.descriptionText.text = "Detalle nuevo sin estadísticas visibles"; Tick(); Tick();
-        check(ScreenReader.Messages.Last().Text.Contains("Detalle nuevo") && !ScreenReader.Messages.Last().Text.Contains("100"),
-            "Changed stable detail with hidden combat fields cannot inherit an old stat snapshot");
+        check(ScreenReader.Messages.Last().Text.Contains("80"), "Manual inspection includes current labeled combat stats");
+        liveValue.text = "Daño por segundo: 82"; Tick(); Tick();
+        check(ScreenReader.Messages.Count == 2, "Fluctuating DPS remains silent automatically");
+        SkillAccessibility.Update(readDetails: true);
+        check(ScreenReader.Messages.Last().Text.Contains("82"), "A second manual inspection refreshes the actual stat");
+        fixture.Tooltip.descriptionText.text = "Nueva mejora"; liveRoot.Active = false;
+        SkillAccessibility.Update(readDetails: true);
+        check(ScreenReader.Messages.Last().Text.Contains("Nueva mejora") && !ScreenReader.Messages.Last().Text.Contains("82"),
+            "Hidden stats never persist across manual requests");
+        fixture = Reset();
+        SkillAccessibility.Update(readDetails: true); Tick(); Tick();
+        check(ScreenReader.Messages.Count == 1, "Manual read before settled focus suppresses a following automatic duplicate");
         fixture = Reset();
         fixture.Panel.IsSkillTreeOpen = true;
         tree = new GameObject().Add(new SkillTree { treeID = 3, ability = fixture.Ability });
@@ -303,6 +250,121 @@ internal static class SelectionTests
         SkillAccessibility.Update(readDetails: true);
         check(ScreenReader.Messages.Count == beforeModal, "Manual skill gesture cannot read behind a modal");
         ScreenContentAnnouncer.HasActiveContent = false;
+        modernSystem._nodeTooltipRequiresLayout = false;
+        SkillAccessibility.Update(readDetails: true);
+        int afterNodeRead = ScreenReader.Messages.Count;
+        Tick(); Tick();
+        check(ScreenReader.Messages.Count == afterNodeRead,
+            "Differently worded tooltip title cannot cause a brief node reread after manual inspection");
+        node.pointsAllocated = 1; Tick(); Tick();
+        check(ScreenReader.Messages.Last().Text == "Nombre local. 1 of 5 points allocated",
+            "Allocating a node updates points without its description or the parent ability binding");
+
+        fixture = Reset();
+        var hotbar = new GameObject().Add(new PrioritizedNavigable());
+        var slotControl = hotbar.gameObject.Child().Add(new Selectable());
+        var barIcon = slotControl.gameObject.Add(new AbilityBarIcon { abilityNumber = 1, player = PlayerFinder.player,
+            ability = new Ability { abilityName = "Golpe de combo" } });
+        hotbar.ActiveSelectable = slotControl; NavigationManager.currentlySelected = hotbar;
+        BindingTests.Equip(1, fixture.Ability);
+        BindingTests.Bind("bar-one", EpochInputManager.InputActions.Ability1, "Square");
+        Tick(); Tick();
+        check(ScreenReader.Messages.Single().Text == "Bola de fuego. Equipped: Square. Learned. Action bar: Square",
+            "Assignment bar reads the stable skill and actual destination button rather than its current combo hit");
+        BindingTests.Equip(1, null); Tick(); Tick();
+        check(ScreenReader.Messages.Last().Text == "Empty skill slot. Action bar: Square",
+            "Empty action bar slot retains its button and does not announce old skill text");
+        SkillAccessibility.Update(readDetails: true);
+        check(ScreenReader.Messages.Last().Text.Contains("open the list"), "Manual slot details explain how to choose a replacement");
+        var choices = new GameObject().Add(new UnityDrivenGridNavigable());
+        var choice = choices.gameObject.Child().Add(new Selectable());
+        choice.gameObject.Add(new AbilitySelectionIcon { ability = fixture.Ability });
+        choices.ActiveSelectable = choice;
+        AbilityBarSelectorManager.instance = new GameObject().Add(new AbilityBarSelectorManager { IsMenuOpened = true,
+            abilityClicked = 1, _playerObject = PlayerFinder.player, _gridNavigable = choices });
+        NavigationManager.currentlySelected = choices; Tick(); Tick();
+        check(ScreenReader.Messages.Last().Text == "Bola de fuego. Not equipped. Learned. Assign to: Square",
+            "Available skill menu distinguishes the destination button from current assignment");
+        SkillAccessibility.Update(readDetails: true);
+        check(ScreenReader.Messages.Last().Text.Contains("confirm to assign"), "Manual candidate details explain confirmation");
+        fixture = Reset();
+        fixture.Icon.UnlockReqTMP = Text(fixture.Control.gameObject, "8");
+        fixture.Icon.UnlockReqTMP.gameObject.Active = false;
+        var variant = new Ability { abilityName = "Bow variant", overridePrimaryAbility = true,
+            customPrimaryAbility = new AbilityRef { target = fixture.Ability } };
+        BindingTests.Equip(2, variant);
+        BindingTests.Bind("equipped-variant", EpochInputManager.InputActions.Ability2, "Square");
+        Tick(); Tick();
+        check(ScreenReader.Messages.Single().Text == "Bola de fuego. Equipped: Square. Learned. Required level: 8",
+            "Navigation combines declared-primary assignment, learned state and hidden owned required level without tooltip body");
+        fixture.Icon.locked = true; BindingTests.Equip(2, null); Tick(0.21); Tick();
+        check(ScreenReader.Messages.Last().Text == "Bola de fuego. Not equipped. Not learned. Required level: 8",
+            "Changed native lock and assignment state update automatically without a manual description request");
+        SkillAccessibility.Reset();
+        CheckFirstOpening(check);
+    }
+
+    private static void CheckFirstOpening(Action<bool, string> check)
+    {
+        var fixture = Reset();
+        var pending = new Ability { overridePrimaryAbility = true, customPrimaryAbility = new AbilityRef() };
+        BindingTests.Equip(1, pending);
+        BindingTests.Equip(2, fixture.Ability);
+        BindingTests.Bind("cast-two", EpochInputManager.InputActions.Ability2, "Triangle");
+        Tick(); Tick();
+        check(ScreenReader.Messages.Single().Text == "Bola de fuego. Equipped: Triangle. Learned",
+            "First class-panel opening announces its assigned button while another primary is pending");
+        pending.customPrimaryAbility.target = new Ability();
+        Tick(0.21); Tick();
+        check(ScreenReader.Messages.Count == 1, "Unrelated resolution does not duplicate the same spoken binding");
+
+        fixture = Reset();
+        pending = new Ability { overridePrimaryAbility = true, customPrimaryAbility = new AbilityRef() };
+        BindingTests.Equip(1, pending);
+        BindingTests.Bind("cast-one", EpochInputManager.InputActions.Ability1, "Square");
+        Tick(); Tick();
+        check(ScreenReader.Messages.Single().Text == "Bola de fuego. Learned",
+            "An unresolved selected variant stays unknown instead of falsely announcing not equipped");
+        for (int index = 0; index < 4; index++) { Tick(0.21); Tick(); }
+        check(ScreenReader.Messages.Count == 1, "Pending first-open identity does not repeat the name");
+        check(LeAccess.Plugin.Log.Information.Count(line => line == "[Skill binding] primary identity pending") == 1,
+            "Persistent first-open readiness failure has one diagnostic");
+        pending.customPrimaryAbility.target = fixture.Ability;
+        Tick(0.21); Tick();
+        check(ScreenReader.Messages.Last().Text == "Bola de fuego. Equipped: Square. Learned" && ScreenReader.Messages.Count == 2,
+            "Primary becomes readable during the first opening and assignment is announced without closing");
+        check(LeAccess.Plugin.Log.Information.Count(line => line == "[Skill binding] ready") == 1,
+            "Recovery is logged once after a pending identity");
+        Tick(0.21); Tick();
+        check(ScreenReader.Messages.Count == 2, "Recovered binding does not repeat every refresh");
+        NavigationManager.currentlySelected = null; Tick();
+        NavigationManager.currentlySelected = fixture.Panel; Tick(); Tick();
+        check(ScreenReader.Messages.Count == 3 && ScreenReader.Messages.Last().Text.Contains("Equipped: Square"),
+            "Second opening remains correct after first-opening recovery");
+
+        fixture = Reset();
+        BindingTests.Equip(1, fixture.Ability);
+        BindingTests.Bind("cast-one", EpochInputManager.InputActions.Ability1, "Square");
+        var combo = (ComboAbilityList)PlayerFinder.getPlayerActor().abilities;
+        combo.HasInitialised = false;
+        Tick(); Tick();
+        check(ScreenReader.Messages.Single().Text == "Bola de fuego. Learned", "Pre-initialization menu never guesses equipped state");
+        combo.HasInitialised = true;
+        Tick(0.21); Tick();
+        check(ScreenReader.Messages.Last().Text == "Bola de fuego. Equipped: Square. Learned" && ScreenReader.Messages.Count == 2,
+            "Combo initialization completes while first menu remains open and speech recovers");
+        check(LeAccess.Plugin.Log.Information.Contains("[Skill binding] combo initialization pending"),
+            "Initialization delay is distinguished from unresolved primary metadata");
+
+        fixture = Reset();
+        pending = new Ability { overridePrimaryAbility = true, customPrimaryAbility = new AbilityRef() };
+        BindingTests.Equip(1, pending);
+        Tick(); Tick();
+        NavigationManager.currentlySelected = null; Tick();
+        pending.customPrimaryAbility.target = fixture.Ability;
+        Tick(0.21); Tick();
+        check(ScreenReader.Messages.Count == 1, "Resolution after the menu closes does not announce a stale selection");
+        check(!SkillAccessibility.HasActiveContent, "Closed first-open ownership stays released during initialization");
         SkillAccessibility.Reset();
     }
 }

@@ -44,16 +44,33 @@ namespace LE.UI.Tooltips
     {
         internal static int Refreshes;
         internal SkillTreeNode Node;
-        internal string Name => Node.Name;
-        internal string Description => Node.Description;
+        internal string Name, Description;
         internal int PointsAllocated => Node.pointsAllocated;
         internal int MaxPoints => Node.maxPoints;
         internal string PointBonusDescription;
-        internal NativeArray<NodeTooltipModifierInfo> Modifiers = new(new[] { new NodeTooltipModifierInfo() });
+        internal NativeArray<NodeTooltipModifierInfo> Modifiers = new(System.Array.Empty<NodeTooltipModifierInfo>());
         internal NativeArray<NodeTooltipModifierInfo> PointBonusModifiers = new(System.Array.Empty<NodeTooltipModifierInfo>());
-        internal NativeArray<NodeTooltipRequirementInfo> Requirements = new(new[] { new NodeTooltipRequirementInfo() });
+        internal NativeArray<NodeTooltipRequirementInfo> Requirements = new(System.Array.Empty<NodeTooltipRequirementInfo>());
         internal NodeTooltipInfo(SkillTreeNode node, bool showAltText) => Node = node;
-        internal void Refresh() => Refreshes++;
+        internal void Refresh()
+        {
+            Refreshes++;
+            Modifiers = new(new[] { new NodeTooltipModifierInfo() });
+            Requirements = new(new[] { new NodeTooltipRequirementInfo() });
+        }
+    }
+    internal static class NodeTooltipContentBuilder
+    {
+        internal static int Builds;
+        internal static bool ReturnNull;
+        internal static NodeTooltipInfo GetNodeTooltipInfo(SkillTreeNode node, bool showAltText)
+        {
+            Builds++;
+            if (ReturnNull) return null;
+            var result = new NodeTooltipInfo(node, showAltText) { Name = node.Name, Description = node.Description };
+            result.Refresh();
+            return result;
+        }
     }
     internal sealed class NodeTooltipModifierInfo : NativeObject
     { internal string ToModifierString() => "Localized modifier"; }
@@ -66,8 +83,14 @@ namespace LeAccess.I18n
 {
     internal static class ModText
     {
+        internal static string Get(string key) => key == "node.available" ? "Available" : "Locked";
         internal static string Format(string key, params object[] args) =>
             string.Format(key == "node.points" ? "{0} of {1} points allocated" :
                 key == "node.requirement_met" ? "{0}, requirement met" : "{0}, requirement not met", args);
     }
+}
+namespace LE.UI.PanelSystem
+{
+    internal sealed class FullScreenPanelPassiveTree : Component
+    { internal NativeObject ActiveChildNavigable; }
 }

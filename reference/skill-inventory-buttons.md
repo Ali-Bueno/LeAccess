@@ -1,88 +1,129 @@
-# Equipped skills and inventory action buttons
+# Manual tooltips, skill assignment and inventory feedback
 
-## Manual details (2026-10-02)
+## Current behavior — 2026-10-02
 
-Right-stick up now rereads the selected inventory item or skill, including skill
-tree nodes, without requiring a selection change. This mirrors the local D2R
-mod's `src/interaction_reader.cpp:ReadDetail` gesture. `MenuDetailInput` reads the
-assigned Rewired gamepad template's `rightStick.value` and `valuePrev`; the
-half-travel threshold matches D2R's explicit gesture policy on normalized axes.
-Holding or rotating the stick does not repeat speech until it returns below the
-threshold. Native input mappings and native scrolling are unchanged.
+Navigation reads a brief name and current state. Descriptions, modifiers, costs,
+DPS and other tooltip contents require **right-stick up**, from neutral. This
+applies to inventory, skills, passive nodes, creation classes/masteries/realms,
+quest details and ordinary menu controls with associated descriptions. Quests
+retain their current objective and state in the brief announcement.
 
-The existing readers resolve ownership again on every request: hidden menus,
-modals, loading, empty slots and mismatched tooltips cannot replay the previous
-selection. A skill request refreshes bindings and the displayed combat-stat
-snapshot; ordinary focus reading continues to suppress fluctuating DPS. Both
-readers acknowledge the manual read to avoid an immediate automatic duplicate.
-Input and source-linked reader regressions cover those behaviors. Real controller
-and listening checks remain required; the game was not opened for this change.
+The gesture matches the local D2R mod's
+`src/interaction_reader.cpp:ReadDetail`: assigned Rewired gamepad template
+`rightStick.value/valuePrev`, half normalized travel, upward dominant direction.
+Holding or rotating the stick does not repeat until neutral. No native mapping,
+scrolling or action dispatch is changed.
 
-When an inventory tooltip cannot be read, explicit inspection falls back to the
-[native item presentation model](item-tooltip-model.md). This includes the item's
-localized properties and requirements without opening UI. Ordinary focus polling
-does not build models. Its brief-name fallback stays acknowledged so it cannot
-interrupt the manual body on the next frame. Failed manual reads give localized
-unavailable feedback. Validation: 72 inventory service, 50 item-model, 109 skill
-and 36 combined vitals/menu-input checks pass.
+Every request resolves current ownership again. Hidden controls, foreground
+modals, loading and mismatched tooltip identities cannot replay old content.
+Manual reading acknowledges the brief selection so the next poll does not
+interrupt it. Native tooltip expansion or a late completed tooltip no longer
+triggers automatic skill narration. Manual skill inspection reads fresh visible
+stats each time; automatic reading does not traverse the tooltip.
 
-## Equipped status and actions
+Missing visual item details use the [native presentation model](item-tooltip-model.md)
+for the selected item. Automatic item navigation reads its localized name,
+base type, equipped state for declared `ContainerID.EQ_*` slots, merchant price
+and available native actions. No success is inferred merely from an empty cell.
 
-Skill announcements now distinguish equipped skills from available skills and
-say the current assigned button after the skill name. Matching uses the current
-player's `AbilityBarIcon.all`, including `correspondingAbility` for transformed
-skills. An unavailable HUD produces no unassigned claim. Equipped status remains
-readable even if button information is temporarily unavailable.
+## Follow-up on Steam 1.5.1 / build 25672295
 
-The old binding reader depended entirely on typed child prompts. It now also
-resolves a glyph-only icon's native `abilityNumber`: `AbilityBarIcon.UpdateIcon`
-(installed RVA `0x23CF100`) reads the equipped ability at `abilityNumber - 1`.
-Slots 1–5 map to the named `EpochInputManager.InputActions.Ability1`–`Ability5`
-actions, then `ReInput.mapping.GetAction(id).name` supplies the actual action
-name. The enum IDs are not assumed consecutive. Unsupported numbers remain
-unknown. Existing child prompt ownership and cast-action validation remain.
+The 15:23 session still had silent passive nodes, incorrect Ráfaga assignment,
+missing item actions and unavailable shop tooltip models. The earlier fixes were
+insufficient. See [passive evidence](passive-reading.md),
+[skill identity and unlock state](skill-assignment.md) and
+[merchant reading](merchant-reading.md) for the corrected sources.
 
-Shared `InputBindingText` reads the game's current `PromptsInfoProvider` mapping;
-there are no fixed Xbox slot/button assignments. Binding groups retain their
-`+` chord separators. The existing 0.2-second focused binding refresh observes
-remaps and reassignment without replaying unchanged skill details.
+`InventoryActionReader.ReadForItem` now enumerates the game's read-only
+`ItemTooltipPromptHelper.GetActions` presentation model for the exact selected
+item and slot. Its current native iterator is `0x2016AF0`: it constructs localized
+PanelActionPrompt records and queries availability; the reader never invokes an
+action callback. It filters `CanUse` and current-device `Controls`, respects
+explicit native button overrides/hold semantics, and otherwise resolves current
+action bindings through PromptsInfoProvider. Enumeration uses the IL2CPP generic
+current-item interface plus nongeneric MoveNext, disposing the iterator.
 
-Modern inventory item reading now includes its visible usable
-`PanelActionUIPrompt` action labels and current buttons. This happens only after
-`ItemTooltipReader` validates the active item, opener/container, readiness, and
-bound tooltip-info identity. Hidden pooled prompts and unavailable actions are
-excluded. Explicit controller/keyboard overrides take priority over ordinary
-action mappings; hold actions retain hold speech.
+Speech puts the button first, e.g. “Triángulo, Equipar. Cuadrado, Tirar”, using
+actual mappings rather than assuming these defaults. Every new item repeats its
+own actions. Context/price/action refresh is limited to once per 200 ms while
+focus stays put; full property models still require right-stick-up. Selection and
+slot ownership are checked before and after reading. Empty cells clear context.
+Legacy tooltip prompts are excluded from the separate menu hint queue so those
+actions do not repeat later or leak from uninitialized prefabs.
 
-Native `PanelActionUI.Refresh` (RVA `0xA6AD20`) chooses overrides using the active
-device and otherwise calls the provider with `GetActionName()` and
-`showKeyboardGylphs`. Its `BuildOverrideButtonsInfo` (RVA `0xA6A720`) only allocates
-button data and resolves icons; the reader never refreshes, submits, or executes
-an inventory action. Legacy MultiButtonsActionPrompt hints use the shared general
-prompt announcer instead of another item-specific copy.
+The skill brief includes learned/unlearned state and declared level/passive-point
+requirements. Equipped comparison uses the game's explicit primary-ability
+relationship, fixing bow/combo variants without matching localized names.
 
-The focused source-linked suites pass **100 skill checks** and **64 inventory
-checks**, including absent child glyph prompts, live remaps, transformed abilities,
-explicit equipped status, device/override changes, hold actions, and stale pooled
-tooltip rejection. The shared binding decoder has separate tests. The main
-no-deploy build passes without warnings/errors. The game remained closed;
-controller listening remains the validation boundary.
+## Skill assignment
 
-## Late tooltip rendering
+Historical build 25663618 evidence (session ending 13:01:22) showed Ráfaga alternating between
+equipped and not equipped at lines 821–834. The HUD's current combo attack is
+not the same source as the actual assigned skill:
 
-The subsequent user log showed a base skill description followed by the same
-selection's completed tooltip, which replayed the full name/description and
-interrupted the first read. The first late tooltip presentation now appends only
-new sentence fragments with `interrupt:false`, then acknowledges the complete
-rich snapshot for deduplication. The name, equipped button and existing
-description remain immediate; added definitions and stats are not discarded.
+- `AbilityBarIcon.UpdateIcon`, RVA `0x23CF100`, invokes virtual
+  `getAbility(abilityNumber - 1)` at `0x23CF244`, taking the current attack.
+- `ComboAbilityList.getEquippedAbilities`, RVA `0x498CB0`, returns the
+  separate assigned list. `PlayerAbilityList.getEquippedAbilities` also appends
+  the inactive human-form bar during transformation, so using its concatenated
+  indices would give incorrect current buttons.
+- `AbilitySelectionIcon.clicked`, RVA `0x24216F0`, gets the current player's
+  actor/ability list, verifies the selected ability is available, and assigns
+  it at `AbilityBarSelectorManager.abilityClicked - 1`. The sixth slot is
+  reserved and does not accept this assignment operation.
 
-The existing native `UITooltipAbility.activeInitializationStage == Completed`
-gate still rejects partially rendered content. No guessed tooltip delay or new
-hook was added. The new delta behavior applies only to the first asynchronous
-enrichment of the same already-spoken name/binding. Deliberate expansion, real
-stable detail changes, remaps and reselection retain their existing behavior.
-Combat-stat snapshots still freeze fluctuating DPS. Regression tests cover a
-tooltip appearing several frames after base speech, incomplete initialization,
-noninterrupting complete additions, punctuation/decimal preservation, hidden/
-restored tooltips, explicit expansion and full rereading after reselection.
+The reader now follows `PlayerFinder.getPlayerActor().GetAbilityList()`,
+uses `ComboAbilityList.equippedAbilities` for that type, and compares declared
+primary ability pointers. Localized-name matches cannot establish identity. Missing
+authoritative data stays unknown instead of announcing “not equipped”.
+
+Slots 1–5 use named `EpochInputManager.InputActions.Ability1`–`Ability5`
+members, never arithmetic on action IDs. The game's prompt provider supplies
+current remapped buttons even when HUD icons are unavailable.
+
+The selected hotbar slot announces its actual assigned ability or empty state
+and button. The available-skill grid announces “Assign to” with the destination
+from the live manager, requiring the same player and declared visible grid.
+Manual details explain confirming the slot to open choices, then confirming a
+choice to assign it. This reader does not equip or submit anything.
+
+## Equipment rejection and action hints
+
+In build 25663618, native `ItemContainersManager.TryQuickEquip` (`0x140A480`) routes failures
+through `InventoryPanelUI.OnFailedManualEquip` (`0x17967F0`). That method
+localizes the actual reason and calls `Notifications.FailedToEquipItem`
+at `0x1796D70`. The existing notification reader observes displayed notices.
+
+The caller previously suppressed notifications for the entire time that
+inventory/skill/passive/quest readers had active content. It now yields only
+while their speech is pending or another reader spoke that frame, preserving
+modal/dialogue priority. Thus a visible rejection can be read while the menu
+stays open. Native equipment rules and Triángulo/Y actions remain game-owned;
+the prior log does not identify which rule rejected a particular attempt.
+
+Legacy `MultiButtonsActionPrompt.IsPromptActive` checks device/navigation,
+whereas `CanUse` controls actual availability and indicator color. The reader
+now requires both. Modern `PanelActionUIPrompt` already requires its native
+action's `CanUse`, visible owned label and current input mapping/overrides.
+
+The log's 15 bogus Gladius actions also came from an unprepared legacy tooltip.
+Installed `PermaLoad.bundle`'s `UITooltipItem` (4485364037099581161) starts
+`tooltipActive=false`, but its `ItemTooltipPrompts` (79123104355113053) and
+all 30 action objects start active. Many allow inventory navigation. The native
+prompt constructor (`0x107DEF4`) also starts `CanUse=true`.
+`TooltipItemManager.ProcessInitializationStage` sets current prompts at
+`0x14907B0`. Its show-all, per-action update, and hide-inactive calls are
+synchronous; an arbitrary delay would not establish ownership.
+`InventoryPromptReader` now requires the completed, visible primary tooltip,
+exact prompt owner, selected item identity, and opener inside the focused
+container. Initial prefab, comparison, previous-item and empty-slot prompts are
+excluded before their button bindings are read.
+
+## Validation
+
+Source-linked tests cover brief/manual separation, late/changed tooltips,
+repeated deliberate reads, current-node point changes, stable combo assignment,
+empty slots, current versus inactive transformation bars, remaps, rejected
+ownership and current inventory status. See [STATUS.md](../STATUS.md) for the
+final integrated counts/build. Real controller and listening validation remains
+pending; no game was launched.

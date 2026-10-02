@@ -9,6 +9,8 @@
     <Compile Include="../../LeAccess/Accessibility/Announcements/ElementAnnouncer.cs" Link="ElementAnnouncer.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/TextDetector.cs" Link="TextDetector.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/TextClassifier.cs" Link="TextClassifier.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Settings/SettingsFocusAnnouncer.cs" Link="SettingsFocusAnnouncer.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Settings/SettingsValueReader.cs" Link="SettingsValueReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/UiVisibility.cs" Link="UiVisibility.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/ButtonPromptAnnouncer.cs" Link="ButtonPromptAnnouncer.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/InputBindingText.cs" Link="InputBindingText.cs" />

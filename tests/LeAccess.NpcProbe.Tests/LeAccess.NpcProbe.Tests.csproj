@@ -7,6 +7,7 @@
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/Npcs/NpcWorldProbe.cs" Link="NpcWorldProbe.cs" />
     <Compile Include="../../LeAccess/Accessibility/Npcs/NpcNameReader.cs" Link="NpcNameReader.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Npcs/WorldServiceReader.cs" Link="WorldServiceReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Npcs/NpcConversationNameReader.cs" Link="NpcConversationNameReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
   </ItemGroup>

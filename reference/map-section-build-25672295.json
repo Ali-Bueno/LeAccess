@@ -1,0 +1,670 @@
+{
+  "gameVersion": "1.5.1",
+  "steamBuild": 25672295,
+  "buildHash": "bf5a46c674908886ecdabb6e9906b8a3bf81ec5b",
+  "regeneratedUtc": "2026-10-02T19:18:07.408192+00:00",
+  "method": "Re-extracted all 57 previously shipped generated scenes from installed MonoScripts, SceneList, transform/collider and default-agent NavMesh data; independently re-extracted Z12 pilot. All profile content except buildHash is structurally identical to previous catalog. Exact runtime build/anchor/source guards retained.",
+  "analysisDependencies": {
+    "UnityPy": "1.25.3",
+    "Shapely": "2.1.2"
+  },
+  "inputs": {
+    "PermaLoad.bundle": "e63cec5ab089ceea165e9fef15a0c0f0bc809ea6ed08c405980a97959aedb393",
+    "monoscripts.bundle": "c8854ae1bbb288de2c15b934f73f01b803d93248d2a85f1d759ec208e7d1bff1"
+  },
+  "tools": {
+    "tools/extract_map_sections.py": "528b74d1da8d2ce068518f96c485600cfbf1be61b37362ff52252a5c6a6b8f6e",
+    "tools/extract_oldroad_sections.py": "17346d49bdeee5908e1ea53d7583f442dc17197853de4305f11ac364d5ca8508",
+    "tools/map_section_metadata.py": "39e96915bf2923206589419a807b952bf07d2caa9b39163fcb473d9184c2db8a",
+    "tools/map_section_geometry.py": "5484b7ff9fb04d7eb92b9c8fff3febbc8bb1470e61656164d6728fbb7535730f",
+    "tools/map_section_navmesh.py": "6c0c4e73177a31980613775c832a9cf603bc285eb9d9e9a582b375095f50393f"
+  },
+  "outputs": {
+    "campaign.json": "9d5c7e26a12d04a0e6377300be8a78ff8d4749c584fcf17fa8504d33af29211b",
+    "generated.json": "944142dbcff4adc81a23ac22c9fbc10a77638109a9dc8bada8c8c52c5fb371d6"
+  },
+  "counts": {
+    "profiles": 58,
+    "sections": 750,
+    "generatedPolygonComponents": 6118,
+    "contributingGeneratedColliderGuards": 2205
+  },
+  "scenes": [
+    {
+      "scene": "ArenaLobby",
+      "sceneBundleSHA256": "49d9fd9fb5d04429714e0dd12bd1a72e3595aeb9e714f4edc1a07a51753eeae1",
+      "navigationBundleSHA256": "0b65210485b5eaf857c679f8e9fd7bcdfc92751895b25317511aaf4248025cce",
+      "sections": 1,
+      "metadata": {
+        "sceneType": "Arena",
+        "displayName": "Champions' Gate",
+        "recordOffset": 108300
+      }
+    },
+    {
+      "scene": "Arena_5_Lake",
+      "sceneBundleSHA256": "21ad8807b867e32ce03ea96f8a0e8135ada47dcf79bf519b05e355ec27a792b6",
+      "navigationBundleSHA256": "e09caca913b9e4016084777ee35860fb24e601618365d9ce166bd6d133f5dd91",
+      "sections": 1,
+      "metadata": {
+        "sceneType": "Arena",
+        "displayName": "Lakeside Arena",
+        "recordOffset": 77424
+      }
+    },
+    {
+      "scene": "B50",
+      "sceneBundleSHA256": "a167a8b50c2aff249620567bdfdb37796c1895cb768137acf15a3c840a883d15",
+      "navigationBundleSHA256": "61261e3c3bf3fbc3166a89249ab8ef6a5a312b634c44d8b8ac4c8f3c281d6872",
+      "sections": 10,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "The Courtyard",
+        "recordOffset": 8860
+      }
+    },
+    {
+      "scene": "B5S10",
+      "sceneBundleSHA256": "87c0e8d7aaccbe52e75e3bdd7750b4831d1467ab501024e7eaee774783bae7bf",
+      "navigationBundleSHA256": "2ee4aea52bfb5f98ceb6f112f2db36fa9df72ef027f74d667a3e6507a9d5e9cc",
+      "sections": 2,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "The Sealed Shrine",
+        "recordOffset": 49716
+      }
+    },
+    {
+      "scene": "B60",
+      "sceneBundleSHA256": "2c8480ec0b82b5cc2852f0ba19b0016b635ddcf9e418d26015d33d562503c231",
+      "navigationBundleSHA256": "164aae682ce06662c093a8ab9f03edb8c76122340d5eb282ef0b3e3763141a72",
+      "sections": 2,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "The Temple of Eterra",
+        "recordOffset": 9556
+      }
+    },
+    {
+      "scene": "B7S10",
+      "sceneBundleSHA256": "cb7b672f7c9c5bec9bfdd47e7fd7a239962058146b7a937d412de2cc120c6e08",
+      "navigationBundleSHA256": "b77a867aa12d92e75671a1d045da855f00006edc84c17a05dfd08590c21ffba3",
+      "sections": 1,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "Welryn Docks",
+        "recordOffset": 75684
+      }
+    },
+    {
+      "scene": "B80",
+      "sceneBundleSHA256": "296f17b24cb32422a78fee28caf09c62205312d7f8f2d973c1f6166531ef0ded",
+      "navigationBundleSHA256": "8718b5f93541c2f3c954b9fbfcfb82d19a11204b2222d4bf8cca86adcc97b9b6",
+      "sections": 10,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "The Lotus Halls",
+        "recordOffset": 10248
+      }
+    },
+    {
+      "scene": "B90",
+      "sceneBundleSHA256": "30eb0b5744899c8b68702e41713e94a3cd72ffc61c4d02c5f82a9e7e4c525ca0",
+      "navigationBundleSHA256": "f75f64e0319eab4f748db5c7fee9d07e8b030ba10c28fe626437da2543393c03",
+      "sections": 39,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "The Sanctum Bastille",
+        "recordOffset": 10592
+      }
+    },
+    {
+      "scene": "C10",
+      "sceneBundleSHA256": "54675eecdbc43fed173b4cd6fb124a56121c92ac51c1087089f4d85502cf64af",
+      "navigationBundleSHA256": "2f3ac87736652f098fc6c229de0e9a526bbc8fe074da622cd0698311997d1774",
+      "sections": 8,
+      "metadata": {
+        "sceneType": "Town",
+        "displayName": "The Outcast Camp",
+        "recordOffset": 10940
+      }
+    },
+    {
+      "scene": "D30",
+      "sceneBundleSHA256": "aeafa80f30268cf7c42b5e7bbbee1612338e76fe1ca6a1678fc23d300a1b99a5",
+      "navigationBundleSHA256": "78924a88ac91358426f9b4dc317a26b02e2ade1ece792a1053728ec0df267096",
+      "sections": 4,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "Maj'elka",
+        "recordOffset": 20500
+      }
+    },
+    {
+      "scene": "D50",
+      "sceneBundleSHA256": "34fa2122c070e733fd17926c8e11c284b9fb5c75351e11532cd7d56eaf1cd956",
+      "navigationBundleSHA256": "b08160eeecbcbb540048a78f4d5c8be198d1582cefdd124911c3f89856aecc3e",
+      "sections": 37,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "The Maj'elkan Catacombs",
+        "recordOffset": 21284
+      }
+    },
+    {
+      "scene": "D60",
+      "sceneBundleSHA256": "c1d0ea12a11e3708f56147dd1370552f9126659ce2717415ebfc4362628dd04b",
+      "navigationBundleSHA256": "4908d951e26ba7e1f76ce5f0ba438b2757c3f1a3e5eadd873cd28f8bc4a494d4",
+      "sections": 1,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "Titan's Canyon",
+        "recordOffset": 21908
+      }
+    },
+    {
+      "scene": "D80",
+      "sceneBundleSHA256": "9731094401cfb85fe66d4cd4604214841d532c7ee97d3049e9aca9ff2c9508fd",
+      "navigationBundleSHA256": "aa6cc45e830dd2a5abc7d9a89de316b01da50cf7eaddb1955fe757a283bb3bfe",
+      "sections": 5,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "The Maj'elka Waystation",
+        "recordOffset": 22792
+      }
+    },
+    {
+      "scene": "Dun1Q10",
+      "sceneBundleSHA256": "c4056f3c8fcd07b36c530b2a3219794abd7eee793a7e02551d7ec7d4de3fa14a",
+      "navigationBundleSHA256": "7913b54e4c0fbb67f88285c47b3cd2a0d06061a3e4c5fa49494c89d3441c433a",
+      "sections": 8,
+      "metadata": {
+        "sceneType": "Dungeon",
+        "displayName": "The Temporal Sanctum",
+        "recordOffset": 100800
+      }
+    },
+    {
+      "scene": "Dun2Q20",
+      "sceneBundleSHA256": "987b4e3818677a4d35b247d33be7d430956dd923212b2f553446a86710219efa",
+      "navigationBundleSHA256": "86c1bb4ab411f4f287fe111297dfb4336118190e6072de5ac4768d8c8d678387",
+      "sections": 2,
+      "metadata": {
+        "sceneType": "Dungeon",
+        "displayName": "Titan's Hollow",
+        "recordOffset": 109012
+      }
+    },
+    {
+      "scene": "Dun2Q30",
+      "sceneBundleSHA256": "eb1c0469e27b00abc98418bc912bcf981cb676ebe752c9662795d8cc3c3a4189",
+      "navigationBundleSHA256": "e7116c57167bd583adb3c9f304f49239f10bc635a18271e00dfccead477b7755",
+      "sections": 11,
+      "metadata": {
+        "sceneType": "Dungeon",
+        "displayName": "Titan's Rest",
+        "recordOffset": 109368
+      }
+    },
+    {
+      "scene": "Dun3Q10",
+      "sceneBundleSHA256": "9e7ffab91b8b36cbd9daefea1d97d4dcc95cf97df952599153a1ba260174d7f7",
+      "navigationBundleSHA256": "d0c010aefabe5cbcf9cd2fcb12eee579b4af03e5a71d652703e06109f70d3f03",
+      "sections": 15,
+      "metadata": {
+        "sceneType": "Dungeon",
+        "displayName": "Soulfire Bastion",
+        "recordOffset": 109848
+      }
+    },
+    {
+      "scene": "Dun3Q20",
+      "sceneBundleSHA256": "54ce3fe9e569bf0c535efbc880f5a33aa19ac9508a12bd6dc6a696cf5d80f325",
+      "navigationBundleSHA256": "2cf7e6a297038f3f5d15f07feca9f653462af8fb7d46428c71542618caeb7c12",
+      "sections": 51,
+      "metadata": {
+        "sceneType": "Dungeon",
+        "displayName": "Soulfire Keep",
+        "recordOffset": 110320
+      }
+    },
+    {
+      "scene": "Dun3Q30",
+      "sceneBundleSHA256": "a89be5178c8e6af55741df85bfc3d5c6bfde1332058e0dceca9fd3dd60865a00",
+      "navigationBundleSHA256": "d9b7ef09432ee20a6eb270e763ad38ffd8802af76df55acfa79e3e9b79301615",
+      "sections": 4,
+      "metadata": {
+        "sceneType": "Dungeon",
+        "displayName": "The Soul Furnace",
+        "recordOffset": 110704
+      }
+    },
+    {
+      "scene": "E20",
+      "sceneBundleSHA256": "7acb6d0cb1e4078b2c7e86ddddb04d40256a48f1091f8e9fa84c87903d84e523",
+      "navigationBundleSHA256": "de1304a87611155f90387d3b197588e2ab242803cf691355d9f52b9126304245",
+      "sections": 1,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "The Rust Lands",
+        "recordOffset": 28972
+      }
+    },
+    {
+      "scene": "E40",
+      "sceneBundleSHA256": "4b658b837be59cf96e31c209fd912fb671ca033b5d0f5cc6592980973866419b",
+      "navigationBundleSHA256": "4da8c224b8dd96fdf184859213bced930a4fc38eba845cecbea0717c88067199",
+      "sections": 1,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "The Barren Aqueduct",
+        "recordOffset": 29804
+      }
+    },
+    {
+      "scene": "E80",
+      "sceneBundleSHA256": "d1df0999675a31559fafcb39cb14b29a66d366490fd2e020b3daa859959b550c",
+      "navigationBundleSHA256": "1a5fadc43594bd7a156c0dec9838db5c003c461b9ac755a5903264e44fbcbd04",
+      "sections": 6,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "The Citadel Sewers",
+        "recordOffset": 42168
+      }
+    },
+    {
+      "scene": "EoT",
+      "sceneBundleSHA256": "5fc1828b62bd2f926ea14cb09a498b5f95092ed9ffd3dee41f8a7cd52f499551",
+      "navigationBundleSHA256": "2f72d8921f16c174b62f6baecbbbfa36ddc58af7c152df105698fcd916b72fa8",
+      "sections": 1,
+      "metadata": {
+        "sceneType": "Town",
+        "displayName": "The End of Time",
+        "recordOffset": 12848
+      }
+    },
+    {
+      "scene": "F40",
+      "sceneBundleSHA256": "a7506561714e1613da9b60df8be13a6e68d347cbf4a40d377f4baf43b8eb1aec",
+      "navigationBundleSHA256": "9e6d03d2fa40b2a2b9708e0f0e9b0f906bc67c02b81ce3e6f5dc98c1a24ace01",
+      "sections": 1,
+      "metadata": {
+        "sceneType": "Town",
+        "displayName": "Heoborea",
+        "recordOffset": 32772
+      }
+    },
+    {
+      "scene": "F90",
+      "sceneBundleSHA256": "24bc232090b3341ceb70f4903d8b08956bea44f8136db218c44865fa85ff52bd",
+      "navigationBundleSHA256": "781e0ef316e7e200f769f65c5b3a46bbfc4747338de940d769ee9e4ee2c8ad22",
+      "sections": 7,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "The Temple of Heorot",
+        "recordOffset": 46936
+      }
+    },
+    {
+      "scene": "G110",
+      "sceneBundleSHA256": "3623595269410da996f797b58e297f40b9f1cb689fd1386c898b62e3b4d5b43b",
+      "navigationBundleSHA256": "c4713368be35b84525d4921537a6d21210a9b57555b002dad7f9dca220d184d3",
+      "sections": 28,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "The Temple of Lagon",
+        "recordOffset": 54252
+      }
+    },
+    {
+      "scene": "G111",
+      "sceneBundleSHA256": "ae5f71317a7ce1103e59e9a435db460bd87c3bd99cc6820009dc317d90172866",
+      "navigationBundleSHA256": "200104c7a0e2221ac809eadfd66825f2657ef2a14b998cc39f7fa0ce9a5821dc",
+      "sections": 20,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "The Temple Depths",
+        "recordOffset": 54596
+      }
+    },
+    {
+      "scene": "G115",
+      "sceneBundleSHA256": "8292bca0f3168e0f9b70ef26ce2c2a3b0d39e1394b2662c092763b24439d0ca1",
+      "navigationBundleSHA256": "bad0ddb97e4a4f4013282461686903f90611e511c5af6aa7ac931e3ddf6f13e6",
+      "sections": 8,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "Sanctum of the Architect",
+        "recordOffset": 54940
+      }
+    },
+    {
+      "scene": "G120",
+      "sceneBundleSHA256": "3bf2e63cd82ee7a40db17af97b65248b7f9ac29b18509d15f02191973565f762",
+      "navigationBundleSHA256": "961c9f36f52cac3a748203b05c039097c9702c18c9f743cc257dba8664e100e6",
+      "sections": 8,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "Seafloor Colosseum",
+        "recordOffset": 55288
+      }
+    },
+    {
+      "scene": "G40",
+      "sceneBundleSHA256": "1686731d0317b53e58e0b3bdc36deb69972b0e689d3ead48eca05cbab2bf8982",
+      "navigationBundleSHA256": "5660617a67c00589c347469d43a2860d1245937057823e0c465d1af74b1c07ac",
+      "sections": 6,
+      "metadata": {
+        "sceneType": "Town",
+        "displayName": "Deep Harbor",
+        "recordOffset": 36820
+      }
+    },
+    {
+      "scene": "G50",
+      "sceneBundleSHA256": "4b5c4d9765b14efc21d1d7f16db208d1c5087cf8e850d503df6584f9f81ffe24",
+      "navigationBundleSHA256": "18edac9e8379633a8747b5514871e064f8c24bf35d858130fb039cf8934a77e9",
+      "sections": 14,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "The Burning Pier",
+        "recordOffset": 37172
+      }
+    },
+    {
+      "scene": "H10",
+      "sceneBundleSHA256": "8db1b39135b53415638a029f28d34433378b9d6385a6b45665edd394e2d19cec",
+      "navigationBundleSHA256": "35b39a60f4db7f701d7db22d5c2998405a87674a59b9aa67ff38bdddad819eaf",
+      "sections": 5,
+      "metadata": {
+        "sceneType": "Town",
+        "displayName": "Soreth'ka",
+        "recordOffset": 94316
+      }
+    },
+    {
+      "scene": "H100",
+      "sceneBundleSHA256": "f54e0d2afd66ccf1d9c5554459e81197aa2a4c41e0319186663ac28288985021",
+      "navigationBundleSHA256": "9dfcd33e11318e27c187546e5b573c2bfba2ca81c7aec964fcbd0d8c0782ff00",
+      "sections": 2,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "The Aerie",
+        "recordOffset": 98388
+      }
+    },
+    {
+      "scene": "H130",
+      "sceneBundleSHA256": "7c907ef3310facc05375c5001ea26b981ae1f95d48504d0388a7da0745c878e5",
+      "navigationBundleSHA256": "6d8375456d634a379186e13630db7ddb085232728ec795f109dd9c677a2bcae0",
+      "sections": 1,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "The Lower Temple",
+        "recordOffset": 100112
+      }
+    },
+    {
+      "scene": "H50",
+      "sceneBundleSHA256": "751761023efdd5e12ee24b2c0b41f20088a897554673e682e957b5e954fd5b89",
+      "navigationBundleSHA256": "33b470a90120effbaa958bde4db115106713357873df30f3ff4eedddc9a18f51",
+      "sections": 1,
+      "metadata": {
+        "sceneType": "Town",
+        "displayName": "Maj'elka Upper District",
+        "recordOffset": 96040
+      }
+    },
+    {
+      "scene": "H60",
+      "sceneBundleSHA256": "7198e62fd9f665f69bb3a3ca6bc8df2d41ee8505a283309f53737c5cd00892ec",
+      "navigationBundleSHA256": "e5be22c4331fef9b2c59f3fe8173c89e5cae528548b0090c045dffdf5d289457",
+      "sections": 1,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "Maj'elka Lower District",
+        "recordOffset": 96388
+      }
+    },
+    {
+      "scene": "I110",
+      "sceneBundleSHA256": "21cf37c5cc2b59f590595db186e9ffd5af85dad9cf3de6801078ab59008bd160",
+      "navigationBundleSHA256": "f925ecbe8caec3bbcafe29c50740b14ddeb8dae66b891256e8487160156ab2b2",
+      "sections": 1,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "The Sky Chains",
+        "recordOffset": 130892
+      }
+    },
+    {
+      "scene": "I130",
+      "sceneBundleSHA256": "9bbd36f22ad63612ad8f1e8300d57e5e26bbc883269ee77b458484305dc694bb",
+      "navigationBundleSHA256": "8f3ac79ee403a1b771d05c7c459927dd8c9d84b06e09118ff2885f465f87f1f1",
+      "sections": 83,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "Eterra's Arboretum",
+        "recordOffset": 131624
+      }
+    },
+    {
+      "scene": "I60",
+      "sceneBundleSHA256": "72a74f46c734fc372adf23fbcc56df2500032f86fd190cfdd90a87c28fbc4694",
+      "navigationBundleSHA256": "bee8f316b9cfca57547bef436d2ca2d0a01c8474a7c91eb88fedc5327dfe2ef2",
+      "sections": 2,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "Draal Queen's Lair",
+        "recordOffset": 129056
+      }
+    },
+    {
+      "scene": "M_A10",
+      "sceneBundleSHA256": "0bf86c88681dcf8f9de92209822a9a71c1f89fee403a3a3c0d43ba370000766e",
+      "navigationBundleSHA256": "5ff1f99b203c84b89ffc23561e7b79ec5e6344ff147184393be337ea4909a1a2",
+      "sections": 1,
+      "metadata": {
+        "sceneType": "Monolith",
+        "displayName": "Flooded Cavern",
+        "recordOffset": 23980
+      }
+    },
+    {
+      "scene": "M_Arena_5_Lake",
+      "sceneBundleSHA256": "d9a22b906da629f109bdbd329ffec92ce77c34b7c7f652ab4036b4bf5092c2f7",
+      "navigationBundleSHA256": "d1360cad00e5c852c87c3e8a72bafe2c3fa9380dac5fbab4918639a711a4666e",
+      "sections": 1,
+      "metadata": {
+        "sceneType": "Monolith",
+        "displayName": "Lakeside Arena",
+        "recordOffset": 92172
+      }
+    },
+    {
+      "scene": "M_B50",
+      "sceneBundleSHA256": "747eebd5f8202d8db78302407c25dfcb89cc5eec3a3926a735f6baf223929a9d",
+      "navigationBundleSHA256": "ed9319e4fcb19278f1ca92c76d4b30d4ad3ccdad272c7e702a25ef970be4bc57",
+      "sections": 4,
+      "metadata": {
+        "sceneType": "Monolith",
+        "displayName": "Ruined Shrine",
+        "recordOffset": 13180
+      }
+    },
+    {
+      "scene": "M_E80",
+      "sceneBundleSHA256": "1aa78a7f2dc6501a33a695b1e6f3f1d7952b614bae12f5e35b3d200c1e5aec65",
+      "navigationBundleSHA256": "8359b3359a92c7535ee0f893ceced6063239b19148c299b75fea75be7036ec34",
+      "sections": 1,
+      "metadata": {
+        "sceneType": "Monolith",
+        "displayName": "Festering Sewers",
+        "recordOffset": 62968
+      }
+    },
+    {
+      "scene": "M_F10",
+      "sceneBundleSHA256": "dbf8092aa4b98e83bd567d67bac3874fb786f63ca0a9273e3dcef59fa8707f74",
+      "navigationBundleSHA256": "cb5bd7924305b6a91e10c1d7eb08a44b15ed11da071b9804beea6f87af4ca24f",
+      "sections": 14,
+      "metadata": {
+        "sceneType": "Monolith",
+        "displayName": "Solarum Ascent",
+        "recordOffset": 63968
+      }
+    },
+    {
+      "scene": "M_M130",
+      "sceneBundleSHA256": "46770c60439b96dcc1aa7c9b142a30604d08fe3a18a6591cefd114ce8eadf1bb",
+      "navigationBundleSHA256": "b905bbae272641345339b92d89fcdebbbacf80d26e4ccf7823144d1e5055df69",
+      "sections": 5,
+      "metadata": {
+        "sceneType": "Monolith",
+        "displayName": "Autumnal Highlands",
+        "recordOffset": 101980
+      }
+    },
+    {
+      "scene": "M_M150",
+      "sceneBundleSHA256": "80b1f8a81c89a7bc5f6acb8a0c76f8042d56da49f5f7682e473383b87fdb6b3c",
+      "navigationBundleSHA256": "9a44aa96cf557071d338b78b05ce116b3547ae779e41270f3725a3b216162dbc",
+      "sections": 2,
+      "metadata": {
+        "sceneType": "Monolith",
+        "displayName": "Coastal Village",
+        "recordOffset": 103132
+      }
+    },
+    {
+      "scene": "M_M180",
+      "sceneBundleSHA256": "b8c45757d7093f19b1397a0ad3b8328f22b9eca51b81ea8903cdd9d22d5a995b",
+      "navigationBundleSHA256": "f31a897249d19eef8b156cc3fba6444aa8af1c4c074ff0abb0f24417a7ead792",
+      "sections": 2,
+      "metadata": {
+        "sceneType": "Monolith",
+        "displayName": "Alpine Halls",
+        "recordOffset": 104352
+      }
+    },
+    {
+      "scene": "M_M360",
+      "sceneBundleSHA256": "6bc16b658e475273420033ab375687e96e33d1b583402ece4890dbc1b6c07b4f",
+      "navigationBundleSHA256": "2d5caef8270f3f4828e70447e97d3f4af91967534a13f662eec63cd6c4869bb1",
+      "sections": 2,
+      "metadata": {
+        "sceneType": "Monolith",
+        "displayName": "Underground Lakes",
+        "recordOffset": 123160
+      }
+    },
+    {
+      "scene": "M_Sanctuary",
+      "sceneBundleSHA256": "0ffbdde234c86ec9d11720a077b176c895a779d31559dccc40db486967b5aaf3",
+      "navigationBundleSHA256": "7dc72307608e2c1d0b46368770e966939a5d81edfe16929ce9f9602f042baf5a",
+      "sections": 6,
+      "metadata": {
+        "sceneType": "Monolith",
+        "displayName": "Sanctuary of Eterra",
+        "recordOffset": 119980
+      }
+    },
+    {
+      "scene": "R1Q10",
+      "sceneBundleSHA256": "dc917681e21e00a186252096726f24e43d6390256e4cdbc2b197899f66ccb850",
+      "navigationBundleSHA256": "485ea077852e95f151e32bfd2594062727b50b834e9a76d4cac70e6c62d2a171",
+      "sections": 5,
+      "metadata": {
+        "sceneType": "Monolith",
+        "displayName": "The Ransacked Camp",
+        "recordOffset": 55632
+      }
+    },
+    {
+      "scene": "R7Q10",
+      "sceneBundleSHA256": "7ca9efad1d64160e56b7cee7c3c75d4e0be23ce790b7122bfe49e66b7cf8791a",
+      "navigationBundleSHA256": "88b2849431eac25df1171f5391b6718769ca8c635fb183ce4e2545aa70ee1e9b",
+      "sections": 14,
+      "metadata": {
+        "sceneType": "Monolith",
+        "displayName": "Heorot's Sanctum",
+        "recordOffset": 73048
+      }
+    },
+    {
+      "scene": "R9Q10",
+      "sceneBundleSHA256": "4c9f157319cc4e42a830febfe1878966cb49e2a64ada41d873c3be05686b28dc",
+      "navigationBundleSHA256": "b7d1421a9a44eb865178719f754badd51b652e81a2d08bf4d8ce5264322088c1",
+      "sections": 15,
+      "metadata": {
+        "sceneType": "Monolith",
+        "displayName": "The Frozen Fortress",
+        "recordOffset": 81220
+      }
+    },
+    {
+      "scene": "WE505",
+      "sceneBundleSHA256": "9e29ca6f4602161af7a4b0bcb50c3f1d51279f2d88735d5b8bf6a64d733e7983",
+      "navigationBundleSHA256": "6a97d5631c918fa1923047f54e48b5b17d4fdd8b72b097e5dfac15acd8d916dd",
+      "sections": 4,
+      "metadata": {
+        "sceneType": "Monolith",
+        "displayName": "The Grand Brewery",
+        "recordOffset": 139000
+      }
+    },
+    {
+      "scene": "WE509",
+      "sceneBundleSHA256": "45f8eb7f6b7be6d2431a9894cfeb3f29409fa34a3b4a394f6a7d6b9a32e95afe",
+      "navigationBundleSHA256": "be64d13fd35fe1a5e27e2ec59dd73ac49bbb1bfffbe9f85acb17f976098c724c",
+      "sections": 229,
+      "metadata": {
+        "sceneType": "Monolith",
+        "displayName": "Soul Foundry",
+        "recordOffset": 136312
+      }
+    },
+    {
+      "scene": "WE7",
+      "sceneBundleSHA256": "9daafbb9936aa60d886678f0969ba16f28ca716594e02eaf5edc93f9bbfcf2b2",
+      "navigationBundleSHA256": "318f3e19a5d99e38efe3824427e1e964241a3ae94e034e2161c1c6f1fd928133",
+      "sections": 32,
+      "metadata": {
+        "sceneType": "Monolith",
+        "displayName": "Gauntlet of Strife",
+        "recordOffset": 135312
+      }
+    },
+    {
+      "scene": "Z102",
+      "sceneBundleSHA256": "d378bb5e0d9f95806139362a5963e49ad721672ac48c36ef8dea62893440f67d",
+      "navigationBundleSHA256": "e03da7fde7479133f002f1458364003f1c831bf09ec615a396799acfa57d6396",
+      "sections": 1,
+      "metadata": {
+        "sceneType": "Normal",
+        "displayName": "The Summit",
+        "recordOffset": 119316
+      }
+    },
+    {
+      "scene": "Z12",
+      "sceneBundleSHA256": "81c2196dcbd794275006689f684e93386b85af827aec476b6f46aa326d785f71",
+      "navigationBundleSHA256": "6bb8e78e202f321915cc346aa4ae08439435552226e95f96fd99911c2cecd7fd",
+      "sections": 2,
+      "metadata": {
+        "note": "Manual pilot; current scene identity, collider geometry, navigation heights and anchors independently re-extracted."
+      }
+    },
+    {
+      "scene": "Z32",
+      "sceneBundleSHA256": "5c125d510c14b457b8e172bb018a97d388440e6791f91353458207a30c85d3ef",
+      "navigationBundleSHA256": "540d4bdf1e4e1041cf2e4d94c31d59dabcec8d2ade1e4060bf3e21cb4eb65308",
+      "sections": 1,
+      "metadata": {
+        "sceneType": "Town",
+        "displayName": "The Keepers' Camp",
+        "recordOffset": 116348
+      }
+    }
+  ]
+}

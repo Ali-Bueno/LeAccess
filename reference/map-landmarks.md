@@ -1,6 +1,10 @@
-# Named places inside maps — Steam 1.5.0.1
+# Named places inside maps — Steam 1.5.1
 
-Investigated 2026-10-02 against build 25663618, with the game closed. The existing
+For nearby merchant, stash, forge and waypoint identity without hover labels,
+see [world-services.md](world-services.md), including current coverage limits.
+
+Rechecked 2026-10-02 against build 25672295, with the game closed. Historical
+native addresses below are explicitly from build 25663618. The existing
 zone reader announces the localized scene name once on entry. The additional
 landmark reader announces **nearby named signposts and zone/dungeon destinations**.
 This is a proximity label, not a claim that the player has entered a named room.
@@ -25,8 +29,8 @@ The following explicit `HoverTagOnMouseOver.HoverTargetType` values are read:
 | Type | Authoritative text |
 |---|---|
 | `SIGNPOST` | The game's authored `hoverText`, cleaned of formatting. |
-| `ZONE_TRANSITION` | Live `sceneInteraction.sceneName`, resolved through known scene metadata and `LocalizedName`. |
-| `DUNGEON_TRANSITION` | Live `dungeonTransitionInteraction.sceneName`, resolved the same way. |
+| `ZONE_TRANSITION` | Live same-scene `sceneInteraction.sceneName`, resolved through known scene metadata and `LocalizedName`; this metadata owner can be inactive. |
+| `DUNGEON_TRANSITION` | Live same-scene `dungeonTransitionInteraction.sceneName`, resolved the same way. |
 | `OTHER` / `LOCALIZATION_KEY` on an owned modern portal | The native initialized portal's localized `hoverText`, including its destination or player name. |
 
 Modern portals were previously silent because their native initialization uses
@@ -65,7 +69,9 @@ AnnounceNearbyNames = true
 Actual announcements log `[Landmark]`. Changed probe stage counts log
 `[LandmarkStatus]` at most once per five seconds; unchanged status does not repeat.
 Counts distinguish active listeners, available tags, exact-owner tags, native
-range candidates and named competitive candidates. The existing zone entry reading and world
+range candidates and named competitive candidates. The last competitive candidate
+also records tag type and name-resolution source/failure, including destination ID
+and whether its metadata component is active. The existing zone entry reading and world
 object sounds remain separate from this proximity text.
 
 ## What the investigation did not establish
@@ -99,7 +105,7 @@ the owning scene's name, not the destination room.
   This does not prove that every asset lacks them; broad asset extraction and
   decorative GameObject-name guesses were not used to fabricate coverage.
 
-## Native label evidence
+## Historical native label evidence — build 25663618
 
 Follow-up read-only disassembly of the same installed build identifies
 `PortalVisualController._InitializeAsync_d__25.MoveNext` RVA `0x190C750`.
@@ -125,7 +131,50 @@ is called by the mod; both can mutate game/UI state.
 RVA `0x15787B0` delegates to the same lookup at `0x1579B50`. Transition gate IDs
 are technical spawn identifiers, not separately localized interior destinations.
 
-## Runtime validation still required
+## Follow-up: inactive transition metadata — build 25672295
+
+The 15:23 session still missed the authored entrances after the exact-owner tag
+fix. `BepInEx-152324.log:1804` has `in_range=1 named=0` in Z22 immediately before
+the Z32 load at line 1810; line 1875 has the same failure in Z32. This rules out
+speech priority as the initial failure: the candidate name was rejected first.
+
+Current installed assets supply live typed destination references on **inactive
+GameObjects**. The previous `isActiveAndEnabled` requirement on those metadata
+components incorrectly excluded them:
+
+| Scene | Tag | Destination interaction | Metadata GameObject (`m_IsActive=false`) |
+|---|---:|---|---:|
+| Z12 | 18302 | 16432 → Z22, Burning Forest | 296 |
+| Z22 | 16191 | 15210 → Z32, Keepers' Camp | 486 |
+| Z32 | 51135 | 49889 → Z22, Burning Forest | 12706 |
+
+Native `HoverTagOnMouseOver.SetHoverText` RVA `0x1150AF0`, instructions
+`0x1150B8E`–`0x1150BA4`, reads the referenced interaction's `sceneName` directly
+and calls `SceneList.GetSceneDisplayName`, without checking the interaction's
+enabled state or active hierarchy. The dungeon case uses the same path via
+`0x1150BCD`. The mod now follows that metadata lifetime rule: the exact typed
+reference must still be alive and belong to the current scene, but need not be
+active. The listener and hover tag must still be active; native `CanInteract()`,
+range, player/scene ownership and known destination checks still apply. No game
+component is enabled and no transition is invoked.
+
+Current asset evidence is `%TEMP%/LeAccess-landmark-151-20261002/{Z22,Z32}.json`
+(includes owning GameObjects), plus the installed `scene_Z12_unity.bundle`
+objects above. Native map/disassembly:
+`%TEMP%/LeAccess-passive-native-20261002-1523/{map.json,disasm.py}`.
+The later dynamic candidate at log line 2240 did announce the camp while already
+in Z32. Its type/destination were not logged then; it does not establish a wrong
+destination. New source diagnostics distinguish authored transitions from modern
+portal labels without substituting the current zone for an unknown destination.
+
+Two source-linked suites pass 120 checks: probe 66 and service 54. Tests cover
+inactive metadata owners, disabled metadata components, actual destination
+changes, destroyed/collected/foreign references, locked and out-of-range listeners,
+inactive listener owners, and existing speech deduplication/priority. Main build
+passes with `SkipPluginDeployment=true`, zero warnings/errors. No game was
+launched; audible verification of forest/camp entrances remains required.
+
+## Earlier association fix — build 25663618
 
 The reported offline session emitted zone entry names but no landmark speech.
 Installed `scene_Z12_unity.bundle` and `scene_Z22_unity.bundle` establish a
@@ -143,9 +192,9 @@ enabled, and the native interaction range is 9 metres. Native
 `WorldObjectClickListener.Start` RVA `0x18A1380` caches NPC/conversation components
 at `0xB8`/`0xC0`; it does not initialize the hover-tag field at `0xE8` (read by
 `UseHoverTagOffset`, RVA `0x18A1580`). The fix reads the authored exact-owner tag
-without changing that field or invoking any game setters. Disabled tags and
-interactions still remain unavailable; next-session diagnostics distinguish
-these runtime conditions from missing associations.
+without changing that field or invoking any game setters. That initial patch
+retained an incorrect active-state requirement on the destination metadata,
+corrected in the follow-up above. Disabled tags remain unavailable.
 
 Reproduction evidence is in
 `%TEMP%/LeAccess-landmark-runtime-20261002/{Z12,Z22}.json`, extracted with UnityPy
@@ -155,7 +204,7 @@ Reproduction evidence is in
 records prove installed ownership, not that the patched reader was heard in a
 running game.
 
-Two source-linked suites pass 107 checks: probe 53 and service 54. Current-scene
+At that stage two source-linked suites passed 107 checks: probe 53 and service 54. Current-scene
 ownership, ranges, nearest selection, stale destination text, per-listener
 failure isolation, menu/lifecycle handling, deduplication, speech priority and
 real en/es formatting are covered with host doubles. Four existing suites also

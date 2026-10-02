@@ -69,7 +69,9 @@ internal static class ButtonPromptAnnouncer
                         continue;
                     }
                     var label = prompt._promptDescription;
-                    if (!prompt.isActiveAndEnabled || !prompt.IsPromptActive() || label == null ||
+                    if (Inventory.InventoryPromptReader.IsItemPrompt(prompt)) continue;
+                    if (!prompt.isActiveAndEnabled || !prompt.CanUse || !prompt.IsPromptActive() ||
+                        !Inventory.InventoryPromptReader.CanRead(prompt) || label == null ||
                         !label.isActiveAndEnabled || label.alpha <= 0 || label.canvasRenderer.cull ||
                         !UiVisibility.IsVisible(label.gameObject)) continue;
 

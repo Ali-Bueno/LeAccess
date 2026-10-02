@@ -1,4 +1,104 @@
-# Visible NPC subtitles — Steam 1.5.0.1
+# Visible NPC subtitles — Steam 1.5.1
+
+## Distant camp barks and actual screen visibility — build 25672295
+
+The 15:23 session reads camp chatter through `[Dialogue]` (for example log lines
+1898 and 1928), rather than the submitted NPC-message channel. The prior floating
+reader checked active hierarchy, alpha and `canvasRenderer.cull`, but none of
+these proves that an active floating label lies inside the screen. An offscreen
+label could therefore be announced repeatedly as new bark occurrences.
+
+`BarkAudibility` now requires the exact `FloatingBarkUI.bark` owner and label
+hierarchy in a loaded scene. An active readable floating label is
+eligible when either its actual rectangle overlaps the screen, its speaker is
+within the declared `WorldObjectClickListener.interactionRange` from that bark's
+own hierarchy, or the bark belongs to the player's hierarchy. Range is physical
+3D distance in the player's own scene, finite and positive; no guessed radius, nearest unrelated NPC,
+conversation permission or interaction invocation is involved. An NPC without a
+reliable listener has only the onscreen route. Existing alpha, cull, hierarchy,
+lifetime, priority and loading gates remain.
+
+Screen visibility uses the TMP label's `RectTransform.GetWorldCorners`, the
+owning root canvas's render mode/camera, `RectTransformUtility.WorldToScreenPoint`
+and the actual camera pixel rectangle or overlay `Screen.width/height`. A partly
+visible label remains eligible even when the NPC's center is offscreen or far
+away. Behind-camera sources, invalid geometry and missing render-camera evidence
+cannot establish visibility. A truly visible label does not depend on the player
+reference being ready or sharing its scene, so additive/persistent scene sources
+remain readable. Nearby and player-owned speech do not need a camera to pass
+their separate eligibility routes.
+
+Current native evidence: `FloatingBarkUI.SetPosition` RVA `0x173A650` and
+`FloatingTextLineUI.SetPosition` RVA `0x1742140` project through
+`CameraManager.getMainCamera`; `FloatingBark.OnUpdate` RVA `0x173AFF0` supplies
+`transform.position + offset`. `FloatingTextLine.IsPlayerVisible` RVA `0x1742650`
+only checks a native 25-unit player distance, **not viewport visibility**, and is
+not used as an onscreen test. Earlier native addresses in the following historical
+sections are from build 25663618.
+
+Rejected current barks do not accumulate pending speech. Their occurrence tracker
+is retained so leaving and re-entering the viewport cannot repeat an already
+spoken occurrence. A spatially rejected owned label consumes matching queued NPC
+submissions and suppresses later duplicates while that bark remains registered;
+it cannot be read indirectly through the second channel. Unrelated submissions,
+player narrative without floating UI, intro/video and cinematic readers retain
+their existing behavior. `[BarkSubtitleStatus]` reports bounded changed counts
+for current, onscreen, in-range, player-owned and eligible barks plus speech
+priority; it never logs suppressed text.
+
+The source-linked visible-subtitle suite passes **143 checks**, including 49 new
+spatial/ownership/dedup regressions. Main `SkipPluginDeployment=true` build passes
+with zero warnings/errors. No game was launched. The next listening test should
+compare distant offscreen camp speech, approaching the same speaker, a partially
+visible distant label, and walking away/back during one still-current line.
+
+## Intro/video subtitles and Rogue narrative follow-up (2026-10-02)
+
+The session ending **13:01:22 local** creates a Rogue, enters Z12, then Z22.
+It delivers Grael's interactive dialogue at log lines 1485–1501, but no
+`DialogueNpcMessage` or movie subtitle entries. This establishes the remaining
+gap, without proving a particular visibility failure in the old cinematic-panel
+reader. The log is preserved at
+`%TEMP%/LeAccess-cinematic-20261002/BepInEx-130122.log`.
+
+Full-screen intro/video playback has a **different owner** from the previously
+covered `CinematicSubtitlePanel`: `CharacterSelectionVideoManager.instance`.
+Interop fields at `CharacterSelectionVideoManager.cs:647–778` expose `holder`,
+`cv`, `subtitleText`, `currentCinematic`, `currentSubtitleIndex` and `IsPlaying`.
+Native `Update` (`0x16FDFA0`) tests video playback, compares video time against
+`Cinematic.Subtitle.StartTime`, resolves that entry's localized text, writes
+`subtitleText` at `0x16FE146`, activates its object and advances the subtitle
+index at `0x16FE187`. This source was entirely absent from the reader.
+
+The reader now polls that exact owner and its currently rendered localized label.
+The owner must be playing, the cinematic alive, the subtitle index positive,
+and its holder/canvas/label visible. It does not enumerate upcoming subtitles.
+Movie identity plus the native subtitle index distinguishes repeated captions
+and resets pending text on a different clip. Stop, skip, invisible content and
+focus loss discard pending captions. The movie's own rendered lifecycle is read
+before the gameplay loading reset, so resetting world sources cannot erase a
+currently visible movie every frame. No hook or dependency was added.
+Delivered movie lines log `[VideoSubtitle]`. Changed status logs for the movie
+and the existing cinematic panel are capped at once per five seconds per source
+and contain visibility/priority flags, never hidden subtitle text.
+
+The **Rogue's initial spoken line** has separate, concrete evidence: installed
+`scene_Z12_unity.bundle` object `PC_VA_RogueZStart` (2800) has a class condition
+for Rogue, a world-area listener and `PlayOneShotSoundInteraction` (17298),
+`isVoiceLine=1`, using
+`event:/Voice Acting/Rogue/Story/va_rogue_story_farfromslums`. It contains no NPC
+message, floating subtitle or cinematic-text component. Native
+`PlayOneShotSoundInteraction.play(GameObject)` (`0x187E430`) calls FMOD voice
+playback at `0x187E498` without publishing text. This particular authored story
+utterance is audio-only at the inspected trigger; the new movie reader cannot
+transcribe it. The previous limitation therefore includes some story lines,
+not only combat/error vocalizations. No transcript is guessed from the event name.
+
+**94 visible-subtitle checks** now pass, including 25 movie regressions for its
+real separate-owner structure, locale text, repeated-caption identity, source
+replacement, loading coexistence, skip, deferred-text replacement, priority and
+visibility gates. Main no-deploy build passes without warnings/errors. No game
+was launched; the newly added movie source still needs the user's listening test.
 
 ## Ambient speech and the offline NPC channel (2026-10-02)
 

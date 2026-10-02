@@ -12,12 +12,17 @@ void Reset()
     VisibleSubtitleAnnouncer.Reset(); ScreenReader.Messages.Clear();
     CinematicSubtitlePanel.Instance=null; Application.isFocused=true; LE.UI.LoadingScreen.IsVisible=false;
     DialogueAnnouncer.HasActiveContent=ScreenContentAnnouncer.HasActiveContent=false;
+    PlayerFinder.player=new GameObject(); CameraManager.Main=new GameObject().Add(new Camera());
+    Screen.width=1920; Screen.height=1080;
 }
 void Tick(bool blocked=false)=>VisibleSubtitleAnnouncer.Update(blocked);
 FloatingBark Bark(string text)
 {
-    var ui=new GameObject().Add(new FloatingTextLineUI{textComponent=Label(text)});
+    var canvas=new GameObject();canvas.Add(new Canvas());
+    var ui=canvas.Child().Add(new FloatingBarkUI{textComponent=Label(text)});
+    ui.textComponent.gameObject.Parent=ui.gameObject;
     var bark=new GameObject().Add(new FloatingBark{FloatingUI=ui});
+    ui.bark=bark;
     VisibleSubtitleAnnouncer.BarkShown(bark);return bark;
 }
 Reset();var bark=Bark("Grae: ¡Sigamos!");Tick();
@@ -125,4 +130,6 @@ submittedTracker.Reset();
 for(int i=0;i<=SubmittedSubtitleTracker.MaximumPendingLines;i++)submittedTracker.Submit("Line "+i,null,0);
 Check(submittedTracker.TryTake(true,0,out submittedText)&&submittedText=="Line 1","bounded backlog discards oldest pending line");
 submittedTracker.Reset();Check(!submittedTracker.TryTake(true,0,out submittedText)&&submittedText==null,"reset discards pending and dedup state");
+VideoSubtitleTests.Run(Check);
+BarkAudibilityTests.Run(Check);
 Console.WriteLine($"Passed {checks} visible subtitle checks.");

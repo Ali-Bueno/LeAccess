@@ -28,7 +28,7 @@ internal static class ItemTooltipModelReader
             var info = ItemTooltipContentBuilder.GetItemTooltipInfo(unpacked, slot, mode);
             if (info is null || info.WasCollected || !Matches(info.Item, expectedItem) ||
                 info.SlotType != slot || info.TooltipMode != mode) return false;
-            string result = Read(info);
+            string result = ScreenContentTracker.Combine(new[] { Read(info), MerchantItemReader.ReadContext(expectedItem, container) });
             if (string.IsNullOrWhiteSpace(result) || !OwnsSelection(expectedItem, container)) return false;
             text = result;
             return true;
@@ -36,7 +36,7 @@ internal static class ItemTooltipModelReader
         catch (Exception ex) { LastFailure = $"{ex.GetType().Name}: {ex.Message}"; return false; }
     }
 
-    private static bool OwnsSelection(ItemData item, ItemContainerUI container)
+    internal static bool OwnsSelection(ItemData item, ItemContainerUI container)
     {
         if (item is null || item.WasCollected || !IsAlive(container) || !container.isActiveAndEnabled ||
             !UiVisibility.IsVisible(container.gameObject)) return false;
@@ -46,7 +46,7 @@ internal static class ItemTooltipModelReader
         return entry is not null && !entry.WasCollected && Matches(entry.data, item);
     }
 
-    private static bool TryGetParameters(ItemData item, ItemContainerUI container,
+    internal static bool TryGetParameters(ItemData item, ItemContainerUI container,
         out TooltipItemManager.SlotType slot, out TooltipMode mode)
     {
         slot = TooltipItemManager.SlotType.UNDEFINED;
@@ -66,6 +66,7 @@ internal static class ItemTooltipModelReader
         }
         var source = container.Container;
         if (source is null || source.WasCollected) return false;
+        if (MerchantItemReader.TryGetShopSlot(container, out slot)) return true;
         // These three mappings are the direct native OnItemHovered branches.
         switch (source.Type)
         {

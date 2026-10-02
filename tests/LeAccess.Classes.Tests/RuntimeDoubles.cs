@@ -55,6 +55,16 @@ namespace UnityEngine
         internal Transform parent => gameObject.Parent?.transform;
         internal int childCount => gameObject.Children.Count;
         internal Transform GetChild(int index) => gameObject.Children[index].transform;
+        internal Transform Find(string path)
+        {
+            var current = gameObject;
+            foreach (var name in path.Split('/'))
+            {
+                current = current.Children.FirstOrDefault(child => child.name == name);
+                if (current is null) return null;
+            }
+            return current.transform;
+        }
         internal bool IsChildOf(Transform ancestor)
         {
             for (var current = gameObject; current is not null; current = current.Parent)
@@ -122,6 +132,7 @@ namespace TMPro
 namespace UnityEngine.UI
 {
     internal class Selectable : UnityEngine.Component { }
+    internal sealed class Button : Selectable { }
     internal sealed class Text : UnityEngine.Component
     { internal string text { get; set; } internal UnityEngine.Color color = new() { a = 1 }; }
     internal sealed class InputField : UnityEngine.Component { }

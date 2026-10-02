@@ -358,4 +358,5 @@ grael.gameObject.Add(new NpcNameTooltip { TopText = "Nombre mostrado" });
 Check(probe.TryCapture(1, out result) && result.Name == "Nombre mostrado" && result.NameSource == "NPC tooltip",
     "Actual NPC name component retains precedence over database fallback");
 
+checks += ServiceTests.Run();
 Console.WriteLine($"NPC probe tests passed: {checks} checks.");

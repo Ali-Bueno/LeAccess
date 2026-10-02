@@ -22,10 +22,12 @@ internal static class GeneratedData
         foreach(var data in maps)
         {
             string scene=data.GetProperty("scene").GetString(),hash=data.GetProperty("buildHash").GetString();
+            check(hash==SceneEvidence.BuildHash,"Every generated profile binds the independently verified installed build");
             var map=catalog.Find(scene,hash);
             check(map!=null && scene!="Z12","Generated exact scene/build profile exists without duplicate manual pilot");
             check(map.ScenePath=="Assets/BundledScenes/"+scene+".unity","Generated scene asset path is exact");
             check(catalog.Find(scene,"wrong-build")==null,"Generated profile rejects another build");
+            check(catalog.Find(scene,SceneEvidence.PreviousBuildHash)==null,"Refreshed generated profile rejects previous build");
             check(map.Anchors.Length>=3 && map.Anchors.Select(a=>a.Path).Distinct().Count()==map.Anchors.Length,
                 "Generated map has unique runtime anchor paths");
             check(map.Anchors.All(a=>a.Tolerance>0 && double.IsFinite(a.X+a.Y+a.Z)),"Generated anchors are finite and guarded");
@@ -73,7 +75,7 @@ internal static class GeneratedData
         check(sections==748 && components==6118,"Generated evidence counts match final extraction");
         // Independently sampled installed BoxCollider faces intersecting installed navigation cells;
         // Collider path IDs 29484 (ArenaLobby), 26124 (B7S10), 40378 (B50), 46111 (M_A10).
-        const string build="c8576b3db279ad61f09835dd69cc9d589e5a5cbe";
+        const string build=SceneEvidence.BuildHash;
         var golden=new[] {
             (Scene:"ArenaLobby",Id:"ArenaLobby_bridge_156",Key:"map.section.bridge",X:1954.20684460711,Y:30.206069946289062,Z:2004.1718521446815),
             (Scene:"B7S10",Id:"B7S10_stairs_67",Key:"map.section.stairs",X:-23.849960327148438,Y:.023736953735351562,Z:33.55998229980469),

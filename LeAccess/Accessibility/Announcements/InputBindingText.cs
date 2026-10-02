@@ -59,6 +59,6 @@ internal static class InputBindingText
         string buttons = null;
         try { buttons = ReadButtons(prompt.GetButtonsInfo()); }
         catch (Exception) { }
-        return string.IsNullOrWhiteSpace(buttons) ? action : action + ": " + buttons;
+        return string.IsNullOrWhiteSpace(buttons) ? action : buttons + ", " + action;
     }
 }

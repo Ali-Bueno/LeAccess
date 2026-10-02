@@ -1,6 +1,13 @@
 internal sealed class Ability : UnityEngine.Object
 {
     internal string abilityName;
+    internal bool overridePrimaryAbility;
+    internal AbilityRef customPrimaryAbility;
+}
+internal sealed class AbilityRef : NativeObject
+{
+    internal Ability target;
+    internal bool TryGetAbility(out Ability ability) { Guard(); ability = target; return ability is not null; }
 }
 internal sealed class AbilityBarIcon : UnityEngine.Component
 {
@@ -15,6 +22,31 @@ internal static class PlayerFinder
 {
     internal static UnityEngine.GameObject player;
     internal static UnityEngine.GameObject getPlayer() => player;
+    internal static Actor getPlayerActor() => player?.GetComponent<Actor>();
+}
+internal sealed class Actor : UnityEngine.Component
+{
+    internal AbilityList abilities;
+    internal AbilityList GetAbilityList() => abilities;
+}
+internal class AbilityList : UnityEngine.Component
+{
+    internal NativeArray<Ability> allEquipped;
+    internal NativeArray<Ability> getEquippedAbilities() => allEquipped;
+}
+internal sealed class ComboAbilityList : AbilityList
+{
+    internal NativeArray<Ability> equippedAbilities;
+    internal bool HasInitialised = true;
+}
+internal sealed class UnityDrivenGridNavigable : PrioritizedNavigable { }
+internal sealed class AbilityBarSelectorManager : UnityEngine.Component
+{
+    internal static AbilityBarSelectorManager instance;
+    internal bool IsMenuOpened;
+    internal int abilityClicked;
+    internal UnityDrivenGridNavigable _gridNavigable;
+    internal UnityEngine.GameObject _playerObject;
 }
 internal sealed class InputCharacterForAction : UnityEngine.Component { internal string actionName; }
 internal sealed class InputDependantPrompt : UnityEngine.Component { internal string _rewiredActionName; }

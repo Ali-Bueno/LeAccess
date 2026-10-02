@@ -59,7 +59,9 @@ Tick();
 Check(QuestAccessibility.HasActiveContent, "active journal");
 Check(ScreenReader.Spoken.Count == 0 && QuestAccessibility.HasPendingContent, "first observation settles");
 Tick();
-Check(ScreenReader.Spoken.Count == 1 && ScreenReader.Spoken.Last() == full, "complete settled announcement");
+Check(ScreenReader.Spoken.Count == 1 && ScreenReader.Spoken.Last().Contains("Speak to the keeper") &&
+    ScreenReader.Spoken.Last().Contains("In progress") && !ScreenReader.Spoken.Last().Contains("100 gold") &&
+    !ScreenReader.Spoken.Last().Contains("Find the keeper"), "settled navigation includes objective and state, defers long detail");
 Tick();
 Check(ScreenReader.Spoken.Count == 1 && !QuestAccessibility.HasPendingContent, "unchanged silent");
 button.pinned = true;
@@ -68,7 +70,10 @@ Check(ScreenReader.Spoken.Count == 2 && ScreenReader.Spoken.Last().Contains("Pin
 button.completed = true;
 objective.check.activeInHierarchy = true;
 Tick(); Tick();
-Check(ScreenReader.Spoken.Last().Contains("Completed") && ScreenReader.Spoken.Last().Contains("Speak to the keeper (Completed)"), "completed states");
+Check(ScreenReader.Spoken.Last().Contains("Completed") && !ScreenReader.Spoken.Last().Contains("Speak to the keeper"),
+    "completed quest navigation does not read its old objectives as current tasks");
+Check(Read(generator).Contains("Objective history for this quest: Speak to the keeper (Completed)"),
+    "fallback manual content explicitly identifies completed rows as this quest's history");
 int spoken = ScreenReader.Spoken.Count;
 var secondQuest = new Quest();
 button.quest = secondQuest;
@@ -190,8 +195,14 @@ Check(ScreenReader.Spoken.Count == spoken + 1 && ScreenReader.Spoken.Last().Cont
 spoken = ScreenReader.Spoken.Count;
 info.allContent.activeInHierarchy = true;
 Tick(); Tick();
-Check(ScreenReader.Spoken.Count == spoken, "unchanged detail after summary change acknowledged");
+Check(ScreenReader.Spoken.Count == spoken + 1 && ScreenReader.Spoken.Last().Contains("In progress") &&
+    !ScreenReader.Spoken.Last().Contains("Speak to the keeper"),
+    "restored fallback clarifies the changed quest state without reintroducing completed history");
+spoken = ScreenReader.Spoken.Count;
 objective.text.text = "Find a different keeper";
+Tick(); Tick();
+Check(ScreenReader.Spoken.Count == spoken, "Changing completed fallback history cannot trigger navigation speech");
+objective.check.activeInHierarchy = false;
 Tick(); Tick();
 Check(ScreenReader.Spoken.Count == spoken + 1 && ScreenReader.Spoken.Last().Contains("different keeper"), "changed objective still speaks");
 spoken = ScreenReader.Spoken.Count;
@@ -274,4 +285,5 @@ state.Reset();
 Check(!state.HasPendingContent, "state reset");
 Check(LeAccess.Plugin.Log.Information.Count == ScreenReader.Spoken.Count &&
     LeAccess.Plugin.Log.Information.All(line => line.StartsWith("[Quest] ")), "one diagnostic per delivered announcement");
+checks += ModelTests.Run();
 Console.WriteLine($"Passed {checks} quest journal checks.");

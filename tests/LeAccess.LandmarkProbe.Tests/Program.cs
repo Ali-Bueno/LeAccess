@@ -56,6 +56,8 @@ tag.hoverTargetType=HoverTagOnMouseOver.HoverTargetType.DUNGEON_TRANSITION;
 tag.dungeonTransitionInteraction=new TransitionOrGateInteraction{sceneName="dungeon"};
 SceneList.Scenes["dungeon"]=new SceneDetails{LocalizedName="Mazmorra"};
 Check(LandmarkProbe.TryRead(out result)&&result.Name=="Mazmorra","dungeon localized source");
+tag.dungeonTransitionInteraction.gameObject.activeInHierarchy=false;
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Mazmorra","dungeon inactive metadata follows native label path");
 tag.dungeonTransitionInteraction.WasCollected=true;
 Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","collected destination skipped");
 tag.hoverTargetType=HoverTagOnMouseOver.HoverTargetType.SIGNPOST;tag.hoverText="Sign";
@@ -84,8 +86,36 @@ Check(LandmarkProbe.TryRead(out result)&&result.Name=="Camino ancestral","instal
 ownedTag.isActiveAndEnabled=false;
 Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","owned disabled tag rejected");
 ownedTag.isActiveAndEnabled=true;ownedTag.sceneInteraction.isActiveAndEnabled=false;
-Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","owned disabled transition rejected");
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Camino ancestral","native label reads disabled metadata reference");
 ownedTag.sceneInteraction.isActiveAndEnabled=true;
+ownedTag.sceneInteraction.gameObject.activeInHierarchy=false;
+ownedTag.sceneInteraction.sceneName="Z32";
+SceneList.Scenes["Z32"]=new SceneDetails{LocalizedName="Campamento de los guardianes"};
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Campamento de los guardianes",
+    "installed Z22 exit reads inactive to-zone metadata GameObject");
+Check(LandmarkProbe.LastStatus.Contains("destination:Z32:metadata_active=False"),
+    "status identifies native destination and inactive metadata");
+ownedTag.sceneInteraction.sceneName="Z22";
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Bosque en llamas",
+    "installed Z32 return exit reads actual forest destination not current camp");
+nearest.Allowed=false;
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","inactive metadata cannot bypass listener condition");
+nearest.Allowed=true;nearest.interactionRange=1;
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","inactive metadata cannot bypass native range");
+nearest.interactionRange=5;nearest.gameObject.activeInHierarchy=false;
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","inactive listener owner remains rejected");
+nearest.gameObject.activeInHierarchy=true;ownedTag.sceneInteraction.gameObject.scene=new Scene{handle=9,isLoaded=true};
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","foreign scene metadata remains rejected");
+Check(LandmarkProbe.LastStatus.Contains("destination_metadata_unavailable"),"unresolved metadata stage logged");
+ownedTag.sceneInteraction.gameObject.scene=SceneManager.Active;ownedTag.sceneInteraction.Destroyed=true;
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","destroyed metadata remains rejected");
+ownedTag.sceneInteraction.Destroyed=false;ownedTag.sceneInteraction.WasCollected=true;
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","collected metadata remains rejected");
+ownedTag.sceneInteraction.WasCollected=false;
+ownedTag.sceneInteraction.sceneName="missing_scene";
+Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","inactive unknown destination never uses stale tag");
+Check(LandmarkProbe.LastStatus.Contains("unknown_destination:missing_scene"),"unknown destination stage logged");
+ownedTag.sceneInteraction.gameObject.activeInHierarchy=true;
 nearest.hoverTagOnMouseOver=tag;tag.Destroyed=true;
 Check(LandmarkProbe.TryRead(out result)&&result.Name=="Farther","stale explicit association never replaced");
 tag.Destroyed=false;tag.hoverText="Explicit";
@@ -153,4 +183,5 @@ visuals.WasCollected=true;Check(!LandmarkProbe.TryRead(out _),"online collected 
 var visualChild=new GameObject();visualChild.transform.parent=visuals.transform;PlayerFinder.player=visualChild;
 Check(LandmarkProbe.TryRead(out _),"online explicit hierarchy accepted");
 PlayerFinder.player=actor.gameObject;Check(!LandmarkProbe.TryRead(out _),"online stale owner excluded");
+checks += ServiceTests.Run();
 Console.WriteLine($"Passed {checks} landmark probe checks.");

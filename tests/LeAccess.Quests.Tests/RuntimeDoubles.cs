@@ -37,6 +37,7 @@ namespace UnityEngine
         public T GetComponent<T>() where T : class => gameObject.GetComponent<T>();
         public T[] GetComponents<T>() where T : class => gameObject.GetComponents<T>();
     }
+    public class RectTransform : Transform { }
     public class Canvas : Behaviour { }
     public class CanvasGroup : Behaviour { public float alpha = 1; public bool ignoreParentGroups; }
     public class CanvasRenderer : Object { public bool cull; }
@@ -52,7 +53,33 @@ namespace TMPro
     }
 }
 public sealed class GameList<T> : List<T> { public bool WasCollected; }
-public class Quest : UnityEngine.Object { }
+public class Quest : UnityEngine.Object
+{
+    public int id;
+    public StatefulQuestList List;
+    public StatefulQuestList getLocalStatefulQuestList() => List;
+}
+public enum QuestState { NotStarted, Active, Completed, Failed, NoLongerRelevant }
+public class QuestStep : UnityEngine.Object { public Quest quest; public int id; public string displayText; }
+public class Objective : UnityEngine.Object { public Quest quest; public QuestStep questStep; public string Text; }
+public class ObjectiveAndState : UnityEngine.Object { public Objective objective; public QuestState state; }
+public class StatefulQuest : UnityEngine.Object
+{
+    public Quest quest;
+    public QuestStep currentStep;
+    public QuestState State = QuestState.Active;
+    public QuestState getState() => State;
+}
+public class StatefulQuestList : UnityEngine.Object
+{
+    public StatefulQuest Selected;
+    public GameList<ObjectiveAndState> Objectives = new();
+    public StatefulQuest getStatefulQuest(Quest quest) => Selected;
+    public GameList<ObjectiveAndState> getObjectiveStatesForQuest(Quest quest) => Objectives;
+}
+public static class Localization { public static QuestLocalization Quests = new(); }
+public class QuestLocalization : UnityEngine.Object
+{ public string GetStepDescription(int quest, int step, string fallback) => fallback; }
 public class QuestPanel : UnityEngine.Behaviour { public QuestButtonGenerator buttonGenerator; public bool questsHidden; }
 public class QuestButtonGenerator : UnityEngine.Behaviour
 {
@@ -62,6 +89,7 @@ public class QuestButtonGenerator : UnityEngine.Behaviour
 }
 public class QuestButton : UnityEngine.Behaviour
 {
+    public UnityEngine.RectTransform buttonRectTransform;
     public Quest quest;
     public QuestButtonGenerator buttonGenerator;
     public TMPro.TextMeshProUGUI tmp, chapterText;
@@ -69,6 +97,9 @@ public class QuestButton : UnityEngine.Behaviour
 }
 public class QuestInformation : UnityEngine.Behaviour
 {
+    public string getNameForState(QuestState state) => "Localized " + state;
+    public string getObjectiveStateText(Objective objective, QuestState state) =>
+        state is QuestState.NotStarted or QuestState.NoLongerRelevant ? "" : objective.Text;
     public Quest quest, previousQuest;
     public UnityEngine.GameObject allContent, rewardsHolder;
     public UnityEngine.Transform objectivesHolder;

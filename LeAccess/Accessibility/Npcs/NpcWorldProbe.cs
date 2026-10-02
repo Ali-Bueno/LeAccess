@@ -89,13 +89,7 @@ internal sealed class NpcWorldProbe
 
     internal static bool IsNpc(WorldObjectClickListener listener)
     {
-        var relay = listener._NPCinteraction;
-        if (IsAlive(relay) && relay.isActiveAndEnabled) return true;
-        var npc = listener.GetComponent<NPCInteraction>();
-        if (IsAlive(npc) && npc.isActiveAndEnabled) return true;
-        var name = listener.GetComponent<NpcNameTooltip>();
-        var conversation = listener._leConversationTrigger;
-        return IsAlive(name) && name.isActiveAndEnabled && IsAlive(conversation) && conversation.isActiveAndEnabled;
+        return WorldServiceReader.IsNpc(listener);
     }
 
     private string ReadName(WorldObjectClickListener listener, out string source)

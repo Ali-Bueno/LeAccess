@@ -61,6 +61,19 @@ namespace LeAccess.Accessibility.MapSections
         internal static void Reset() { }
     }
     internal readonly record struct RuntimeMapPlace(string Identity, string TextKey, string SpeechGroup);
+    internal static class MapPlaceDiagnostics
+    {
+        internal static void Report(string stage, string detail) { }
+    }
+    internal static class RuntimeSceneryPlaces
+    {
+        internal static bool Available;
+        internal static int Captures, Resets;
+        internal static RuntimeMapPlace Place = new("tent-owner", "map.place.tents", "map.place.tents");
+        internal static bool TryRead(MapSectionWorldSnapshot world, out RuntimeMapPlace place)
+        { Captures++; place = Place; return Available; }
+        internal static void Reset() { Resets++; }
+    }
     internal static class RuntimeMapPlaces
     {
         internal static bool Available;

@@ -24,6 +24,7 @@ namespace UnityEngine
     }
     internal class GameObject : Object
     {
+        internal bool activeInHierarchy = true;
         internal SceneManagement.Scene scene;
         internal Transform transform = new();
         internal AI.NavMeshAgent Agent;

@@ -152,7 +152,8 @@ namespace LeAccess
     internal sealed class Logger
     {
         internal readonly List<string> Warnings = new();
-        internal void LogInfo(string text) { }
+        internal readonly List<string> Information = new();
+        internal void LogInfo(string text) => Information.Add(text);
         internal void LogWarning(string text) => Warnings.Add(text);
     }
 }

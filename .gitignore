@@ -2,6 +2,9 @@
 bin/
 obj/
 
+# Test packages are kept locally in the repository root.
+/*.zip
+
 # IDE
 .vs/
 .idea/

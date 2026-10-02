@@ -60,7 +60,19 @@ namespace ClientAppState
     internal static class ClientStateManager
     {
         public static ClientAppStateType CurrentClientAppStateType;
-        public static Transition _activeTransition = new();
+        internal static Transition NativeTransition = new();
+        internal static bool ThrowSnapshotRead;
+        internal static int GeneratedGetterReads;
+        public static Transition _activeTransition
+        {
+            get
+            {
+                GeneratedGetterReads++;
+                if (NativeTransition is null || !NativeTransition.Active) throw new NullReferenceException("Empty nullable boxed to zero");
+                return NativeTransition;
+            }
+            set { NativeTransition = value; }
+        }
     }
 }
 namespace LE.UI
@@ -96,11 +108,36 @@ namespace LE.UI.Login.UnityUI
         private void NativeStart(bool online)
         {
             if (ClientAppState.ClientStateManager.CurrentClientAppStateType != ClientAppState.ClientAppStateType.Login ||
-                ClientAppState.ClientStateManager._activeTransition.Active)
+                ClientAppState.ClientStateManager.NativeTransition?.Active == true)
                 throw new InvalidOperationException("Reproduced native early-start race");
             if (online) OnlineStarts++; else OfflineStarts++;
             playOnlineButton.interactable = playOfflineButton.interactable = false;
             if (ThrowOnStart) throw new InvalidOperationException("Native login failed");
+        }
+    }
+}
+namespace Il2CppInterop.Runtime
+{
+    internal static class IL2CPP
+    {
+        internal static int FieldLookups;
+        internal static IntPtr GetIl2CppClass(string assembly, string ns, string name)
+        {
+            if (assembly != "LE.dll" || ns != "ClientAppState" || name != "ClientStateManager")
+                throw new InvalidOperationException("Wrong native type lookup");
+            return (IntPtr)1;
+        }
+        internal static IntPtr GetIl2CppField(IntPtr type, string field)
+        {
+            FieldLookups++;
+            if (type == IntPtr.Zero || field != "_activeTransition") throw new InvalidOperationException("Wrong native field lookup");
+            return (IntPtr)2;
+        }
+        internal static IntPtr il2cpp_field_get_value_object(IntPtr field, IntPtr instance)
+        {
+            if (field != (IntPtr)2 || instance != IntPtr.Zero) throw new InvalidOperationException("Expected static native field");
+            if (ClientAppState.ClientStateManager.ThrowSnapshotRead) throw new NullReferenceException("Transient native state observation failure");
+            return ClientAppState.ClientStateManager.NativeTransition?.Active == true ? (IntPtr)3 : IntPtr.Zero;
         }
     }
 }

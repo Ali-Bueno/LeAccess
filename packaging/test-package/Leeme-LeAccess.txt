@@ -1,0 +1,55 @@
+LeAccess - paquete de prueba para Last Epoch
+
+Compatible con la version Steam de Windows de 64 bits. Preparado con Last Epoch
+1.5.1, compilacion 25672295, y BepInEx 6.0.0-be.788. Necesitas tener tu propia
+copia del juego instalada. Este ZIP no contiene el juego ni partidas guardadas.
+
+INSTALACION
+1. Cierra Last Epoch.
+2. En Steam, abre Last Epoch > Administrar > Ver archivos locales.
+3. Extrae TODO el contenido del ZIP directamente en esa carpeta, junto a
+   Last Epoch.exe. No dejes los archivos dentro de otra carpeta intermedia.
+   Deben quedar winhttp.dll, doorstop_config.ini y las carpetas BepInEx y dotnet
+   junto a Last Epoch.exe.
+4. Abre NVDA antes de iniciar el juego.
+5. Inicia el juego normalmente desde Steam. No necesitas ningun archivo BAT.
+
+Si ya usabas BepInEx u otros mods, conserva una copia de sus archivos y de
+BepInEx/config antes de mezclar instalaciones. Este paquete incluye una
+configuracion nueva de diagnostico de BepInEx; no incluye preferencias de otro
+jugador. Las opciones de LeAccess se crean con sus valores predeterminados.
+
+PRIMER INICIO
+La primera ejecucion puede tardar varios minutos mientras BepInEx genera sus
+referencias de interoperabilidad. Puede necesitar Internet para descargar las
+bibliotecas de Unity. Espera a que termine: cerrar el proceso durante esta fase
+interrumpe la preparacion. Los siguientes inicios suelen ser mas rapidos.
+No necesitas instalar .NET por separado: el runtime viene en la carpeta dotnet.
+Steam y el juego conservan sus propios requisitos de instalacion.
+
+USO Y PRUEBAS
+Navega con el mando como en el juego. Pulsa el stick derecho hacia arriba para
+leer los detalles o tooltips del elemento seleccionado en menus compatibles.
+Para jugar juntos, elegid el modo online en el juego. Tambien puedes elegir
+Jugar sin conexion. El mod conserva la opcion que elijas; no cambia el modo.
+Es una version de prueba: algunas pantallas y elementos aun pueden no leerse.
+
+SI NO HABLA O FALLA EL ARRANQUE
+Comprueba que NVDA este abierto y que los archivos esten junto a Last Epoch.exe.
+Despues de cerrar el juego, conserva BepInEx/LogOutput.log y explica que estabas
+haciendo. Revisa el archivo antes de compartirlo: el juego puede incluir nombres
+o rutas de tu equipo. No compartas partidas, carpetas de cuenta ni tokens.
+
+PARA DESACTIVAR EL MOD
+Con el juego cerrado, mueve BepInEx/plugins/LeAccess fuera de la carpeta plugins.
+Para desactivar tambien el cargador, cambia el nombre de winhttp.dll. Si hay
+otros mods, esa segunda opcion tambien los desactivara. No borres partidas.
+
+CONTENIDO Y CREDITOS
+Se incluyen el cargador oficial, LeAccess, su reparador de interoperabilidad,
+sus dependencias de audio/lector de pantalla, catalogos ingles/espanol, este
+documento y LeAccess-SHA256.txt con las huellas de archivos.
+Las licencias y enlaces al codigo fuente estan en LeAccess-Licencias.
+Los componentes LGPL se cargan como bibliotecas separadas y pueden sustituirse
+por versiones modificadas compatibles para depuracion de sus modificaciones.
+Proyecto: https://github.com/Ali-Bueno/LeAccess

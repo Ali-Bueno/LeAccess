@@ -2,7 +2,7 @@ using System.Collections;
 
 namespace UnityEngine
 {
-    internal class Object
+    internal partial class Object
     {
         private static int _nextId;
         private readonly int _id = ++_nextId;
@@ -38,7 +38,7 @@ namespace UnityEngine
         }
     }
 
-    internal sealed class Transform : Component
+    internal partial class Transform : Component
     {
         public bool IsChildOf(Transform ancestor)
         {
@@ -48,7 +48,7 @@ namespace UnityEngine
         }
     }
 
-    internal class GameObject : Object
+    internal partial class GameObject : Object
     {
         public bool Active = true;
         public bool Visible = true;
@@ -99,7 +99,7 @@ internal sealed class NativeArray<T> : IEnumerable<T>
 
 namespace TMPro
 {
-    internal class TMP_Text : UnityEngine.Component
+    internal partial class TMP_Text : UnityEngine.Component
     {
         public string text;
         public bool isActiveAndEnabled = true;

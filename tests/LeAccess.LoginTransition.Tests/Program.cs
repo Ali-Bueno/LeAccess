@@ -24,6 +24,8 @@ LandingZonePanel Setup()
     LeAccess.Plugin.Log.Messages.Clear();
     ClientStateManager.CurrentClientAppStateType = ClientAppStateType.SystemLoading;
     ClientStateManager._activeTransition = new() { Active = true };
+    ClientStateManager.ThrowSnapshotRead = false;
+    ClientStateManager.GeneratedGetterReads = 0;
     Application.isFocused = true;
     LE.UI.LoadingScreen.IsVisible = false;
     var panel = new LandingZonePanel { gameObject = new(), loginController = new() };
@@ -36,7 +38,7 @@ LandingZonePanel Setup()
 void Ready()
 {
     ClientStateManager.CurrentClientAppStateType = ClientAppStateType.Login;
-    ClientStateManager._activeTransition.Active = false;
+    ClientStateManager.NativeTransition.Active = false;
 }
 void Drain() { LoginTransitionGuard.Update(); LoginTransitionGuard.Update(); LoginTransitionGuard.Update(); }
 
@@ -118,7 +120,6 @@ Cancels(p => p.playOfflineButton = new() { gameObject = new() { transform = new(
 Cancels(p => p.playOfflineButton.transform.Parent = new(), "A button reparented to unrelated UI is rejected");
 Cancels(p => ClientStateManager.CurrentClientAppStateType = ClientAppStateType.InGame, "Gameplay transition cancels pending login action");
 Cancels(p => ClientStateManager.CurrentClientAppStateType = ClientAppStateType.CharacterSelect, "Character selection transition cancels pending login action");
-Cancels(p => ClientStateManager._activeTransition.WasCollected = true, "Unavailable native transition snapshot cancels safely");
 
 panel = Setup();
 panel.OnPlayOfflineClicked();
@@ -177,7 +178,7 @@ Check(LoginTransitionGuard.MayExecute(panel, false), "Unowned native panel is ou
 panel = Setup(); panel.loginController.FSM.CurrentState = LoginController.LoginUIState.EmailPrompt;
 Check(LoginTransitionGuard.MayExecute(panel, false), "Other login substates retain native behavior");
 panel = Setup(); ClientStateManager._activeTransition = null;
-Check(LoginTransitionGuard.MayExecute(panel, false), "Unavailable phase data cannot create a speculative deferred action");
+Check(!LoginTransitionGuard.MayExecute(panel, false), "Empty boxed transition is valid no-transition data, while SystemLoading still defers");
 panel = Setup(); ClientStateManager.CurrentClientAppStateType = ClientAppStateType.Login;
 panel.OnPlayOfflineClicked();
 Check(panel.OfflineStarts == 0, "Login with an outstanding transition uses the same safe deferral as SystemLoading");
@@ -185,4 +186,31 @@ ModText.SetLanguage("en");
 panel = Setup(); panel.OnPlayOfflineClicked();
 Check(ScreenReader.Spoken.Single() == "Loading. Your selection will continue when the game is ready.",
     "English production catalog provides the same once-only pending indication");
+
+panel = Setup();
+Check(LoginTransitionState.IsTransitioning(), "Native nullable with a value produces an active transition");
+Ready();
+bool emptyGetterFailed = false;
+try { _ = ClientStateManager._activeTransition; } catch (NullReferenceException) { emptyGetterFailed = true; }
+Check(emptyGetterFailed, "Runtime double reproduces generated Nullable wrapper failure after native boxing returns zero");
+int generatedReads = ClientStateManager.GeneratedGetterReads;
+Check(!LoginTransitionState.IsTransitioning() && ClientStateManager.GeneratedGetterReads == generatedReads,
+    "Production transition reader accepts empty boxing without constructing the faulty nullable wrapper");
+Check(Il2CppInterop.Runtime.IL2CPP.FieldLookups == 1, "Native field metadata is resolved and cached once");
+
+panel = Setup(); panel.OnPlayOfflineClicked();
+ClientStateManager.ThrowSnapshotRead = true; Ready(); Drain();
+Check(panel.OfflineStarts == 0 && LeAccess.Plugin.Log.Messages.Count(x => x.Contains("Transient native state observation failure")) == 1,
+    "Transient readiness observation failure is deduplicated and never starts native login");
+ClientStateManager.ThrowSnapshotRead = false; Drain();
+Check(panel.OfflineStarts == 1 && panel.OnlineStarts == 0 && ScreenReader.Spoken.Count == 1,
+    "Recovered readiness observation resumes the original offline click once without a second press");
+Drain(); Check(panel.OfflineStarts == 1, "Observation recovery does not become repeated native login attempts");
+
+panel = Setup(); panel.OnPlayOfflineClicked();
+ClientStateManager.ThrowSnapshotRead = true; Ready(); Drain();
+panel.loginController.FSM.CurrentState = LoginController.LoginUIState.EmailPrompt; Drain();
+ClientStateManager.ThrowSnapshotRead = false;
+panel.loginController.FSM.CurrentState = LoginController.LoginUIState.LandingZone; Drain();
+Check(panel.OfflineStarts == 0, "A real ownership change during a transient observation failure still cancels the old request");
 Console.WriteLine($"Login transition tests passed: {checks} checks.");

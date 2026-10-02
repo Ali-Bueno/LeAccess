@@ -1,7 +1,8 @@
 # Runtime map places
 
 `RuntimeMapPlaces` complements fixed map annotations by inspecting the physical
-floor under the current player. It works independently of scene IDs, catalog
+floor under the current player. `RuntimeSceneryPlaces` separately describes nearby
+authored model footprints. Both work independently of scene IDs, catalog
 coverage, fixed/generated layout classification, and material announcements.
 It returns a place identity and localization key; the existing map-section
 service confirms movement between places and controls speech priority.
@@ -48,7 +49,7 @@ service confirms movement between places and controls speech priority.
 
 ## Structural names
 
-Only the collider's own active ancestry can supply a label. Nearby renderers,
+Only the collider's own active ancestry can supply a **floor** label. Nearby renderers,
 textures, materials, scene names and detached signs cannot label the floor.
 Camel-case/underscore/digit-separated authored words select translated category
 keys; internal asset names are never spoken.
@@ -113,8 +114,9 @@ The native foot source must be available; a missing trigger or unowned/dead
 visual hierarchy produces no guessed fallback. The installed visual-prefab audit
 verified one enabled trigger and two owned foot references for all five base
 classes (native range 3) and Werebear, Spriggan and Swarmblade forms (range 5).
-An agent bound to a NavMesh alone does not prove physical ground contact, so no
-second speculative probe is used. Materials and entry summaries remain disabled
+An agent bound to a NavMesh alone does not prove physical ground contact; nearby
+scenery therefore says "Nearby", never "inside" or a floor-contact label.
+Materials and entry summaries remain disabled
 by default.
 
 Run `dotnet run --project tests/LeAccess.RuntimeMapPlaces.Tests` for deterministic
@@ -145,3 +147,119 @@ foreign feet, successful rig capture, missing ground, rejected height/ownership,
 unnamed geometry and recognized place. These are log diagnostics only, never
 screen-reader announcements. They do not assert that this ownership issue caused
 every missing place in the user's run; the next run can identify remaining stages.
+
+## Camp scenery: installed 1.5.1, 2026-10-02
+
+The user's `BepInEx-152324.log` changes from Z22 to Z32 at line 1810 and names
+**Keeper's Camp / Campamento de los guardianes** at 1873. The footstep rig is
+available: owned local visual, native range 3, mask 85984769, clearance 0.5.
+Lines 1865 and 1965/1967 encounter unnamed Terrain and `Navmesh Folder/Cube`
+colliders; 2055 successfully names `Stairs (1)`. These are real contacts, but
+they cannot identify decorative buildings beside the path. Separately, the
+fixed catalogs still held the previous build hash and could not match this
+installed build; the catalog refresh is recorded in its own provenance.
+
+Read-only comparison with today's working D2R implementation:
+`D:/code/c++/diablo 2 access project/d2r-access/docs/places.md:68` and
+`src/places.cpp:74`. Its useful change measures distance to the transformed
+**footprint**, not just an NPC/prefab origin. Walking distance and actual
+interior volumes prevent naming a kitchen through a wall. D2R's room acoustic
+volumes do not establish equivalent interiors in Last Epoch.
+
+Fresh `scene_Z32_unity.bundle` and its referenced meshes from Steam build
+25672295 establish these useful, bounded model families:
+
+| Category | Authored owner and current source |
+|---|---|
+| Tents | 41 `Tent_01/02/03` MeshFilter+MeshRenderer objects under `Tents Folder`; no own colliders. Example GO13676 `Tent_01 (4)` uses sceneassets mesh6692287729664568065, local center `(0,3.406266,0)`, extents `(6.020132,3.417642,6.585278)`. Its transformed base is around `(-5.05,4.010,27.29)`. |
+| Wagon | Four `Wagon1B`/`Wagon1B(Empty)` groups. Read the exact `WagonBody` child, e.g. GO16480, mesh5197301198422176590 `WagonCombined` in `assets_1162bb217239bd18.bundle`. Other boxes/planks do not expand its footprint. Example transformed base `(-50.629,6.009,54.830)`. |
+| Statue of Eterra | GO15817 `Temple Folder/Circle_Statue/Eterra_Statue_Model`, mesh7660974856051224027 in `assets_b991a5071bb14fff.bundle`: local footprint about 2.89 by 3.25 units, base `(35.090,3.878,31.643)`. The parent platform's 27.9-unit bounds do not define the statue's reach. |
+| Gateway | Eight `Bridge_Gate_001/002` meshes on the two bridge groups. Example GO1917 uses mesh8438115556616732491 in `assets_8db916e52c8d30a9.bundle`, transformed base `(35.393,4.078,-17.540)`. This describes the structure, not a zone destination. |
+
+These sample renderers are enabled and have no static-batch submeshes. Runtime
+code reads each renderer's **live local bounds and transform**; none of the
+sample IDs, coordinates or scene names are hardcoded. Exact verified model
+families can work in other scenes using the same assets. Internal model names
+are translated to category labels and never spoken literally.
+
+The current loaded scene's renderers are indexed once per player/scene session,
+including inactive phase variants; per-poll reads recheck active state, owner,
+scene, family, actor exclusion and background/damaged/effect ancestry. Empty
+indexes do not cause repeated whole-scene searches. Rotated/nonuniformly scaled
+local footprints avoid the empty corners of a world-aligned bounding box.
+Distance is to that footprint, with reach one current body width (twice the
+larger of actual actor radius and native navigation radius). Base height must
+match the existing body/base-offset/climb allowance.
+
+The owned native NavMesh agent supplies radius, agent type and area mask. Its
+component can be disabled by native movement while those query settings remain
+valid; inactive/foreign/destroyed ownership still rejects the query. Both
+the player and nearest approach must sample onto that same floor; a clear
+NavMesh segment establishes the short walking route. A body-midpoint physics
+ray additionally rejects an intervening wall, including cases where sampling
+finds our side of the wall. The prop's own collision and local player's body
+are excluded. No movement, interaction, NavMesh mutation or new hook is used.
+
+Scenery has its own state in `MapSectionAccessibility`. A fully validated
+arrival can speak immediately; departure still requires two observations to
+avoid repeating the same prop after a single missing sample. It yields
+to zone/menu/dialogue and floor speech, then says **"Nearby: Tents"** / **"Cerca:
+Tiendas de campaña"**. Thus a bridge does not hide its gateway. Adjacent pieces
+share category identity; obsolete deferred text is canceled on leaving range,
+and loading/session reset clears the cache and pending speech. Bounded existing
+map diagnostics include indexed count, owned navigation settings and first
+confirmed source/distance for each family.
+
+Coverage remains specific: `ShrineCenter` is a large ruin grouping, not an
+interior volume. `Circle_Fountain` has a large, partly buried mesh; its bounds
+do not prove a walkable room or current floor. Torch particle objects called
+`Campfire` do not prove an actual campfire location. No tavern/kitchen interior
+was found in this Z32 audit. Waypoint, stash and merchant roles belong to the
+separate typed interaction/service reader, not these decorative meshes.
+
+Validation: **207** runtime-place checks and **150** map-section service checks
+cover source-linked geometry/ownership, walls, floors, rotated/scaled bounds,
+inactive phase changes, cache lifetime, priority, localization and stale pending
+speech. These are deterministic tests, not listening confirmation in-game.
+
+### First listening follow-up: discovery worked, admission was too strict
+
+The 19:40:15 UTC log was preserved in the session temp folder as
+`LeAccess-camp-followup-20261002/BepInEx-194015.log`. This session **does** contain
+Z32 (lines 446–694), followed by a new Z12 online character. The installed and
+local DLLs matched SHA256 `5D3469AB384E06F5C486FE399E5C33211E4694B9FE12D43B8938B6B0308BB9C8`.
+
+- Lines 460–461 confirm 54 authored renderer footprints and an agent on the
+  exact player GameObject: radius 0.1, height 4, type 0, mask -1. Missing assets,
+  an absent initial rig or the fixed catalog guard do not explain this run.
+- Line 480 actually recognizes `Tent_02 (17)` at footprint distance 0.16378868,
+  within the unchanged one-body-width reach of 1.0000001. There is no
+  `[Map scenery]` speech anywhere in this session. The previous state required
+  two consecutive samples even after all model/route/height checks passed.
+  First-valid arrival now speaks when higher-priority speech permits. Deferred
+  text is still canceled immediately if the physical evidence disappears.
+  The old log records only first detection, so it cannot prove the precise
+  number of valid samples or identify every speech delay. A bounded
+  `scenery-deferred` diagnostic now records that distinction.
+- Line 581 changes to `scenery-nav-missing` while the radar continues to read
+  the same player's navigation data. Requiring `isActiveAndEnabled` was not
+  appropriate for querying the static NavMesh with an owned component's
+  settings. Current native `CollisionAndNavMeshToggler.DisableNavmeshAgent`
+  (`0x162B2D0`) calls `UnityEngine.Behaviour.set_enabled(false)` (`0x4017010`)
+  at `0x162B399`; the log does not identify which action caused this transition.
+  `TryGetQueryAgent` now retains validated settings during that state. The
+  stricter active-agent rule remains for expanding physical floor clearance.
+- Fresh Z32 `NavMeshData` path7816013741281028484 in
+  `sceneassets_Z32_unity.bundle` proves a **baked radius of 0.5**, climb 0.4,
+  cell size 0.15, agent type 0. The runtime radius is only 0.1. The previous
+  0.1-unit approach offset and sample sphere could both remain inside the
+  0.5-unit obstacle clearance excluded during baking. Approach/projection now
+  uses the greater of the runtime and native build-setting radii. This changes
+  how the nearest walkable edge is found, not the announcement distance;
+  route length, wall rejection and floor checks still apply. A source-linked
+  regression reproduces the old failure with those exact two radii.
+
+The related suites also pass: PCG 66, map-state 323 and installed map data 51203;
+the production build succeeds with deployment disabled. No game was launched
+for this correction; the next listening run must confirm which camp references
+the user's actual route reaches.

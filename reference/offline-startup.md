@@ -1,6 +1,37 @@
 # Early online/offline selection during startup
 
-Implemented for installed Steam 1.5.0.1 / build 25663618 on 2026-10-02.
+Initial fix implemented for Steam 1.5.0.1 / build 25663618 on 2026-10-02.
+The one-click follow-up below uses installed 1.5.1 / build 25672295.
+
+## One-click follow-up, 15:23 session
+
+`BepInEx-152324.log` retains the failure after the first fix: the offline click
+is deferred at line 464, the game reaches `Login` at line 488, and the guard
+logs `NullReferenceException` at line 490. There is no `resuming` message before
+that exception. The old `Update` catch discarded the pending click; a later
+explicit press reached CharacterSelect at line 529.
+
+The generated `_activeTransition` getter copies the native `Nullable<UniTask>`,
+passes it through `il2cpp_value_box`, and constructs a managed Nullable wrapper
+from the returned pointer. Installed native `il2cpp_value_box` (export RVA
+`0x2F1780`, implementation `0x31D6A0`) returns zero when the nullable is empty
+(`0x31D6DE`–`0x31D6E5`). Constructing the wrapper from zero fails precisely when
+startup finishes. The earlier mock retained a wrapper with `HasValue = false`,
+so it missed the real nullable-boxing boundary.
+
+`LoginTransitionState` instead resolves the `_activeTransition` field once using
+Il2CppInterop metadata after static class initialization. It calls the supplied
+`il2cpp_field_get_value_object(field, IntPtr.Zero)` API and tests the returned
+pointer directly: zero means no active transition. Current native export
+`0x33FDA0`, implementation `0x2F4060`, reads the static field and calls the same
+box implementation at `0x2F4191`. Production uses no hardcoded addresses, field
+offsets, unsafe memory reads, Nullable wrappers or new hooks.
+
+A failed readiness/ownership observation now preserves the pending request and
+logs its exception once, including the stack. A positively observed owner or
+application-state change still discards it. The request is cleared before calling
+the original native handler, so handler failures are never retried as new actions.
+Persistent ownership and visibility restrictions otherwise remain unchanged.
 
 ## Observed failure
 
@@ -36,7 +67,8 @@ Installed native inspection confirms:
 - The advance state machine, `0x1FA6B10`, disables both mode buttons before
   its waits. A premature transition can therefore leave an inert landing UI.
 - `ClientStateManager.CurrentClientAppStateType` reads the current native
-  state; `_activeTransition.HasValue` indicates an outstanding transition.
+  state; `_activeTransition` is a native nullable task. Read its boxed presence
+  through `LoginTransitionState`, not the generated Nullable wrapper.
   `LoginPanelBase.loginController`, its `landingZonePanel`, and
   `FSM.CurrentState == LandingZone` identify the actual UI owner.
 
@@ -62,15 +94,19 @@ action is added. Native behavior outside the verified startup scope remains.
 
 ## Validation
 
-- `dotnet run --project tests/LeAccess.LoginTransition.Tests`: **49 checks**,
+- `dotnet run --project tests/LeAccess.LoginTransition.Tests`: **56 checks**,
   source-linking the guard and both production prefixes. Covers the observed
   startup sequence, both mode choices, deduplication, replacement/cancellation,
   lifecycle, focus/loading delays, English/Spanish speech and native failures.
-- Full installed native hook audit: **31 regression checks**, **50 declarations
-  / 49 native targets**. Both new click targets have unique native bodies and
+  The current native-field reader is also source-linked. Follow-up regressions
+  reproduce empty-nullable boxing, check metadata caching, recover a transient
+  observation failure without another click, and cancel on actual owner change.
+- Full installed native hook audit: **31 regression checks**, **59 declarations
+  / 58 native targets**. Both click targets have unique native bodies and
   supported signatures.
 - Main build with `-p:SkipPluginDeployment=true`: zero warnings/errors.
 
+The follow-up main build passes with zero warnings/errors and deployment skipped.
 No game was launched for validation. Fresh listening must confirm an early
 offline press says it is loading, then continues once into character selection.
 `[StartupMode]` logs distinguish deferral, replay, cancellation and failures

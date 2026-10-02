@@ -54,13 +54,14 @@ internal static class CreationTabTests
         Check(selection.Root == masteryTab.gameObject, "Typed tab is the exact speech owner");
         ClassCarouselHandler.CheckPendingClassAnnouncement();
         ClassCarouselHandler.CheckPendingClassAnnouncement();
-        Check(ScreenReader.Messages.Single().Text == "Hechicero. Descripción completa de hechicero", "Creation mastery announces full localized description without section labels");
+        Check(ScreenReader.Messages.Single().Text == "Hechicero", "Creation mastery announces only its localized name");
+        Check(ClassCarouselHandler.TryReadDetails(out var details) && details == "Hechicero. Descripción completa de hechicero", "Manual mastery details use the exact owned description");
         ClassCarouselHandler.CheckPendingClassAnnouncement();
         Check(ScreenReader.Messages.Count == 1, "Stable creation mastery stays silent");
         ScreenReader.SpokeThisFrame = false;
         navigation.ActiveSelectable = baseTab;
         ClassCarouselHandler.CheckPendingClassAnnouncement(); ClassCarouselHandler.CheckPendingClassAnnouncement();
-        Check(ScreenReader.Messages.Last().Text == "Mago. Descripción completa del mago", "Returning to base tab reads its own description");
+        Check(ScreenReader.Messages.Last().Text == "Mago", "Returning to base tab reads its own name briefly");
         Localization.Texts["Class_Description_Mage"] = "New locale content";
         Check(ClassSelectionReader.TryRead(out selection) && selection.Description == "New locale content", "Cached references resolve current language on every reading");
         Localization.Texts.Remove("Class_Description_Mage");

@@ -1,5 +1,37 @@
 # Static map section generation
 
+## Steam 1.5.1 refresh — build 25672295
+
+On 2026-10-02 all **58 shipped profiles / 750 sections** were regenerated against
+the installed `build_hash.txt` value
+`bf5a46c674908886ecdabb6e9906b8a3bf81ec5b`. Previously both catalogs still bound
+the older `c8576b3db279ad61f09835dd69cc9d589e5a5cbe`; the exact runtime guard
+therefore disabled their fixed-map coverage after the update.
+
+The generator re-read installed MonoScripts, SceneList classification, hierarchy,
+colliders and default-agent navigation data for the 57 previously shipped
+generated profiles. `extract_oldroad_sections.py` independently regenerated Z12.
+All anchors, paths, source/collider guards, height bands and polygons compared
+structurally equal to the prior profiles; only their verified build binding
+changed. The runtime hash check was retained. Tests now assert the independently
+recorded current hash on every generated profile and reject the previous hash.
+
+[Provenance](map-section-build-25672295.json) records the two installed source
+bundle SHA256 values for each of the 58 scenes, source metadata, generator/tool
+hashes and resulting catalog hashes. Full extraction notes and previous catalog
+backups remain in `%TEMP%/LeAccess-map-refresh-25672295-20261002/`. Reproduction
+used the documented generator's `--scenes-from` option with the previous
+`full-monolith-generated-evidence.json` (57 accepted scenes); rejected scenes and
+the separate 360-scene coverage census were not reclassified. Accordingly the
+[coverage ledger](map-coverage-ledger.json) remains historical census evidence,
+not a claim of a new complete scene audit.
+
+No new fixed categories or map coordinates were added. The totals below remain
+valid for the regenerated catalogs. Runtime/source ownership checks and the
+user's next listening test still determine whether a profile can speak.
+
+## Generator and coverage
+
 `tools/extract_map_sections.py` builds annotations from the installed scene
 bundles. It uses analysis-only UnityPy 1.25.3 and Shapely and imports the verified
 navigation decoder in `tools/map_section_navmesh.py`. Neither Python package

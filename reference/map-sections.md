@@ -1,6 +1,11 @@
 # Map sections and environment descriptions
 
-Implemented for Steam 1.5.0.1, build 25663618. Default speech identifies concrete
+Initially implemented for Steam 1.5.0.1, build 25663618. All 58 fixed profiles
+(750 sections) were regenerated from the installed Steam 1.5.1, build 25672295,
+on 2026-10-02. Geometry and ownership guards were unchanged; the verified build
+hash was refreshed because the previous hash correctly disabled those catalogs
+after the game update. See [regeneration provenance](map-section-build-25672295.json).
+Default speech identifies concrete
 structures and rooms when the player reaches them. The user explicitly prefers
 these local landmarks over generic material changes or an entry summary.
 The existing central speech sink serves these readers:

@@ -1,0 +1,87 @@
+LeAccess test package - third-party notices and source locations
+
+This package contains unmodified third-party binaries alongside LeAccess.
+The license texts listed below are included in this directory. They govern
+their respective components; this notice does not replace those licenses.
+The original BepInEx archive is preserved file-for-file. Its SHA256 is
+F4CC496BD098A0DF4164B81E3737297707F13A47C2478DBA2F60EEFAB784817A.
+LeAccess-SHA256.txt identifies every distributed file without machine paths.
+
+LOADER AND RUNTIME
+
+BepInEx 6.0.0-be.788 - Copyright BepInEx Team - LGPL-2.1
+License: BepInEx.txt
+Source: https://github.com/BepInEx/BepInEx/tree/5b766a3b7f6c164d4798924a93f3acf4db769d06
+Source download: https://github.com/BepInEx/BepInEx/archive/5b766a3b7f6c164d4798924a93f3acf4db769d06.zip
+Distribution: https://builds.bepinex.dev/projects/bepinex_be
+
+Unity Doorstop 4.5.0 - Copyright NeighTools contributors - LGPL-2.1
+License: UnityDoorstop.txt
+Source and downloads: https://github.com/NeighTools/UnityDoorstop/tree/v4.5.0
+Source download: https://github.com/NeighTools/UnityDoorstop/archive/refs/tags/v4.5.0.zip
+
+.NET runtime 6.0.7 - Copyright .NET Foundation and contributors - MIT
+Licenses: Dotnet-LICENSE.txt and Dotnet-THIRD-PARTY-NOTICES.txt
+Source: https://github.com/dotnet/runtime/tree/0ec02c8c96e2eda06dc5b5edfdbdba0f36415082
+
+Il2CppInterop 1.5.3 - LGPL-3.0 (including the GPL text)
+License: Il2CppInterop.txt
+Source: https://github.com/BepInEx/Il2CppInterop/tree/dbda1cb353b0f4253345dc45136d170b9e50a5a0
+Source download: https://github.com/BepInEx/Il2CppInterop/archive/dbda1cb353b0f4253345dc45136d170b9e50a5a0.zip
+
+Cpp2IL.Core, LibCpp2IL, StableNameDotNet and WasmDisassembler - MIT
+Copyright Samboy063 and contributors. License: Cpp2IL.txt
+Source: https://github.com/SamboyCoding/Cpp2IL/tree/558ddd98642010897d54316b51fbaa7889fda093
+
+Disarm - Copyright Samboy063 - MIT. License: Disarm.txt
+Source: https://github.com/SamboyCoding/Disarm/tree/8574010015c8c56bb7faad7e407c50b0abe9cc72
+
+AssetRipper.CIL - Copyright ds5678 - MIT. License: AssetRipper-CIL.txt
+Source: https://github.com/AssetRipper/AssetRipper.CIL/tree/06216e69825ccd6536dc17e9ca81c4d539ce9321
+AssetRipper.Primitives - License: AssetRipper-Primitives.txt
+Source: https://github.com/AssetRipper/AssetRipper.Primitives
+
+HarmonyX - MIT. License: HarmonyX.txt
+Source: https://github.com/BepInEx/HarmonyX
+MonoMod RuntimeDetour, Utils, Backports and ILHelpers - MIT. License: MonoMod.txt
+Source: https://github.com/MonoMod/MonoMod
+Mono.Cecil, Rocks, Pdb and Mdb - MIT. License: Mono-Cecil.txt
+Source: https://github.com/jbevain/cecil
+Iced - MIT. License: Iced.txt
+Source: https://github.com/icedland/iced
+AsmResolver, DotNet, PE and PE.File - MIT. License: AsmResolver.txt
+Source: https://github.com/Washi1337/AsmResolver
+Gee.External.Capstone - MIT. License: Capstone-NET.txt
+Source: https://github.com/9ee1/Capstone.NET
+SemanticVersioning - Copyright Adam Reeve - MIT. License: SemanticVersioning.txt
+Source: https://github.com/adamreeve/semver.net
+Dobby - Apache-2.0. License: Dobby.txt
+Source: https://github.com/jmpews/Dobby
+
+LEACCESS AUDIO AND SCREEN-READER DEPENDENCIES
+
+NAudio, NAudio.Core, NAudio.Wasapi and NAudio.WinMM 2.2.1 - MIT
+Copyright Mark Heath and contributors. License: NAudio.txt
+Source: https://github.com/naudio/NAudio/tree/v2.2.1
+
+Tolk.dll and TolkDotNet.dll - Copyright Davy Kager - LGPL-3.0
+Licenses: Tolk-LGPL-3.0.txt and GNU-GPL-3.0.txt
+Upstream source and build instructions: https://github.com/dkager/tolk
+Source snapshot: https://github.com/dkager/tolk/tree/e5149f0cb6ef9b941673017e0e7b7c409e485fbe
+Source download: https://github.com/dkager/tolk/archive/e5149f0cb6ef9b941673017e0e7b7c409e485fbe.zip
+The supplied binaries report version 1.0.0.0. They are copied unchanged from
+the project's reference libraries; the local build's original source revision
+is not recorded. Their exact hashes are recorded in LeAccess-SHA256.txt.
+
+nvdaControllerClient64.dll - Copyright NV Access and contributors - LGPL-2.1
+License: NVDA-LGPL-2.1.txt
+API source and build instructions:
+https://github.com/nvaccess/nvda/tree/master/extras/controllerClient
+https://github.com/nvaccess/nvda/tree/master/nvdaHelper/remote
+Supplied upstream client library: https://github.com/dkager/tolk/tree/e5149f0cb6ef9b941673017e0e7b7c409e485fbe/libs/x64
+
+The LGPL libraries remain separate, dynamically loaded files. Users may replace
+them with compatible modified versions and debug those modifications. No game
+binary, game asset, save, generated game interop assembly, account data, or
+personal configuration is included. Source links identify upstream locations;
+they do not claim that this package builds any third-party component from source.

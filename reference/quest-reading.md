@@ -1,7 +1,35 @@
 # Quest journal reading
 
-Implemented 2026-10-02 for Steam 1.5.0.1, build 25663618. Game remained closed;
-controller reachability and listening validation are pending.
+Initial implementation: 2026-10-02 for Steam 1.5.0.1, build 25663618.
+History/context follow-up: installed Steam 1.5.1, build 25672295. Game remained
+closed; listening validation of the follow-up is pending.
+
+## Current objectives versus earlier objectives
+
+The preserved `BepInEx-152324.log` identifies one selected mission, **Al campamento
+de los guardianes**, at lines 603 and 624: `En progreso` and `Ábrete paso a través
+del bosque en llamas`. The manual read at line 635 appends five completed earlier
+objectives of that mission, without first introducing them as history. That
+explains the reported impression of several unfamiliar quests. The log does not
+show the reader selecting or announcing other quest assets in this sequence.
+
+Navigation now places the authoritative quest state after the selected title and
+introduces active rows as **Current objectives**. Completed or failed objectives
+stay in manual details under **Objective history for this quest**, with each row's
+completion/failure state. The rendered fallback applies the same separation:
+checked rows never become current navigation objectives. A completed quest cannot
+reintroduce a retained active row as an unfinished task. History-only text changes
+remain silent until the user requests details.
+
+Current installed `QuestInformation.getObjectiveStateText`, RVA `0x17C3D70`,
+uses `GetObjectiveActive` for both Active and Completed and `GetObjectiveFailed`
+for Failed; NotStarted/NoLongerRelevant return no display text. Therefore the
+formatter's text alone cannot distinguish active work from completed history.
+`QuestModelReader` uses the actual enum, groups the history explicitly, and keeps
+all selected quest and objective-step ownership checks. The native projection
+`StatefulQuestList.getObjectiveStatesForQuest` is at `0x14CA0E0` in this build.
+Addresses farther below document the earlier build and must not be reused as
+1.5.1 addresses. Production uses typed APIs, not these RVAs.
 
 `QuestAccessibility` follows the current navigation component or its active
 selectable to a `QuestButton`, `QuestButtonGenerator`, or `QuestPanel`, and follows
@@ -14,24 +42,31 @@ ordinary consumers do not rebuild quest content.
 
 The generator's `_selectedButton_k__BackingField` establishes current selection.
 The button must belong to that generator and its visible, expanded quest panel.
-The reader announces the button's displayed title/chapter, completion, and pin
-state. Detail content requires matching quest pointers in `QuestInformation.quest`
+Navigation announces the displayed title, the local player's current quest state,
+chapter/pin state and clearly labeled current active objectives. Right-stick-up calls
+`ReadCurrentDetails()` for the full step description, objectives and owned reward
+rows. The native model projection described below supplies state/objectives even
+when the information widget has not rendered them. Rendered fallback detail
+requires matching quest pointers in `QuestInformation.quest`
 and `previousQuest`, a matching displayed title, and visible owned content.
 Objectives and rewards come from the declared typed lists and must belong to
 their declared holders. Hidden, culled, transparent, collected, or foreign rows
-are excluded. A visible objective check contributes a localized completion label.
+are excluded. A visible objective check contributes a localized completion label
+in manual history.
 Game-supplied names, descriptions and reward text are preserved.
 
 `QuestAnnouncementState` settles two identical observations, deduplicates unchanged
 content, and discards pending speech when selection disappears or changes. The
-reader supplies an explicit summary and owned detail payload: temporarily hiding
+reader supplies an explicit summary and current-objective payload: temporarily hiding
 details for the same selection does not repeat its summary, and restoring
 unchanged details stays silent. Changed summary/pin/completion while details are
 hidden speaks only current summary; changed visible objectives still speak. Pin,
 completion and rendered-content changes can speak while selection stays still.
 Popups, dialogue, controller menus, loading and lost application focus suppress
-the reader. Focus claiming is limited to the selected quest button itself so tab,
-filter and nested pin controls retain ordinary focus announcements.
+the reader. Focus claiming is limited to the selected quest button and its exact
+declared `buttonRectTransform` (the `MainButton` seen in the log), so tabs, filters
+and other nested controls retain ordinary focus announcements. Manual delivery
+acknowledges the current brief to prevent interruption by the following poll.
 
 ## Native ownership evidence
 
@@ -68,21 +103,57 @@ Analysis used the existing metadata-map/disassembly workflow, copied into
 
 ## Validation and limits
 
+The 13:01 runtime log, lines 1515–1527, records only
+`Al campamento de los guardianes. I. Fijada`, then repeated `MainButton` and
+`QuestHeader` focus. It does not identify which displayed-content guard failed.
+The follow-up therefore retains those guards and adds `QuestModelReader`:
+
+- `Quest.getLocalStatefulQuestList` RVA `0x14A9CA0` obtains the local player's
+  appropriate list; `getStatefulQuest` RVA `0x14CABD0` searches it without creating
+  or advancing a quest. The returned quest must match the exact selected asset.
+- `QuestInformation.GenerateObjectives` RVA `0x17C18B0` uses
+  `StatefulQuestList.getObjectiveStatesForQuest` RVA `0x14C9AD0` and
+  `QuestInformation.getObjectiveStateText` RVA `0x17C35D0`. The reader uses these
+  same read-only projection/formatting methods, preserving the game's omission
+  of not-started and no-longer-relevant objectives. Each objective and its step
+  must explicitly belong to the selected quest.
+- `getNameForState` RVA `0x17C34A0` formats the actual local state. Both formatter
+  methods are stateless and safe to call on the declared information component
+  even when its displayed quest is stale or hidden; no UI field is changed.
+- `Localization.Quests.GetStepDescription` formats the exact current step of that
+  local quest for manual details. Active objectives form the navigation payload;
+  prior completed objectives and the longer description stay in manual details.
+  Rendered reward rows still require all original visible ownership checks.
+
+The native functions allocate presentation lists/strings but do not pin, select,
+advance, complete or open quests. The reader does not call `updateInfo` or
+`GenerateObjectives` and does not expose unselected quest assets.
+
 `dotnet run --project tests/LeAccess.Quests.Tests/LeAccess.Quests.Tests.csproj`
-passes 88 checks against source-linked production readers/state and small game
+passes 124 checks against source-linked production readers/state and small game
 doubles. Cases cover structured content, stale quest/title/sentinel rejection,
 foreign/hidden rows, pin/completion changes, switching while pending, duplicate
 speech, lifecycle and priority gates, unavailable speech, English/Spanish
 mod-owned state labels, detail hiding/restoration, hidden state changes,
 cross-quest detail provenance, disabled navigation, and preservation of game
-title text. A `[Quest]` diagnostic is logged once per delivered announcement.
-Main project builds
-without warnings/errors with `-p:SkipPluginDeployment=true`; the final integrated
-build was installed with its hash recorded in `STATUS.md`.
+title text. Follow-up cases cover local model identity, native state changes,
+hidden/stale information, current versus completed objectives, foreign steps,
+native hidden-objective states, collected/missing models, declared main-button
+focus, manual reads, no subsequent interruption and no automatic long description.
+History regressions cover its explicit introduction, multiple completed/failed
+rows, foreign quest rejection, completed quest with a retained active row, both
+model and rendered-fallback history changes staying silent, and current-objective
+changes continuing to announce. The rendered fallback can announce a newly
+available quest state after completion changed while content was hidden; it still
+cannot include completed objectives as current tasks.
+A `[Quest]` or `[Quest details]` diagnostic is logged once per delivery. The
+follow-up main project builds without warnings/errors using
+`-p:SkipPluginDeployment=true`; this feature investigation did not deploy or launch.
 
 The selected button's visible title is required; no scene text or asset-name
 guess supplies missing identity. If details are hidden or lag behind selection,
-the reader announces the current title/state and waits for safely owned details.
+the native model can still supply the selected quest's current state, active
+objectives and step description; visible rewards wait for safely owned rows.
 A cold information widget must have a discoverable declared owner through the
 registered map or panel hierarchy. The new regressions cover map-owned navigation,
 separate information roots, disabled/foreign/missing owners and hidden journals.

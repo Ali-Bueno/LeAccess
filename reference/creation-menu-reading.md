@@ -1,4 +1,4 @@
-# Character creation class and mastery descriptions
+# Character creation choices and manual descriptions
 
 Investigated and implemented against Steam 1.5.0.1, build 25663618, on
 2026-10-02. The game was not started.
@@ -50,20 +50,73 @@ language changes. The reader does not open panels or change selection. It valida
 the owner/content pointers and index on each use, rejects ambiguous description
 sources and retains the existing two-observation announcement tracking.
 
+Navigation now announces only the localized name. Descriptions and mastery bonuses
+are returned by `ClassCarouselHandler.TryReadDetails(out string text)` exclusively
+for the manual right-stick-up route. The method rereads current localization and
+selection, rejects loading/background/modal ownership, and suppresses any pending
+short announcement so it cannot interrupt the requested description next frame.
+Repeated manual requests remain available for the same choice. This method should
+not be used to prefetch text during ordinary focus polling.
+
 `Unity.Localization.dll` and `UnityEngine.UIElementsModule.dll` are existing game
 interop references, both `Private=false`; no new DLL is shipped. Older
 MasteryButton/passive-tree readers remain available for their separate menus.
+The modern passive panel is resolved through its exact `ActiveChildNavigable`.
+The class reader accepts selected tab controls or a typed
+`PassiveTreeBannerNavigable`: its exact `CurrentButton`, or its visible
+`descriptionContainer` only while `IsDescriptionSelected` is true. Native setters
+at RVAs `0x105C330` and `0x105C5E0` move the focus cursor to those respective
+targets. A selected passive grid, search field, missing child or unrelated control
+cannot use the open `_currentMasteryIndex` as focus evidence. This prevents a
+background mastery announcement from interrupting node speech, and prevents a
+failed node-detail request from reading the mastery instead.
+
+## Realm selection: the ambiguous "Select" buttons
+
+The user's 13:01 runtime log (`LogOutput.log`, 2026-10-02) records the initial
+`New Character Button` at line 407 and `SeasonSelectionButton` inside `CycleTile`
+at line 410. This is the **Season / Legacy realm choice**. The log does not show a
+gender-selection screen at that point. Both realm buttons have the same localized
+`Button_Label_Select` child, which explains the reported speech "Elegir".
+
+The installed `PermaLoad.bundle/CharacterSelection` prefab confirms these bindings:
+
+| Control under `CycleModal/Contents` | Owned realm title | Native action |
+|---|---|---|
+| `CycleTile/SeasonSelectionButton` | `CycleTile/SeasonName` | `CharacterSelect.NewCharacterClick(true)`; `LocalCharacterSlots.ChangeCycle(1)` |
+| `CycleTile (2)/LegacySelectionButton` | `CycleTile (2)/Name` | `CharacterSelect.NewCharacterClick(false)`; `LocalCharacterSlots.ChangeCycle(0)` |
+| `CycleTile/chooseCycleInsteadButton` | `CycleTile/SeasonName` | Changes the existing creation form to Season |
+| `CycleTile (2)/chooseLegacyInsteadButton` | `CycleTile (2)/Name` | Changes the existing creation form to Legacy |
+
+`CreationRealmReader` requires the live declared `CharacterSelect`, those exact
+button names and direct parent paths, a real `Button`, and visible controls. It
+reads the visible TMP title plus `EterraFrameHeader/Header` (`Cycles/Header/ChooseRealm`)
+and the tile's optional visible `Label/Type` recommendation. Missing titles wait
+instead of falling back to "Select". The copied `BorderTitle/Recommended` text
+contains "Season" even on the Legacy tile and is deliberately not a name source.
+
+Manual details combine only the chosen tile's `Message` and the shared
+`Footer/CycleEndExplanation`. Their localization entries use numeric table keys;
+reading their rendered TMP text preserves the current language without hardcoded
+translations. Unrelated or hidden sibling text is excluded. These four static
+bindings are documented because this modal has no dedicated typed realm-choice
+component or title reference. No native hooks or UI state changes were added.
 
 ## Verification and remaining listening checks
 
-The source-linked class suite passes **67 checks**, including 20 new cases for
+The source-linked class suite now passes **101 checks**, covering
 the installed tab layout, inactive exact-owned content, localized fallback,
 language changes, category-label exclusion, foreign/replaced content, invalid
-indices, collected wrappers, rapid focus and reopening. The main mod builds
+indices, collected wrappers, rapid focus and reopening. Realm tests reproduce all
+four buttons and their generic "Select" children, distinct sibling titles,
+incorrect copied Season decoration, optional recommendation, manual-only details,
+missing/hidden titles, foreign ownership, repeated manual requests and suppression
+of pending short speech. The main mod builds
 without warnings/errors. These are static/host checks, not a listening claim.
 
-Navigate all five base classes, enter the name/mastery screen and highlight each
-mastery without activating it. Expect its complete localized description once,
-with navigation interrupting the previous selection. Activate a tab and enter its
-skill list; it must not speak a neighboring mastery. Then return to the name field
-and verify the [explicit keyboard activation](character-name-reading.md).
+Open Create Character and navigate both realm choices: expect the realm context
+and the specific title, with descriptions only on right-stick-up. Repeat from the
+change-realm action in character details. Navigate all five base classes and each
+mastery: expect short names on focus and the exact current description on the
+manual gesture, without activation or adjacent-mastery speech. The user-confirmed
+[character-name keyboard behavior](character-name-reading.md) was not changed.

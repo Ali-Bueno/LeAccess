@@ -7,6 +7,7 @@ void Check(bool condition, string message)
 }
 
 BindingTests.Run(Check);
+LearningTests.Run(Check);
 SelectionTests.Run(Check);
 TooltipDetailsTests.Run(Check);
 if (failures.Count != 0) throw new InvalidOperationException(string.Join(Environment.NewLine, failures));

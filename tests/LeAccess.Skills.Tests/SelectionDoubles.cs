@@ -22,10 +22,21 @@ internal sealed class SkillsPanelManager : UnityEngine.Component
 }
 internal sealed class AbilityPanelIcon : UnityEngine.Component
 {
+    internal enum AbilityUnlockType { BaseClass, MasteryPoints, Mastering }
+    internal AbilityUnlockType ablityUnlockType;
+    internal bool locked;
     internal Ability ability;
     internal AbilityTooltip tooltipAbility;
     internal TMPro.TMP_Text skillName { get; set; }
     internal TMPro.TMP_Text UnlockReqTMP { get; set; }
+}
+internal sealed class LocalTreeData : UnityEngine.Component { internal CharacterClass characterClass; }
+internal sealed class CharacterClass : UnityEngine.Object { internal NativeArray<AbilityAndLevel> unlockableAbilities; }
+internal sealed class AbilityAndLevel : NativeObject { internal Ability ability; internal int level; }
+internal sealed class KnownAbilityList : UnityEngine.Component
+{
+    internal LocalTreeData treeData;
+    internal NativeArray<Ability> abilities;
 }
 internal sealed class AbilitySelectionIcon : UnityEngine.Component
 { internal Ability ability; internal AbilityTooltip tooltipAbility { get; set; } }
@@ -56,6 +67,8 @@ internal sealed class UITooltipAbility : UnityEngine.Component
 internal sealed class SkillTree : UnityEngine.Component { internal int treeID; internal Ability ability; }
 internal sealed class SkillTreeNode : UnityEngine.Component
 {
+    internal int pointsAllocated;
+    internal byte maxPoints = 5;
     internal SkillTree tree;
     internal int id;
     internal string nodeName, description;

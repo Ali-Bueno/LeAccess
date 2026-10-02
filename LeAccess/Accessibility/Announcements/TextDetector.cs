@@ -157,6 +157,10 @@ public static class TextDetector
         if (setting == null && spinner != null) setting = spinner._settingContainer;
         var flag = controlGo.GetComponentInParent<LE.Settings.EnumToggleSettingUI>();
         if (setting == null && flag != null) setting = flag._settingContainer;
+        var enumDropdown = controlGo.GetComponentInParent<LE.Settings.EnumSettingUI>();
+        if (setting == null && enumDropdown != null) setting = enumDropdown._settingContainer;
+        var stringDropdown = controlGo.GetComponentInParent<LE.Settings.StringDropdownSettingUI>();
+        if (setting == null && stringDropdown != null) setting = stringDropdown._settingContainer;
         if (UiVisibility.IsVisible(setting) && controlGo.transform.IsChildOf(setting.transform)) return setting.transform;
 
         Transform result = null;

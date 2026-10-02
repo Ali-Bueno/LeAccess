@@ -5,6 +5,7 @@ namespace Il2CppSystem
         private static int next;
         internal IntPtr Pointer = (IntPtr)(++next);
         internal bool WasCollected;
+        internal T TryCast<T>() where T : class => this as T;
     }
 }
 namespace Il2CppSystem.Collections.Generic
@@ -19,7 +20,25 @@ namespace UnityEngine
     {
         internal bool isActiveAndEnabled = true;
         internal GameObject gameObject = new();
+        internal TMPro.TMP_Text Text;
+        internal T GetComponentInChildren<T>() where T : class => Text as T;
     }
+    internal class CanvasRenderer : Object { internal bool cull; }
+}
+namespace UnityEngine.UI { internal class Selectable : UnityEngine.Behaviour { } }
+namespace TMPro
+{
+    internal class TMP_Text : UnityEngine.Behaviour
+    {
+        internal string text;
+        internal float alpha = 1;
+        internal UnityEngine.CanvasRenderer canvasRenderer = new();
+    }
+}
+internal static class Localization
+{
+    internal static Dictionary<string, string> Texts = new();
+    internal static string GetText(string key, string fallback = "") => Texts.GetValueOrDefault(key, fallback);
 }
 internal class ItemData : Il2CppSystem.Object
 {
@@ -37,11 +56,20 @@ internal class ItemContainerUI : UnityEngine.Behaviour
     internal ItemContainerEntry currentlySelectedItem;
     internal IItemContainer Container = new();
 }
+internal class BaseShopContainerUI : ItemContainerUI
+{ internal UnityEngine.UI.Selectable shopBtn, buyBackBtn; }
 internal static class NavigationManager { internal static Il2CppSystem.Object currentlySelected; }
 internal class UIBase : UnityEngine.Object
 {
     internal static UIBase instance;
     internal LE.UI.Tooltips.TooltipSystem TooltipSystem;
+    internal static LE.UI.PanelSystem.ShopPanel Shop;
+    internal static T GetPanelIfOpen<T>() where T : class => Shop as T;
+}
+namespace LE.UI.PanelSystem
+{
+    internal class ShopPanel : UnityEngine.Behaviour
+    { internal ItemContainerUI _shop, _buyback; }
 }
 internal enum TooltipMode { None, DefaultInfo, DefaultModRanges, Explanation, CompareModRanges, CompareDefault }
 internal class TooltipItemManager
@@ -113,6 +141,12 @@ namespace LE.UI.Tooltips
         internal static ItemTooltipInfo Result;
         internal static Action BuildAction;
         internal static bool WrongItem, WrongMode, WrongSlot;
+        internal static int VendorCalls;
+        internal static ItemTooltipVendorInfo VendorResult;
+        internal static Action VendorAction;
+        internal static TooltipItemManager.SlotType VendorSlot;
+        internal static ItemTooltipVendorInfo GetVendorInfo(ItemDataUnpacked item, TooltipItemManager.SlotType slot)
+        { VendorCalls++; VendorSlot = slot; VendorAction?.Invoke(); return VendorResult; }
         internal static ItemTooltipInfo GetItemTooltipInfo(ItemDataUnpacked item, TooltipItemManager.SlotType slot, TooltipMode mode)
         {
             Calls++;
@@ -123,6 +157,17 @@ namespace LE.UI.Tooltips
             Result.TooltipMode = WrongMode ? TooltipMode.None : mode;
             return Result;
         }
+    }
+    internal class ItemTooltipVendorInfo : Il2CppSystem.Object
+    {
+        internal bool IsForPurchase = true;
+        internal Il2CppSystem.Collections.Generic.List<ItemTooltipPriceInfo> Prices = new();
+    }
+    internal class ItemTooltipPriceInfo : Il2CppSystem.Object
+    {
+        internal string Text;
+        internal bool CanAfford = true;
+        internal string ToSearchableString() => Text;
     }
 }
 namespace LeAccess.Accessibility.Announcements

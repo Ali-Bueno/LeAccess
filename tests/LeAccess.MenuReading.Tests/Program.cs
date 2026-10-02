@@ -4,6 +4,7 @@ using LeAccess.Accessibility.Dialogue;
 using LeAccess.Accessibility.Navigation;
 using LeAccess.Accessibility.ScreenContent;
 using LeAccess.Accessibility.Utils;
+using LeAccess.Accessibility.Settings;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,6 +15,7 @@ void Check(bool condition, string message)
 void Reset()
 {
     ElementAnnouncer.ResetFocus(); ButtonPromptAnnouncer.Reset();
+    SettingsFocusAnnouncer.Reset(); SettingsFocusReader.Current = null;
     ScreenReader.Messages.Clear(); ScreenReader.Speaking = ScreenReader.SpokeThisFrame = false;
     ScreenContentAnnouncer.HasActiveContent = ScreenContentAnnouncer.HasPendingContent = false;
     DialogueAnnouncer.HasActiveContent = DialogueAnnouncer.HasPendingContent = false;
@@ -33,6 +35,12 @@ MultiButtonsActionPrompt Prompt(GameObject root, string text)
     return go.Add(new MultiButtonsActionPrompt { _promptDescription = Label(go,text) });
 }
 
+Reset();
+var merchantTab = new GameObject { name = "Buyback" };
+LeAccess.Accessibility.Items.MerchantMenuReader.OwnedTab = merchantTab;
+ElementAnnouncer.AnnounceElement(merchantTab);
+Check(ScreenReader.Messages.Single().Text == "Recompra", "Owned merchant tab overrides generic object-name fallback");
+LeAccess.Accessibility.Items.MerchantMenuReader.OwnedTab = null;
 Reset();
 var menu = new GameObject();
 var play = Button(menu,"Jugar"); var options = Button(menu,"Opciones");
@@ -54,7 +62,13 @@ var description = string.Join(" ", Enumerable.Repeat("La descripción completa p
 var described = Button(new GameObject(),"Sin conexión");
 described.Add(new InfoForTooltip { tooltipInfo = new TooltipInfo { nameText = "Sin conexión", mainText = description } });
 ElementAnnouncer.AnnounceElement(described);
-Check(ScreenReader.Messages.Single().Text == "Sin conexión. " + description, "A button keeps its complete associated description in the same utterance");
+Check(ScreenReader.Messages.Single().Text == "Sin conexión", "Navigation keeps tooltip descriptions separate");
+Check(ElementAnnouncer.TryReadDetails(described, out var manualText) && manualText == "Sin conexión. " + description,
+    "Manual inspection retains the complete associated description");
+Time.unscaledTime += 1; ElementAnnouncer.AnnounceElement(described);
+Check(ScreenReader.Messages.Count == 1, "Manual inspection acknowledges brief focus without a following duplicate");
+described.Active = false;
+Check(!ElementAnnouncer.TryReadDetails(described, out _), "Hidden previous focus cannot supply manual details");
 
 foreach (string hidden in new[] {"inactive","alpha","culled","disabled","canvas","group","collected"})
 {
@@ -91,6 +105,53 @@ var numericRow = settings.Child("Numeric row"); Label(numericRow,"Resolución");
 numericRow.Add(new LE.Settings.NumericSettingUI { _settingContainer = numericRow });
 var numericSlider = numericRow.Child().Add(new Slider()); numericRow.Child().Add(new TMP_InputField());
 Check(ReferenceEquals(TextDetector.FindSingleOptionContainer(numericSlider.gameObject),numericRow.transform), "The actual new setting container owns its paired slider and number input");
+Reset();
+var soundSetting = new GameObject(); Label(soundSetting, "Volumen de música");
+var sliderInputGo = soundSetting.Child("Slider Input");
+sliderInputGo.Add(new LE.Settings.NumericSettingUI { _settingContainer = soundSetting });
+var soundSlider = sliderInputGo.Add(new Slider { value = 0.55f });
+var numberInputGo = sliderInputGo.Child("Number Float Input");
+var soundNumber = numberInputGo.Add(new TMP_InputField { text = "55 %" });
+var floatInput = numberInputGo.Add(new NumberFloatInput { _input = soundNumber });
+sliderInputGo.Add(new SliderInput { _slider = soundSlider, _numberInput = floatInput });
+ElementAnnouncer.AnnounceElement(sliderInputGo);
+Check(ScreenReader.Messages.Single().Text == "Volumen de música: 55 %",
+    "A composite slider reads the named setting and game's formatted value instead of entering its child text editor");
+Time.unscaledTime += 1;
+ElementAnnouncer.AnnounceElement(numberInputGo);
+Check(ScreenReader.Messages.Last().Text == "Volumen de música: 55 %" && ScreenReader.Messages.Count == 2,
+    "The separately navigable numeric editor retains its own setting name");
+var unrelatedNumber = new GameObject().Add(new TMP_InputField { text = "Valor ajeno" });
+floatInput._input = unrelatedNumber;
+Check(SettingsValueReader.ReadSlider(soundSlider) == null, "Foreign numeric value cannot label the focused slider");
+floatInput._input = soundNumber; numberInputGo.Active = false;
+Check(SettingsValueReader.ReadSlider(soundSlider) == null, "Hidden numeric editor cannot expose a stale displayed value");
+foreach (bool enumSetting in new[] { true, false })
+{
+    Reset();
+    var rows = new GameObject();
+    var row = rows.Child("Dropdown row");
+    var labels = row.Child("Input Labels");
+    string title = enumSetting ? "Calidad de sombras" : "Resolución de pantalla";
+    string current = enumSetting ? "Baja" : "1920 x 1080";
+    Label(labels, title);
+    Label(labels, "Esta descripción debe leerse únicamente al pedir los detalles.");
+    var control = row.Child("Dropdown Input");
+    if (enumSetting) control.Add(new LE.Settings.EnumSettingUI { _settingContainer = row });
+    else control.Add(new LE.Settings.StringDropdownSettingUI { _settingContainer = row });
+    var dropdown = control.Add(new TMP_Dropdown { captionText = Label(control, current) });
+    var template = control.Child("Template"); template.Active = false;
+    template.Child("Item").Add(new Toggle());
+    var neighbor = rows.Child("Neighbor"); Label(neighbor, "Calidad de texturas");
+    neighbor.Child().Add(new TMP_Dropdown());
+    ElementAnnouncer.AnnounceElement(control);
+    Check(ScreenReader.Messages.Single().Text == title + ": " + current,
+        "Typed dropdown row reads its own label and value despite the inactive template: " + enumSetting);
+    Check(ElementAnnouncer.TryReadDetails(control, out string details) && details.StartsWith(title + ": " + current + ". Esta descripción"),
+        "Dropdown description remains manual and belongs to its declared row: " + enumSetting);
+    row.Active = false;
+    Check(!ElementAnnouncer.TryReadDetails(control, out _), "Inactive dropdown cannot expose old row text");
+}
 var hiddenRow = settings.Child("Hidden row"); hiddenRow.Add(new CanvasGroup { alpha = 0 });
 Label(hiddenRow,"Invisible"); var hiddenControl = hiddenRow.Child().Add(new Toggle());
 string hiddenLabel = null, hiddenDescription = null;
@@ -191,4 +252,52 @@ foreach (bool passive in new[] { true, false })
     LeAccess.Accessibility.Passives.PassiveAccessibility.OwnedRoot = null;
     LeAccess.Accessibility.Quests.QuestAccessibility.OwnedRoot = null;
 }
+Reset();
+LeAccess.I18n.ModText.SetLanguage("es");
+var soundRow = new GameObject(); Label(soundRow, "Volumen principal");
+var volume = soundRow.Child("Slider").Add(new Slider { value = 50 });
+SettingsFocusReader.Current = new(10, 2, volume.gameObject, "Sonido", null);
+bool TickSettings()
+{ ScreenReader.SpokeThisFrame = false; Time.unscaledTime += 1; return SettingsFocusAnnouncer.Update(); }
+Check(TickSettings() && ScreenReader.Messages.Single().Text == "Sonido. Volumen principal: 50",
+    "Settings opening combines tab and first control into one announcement");
+TickSettings();
+Check(ScreenReader.Messages.Count == 1, "Header removal does not repeat a stable first control");
+volume.value = 35; TickSettings();
+Check(ScreenReader.Messages.Last().Text == "Volumen principal: 35" && ScreenReader.Messages.Count == 2,
+    "Settings values refresh without a new focus-cursor event");
+SettingsFocusReader.Current = new(11, 4, null, "Desafíos", "Modo extremo. Desactivado");
+TickSettings();
+Check(ScreenReader.Messages.Last().Text == "Desafíos. Modo extremo. Desactivado",
+    "A tab without an active button still announces its visible state");
+TickSettings();
+Check(ScreenReader.Messages.Count == 3, "Buttonless tab summary stays silent while unchanged");
+SettingsFocusReader.Current = new(11, 4, null, "Desafíos", "Modo extremo. Activado");
+TickSettings();
+Check(ScreenReader.Messages.Count == 4 && ScreenReader.Messages.Last().Text.EndsWith("Activado"),
+    "Visible challenge state changes refresh even without a selectable");
+Check(SettingsFocusAnnouncer.ReadCurrentDetails() && ScreenReader.Messages.Count == 4,
+    "A buttonless tab cannot read details from old focus");
+ScreenContentAnnouncer.HasActiveContent = true;
+Check(!TickSettings() && ScreenReader.Messages.Count == 4, "Foreground popup suppresses background settings");
+ScreenContentAnnouncer.HasActiveContent = false; TickSettings();
+Check(ScreenReader.Messages.Count == 5, "Returning from foreground content renews the tab context");
+Application.isFocused = false;
+Check(!TickSettings() && ScreenReader.Messages.Count == 5, "Unfocused settings remain silent");
+Application.isFocused = true; TickSettings();
+Check(ScreenReader.Messages.Count == 6, "Focus restoration renews context once");
+SettingsFocusReader.Current = null;
+Check(!TickSettings() && !SettingsFocusAnnouncer.ReadCurrentDetails(), "Closing settings releases focus and manual detail ownership");
+SettingsFocusReader.Current = new(10, 2, volume.gameObject, "Sonido", null); TickSettings();
+Check(ScreenReader.Messages.Last().Text == "Sonido. Volumen principal: 35",
+    "Reopening renews the same selected control with current value");
+var boolRow = new GameObject(); Label(boolRow, "Filtro de lenguaje");
+var boolSetting = boolRow.Child().Add(new Toggle { isOn = true });
+SettingsFocusReader.Current = new(12, 3, boolSetting.gameObject, "Social", null); TickSettings();
+int beforeToggleChange = ScreenReader.Messages.Count;
+boolSetting.isOn = false; ElementAnnouncer.HandleToggleValueChange(boolSetting, false, "native");
+Check(ScreenReader.Messages.Count == beforeToggleChange, "Settings polling owns the value instead of duplicating the native toggle callback");
+TickSettings();
+Check(ScreenReader.Messages.Count == beforeToggleChange + 1 && ScreenReader.Messages.Last().Text == "Filtro de lenguaje: Desactivado",
+    "A settings toggle change is announced exactly once with its label");
 Console.WriteLine($"Menu reading tests passed: {checks} checks.");

@@ -111,4 +111,6 @@ ItemTooltipContentBuilder.BuildAction = null;
 container.currentlySelectedItem = new ItemContainerEntry { data = item };
 ItemTooltipContentBuilder.Result = null;
 Check(!ItemTooltipModelReader.TryRead(item, container, out _), "missing native result handled");
+MerchantTests.Run(Check);
+MerchantMenuTests.Run(Check);
 Console.WriteLine($"Passed {checks} manual item tooltip model checks.");

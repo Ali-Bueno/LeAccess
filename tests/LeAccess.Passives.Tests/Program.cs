@@ -11,12 +11,16 @@ var first = new GameObject().Add(new SkillTreeNode { tree = tree });
 var second = new GameObject().Add(new SkillTreeNode { tree = tree, Name = "Second passive" });
 var owner = new GameObject().Add(new PassiveTreeNavigable { _currentColumn = 2, _currentRow = 1 });
 var cells = new Il2CppSystem.Array { Cells = new NativeObject[4, 3] };
-var cell = new GameObject();
-cell.Add(new SkillnodeTooltip { node = first });
+var cell = first.gameObject;
+var source = cell.Add(new SkillnodeTooltip { node = first });
 cells.Cells[2, 1] = cell;
 owner._navigationElements = cells;
 NavigationManager.currentlySelected = owner;
+var bareModel = new NodeTooltipInfo(first, false);
+bareModel.Refresh();
+Check(bareModel.Name is null && bareModel.Description is null, "native bare constructor and Refresh do not initialize strings");
 Check(PassiveSelectionReader.TryRead(out var read), "selected cell readable");
+Check(NodeTooltipContentBuilder.Builds == 1, "fallback uses populated native builder");
 Check(read.Text.Contains("Localized passive") && read.Text.Contains("0 of 5") &&
     read.Text.Contains("Game description") && read.Text.Contains("Localized modifier") &&
     read.Text.Contains("Localized requirement"), "full localized data");
@@ -63,13 +67,14 @@ first.WasCollected = false;
 PassiveAccessibility.Reset();
 var system = new GameObject().Add(new TooltipSystem());
 system._nodeTooltip = new GameObject().Add(new NodeTooltip());
-system._activeNodeTooltipInfo = new NodeTooltipInfo(second, false);
+system._activeNodeTooltipInfo = NodeTooltipContentBuilder.GetNodeTooltipInfo(second, false);
 TooltipSystem.Found = system;
 UIBase.instance = new GameObject().Add(new UIBase { TooltipSystem = system });
 system.ActiveNodeTooltipNode = second;
 system._nodeTooltip._info = system._activeNodeTooltipInfo;
 Check(PassiveSelectionReader.TryRead(out read) && !read.Text.Contains("Second passive"), "stale tooltip never speaks");
-system._activeNodeTooltipInfo = new NodeTooltipInfo(first, false) { PointBonusDescription = "Owned bonus" };
+system._activeNodeTooltipInfo = NodeTooltipContentBuilder.GetNodeTooltipInfo(first, false);
+system._activeNodeTooltipInfo.PointBonusDescription = "Owned bonus";
 system.ActiveNodeTooltipNode = first;
 Check(PassiveSelectionReader.TryRead(out read) && !read.Text.Contains("Owned bonus"), "mismatched bound info excluded");
 system._nodeTooltip._info = system._activeNodeTooltipInfo;
@@ -101,4 +106,88 @@ Tick();
 NavigationManager.currentlySelected = owner;
 Tick();
 Check(NodeTooltipInfo.Refreshes == refreshes + 1, "reopen refreshes fallback despite unchanged node counts");
+var fullscreen = new GameObject().Add(new LE.UI.PanelSystem.FullScreenPanelPassiveTree { ActiveChildNavigable = owner });
+NavigationManager.currentlySelected = fullscreen;
+Check(PassiveSelectionReader.TryRead(out read), "modern fullscreen delegates to active passive child");
+Check(read.Summary.Contains("Localized passive") && read.Summary.Contains("points allocated") &&
+    read.Summary.Contains("Locked") && !read.Summary.Contains("Game description"), "brief selection contains points and status only");
+Check(read.Details.Contains("Game description") && read.Details.Contains("Localized modifier"), "full native details retained");
+fullscreen.Enabled = false;
+Check(!PassiveSelectionReader.TryRead(out _), "disabled modern panel rejected");
+fullscreen.Enabled = true; fullscreen.gameObject.Active = false;
+Check(!PassiveSelectionReader.TryRead(out _), "hidden modern panel rejected");
+fullscreen.gameObject.Active = true;
+fullscreen.ActiveChildNavigable = new GameObject().Add(new Canvas());
+Check(!PassiveSelectionReader.TryRead(out _), "modern header or other active child cannot reuse passive selection");
+fullscreen.ActiveChildNavigable = null;
+Check(!PassiveSelectionReader.TryRead(out _), "missing modern child rejected");
+fullscreen.ActiveChildNavigable = owner;
+PassiveAccessibility.Reset();
+int spoken = ScreenReader.Messages.Count;
+Tick(); Tick();
+Check(ScreenReader.Messages.Count == spoken + 1 && !ScreenReader.Messages.Last().Text.Contains("Game description"),
+    "modern navigation speaks only brief");
+first.requirementsMet = true;
+Tick(); Tick();
+Check(ScreenReader.Messages.Count == spoken + 2 && ScreenReader.Messages.Last().Text.Contains("Available"),
+    "requirements status update speaks brief once");
+Check(PassiveAccessibility.ReadCurrentDetails() && ScreenReader.Messages.Last().Text.Contains("Game description") &&
+    ScreenReader.Messages.Last().Text.Contains("Localized modifier"), "manual gesture speaks native details");
+spoken = ScreenReader.Messages.Count;
+Tick(); Tick();
+Check(ScreenReader.Messages.Count == spoken, "polling does not interrupt manual details");
+PassiveAccessibility.Reset();
+Tick();
+Check(PassiveAccessibility.HasPendingContent, "new brief pending before manual request");
+PassiveAccessibility.ReadCurrentDetails();
+spoken = ScreenReader.Messages.Count;
+Tick(); Tick();
+Check(ScreenReader.Messages.Count == spoken && !PassiveAccessibility.HasPendingContent,
+    "manual request acknowledges not-yet-delivered brief");
+ScreenContentAnnouncer.HasActiveContent = true;
+Check(!PassiveAccessibility.ReadCurrentDetails(), "manual request respects modal priority");
+ScreenContentAnnouncer.HasActiveContent = false;
+NavigationManager.currentlySelected = null;
+Check(!PassiveAccessibility.ReadCurrentDetails(), "manual request cannot reuse closed passive tree");
+NavigationManager.currentlySelected = owner;
+source.node = null;
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary.Contains("Localized passive"),
+    "empty native tooltip cache resolves selected same-object node");
+Check(source.node is null, "reader never mutates native tooltip cache");
+source.node = second;
+Check(PassiveSelectionReader.TryRead(out read) && !read.Summary.Contains("Second passive"),
+    "foreign stored tooltip node cannot replace selected same-object node");
+Check(source.node == second, "reader leaves foreign tooltip cache unmodified");
+source.node = first;
+cells.Cells[2, 1] = first;
+Check(PassiveSelectionReader.TryRead(out read), "native Component cell resolves its game object");
+int builds = NodeTooltipContentBuilder.Builds;
+first.Name = "Translated passive"; first.Description = "Translated description"; Localization.Locale = "en";
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary.Contains("Translated passive") &&
+    read.Details.Contains("Translated description") && NodeTooltipContentBuilder.Builds == builds + 1,
+    "locale revision rebuilds static localized strings as well as modifiers");
+PassiveAccessibility.Reset();
+NodeTooltipContentBuilder.ReturnNull = true;
+Time.unscaledTimeAsDouble = 100;
+Tick();
+Check(!PassiveAccessibility.HasActiveContent && PassiveSelectionReader.LastStatus.Contains("builder returned no model"),
+    "builder failure identifies exact rejection stage");
+int diagnostics = LeAccess.Plugin.Log.Information.Count(line => line.StartsWith("[PassiveStatus]"));
+Tick(); Tick(); Time.unscaledTimeAsDouble += 3; Tick();
+Check(LeAccess.Plugin.Log.Information.Count(line => line.StartsWith("[PassiveStatus]")) == diagnostics,
+    "unchanged unavailable status never floods log");
+NodeTooltipContentBuilder.ReturnNull = false;
+Tick(); Tick();
+Check(PassiveAccessibility.HasActiveContent && LeAccess.Plugin.Log.Information.Last(line => line.StartsWith("[PassiveStatus]")).Contains("ready"),
+    "successful recovery logs native model source");
+owner._currentColumn = -1;
+Time.unscaledTimeAsDouble += 3; Tick();
+Check(LeAccess.Plugin.Log.Information.Last(line => line.StartsWith("[PassiveStatus]")).Contains("cell index invalid"),
+    "invalid coordinate status includes failure stage");
+owner._currentColumn = 2;
+NavigationManager.currentlySelected = new GameObject().Add(new Canvas());
+Time.unscaledTimeAsDouble += 3;
+Check(!PassiveAccessibility.TryHandleFocus(cell) &&
+    LeAccess.Plugin.Log.Information.Last(line => line.StartsWith("[PassiveStatus]")).Contains("not PassiveTreeNavigable"),
+    "actual passive focus logs unexpected navigation instead of silent failure");
 Console.WriteLine($"Passed {checks} passive checks.");

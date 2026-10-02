@@ -7,8 +7,11 @@ coverage beyond this initial pilot; the evidence below remains specific to it.
 
 ## Installed evidence
 
-- Game: Steam 1.5.0.1, Unity 6000.4.8f1; installed `build_hash.txt`:
-  `c8576b3db279ad61f09835dd69cc9d589e5a5cbe`.
+- Regenerated for Steam 1.5.1 build 25672295, Unity 6000.4.8f1, on 2026-10-02;
+  installed `build_hash.txt`: `bf5a46c674908886ecdabb6e9906b8a3bf81ec5b`.
+  Fresh collider unions, navigation heights and anchors are structurally identical
+  to the original 1.5.0.1 pilot. The current scene and navigation bundle hashes
+  are recorded in [refresh provenance](map-section-build-25672295.json).
 - Installed `PermaLoad.bundle`, SceneList object path ID `587261613367599811`:
   serialized `Z12` at byte offset `0x1c3c0`, `The Old Road` at `0x1c3d0`.
 - Spanish confirmation: Addressables `localization-assets-shared_assets_all.bundle`,

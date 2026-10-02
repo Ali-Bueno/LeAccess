@@ -19,6 +19,7 @@ using LeAccess.Accessibility.Vitals;
 using LeAccess.Accessibility.Landmarks;
 using LeAccess.Accessibility.MapSections;
 using LeAccess.Accessibility.Login;
+using LeAccess.Accessibility.Settings;
 using LeAccess.I18n;
 using UnityEngine;
 
@@ -54,10 +55,13 @@ public class MenuAccessibility : MonoBehaviour
         QuestAccessibility.Update();
         SkillAccessibility.Update(readDetails);
         ClassCarouselHandler.CheckPendingClassAnnouncement();
-        PollSelectedControl();
+        if (SettingsFocusAnnouncer.Update()) _lastPolledSelection = 0;
+        else PollSelectedControl();
         ElementAnnouncer.FlushPendingFocus();
         CharacterNameAccessibility.Update();
         InventoryAccessibility.Update(readDetails);
+        if (readDetails && !SkillAccessibility.HasActiveContent && !InventoryAccessibility.HasActiveContent)
+            ReadSelectedDetails();
         ZoneAnnouncer.Update();
         VisibleSubtitleAnnouncer.Update(ScreenReader.SpokeThisFrame || ZoneAnnouncer.HasPendingContent ||
             InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
@@ -76,9 +80,9 @@ public class MenuAccessibility : MonoBehaviour
             SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent,
             ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent ||
             GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent);
-        NotificationAnnouncer.Update(DialogueAnnouncer.HasActiveContent || InventoryAccessibility.HasActiveContent ||
-            PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent || CharacterNameAccessibility.HasPendingContent ||
-            ControllerMenuAccessibility.HasActiveContent || SkillAccessibility.HasActiveContent || ClassCarouselHandler.HasActiveContent || ZoneAnnouncer.HasPendingContent ||
+        NotificationAnnouncer.Update(ScreenReader.SpokeThisFrame || DialogueAnnouncer.HasActiveContent || InventoryAccessibility.HasPendingContent ||
+            PassiveAccessibility.HasPendingContent || QuestAccessibility.HasPendingContent || CharacterNameAccessibility.HasPendingContent ||
+            ControllerMenuAccessibility.HasActiveContent || SkillAccessibility.HasPendingContent || ClassCarouselHandler.HasPendingContent || ZoneAnnouncer.HasPendingContent ||
             GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || LandmarkAccessibility.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent);
         ButtonPromptAnnouncer.Update(InventoryAccessibility.HasPendingContent || GroundLootAccessibility.HasPendingContent ||
             PassiveAccessibility.HasPendingContent || QuestAccessibility.HasPendingContent || CharacterNameAccessibility.HasPendingContent ||
@@ -88,6 +92,24 @@ public class MenuAccessibility : MonoBehaviour
         VitalsAccessibility.Update(ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
             InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
             SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent);
+    }
+
+    private static void ReadSelectedDetails()
+    {
+        try
+        {
+            if (PassiveAccessibility.ReadCurrentDetails() || QuestAccessibility.ReadCurrentDetails() ||
+                SettingsFocusAnnouncer.ReadCurrentDetails()) return;
+            if (ClassCarouselHandler.TryReadDetails(out string text))
+            { ScreenReader.Speak(text, true); return; }
+            var navigation = NavigationManager.currentlySelected;
+            var prioritized = navigation is null || navigation.WasCollected ? null : navigation.TryCast<PrioritizedNavigable>();
+            if (!NavigationObjectLifetime.IsAlive(prioritized) || !prioritized.isActiveAndEnabled) return;
+            var selected = prioritized.ActiveSelectable;
+            if (!NavigationObjectLifetime.IsAlive(selected) || !selected.isActiveAndEnabled) return;
+            if (ElementAnnouncer.TryReadDetails(selected.gameObject, out text)) ScreenReader.Speak(text, true);
+        }
+        catch (System.Exception ex) { Plugin.Log.LogWarning($"Menu details unavailable: {ex.Message}"); }
     }
 
     // Some current menus change ActiveSelectable without showing the controller

@@ -177,4 +177,5 @@ MapPlaceDiagnostics.Begin(world with { Session = 201 }); beforeInfo = LeAccess.P
 for (int i = 0; i < 10; i++) MapPlaceDiagnostics.UnknownFloor(Object("Unknown floor " + i, foreground).transform);
 Check(LeAccess.Plugin.Log.Infos.Count == beforeInfo + 3, "only three actual unnamed floor samples recorded per session");
 Check(LeAccess.Plugin.Log.Infos.Any(s => s.Contains("rig-ready")) && LeAccess.Plugin.Log.Infos.Any(s => s.Contains("ground-height-rejected")), "silent adapter stages expose rig and physical contact diagnostics");
+SceneryTests.Run(Check);
 Console.WriteLine($"Passed {checks} runtime place checks.");

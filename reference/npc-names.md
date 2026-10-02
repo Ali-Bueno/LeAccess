@@ -1,5 +1,9 @@
 # Nearby NPC conversation names
 
+The 1.5.1 service-role and authored bottom-label follow-up is documented in
+[world-services.md](world-services.md). The older name-resolution evidence
+below remains relevant.
+
 Validated against installed Steam 1.5.0.1 / build 25663618 on 2026-10-02.
 The reported Z22 session produces NPC cues with an unavailable name, then enters
 a conversation. That log identifies the missing name but cannot associate its

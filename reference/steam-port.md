@@ -1,5 +1,20 @@
 # Steam 1.5 port — 2026-10-01
 
+## Steam 1.5.1 — 2026-10-02
+
+The session ending 15:23 reports **1.5.1 / build 25672295**. Steam replaced
+GameAssembly.dll at 15:04 and BepInEx regenerated interop at 15:05. The persistent
+repair handled the same 16 orphan rows in five Unity assemblies, and LeAccess
+loaded. Unity remains 6000.4.8f1 and metadata version remains 39.
+
+Native address maps from build 25663618 are stale. The passive, skill and merchant
+follow-up uses maps rebuilt from the current LE.dll and MethodAddressToToken.db.
+The production hook audit passes all 59 declarations / 58 native targets.
+Earlier addresses below are historical evidence for their stated build.
+The decompiled reference was fully replaced using ILSpy 11.1.0.9782: LE 8046 C#
+files, Controls 11 and Dialogue 537, plus the complete isolated DataStoreList IL.
+SOURCE.txt records current input hashes and the previous tree's TEMP backup.
+
 ## Steam hotfix and persistent repair
 
 The user's subsequent Steam launch updated build 25646802 to **25663618**.

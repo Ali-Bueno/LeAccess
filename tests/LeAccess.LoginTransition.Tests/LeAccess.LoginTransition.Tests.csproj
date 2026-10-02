@@ -8,6 +8,7 @@
   <Import Project="../LocalizationSources.props" />
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/Login/LoginTransitionGuard.cs" Link="LoginTransitionGuard.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Login/LoginTransitionState.cs" Link="LoginTransitionState.cs" />
     <Compile Include="../../LeAccess/Accessibility/Patches/LoginTransitionPatches.cs" Link="LoginTransitionPatches.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
   </ItemGroup>

@@ -17,6 +17,13 @@ internal static class ClassSelectionReader
         selection = default;
         var nav = NavigationManager.currentlySelected;
         if (nav is null || nav.WasCollected) return false;
+        var fullscreen = nav.TryCast<FullScreenPanelPassiveTree>();
+        if (IsAlive(fullscreen))
+        {
+            if (!fullscreen.isActiveAndEnabled || !UiVisibility.IsVisible(fullscreen.gameObject)) return false;
+            nav = fullscreen.ActiveChildNavigable;
+            if (nav is null || nav.WasCollected) return false;
+        }
         var owner = nav.TryCast<Component>();
         if (!IsAlive(owner) || !UiVisibility.IsVisible(owner.gameObject)) return false;
         var list = nav.TryCast<ListNavigable>();
@@ -38,14 +45,24 @@ internal static class ClassSelectionReader
                 return false;
             }
         }
+        var banner = nav.TryCast<PassiveTreeBannerNavigable>();
+        if (!IsAlive(banner) || !banner.isActiveAndEnabled) return false;
+        if (!banner.IsDescriptionSelected)
+        {
+            var button = banner.CurrentButton;
+            return IsAlive(button) && button.isActiveAndEnabled && TryReadControl(button.gameObject, out selection);
+        }
         var tree = owner.GetComponentInParent<FullScreenPanelPassiveTree>();
-        return IsAlive(tree) && TryReadTree(tree, tree._currentMasteryIndex, out selection);
+        return IsAlive(tree) && IsAlive(banner.descriptionContainer) &&
+            UiVisibility.IsVisible(banner.descriptionContainer.gameObject) &&
+            TryReadTree(tree, tree._currentMasteryIndex, out selection);
     }
 
     internal static bool TryReadControl(GameObject go, out ClassSelection selection)
     {
         selection = default;
         if (!UiVisibility.IsVisible(go)) return false;
+        if (CreationRealmReader.TryRead(go, out selection)) return true;
         if (CreationClassTabReader.TryRead(go, out selection)) return true;
         var tab = go.GetComponentInParent<MasteryTabButton>();
         if (IsAlive(tab))
@@ -80,7 +97,7 @@ internal static class ClassSelectionReader
         selection = default;
         var tabs = tree._masteryTabButtons;
         var data = tree._masteryDataList;
-        if (!UiVisibility.IsVisible(tree.gameObject) || tabs is null || tabs.WasCollected ||
+        if (!tree.isActiveAndEnabled || !UiVisibility.IsVisible(tree.gameObject) || tabs is null || tabs.WasCollected ||
             data is null || data.WasCollected || index < 0 || index >= data.Count) return false;
         MasteryTabButton target = null;
         foreach (var tab in tabs)

@@ -127,6 +127,19 @@ namespace LE.Settings
     public class NumericSettingUI : UnityEngine.Component { public UnityEngine.GameObject _settingContainer; }
     public class SpinnerSettingUI : UnityEngine.Component { public UnityEngine.GameObject _settingContainer; }
     public class EnumToggleSettingUI : UnityEngine.Component { public UnityEngine.GameObject _settingContainer; }
+    public class EnumSettingUI : UnityEngine.Component { public UnityEngine.GameObject _settingContainer; }
+    public class StringDropdownSettingUI : UnityEngine.Component { public UnityEngine.GameObject _settingContainer; }
+}
+namespace LeAccess.Accessibility.Settings
+{
+    internal readonly record struct SettingsFocusSnapshot(int OwnerId, int TabId, UnityEngine.GameObject Selected, string TabName, string TabSummary);
+    internal static class SettingsFocusReader
+    {
+        internal static SettingsFocusSnapshot? Current;
+        internal static bool TryRead(out SettingsFocusSnapshot snapshot)
+        { snapshot = Current.GetValueOrDefault(); return Current.HasValue; }
+        internal static bool TryReadTabDetails(out string text) { text = null; return false; }
+    }
 }
 namespace ChatView { public class ChatToggleField : UnityEngine.Component { public bool IsActive; } }
 namespace UnityEngine.UI.Extensions.ColorPicker { public class ColorPickerControl : Component { } }
@@ -134,6 +147,12 @@ public class InfoForTooltip : UnityEngine.Component
 {
     public TooltipInfo tooltipInfo;
     public void SetText() { }
+}
+public class NumberFloatInput : UnityEngine.Component { public TMPro.TMP_InputField _input; }
+public class SliderInput : UnityEngine.Component
+{
+    public UnityEngine.UI.Slider _slider;
+    public NumberFloatInput _numberInput;
 }
 public class TooltipInfo { public string nameText, mainText; }
 public class CharacterCreationSelection : UnityEngine.Component { public CharacterClass characterClass; }
@@ -146,6 +165,7 @@ public static class NavigationManager { public static Navigable currentlySelecte
 public static class PlayerFinder { public static UnityEngine.GameObject Player; public static UnityEngine.GameObject getPlayer() => Player; }
 public class MultiButtonsActionPrompt : UnityEngine.Component
 {
+    public bool CanUse = true;
     public TMPro.TMP_Text _promptDescription;
     public NativeArray<int> _activePromptNavigables;
     public bool _exceptSelectedNavigables, PromptActive = true;
@@ -212,7 +232,26 @@ namespace LeAccess.Accessibility.Dialogue
         public static bool OwnsFocus(UnityEngine.GameObject go) => Root is not null && go.transform.IsChildOf(Root.transform);
     }
 }
+namespace LeAccess.Accessibility.Items
+{
+    internal static class MerchantMenuReader
+    {
+        internal static UnityEngine.GameObject OwnedTab;
+        internal static bool TryReadTab(UnityEngine.GameObject go, out string text)
+        { text = go == OwnedTab ? "Recompra" : null; return text != null; }
+    }
+}
 namespace LeAccess.Accessibility.Inventory { public static class InventoryAccessibility { public static bool TryHandleFocus(UnityEngine.GameObject go) => false; } }
+namespace LeAccess.Accessibility.Inventory
+{
+    internal static class InventoryPromptReader
+    {
+        internal static bool Allowed = true;
+        internal static bool ItemPrompt;
+        internal static bool IsItemPrompt(MultiButtonsActionPrompt prompt) => ItemPrompt;
+        internal static bool CanRead(MultiButtonsActionPrompt prompt) => Allowed;
+    }
+}
 namespace LeAccess.Accessibility.Skills { public static class SkillAccessibility { public static bool TryHandleFocus(UnityEngine.GameObject go) => false; } }
 namespace LeAccess.Accessibility.Passives
 {

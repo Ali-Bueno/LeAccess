@@ -35,7 +35,7 @@ namespace UnityEngine
             }
             return result;
         }
-        public T GetComponentInParent<T>() where T : Component
+        public T GetComponentInParent<T>(bool inactive = false) where T : Component
         {
             for (var current = gameObject; current is not null; current = current.Parent)
             {
@@ -124,6 +124,14 @@ internal sealed class WorldObjectClickListener : UnityEngine.Component
 internal class NPCInteraction : UnityEngine.Component { }
 internal sealed class RelayNPCInteraction : NPCInteraction { public Registry<ConditionHandler> otherInteractables = new(); }
 internal sealed class ConditionHandler : UnityEngine.Component { }
+internal sealed class OpenShop : UnityEngine.Component { }
+internal sealed class OpenStash : UnityEngine.Component { }
+internal sealed class OpenMenuInteraction : UnityEngine.Component
+{
+    internal enum MenuToOpen { Map, Stash, CraftingPanel, MtxShop }
+    internal MenuToOpen menu;
+}
+internal sealed class EnableWaypointInteraction : UnityEngine.Component { }
 internal sealed class ConversationTrigger : LE.Dialog.LEConversationTrigger { }
 namespace LE.Dialog
 {
@@ -139,6 +147,8 @@ internal sealed class NpcNameTooltip : UnityEngine.Component
 {
     public string TopText { get; set; }
     public string TopTextKey { get; set; }
+    public string BottomText { get; set; }
+    public string BottomTextKey { get; set; }
 }
 internal sealed class ActorVisuals : UnityEngine.Component { public bool dead; }
 internal sealed class BaseDisplayInformation : UnityEngine.Component
@@ -207,7 +217,18 @@ internal static class Localization
     public static string GetText(string key, string fallback)
     {
         if (Throw) throw new InvalidOperationException("Localization unavailable");
-        return key == "npc.blacksmith" ? "Herrero" : fallback;
+        return key == "npc.blacksmith" ? "Herrero" : Translations.GetValueOrDefault(key, fallback);
+    }
+}
+namespace LeAccess.I18n
+{
+    internal static class ModText
+    {
+        internal static string Get(string key) => key switch
+        {
+            "service.merchant" => "Mercader", "service.stash" => "Alijo",
+            "service.forge" => "Forja", "service.waypoint" => "Punto de viaje", _ => key
+        };
     }
 }
 namespace LeAccess.Accessibility.Navigation

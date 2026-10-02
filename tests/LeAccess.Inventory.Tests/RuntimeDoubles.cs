@@ -2,6 +2,11 @@ using LeAccess.Accessibility.ScreenContent;
 
 namespace LeAccess.Accessibility.Items
 {
+    internal static class MerchantItemReader
+    {
+        internal static string Context;
+        internal static string ReadContext(ItemData item, ItemContainerUI container) => Context;
+    }
     internal static class ItemTooltipModelReader
     {
         internal static string Text;
@@ -9,6 +14,12 @@ namespace LeAccess.Accessibility.Items
         internal static int Reads;
         internal static ItemData LastItem;
         internal static ItemContainerUI LastContainer;
+        internal static bool OwnsSelection(ItemData item, ItemContainerUI container) => item is not null && !item.WasCollected &&
+            container is not null && !container.WasCollected && container.isActiveAndEnabled && container.gameObject.Visible &&
+            NavigationManager.currentlySelected == container && container.currentlySelectedItem?.data == item;
+        internal static bool ParametersAvailable = true;
+        internal static bool TryGetParameters(ItemData item, ItemContainerUI container, out TooltipItemManager.SlotType slot, out int mode)
+        { slot = TooltipItemManager.SlotType.INVENTORY; mode = 0; return ParametersAvailable; }
         internal static bool TryRead(ItemData item, ItemContainerUI container, out string text)
         { Reads++; LastItem = item; LastContainer = container; text = Text; return text != null; }
     }
@@ -48,6 +59,12 @@ namespace UnityEngine
         public Component() => gameObject = new();
         public Transform transform => gameObject.transform;
         public bool isActiveAndEnabled = true;
+        public T GetComponentInParent<T>() where T : Component
+        {
+            for (var current = transform; current is not null; current = current.parent)
+                if (current.gameObject.Components.OfType<T>().FirstOrDefault() is { } component) return component;
+            return null;
+        }
     }
     internal sealed class GameObject : Object
     {
@@ -86,6 +103,7 @@ namespace UnityEngine
     internal struct Vector2Int { public int x { get; set; } public int y { get; set; } }
     internal sealed class CanvasRenderer : Object { public bool cull; }
     internal static class Application { public static bool isFocused = true; }
+    internal static class Time { public static float unscaledTime; }
 }
 internal sealed class NativeList<T> : List<T> { public bool WasCollected; }
 namespace TMPro
@@ -114,9 +132,12 @@ internal sealed class ItemDataUnpacked : ItemData
 internal sealed class ItemContainerEntry : NativeObject { public ItemData data; }
 internal sealed class ItemContainerUI : UnityEngine.Component
 {
+    public ContainerID identifier;
     public ItemContainerEntry currentlySelectedItem;
     public UnityEngine.Vector2Int currentFocusSlot { get; set; }
 }
+internal enum ContainerID { UNDEFINED, INVENTORY, EQ_HELMET, EQ_ARMOR, EQ_WEAPON, EQ_OFFHAND, EQ_GLOVES, EQ_BELT,
+    EQ_BOOTS, EQ_RIGHTRING, EQ_LEFTRING, EQ_AMULET, EQ_RELIC }
 internal static class NavigationManager { public static NativeObject currentlySelected; }
 internal sealed class TooltipItemManager : UnityEngine.Component
 {
@@ -141,6 +162,14 @@ internal sealed class UIBase : UnityEngine.Component
 }
 namespace LE.UI.Tooltips
 {
+    internal static class ItemTooltipPromptHelper
+    {
+        internal static NativeList<LE.UI.PanelSystem.PanelActionPrompt> Actions = new();
+        internal static int Reads;
+        internal static Action OnRead;
+        internal static NativeActions GetActions(ItemDataUnpacked item, TooltipItemManager.SlotType slot)
+        { Reads++; OnRead?.Invoke(); return new(Actions); }
+    }
     internal sealed class TooltipSystem : UnityEngine.Component
     {
         public TooltipItemManager _tooltipItemManager;
@@ -167,12 +196,36 @@ namespace LE.UI.Tooltips
 }
 internal sealed class UITooltipItem : UnityEngine.Component
 {
+    public ItemTooltipPrompts _itemTooltipPrompts;
     public bool tooltipActive = true, contentVisible = true;
     public UnityEngine.GameObject content = new();
     public UnityEngine.GameObject requirementsFooter;
     public UnityEngine.GameObject compareContent = new();
     public TMPro.TMP_Text nameText = new(), typeText = new();
 }
+
+internal sealed class NativeActions : NativeObject
+{
+    private readonly NativeList<LE.UI.PanelSystem.PanelActionPrompt> _actions;
+    internal NativeActions(NativeList<LE.UI.PanelSystem.PanelActionPrompt> actions) => _actions = actions;
+    internal Il2CppSystem.Collections.IEnumerator GetEnumerator() => new(_actions);
+}
+namespace Il2CppSystem
+{
+    internal class IDisposable : NativeObject { internal void Dispose() { } }
+}
+namespace Il2CppSystem.Collections
+{
+    internal sealed class IEnumerator : Il2CppSystem.IDisposable
+    {
+        private readonly System.Collections.Generic.IEnumerator<LE.UI.PanelSystem.PanelActionPrompt> _iterator;
+        internal IEnumerator(IEnumerable<LE.UI.PanelSystem.PanelActionPrompt> actions) => _iterator = actions.GetEnumerator();
+        internal bool MoveNext() => _iterator.MoveNext();
+        internal LE.UI.PanelSystem.PanelActionPrompt Current => _iterator.Current;
+    }
+}
+internal sealed class ItemTooltipPrompts : UnityEngine.Component { }
+internal sealed class MultiButtonsActionPrompt : UnityEngine.Component { public bool CanUse = true; }
 
 namespace LE.UI { internal static class LoadingScreen { public static bool IsVisible { get; set; } } }
 namespace LeAccess.Accessibility.Announcements
@@ -223,15 +276,22 @@ namespace LeAccess
 
 internal static class EpochInputManager { internal static bool IsControllerActive = true; }
 internal sealed class ButtonInfo : NativeObject { internal string ButtonName; }
-internal sealed class NativeNames : NativeObject { internal string[] Values = Array.Empty<string>(); internal int Length => Values.Length; }
+internal sealed class NativeNames : NativeObject
+{
+    internal string[] Values = Array.Empty<string>(); internal int Length => Values.Length;
+    public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)Values).GetEnumerator();
+}
 namespace UnityEngine { internal sealed class CanvasGroup : Object { internal float alpha = 1; } }
 namespace LE.UI.PanelSystem
 {
+    internal class PanelAction { [Flags] internal enum ControlType { None = 0, MouseAndKeyboard = 1, Gamepad = 2, All = 3 } }
     internal sealed class PanelActionPrompt : NativeObject
     {
         internal bool CanUse = true, IsHoldAction;
         internal NativeNames GamepadButtonNamesOverride, MouseAndKeyboardButtonNamesOverride;
         internal string ActionName;
+        internal string Label;
+        internal PanelAction.ControlType Controls = PanelAction.ControlType.All;
         internal string GetActionName() => ActionName;
     }
     internal sealed class PanelActionUIPrompt : UnityEngine.Component
