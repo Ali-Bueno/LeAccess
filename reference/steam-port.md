@@ -70,7 +70,10 @@ loaded. Unity remains 6000.4.8f1 and metadata version remains 39.
 
 Native address maps from build 25663618 are stale. The passive, skill and merchant
 follow-up uses maps rebuilt from the current LE.dll and MethodAddressToToken.db.
-The production hook audit passes all 59 declarations / 58 native targets.
+The production hook audit now passes all 60 declarations / 59 native targets,
+including the read-only Morditas return-arrow `FixedUpdate` observer described
+in [hazard sources](hazard-sources.md). Its native body is distinct; pointer
+`Init` cannot provide complete discovery because the game inlines that call.
 Earlier addresses below are historical evidence for their stated build.
 The decompiled reference was fully replaced using ILSpy 11.1.0.9782: LE 8046 C#
 files, Controls 11 and Dialogue 537, plus the complete isolated DataStoreList IL.

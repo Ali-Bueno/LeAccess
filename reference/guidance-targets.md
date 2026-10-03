@@ -4,12 +4,15 @@ The orientation reader follows the game's current minimap registry. It does not
 search the scene, expose all quest assets, reveal fog or infer a correct quest
 exit from geographical proximity. Input and spoken route feedback are described
 in [objective orientation](objective-orientation.md).
+Current build 25690669 also supplies a distinct, guarded Morditas return target
+from its native world arrow; [ownership and current native evidence](hazard-sources.md)
+are separate from the minimap sources below.
 
 ## Native evidence: Steam 1.5.1, build 25672295
 
-Sources are the current `last epoch code/` interop declarations and read-only
-disassembly of the installed `GameAssembly.dll`. Addresses below are evidence,
-not production offsets.
+The following inspections were recorded against build 25672295. Wrapper line
+numbers and native addresses describe that earlier build; they are evidence,
+not production offsets or addresses for the current hotfix.
 
 - `LE.UI.Minimap/MinimapIconManager.cs:330/390`: `Instance.icons` holds explicit
   `IconInfo.icon` / `IconInfo.ui` pairs. `DMM.DMMapIcon.OnEnable` RVA `0x18E8020`

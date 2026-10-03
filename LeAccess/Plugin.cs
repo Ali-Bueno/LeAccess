@@ -96,6 +96,7 @@ public class Plugin : BasePlugin
         DynamicObjectiveAccessibility.Reset();
         GuidanceAccessibility.Cleanup();
         PassiveGuidanceAccessibility.Cleanup();
+        EncounterGuidanceTargets.Reset();
         LeAccess.Accessibility.Zones.ZoneAnnouncer.Reset();
         NotificationAnnouncer.Reset();
         ButtonPromptAnnouncer.Reset();

@@ -95,3 +95,23 @@ pending.
 Very short state transitions between polls can be
 coalesced into their latest settled state. Actual online/offline quest listening
 and zone-transition timing remain to be tested by the user.
+
+## Output acceptance follow-up
+
+Rejected output formerly consumed a pending progression, advanced the source
+rotation and started the shared speech deadline. `TryTake(..., acknowledge:false)`
+now prepares the oldest eligible current revision without removing it. Only
+accepted `ScreenReader.TrySpeak` output acknowledges that exact current change,
+advances campaign/Monolith/stash fairness and records the shared deadline.
+Replacements must settle before delivery; removed or unavailable native records
+cannot acknowledge stale attempted revisions. Existing coalescing, input priority,
+poll cadence, list restoration and character baselines remain in effect.
+
+The source-linked update suite passes **116 checks**, adding 16 acceptance,
+replacement, unavailable/removed state and rejected-source fairness regressions.
+Tests confirm recovery without a failed-attempt cooldown, and that accepted
+recovery gives the next ready source its normal turn. The dynamic suite links both
+actual services and also verifies rejected dynamic output preserves its preferred
+shared turn. The main build passes with `SkipPluginDeployment=true`, zero warnings
+or errors; no game, speech/audio device, quest state or network action was opened
+or changed by verification.

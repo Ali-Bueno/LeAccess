@@ -1,6 +1,6 @@
 # Objective orientation
 
-Implemented for Steam 1.5.1 / build 25672295. Live listening remains pending;
+Current validation targets Steam build 25690669. Live listening remains pending;
 the game was not launched for development.
 
 ## Controls and scope
@@ -19,6 +19,9 @@ take priority over automatically tracked main and side quests. Within the same
 priority, the last target remains selected while eligible so closer/farther
 comparisons do not silently switch destinations; first selection uses distance.
 Pin the desired quest in the native journal to prioritize it.
+An active, owned [Morditas return arrow](hazard-sources.md) temporarily takes
+precedence and is named as a return to that encounter. It uses the actual native
+target even without a ready minimap registry, and disappears when the arrow hides.
 When no eligible quest marker exists, a visible named zone/dungeon transition
 can be reported. This is explicitly an unconfirmed exit for the current quest,
 not evidence that it is the correct dungeon branch. Hidden objective markers and
@@ -40,7 +43,9 @@ steps or real-world metres.
 Progress compares consecutive requests for the same session, target and distance
 kind. A difference of at least one body diameter (bounded by the actual navigation
 radius) produces closer/farther feedback; smaller movement accumulates against
-the prior comparison baseline. A changed target, loading, materially moved marker,
+the prior accepted comparison baseline. Rejected output does not advance that
+baseline or log a successful report; another explicit request reads fresh state.
+A changed target, loading, materially moved marker,
 or switch between route and direct distance resets comparison. Being within a
 body diameter means only **near the map marker**, never quest completion.
 
@@ -71,8 +76,8 @@ here remains available independently.
 
 ## Listening checks
 
-`LeAccess.Guidance.Tests` passes 147 source-linked geometry, route, input and
-service checks. `LeAccess.GuidanceTargets.Tests` passes 90 registry/visibility/
+`LeAccess.Guidance.Tests` passes 157 source-linked geometry, route, input and
+service checks. `LeAccess.GuidanceTargets.Tests` passes 148 registry/visibility/
 ownership checks. Main build/deployment succeeds with no warnings or errors;
 these checks use game doubles and do not establish audible runtime behavior.
 
@@ -88,3 +93,5 @@ these checks use game doubles and do not establish audible runtime behavior.
    verify the explicit warning that this exit is not confirmed for the mission.
 6. Test typing, menus, dialogue, death, reload and online play. No game input
    should be replaced or movement automated.
+7. Leave an active Morditas gauntlet and request direction. Check return wording,
+   route/bearing distinction and disappearance when the native arrow hides.

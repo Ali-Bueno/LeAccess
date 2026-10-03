@@ -39,11 +39,28 @@ reads 100 percent. Exact amounts, ward and rage amounts are not part of this
 percentage reader. If rage replaces mana, manual speech states the replacement
 and automatic mana speech stops until normal mana returns.
 
-Loading, loss of application focus, reader unavailability and player/session loss
-clear the baseline. Missing individual resources retain their independent baseline.
+Loading, loss of application focus and player/session loss clear the baseline.
+Reader unavailability keeps sampling and validating the live player/session;
+only accepted output commits a changed band. Missing individual resources retain
+their independent baseline.
 Automatic reading continues through non-pausing menus so critical losses remain
 audible during online play. Diagnostics record actual speech as `[Vitals]` and
 deduplicate API/input failures. All delivery uses the existing centralized sink.
+
+The 2026-10-03 acceptance audit on build **25690669** reproduced two lost-report
+paths: a rejected output consumed its band change, and reader unavailability
+cleared the baseline before reconnect. Automatic speech now compares each fresh
+sample against its acknowledged band and commits only after `TrySpeak` accepts
+the output. Initial and replacement-session observations remain silent. Critical
+losses keep interrupting priority after rejection; recovery into an ordinary band
+uses current ordinary wording and priority. Returning to the acknowledged band
+before recovery discards the earlier crossing without replay.
+
+No snapshot text or manual edge is queued. Rejected manual reports do not commit
+an automatic crossing; automatic mode may subsequently read the current band.
+With automatic mode disabled, a later explicit button press is required. The
+100 ms automatic sample interval remains active after rejection. Acceptance
+means speech/braille transport acceptance and does not establish audibility.
 
 ## Authoritative player data
 
@@ -101,15 +118,16 @@ do not consume the input or change the game's map bindings.
 
 ## Validation
 
-Four source-linked suites pass 379 checks: state/percentage 267, probe 35,
-input 27 and service 50. Coverage includes strict thresholds and rounding,
+Four source-linked suites pass **423 checks**: state/percentage **285**, probe
+**35**, input **36** and service **67**. Coverage includes strict thresholds and rounding,
 independent missing resources, online identity, stale scenes, death, signed mana,
 rage replacement, passive key edges, typing/menu guards, automatic-off manual
-reports, speech ordering and lifecycle resets. These use host doubles for game
+reports, speech ordering, rejection/reconnect with fresh values, critical priority,
+partial resource acceptance and lifecycle resets. These use host doubles for game
 objects and the speech sink, with the real translation catalogs in service tests.
-Main build/deployment has zero warnings/errors; built and installed DLL hashes
-match (see `STATUS.md`). Current unedited installed en/es catalogs were refreshed;
-custom catalog preservation remains part of deployment.
+These acceptance changes were not deployed; installed-build history remains in
+`STATUS.md`. Custom catalog preservation remains part of deployment.
+The current no-deployment main build passes with zero warnings/errors.
 
 Listening/runtime validation remains pending, including online player hierarchy,
 View hardware mapping, negative mana and transformation mode. The game stayed

@@ -22,13 +22,15 @@ internal static partial class Program
         GameplayInputState.Owned = true;
         EpochInputManager.instance = new();
         ScreenKeyboardManager.Instance = new();
-        ScreenReader.Available = true;
+        ScreenReader.Available = ScreenReader.OutputAccepted = true;
         ScreenReader.Speaking = ScreenReader.SpokeThisFrame = false;
         ScreenReader.Spoken.Clear();
         GuidanceTargetReader.Targets.Clear();
         GuidanceTargetReader.Available = true;
         GuidanceTargetReader.Throw = false;
         GuidanceTargetReader.Reads = 0;
+        EncounterGuidanceTargets.HasTrackedPointers = false;
+        EncounterGuidanceTargets.Reads = 0;
         MapSectionWorld.Available = true;
         MapSectionWorld.World = new(1, 1, 0, 0, 0, 0.5);
         MapPlayerFloor.Agent = new();
@@ -45,7 +47,8 @@ internal static partial class Program
 
     private static void Set<T>(string key, T value) => ((ConfigEntry<T>)_config.Values[key]).Value = value;
     private static void AddTarget(int id = 1, string name = "Objective", float distance = 10, bool quest = true, int priority = 0) =>
-        GuidanceTargetReader.Targets.Add(new(id, name, new(0, 0, distance), quest ? 0 : 3, quest) { Priority = priority });
+        GuidanceTargetReader.Targets.Add(new(id, name, new(0, 0, distance), quest ? 0 : 3,
+            quest ? GuidanceTargetKind.Quest : GuidanceTargetKind.Exit) { Priority = priority });
     private static void Tick(double now, bool content = false, bool pending = false)
     { Time.unscaledTimeAsDouble = now; PassiveGuidanceAccessibility.Update(content, pending); }
     private static void Settle(bool pending = false) { Tick(0, pending: pending); Tick(0.5, pending: pending); Tick(1, pending: pending); }

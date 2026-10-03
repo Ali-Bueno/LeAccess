@@ -11,6 +11,7 @@ internal static partial class Program
         StateTests();
         RouteTests();
         ServiceTests();
+        AcceptanceTests();
         Console.WriteLine($"PASS: {_checks} passive orientation state, service, route and audio checks");
     }
 }

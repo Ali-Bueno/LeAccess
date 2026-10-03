@@ -180,8 +180,16 @@ namespace LeAccess.Accessibility.Navigation
 }
 namespace LeAccess.Accessibility.Navigation.Guidance
 {
-    internal readonly record struct GuidanceTarget(int Id, string Name, UnityEngine.Vector3 Position, float ArrivalRadius, bool IsQuest)
-    { internal int Priority { get; init; } }
+    internal static class EncounterGuidanceTargets
+    {
+        internal static bool HasTrackedPointers;
+        internal static int Reads;
+        internal static void Collect(LeAccess.Accessibility.MapSections.MapSectionWorldSnapshot world, List<GuidanceTarget> targets)
+        {
+            Reads++;
+            targets.AddRange(GuidanceTargetReader.Targets.Where(target => target.Kind == GuidanceTargetKind.EncounterReturn));
+        }
+    }
     internal static class GuidanceTargetReader
     {
         internal static string LastFailure => null;
@@ -197,12 +205,14 @@ namespace LeAccess.Accessibility
 {
     internal static class ScreenReader
     {
-        internal static bool Available = true;
+        internal static bool Available = true, OutputAccepted = true;
         internal static bool SpokeThisFrame = false, Speaking = false;
         internal static readonly List<string> Spoken = new();
         internal static bool IsAvailable() => Available;
         internal static bool IsSpeaking() => Speaking;
-        internal static void Speak(string text, bool interrupt) => Spoken.Add(text);
+        internal static void Speak(string text, bool interrupt) => TrySpeak(text, interrupt);
+        internal static bool TrySpeak(string text, bool interrupt)
+        { if (!Available || !OutputAccepted) return false; Spoken.Add(text); return true; }
     }
 }
 namespace LeAccess.I18n

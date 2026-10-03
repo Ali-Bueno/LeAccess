@@ -286,4 +286,52 @@ Check(!state.HasPendingContent, "state reset");
 Check(LeAccess.Plugin.Log.Information.Count == ScreenReader.Spoken.Count &&
     LeAccess.Plugin.Log.Information.All(line => line.StartsWith("[Quest] ")), "one diagnostic per delivered announcement");
 checks += ModelTests.Run();
+NavigationManager.currentlySelected = worldMap;
+QuestAccessibility.Reset(); ScreenReader.Spoken.Clear(); ScreenReader.OutputAccepted = false;
+Tick(); Tick();
+Check(ScreenReader.Spoken.Count == 0 && QuestAccessibility.HasPendingContent,
+    "Rejected journal output remains pending instead of being acknowledged");
+ScreenReader.OutputAccepted = true; Tick(); Tick();
+Check(ScreenReader.Spoken.Count == 1 && !QuestAccessibility.HasPendingContent,
+    "Recovered current journal content speaks exactly once");
+QuestAccessibility.Reset(); ScreenReader.Spoken.Clear();
+ScreenReader.OutputAccepted = false;
+Check(QuestAccessibility.ReadCurrentDetails() && QuestAccessibility.HasPendingContent,
+    "Rejected manual quest detail preserves focus-bound request intent");
+info.details.text = "Fresh current journal description";
+ScreenReader.OutputAccepted = true; ScreenReader.SpokeThisFrame = true;
+QuestAccessibility.Update();
+Check(ScreenReader.Spoken.Count == 0 && QuestAccessibility.HasPendingContent,
+    "Automatic manual-journal retry yields to an accepted same-frame output");
+Tick(); Tick();
+Check(ScreenReader.Spoken.Single().Contains("Fresh current journal description"),
+    "Recovered journal manual intent reads fresh details rather than old text");
+ScreenReader.Available = false; QuestAccessibility.ReadCurrentDetails();
+Check(QuestAccessibility.HasPendingContent, "New manual journal intent remains pending while the transport is unavailable after accepted navigation");
+ScreenReader.Available = true; Tick(); Tick();
+Check(ScreenReader.Spoken.Count == 2 && ScreenReader.Spoken.Last().Contains("Fresh current journal description"),
+    "Still-owned unavailable manual journal request recovers once");
+QuestAccessibility.Reset(); ScreenReader.Spoken.Clear(); ScreenReader.OutputAccepted = false;
+QuestAccessibility.ReadCurrentDetails();
+panel.questsHidden = true; ScreenReader.OutputAccepted = true; Tick(); Tick();
+Check(ScreenReader.Spoken.Count == 0 && !QuestAccessibility.HasPendingContent,
+    "Hidden rejected journal details cannot replay");
+panel.questsHidden = false; QuestAccessibility.Reset();
+foreach (string gate in new[] { "changed", "collected", "unready", "popup" })
+{
+    ScreenReader.Spoken.Clear(); ScreenReader.OutputAccepted = false;
+    QuestAccessibility.ReadCurrentDetails();
+    var originalQuest = button.quest;
+    if (gate == "changed") { button.quest = new Quest(); button.tmp.text = "Next current quest"; }
+    if (gate == "collected") generator.WasCollected = true;
+    if (gate == "unready") generator._selectedButton_k__BackingField = null;
+    if (gate == "popup") ScreenContentAnnouncer.HasActiveContent = true;
+    ScreenReader.OutputAccepted = true; Tick(); Tick();
+    Check(ScreenReader.Spoken.All(text => !text.Contains("Fresh current journal description")) &&
+        (gate == "changed" ? ScreenReader.Spoken.Single().Contains("Next current quest") : ScreenReader.Spoken.Count == 0),
+        "Rejected manual journal intent expires when ownership changes: " + gate);
+    generator.WasCollected = false; generator._selectedButton_k__BackingField = button;
+    button.quest = originalQuest; button.tmp.text = info.questName.text;
+    ScreenContentAnnouncer.HasActiveContent = false; QuestAccessibility.Reset();
+}
 Console.WriteLine($"Passed {checks} quest journal checks.");

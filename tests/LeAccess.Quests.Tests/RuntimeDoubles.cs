@@ -138,9 +138,15 @@ namespace LeAccess.Accessibility
     internal static class ScreenReader
     {
         internal static bool Available = true, SpokeThisFrame;
+        internal static bool OutputAccepted = true;
         internal static readonly List<string> Spoken = new();
         internal static bool IsAvailable() => Available;
-        internal static void Speak(string text, bool interrupt) { Spoken.Add(text); SpokeThisFrame = true; }
+        internal static void Speak(string text, bool interrupt) => TrySpeak(text, interrupt);
+        internal static bool TrySpeak(string text, bool interrupt)
+        {
+            if (!Available || !OutputAccepted) return false;
+            Spoken.Add(text); SpokeThisFrame = true; return true;
+        }
     }
 }
 namespace LeAccess.Accessibility.ScreenContent { internal static class ScreenContentAnnouncer { internal static bool HasActiveContent; } }

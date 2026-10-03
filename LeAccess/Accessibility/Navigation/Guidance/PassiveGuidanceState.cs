@@ -4,13 +4,13 @@ using System.Numerics;
 namespace LeAccess.Accessibility.Navigation.Guidance;
 
 internal readonly record struct PassiveGuidanceObservation(long Session, int TargetId, string Name,
-    bool IsQuest, Vector3 Player, Vector3 Destination, Vector3 Next, Vector3 Forward, Vector3 Right,
+    GuidanceTargetKind TargetKind, Vector3 Player, Vector3 Destination, Vector3 Next, Vector3 Forward, Vector3 Right,
     float Distance, float BodyWidth, bool Complete);
 
 internal enum PassiveGuidanceSpeechKind { Target, Turn, NearMarker }
 
 internal readonly record struct PassiveGuidanceSpeech(PassiveGuidanceSpeechKind Kind, string Name,
-    string Direction, bool IsQuest, float Distance);
+    string Direction, GuidanceTargetKind TargetKind, float Distance, long Session, int TargetId);
 
 internal sealed class PassiveGuidanceState
 {
@@ -49,7 +49,7 @@ internal sealed class PassiveGuidanceState
         { Suspend(); return false; }
 
         bool changed = !_known || value.TargetId != _current.TargetId || value.Name != _current.Name ||
-            value.IsQuest != _current.IsQuest;
+            value.TargetKind != _current.TargetKind;
         if (changed)
         {
             HasAnnouncedTarget = _near = _announcedNear = false;
@@ -90,17 +90,25 @@ internal sealed class PassiveGuidanceState
     internal bool PulseDue(double now) => _valid && !_near && now >= _readyAt && now >= _nextPulse;
     internal void PulsePlayed(double now) => _nextPulse = now + PulseInterval;
 
-    internal bool TryTakeSpeech(double now, out PassiveGuidanceSpeech speech)
+    internal bool TryTakeSpeech(double now, out PassiveGuidanceSpeech speech, bool acknowledge = true)
     {
         speech = default;
-        if (!_valid || now < _readyAt || now - _lastSpeech < SpeechGapSeconds) return false;
+        bool firstReturn = _current.TargetKind == GuidanceTargetKind.EncounterReturn && !HasAnnouncedTarget;
+        if (!_valid || now < _readyAt || !firstReturn && now - _lastSpeech < SpeechGapSeconds) return false;
         PassiveGuidanceSpeechKind kind;
         if (_near && !_announcedNear) kind = PassiveGuidanceSpeechKind.NearMarker;
         else if (!HasAnnouncedTarget) kind = PassiveGuidanceSpeechKind.Target;
         else if (!_near && now - _directionSince >= TurnSettleSeconds && MajorTurn(_spokenDirection, _direction))
             kind = PassiveGuidanceSpeechKind.Turn;
         else return false;
-        speech = new(kind, _current.Name, _direction, _current.IsQuest, _current.Distance);
+        speech = new(kind, _current.Name, _direction, _current.TargetKind, _current.Distance, _current.Session, _current.TargetId);
+        if (acknowledge) Acknowledge(speech, now);
+        return true;
+    }
+
+    internal bool Acknowledge(PassiveGuidanceSpeech speech, double now)
+    {
+        if (!TryTakeSpeech(now, out var current, acknowledge: false) || current != speech) return false;
         HasAnnouncedTarget = true;
         _spokenDirection = _direction;
         _announcedNear = _near;

@@ -123,6 +123,7 @@
   "quest.update_completed": "Misión completada: {0}",
   "quest.update_failed": "Misión fallida: {0}",
   "guidance.quest_marker": "{0}. Marcador del objetivo: {1}",
+  "guidance.encounter_return": "Regresar al encuentro de Morditas",
   "guidance.automatic.target": "Orientación: {0}. Siguiente tramo: {1}. Unas {2} unidades por el camino",
   "guidance.automatic.turn": "Siguiente tramo: {0}",
   "guidance.automatic.near_marker": "Cerca del marcador de {0}",

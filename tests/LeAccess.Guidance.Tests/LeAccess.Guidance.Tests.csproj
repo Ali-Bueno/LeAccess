@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net6.0</TargetFramework><LangVersion>latest</LangVersion><ImplicitUsings>enable</ImplicitUsings><CheckEolTargetFramework>false</CheckEolTargetFramework></PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../LeAccess/Accessibility/Navigation/Guidance/GuidanceTarget.cs" Link="GuidanceTarget.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/Guidance/GuidanceGeometry.cs" Link="GuidanceGeometry.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/Guidance/GuidanceRouteProbe.cs" Link="GuidanceRouteProbe.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/Guidance/GuidanceAccessibility.cs" Link="GuidanceAccessibility.cs" />

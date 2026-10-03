@@ -49,11 +49,18 @@ namespace LeAccess.Accessibility
     public static class ScreenReader
     {
         public static bool SpokeThisFrame, Speaking, Available = true;
+        public static bool OutputAccepted = true;
         public static List<string> Spoken = new();
         public static bool IsAvailable() => Available;
         public static bool IsSpeaking() => Speaking;
         public static void Speak(string text, bool interrupt)
-        { if (interrupt) throw new Exception("Quest updates must queue without interrupting"); Spoken.Add(text); SpokeThisFrame = true; }
+            => TrySpeak(text, interrupt);
+        public static bool TrySpeak(string text, bool interrupt)
+        {
+            if (interrupt) throw new Exception("Quest updates must queue without interrupting");
+            if (!Available || !OutputAccepted) return false;
+            Spoken.Add(text); SpokeThisFrame = true; return true;
+        }
     }
 }
 namespace LeAccess.Accessibility.Quests

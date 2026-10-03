@@ -15,13 +15,19 @@ internal sealed class VitalsAnnouncementState
     private readonly Meter _health = new();
     private readonly Meter _mana = new();
 
-    internal VitalsChange Observe(int healthPercent, int manaPercent)
+    internal VitalsChange Observe(int healthPercent, int manaPercent, bool acknowledge = true)
     {
         int previousHealth = _health.Previous, previousMana = _mana.Previous;
-        int health = _health.Observe(healthPercent), mana = _mana.Observe(manaPercent);
+        int health = _health.Observe(healthPercent, acknowledge), mana = _mana.Observe(manaPercent, acknowledge);
         bool interrupt = health >= 0 && health <= CriticalPercent && previousHealth > health ||
             mana >= 0 && mana <= CriticalPercent && previousMana > mana;
         return new VitalsChange(health, mana, interrupt);
+    }
+
+    internal void Acknowledge(int healthPercent, int manaPercent)
+    {
+        _health.Acknowledge(healthPercent);
+        _mana.Acknowledge(manaPercent);
     }
 
     internal void Reset() { _health.Reset(); _mana.Reset(); }
@@ -47,16 +53,24 @@ internal sealed class VitalsAnnouncementState
         private int _band = -1;
         internal int Previous { get; private set; } = -1;
 
-        internal int Observe(int percent)
+        internal int Observe(int percent, bool acknowledge)
         {
             if (percent < 0) return -1;
             percent = Math.Min(percent, 100);
             int band = Band(percent);
             bool baseline = _band < 0;
-            Previous = percent;
-            if (band == _band) return -1;
-            _band = band;
-            return baseline ? -1 : percent;
+            bool unchanged = band == _band;
+            if (baseline || unchanged || acknowledge) Acknowledge(percent);
+            // Changed bands remain relative to accepted output after rejection.
+            // The first live sample is always a silent baseline.
+            return baseline || unchanged ? -1 : percent;
+        }
+
+        internal void Acknowledge(int percent)
+        {
+            if (percent < 0) return;
+            Previous = Math.Min(percent, 100);
+            _band = Band(Previous);
         }
 
         internal void Reset() { _band = -1; Previous = -1; }

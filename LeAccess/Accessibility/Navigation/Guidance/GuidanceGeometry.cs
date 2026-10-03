@@ -55,7 +55,8 @@ internal sealed class GuidanceProgress
     private float _distance;
     private Vector3 _destination;
 
-    internal string Observe(long session, int target, bool route, float distance, Vector3 destination, float bodyWidth)
+    internal string Observe(long session, int target, bool route, float distance, Vector3 destination, float bodyWidth,
+        bool acknowledge = true)
     {
         if (!float.IsFinite(distance) || distance < 0 || !GuidanceGeometry.Finite(destination) ||
             !float.IsFinite(bodyWidth) || bodyWidth <= 0) { Reset(); return null; }
@@ -63,6 +64,7 @@ internal sealed class GuidanceProgress
             Vector3.Distance(destination, _destination) <= bodyWidth;
         string change = comparable && Math.Abs(distance - _distance) >= bodyWidth
             ? distance < _distance ? "guidance.closer" : "guidance.farther" : null;
+        if (!acknowledge) return change;
         if (!comparable || change != null)
         {
             _distance = distance;

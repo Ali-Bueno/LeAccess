@@ -18,7 +18,7 @@ static class Program
 
     static void Main()
     {
-        StateTests(); ProbeTests(); ServiceTests(); SourceFairnessTests(); PendingPriorityTests();
+        StateTests(); ProbeTests(); ServiceTests(); SourceFairnessTests(); PendingPriorityTests(); AcceptanceTests(); RejectedFairnessTests();
         Console.WriteLine($"Quest updates: {_checks} checks passed.");
     }
 
@@ -96,6 +96,21 @@ static class Program
             "a rapidly requeued quest cannot reuse a dictionary slot ahead of an older pending quest");
         Check(state.TryTake(true, out change) && change.Quest.Key == "1" && change.Quest.Revision == "second",
             "the requeued quest retains its latest revision for the following turn");
+        state.Reset(); Settle(state, Q()); Settle(state, Q("pending"));
+        Check(state.TryTake(true, out var attempted, acknowledge:false) && state.HasReadyContent,
+            "Preparing a progression preserves its current queue position until acceptance");
+        state.Observe(new[] { Q("replacement") });
+        Check(!state.Acknowledge(attempted) && !state.TryTake(true, out _, acknowledge:false),
+            "An attempted revision cannot be acknowledged while its replacement is unsettled");
+        state.Observe(new[] { Q("replacement") });
+        Check(!state.Acknowledge(attempted) && state.TryTake(true, out attempted, acknowledge:false),
+            "A stale accepted result cannot consume the newer settled progression");
+        var current = attempted;
+        state.Observe(new[] { Q("replacement") with { Available=false } });
+        Check(!state.Acknowledge(current), "Unavailable current native state cannot acknowledge an earlier attempted result");
+        state.Observe(new[] { Q("replacement") });
+        Check(state.Acknowledge(current) && !state.HasPendingContent,
+            "Only the matching restored current progression is acknowledged after acceptance");
     }
 
     private static StatefulQuest AddQuest(StatefulQuestListHolder holder, int id = 1)
@@ -241,6 +256,64 @@ static class Program
         Check(QuestUpdateAccessibility.HasPendingAnnouncement,"A recovered ready source restores queued announcement eligibility");
         Poll(elapsed:2);
         Check(ScreenReader.Spoken.Count==1&&ScreenReader.Spoken.Single().Contains("1/10"),"Retained progress still delivers once after menus/typing end");
+        QuestUpdateAccessibility.Cleanup();
+    }
+
+    private static void AcceptanceTests()
+    {
+        ModText.SetLanguage("en"); ScreenReader.Spoken.Clear(); ScreenReader.OutputAccepted = false;
+        Time.unscaledTimeAsDouble = 0; QuestUpdateAccessibility.Initialize(new ConfigFile());
+        PlayerFinder.Provider = new();
+        var tracked = AddQuest(PlayerFinder.Provider.Campaign);
+        tracked.objectives[0].objective.isIncremental = true;
+        Poll(elapsed:.11); Poll(elapsed:.11);
+        tracked.objectives[0].progress = 1; Poll(elapsed:.11); Poll(elapsed:.11);
+        Check(ScreenReader.Spoken.Count == 0 && QuestUpdateAccessibility.HasPendingAnnouncement && QuestUpdateAccessibility.HasPendingContent,
+            "Rejected automatic quest progression remains current and ready");
+        Check(QuestUpdateAccessibility.CanAnnounceAt(Time.unscaledTimeAsDouble),
+            "Rejected quest output does not consume the shared speech clock");
+        tracked.objectives[0].progress = 2; ScreenReader.OutputAccepted = true;
+        Poll(elapsed:.11);
+        Check(ScreenReader.Spoken.Count == 0, "Old rejected progression cannot speak while a newer counter settles");
+        Poll(elapsed:.11);
+        Check(ScreenReader.Spoken.Single().Contains("2/10") && !QuestUpdateAccessibility.HasPendingContent,
+            "Recovery delivers only fresh settled quest progression");
+        Check(!QuestUpdateAccessibility.CanAnnounceAt(Time.unscaledTimeAsDouble),
+            "Accepted quest progression starts the existing shared speech deadline");
+        Poll(elapsed:2.1); Check(ScreenReader.Spoken.Count == 1, "Accepted recovered progression does not repeat");
+        ScreenReader.OutputAccepted = false; tracked.objectives[0].progress = 3;
+        Poll(elapsed:.11); Poll(elapsed:.11);
+        ScreenReader.OutputAccepted = true; Poll(elapsed:.11);
+        Check(ScreenReader.Spoken.Count == 2 && ScreenReader.Spoken.Last().Contains("3/10"),
+            "Unchanged rejected current progression retries on recovery without an invented cooldown");
+        Poll(elapsed:2.1); ScreenReader.OutputAccepted = false; tracked.objectives[0].progress = 4;
+        Poll(elapsed:.11); Poll(elapsed:.11);
+        PlayerFinder.Provider.Campaign.statefulQuestList.trackedQuests.Clear();
+        ScreenReader.OutputAccepted = true; Poll(elapsed:.11); Poll(elapsed:.11);
+        Check(ScreenReader.Spoken.Count == 2 && !QuestUpdateAccessibility.HasPendingContent,
+            "Removed rejected progression expires instead of replaying after recovery");
+        QuestUpdateAccessibility.Cleanup(); ScreenReader.OutputAccepted = true;
+    }
+
+    private static void RejectedFairnessTests()
+    {
+        QuestUpdateAccessibility.Initialize(new ConfigFile()); PlayerFinder.Provider = new();
+        ScreenReader.Spoken.Clear(); ScreenReader.OutputAccepted = false; Time.unscaledTimeAsDouble = 0;
+        var campaign = AddQuest(PlayerFinder.Provider.Campaign, 1);
+        var monolith = AddQuest(PlayerFinder.Provider.Monolith, 2);
+        campaign.quest.displayName = "Campaign"; monolith.quest.displayName = "Monolith";
+        campaign.objectives[0].objective.isIncremental = monolith.objectives[0].objective.isIncremental = true;
+        Poll(elapsed:.11); Poll(elapsed:.11);
+        campaign.objectives[0].progress = monolith.objectives[0].progress = 1;
+        Poll(menu:true, elapsed:.11); Poll(menu:true, elapsed:.11); Poll(elapsed:.11);
+        Check(ScreenReader.Spoken.Count == 0 && QuestUpdateAccessibility.HasPendingContent,
+            "Rejected first source retains both waiting quest lists");
+        ScreenReader.OutputAccepted = true; Poll(elapsed:.11);
+        Check(ScreenReader.Spoken.Single().Contains("Campaign"),
+            "A rejected source attempt cannot advance campaign/monolith fairness order");
+        Poll(elapsed:2.1);
+        Check(ScreenReader.Spoken.Count == 2 && ScreenReader.Spoken.Last().Contains("Monolith"),
+            "Accepted recovery advances the fairness turn to the next ready quest list");
         QuestUpdateAccessibility.Cleanup();
     }
 

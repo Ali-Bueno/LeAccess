@@ -14,9 +14,10 @@ internal static class QuestAccessibility
     private static readonly QuestAnnouncementState Announcements = new();
     private static QuestButtonGenerator _generator;
     private static string _lastFailure;
+    private static string _detailsKey;
 
     internal static bool HasActiveContent { get; private set; }
-    internal static bool HasPendingContent => HasActiveContent && Announcements.HasPendingContent;
+    internal static bool HasPendingContent => HasActiveContent && (Announcements.HasPendingContent || _detailsKey != null);
 
     internal static bool TryHandleFocus(GameObject element)
     {
@@ -42,31 +43,47 @@ internal static class QuestAccessibility
         try
         {
             if (!QuestSelectionReader.TryRead(GetGenerator(), out var selection))
-            { Announcements.Reset(); return; }
+            { ClearSelection(); return; }
             HasActiveContent = true;
-            if (!Announcements.Observe(selection.Key, selection.Summary, selection.Objectives,
+            if (_detailsKey != selection.Key) _detailsKey = null;
+            bool prepared = Announcements.Observe(selection.Key, selection.Summary, selection.Objectives,
                 ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame,
-                out string announcement)) return;
-            ScreenReader.Speak(announcement, interrupt: true);
-            Plugin.Log.LogInfo($"[Quest] {announcement}");
+                out string announcement, acknowledge: false);
+            bool requestDetails = _detailsKey == selection.Key && ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame;
+            if (requestDetails)
+            {
+                Announcements.Observe(selection.Key, selection.Summary, selection.Objectives, false, out _, acknowledge: false);
+                announcement = selection.Text;
+            }
+            else if (!prepared) return;
+            if (!QuestSelectionReader.TryRead(GetGenerator(), out var current) || current.Key != selection.Key)
+            { ClearSelection(); return; }
+            if (!ScreenReader.TrySpeak(announcement, interrupt: true)) return;
+            Announcements.Acknowledge(selection.Key, selection.Summary, selection.Objectives);
+            _detailsKey = null;
+            Plugin.Log.LogInfo($"[{(requestDetails ? "Quest details" : "Quest")}] {announcement}");
         }
-        catch (Exception ex) { HasActiveContent = false; Announcements.Reset(); ReportFailure(ex); }
+        catch (Exception ex) { ClearSelection(); ReportFailure(ex); }
     }
 
     internal static bool ReadCurrentDetails()
     {
         try
         {
-            if (!QuestSelectionReader.TryRead(GetGenerator(), out var selection)) return false;
+            if (!QuestSelectionReader.TryRead(GetGenerator(), out var selection)) { ClearSelection(); return false; }
             HasActiveContent = true;
-            if (!ScreenReader.IsAvailable()) return true;
-            Announcements.Observe(selection.Key, selection.Summary, selection.Objectives, false, out _);
-            Announcements.Observe(selection.Key, selection.Summary, selection.Objectives, true, out _);
-            ScreenReader.Speak(selection.Text, interrupt: true);
+            _detailsKey = selection.Key;
+            Announcements.Observe(selection.Key, selection.Summary, selection.Objectives, false, out _, acknowledge: false);
+            Announcements.Observe(selection.Key, selection.Summary, selection.Objectives, false, out _, acknowledge: false);
+            if (!QuestSelectionReader.TryRead(GetGenerator(), out var current) || current.Key != selection.Key)
+            { ClearSelection(); return false; }
+            if (!ScreenReader.TrySpeak(selection.Text, interrupt: true)) return true;
+            Announcements.Acknowledge(selection.Key, selection.Summary, selection.Objectives);
+            _detailsKey = null;
             Plugin.Log.LogInfo($"[Quest details] {selection.Text}");
             return true;
         }
-        catch (Exception ex) { ReportFailure(ex); return false; }
+        catch (Exception ex) { ClearSelection(); ReportFailure(ex); return false; }
     }
 
     private static bool IsBlocked() => !Application.isFocused || LE.UI.LoadingScreen.IsVisible ||
@@ -130,7 +147,8 @@ internal static class QuestAccessibility
         if (IsAlive(panel) && IsAlive(panel.buttonGenerator)) { _generator = panel.buttonGenerator; return; }
     }
 
-    internal static void Reset() { Announcements.Reset(); _generator = null; _lastFailure = null; HasActiveContent = false; }
+    private static void ClearSelection() { Announcements.Reset(); _detailsKey = null; HasActiveContent = false; }
+    internal static void Reset() { ClearSelection(); _generator = null; _lastFailure = null; }
     private static void ReportFailure(Exception ex)
     {
         if (_lastFailure == ex.Message) return;

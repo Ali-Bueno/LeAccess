@@ -27,11 +27,13 @@ The startup guard retains an early online/offline button press until the game's
 loading transition has finished. Menu reading preserves native control mappings;
 HUD button hints remain silent during exploration.
 
-If screen-reader output is rejected, inventory, skill and passive readers retry
+If screen-reader output is rejected, inventory, skill, passive and quest-journal readers retry
 the current selection after recovery. Dialogues, visible subtitles, popups and
 notices similarly retain current content until output is accepted. Hidden or
 replaced content is discarded; a failed manual inspection rebuilds details only
 while the same selection remains owned. See [recovery scope and limits](reference/screen-reader-lifecycle.md).
+Quest updates, vitals and automatic orientation also retain current information
+after rejected output; failed attempts do not consume announcement pacing.
 
 Menu navigation reads brief names and states. Push the **right stick up** to read
 the selected tooltip: inventory, skills, passive nodes, class/mastery/realm
@@ -68,6 +70,8 @@ visible shard improvement details. Rune/glyph grids and selector flyouts read
 the native selected material's localized name and visible quantity, including
 empty stacks. Supported potential and affix-count filter
 bounds include their property name alongside the minimum or maximum value.
+Manual inspection of a selected forge control includes its visible preview and
+current forging potential, or the game's visible reason forging is unavailable.
 Item inspection can use the game's tooltip formatter when the visual tooltip is
 unavailable, including modifiers, lore and requirements.
 Character-name screen keyboards require an explicit click or submit on the name
@@ -84,6 +88,9 @@ it reports the marker's straight-line direction and explicitly says the route
 is unverified. Directions follow the screen/camera. Repeat after walking to hear
 whether the same destination is closer or farther. Named visible exits are a
 fallback and are not asserted to lead to the quest. No movement is automated.
+During an active Morditas gauntlet, a validated native return arrow temporarily
+takes priority and names the way back to the encounter. It uses the same route
+checks and manual bearing fallback, and stops when the native arrow hides.
 
 [Automatic orientation](reference/automatic-orientation.md) also works without a
 button. It names a stable visible destination with a verified walking route,

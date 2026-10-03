@@ -81,7 +81,7 @@ Check(!GuidanceTargetReader.TryRead(world, targets), "collected registry unavail
 manager.icons.WasCollected = false;
 var q = QuestMarker(manager);
 Check(GuidanceTargetReader.TryRead(world, targets) && targets.Count == 1, "visible active tracked quest");
-Check(targets[0].IsQuest && targets[0].ArrivalRadius == 0, "marker center is not arrival or completion");
+Check(targets[0].Kind == GuidanceTargetKind.Quest && targets[0].ArrivalRadius == 0, "marker center is not arrival or completion");
 Check(targets[0].Position == q.owner.icon.transform.position, "world marker position, not UI position");
 Check(targets[0].Id == q.owner.GetInstanceID(), "owner identity");
 Check(targets[0].Name.Contains("Find the letter") && targets[0].Name.Contains("Objective marker"), "explicit objective label");
@@ -137,15 +137,15 @@ Check(!GuidanceTargetReader.TryRead(world, targets) && targets.Count == 0 && Gui
     "unreadable quest cannot claim no markers exist");
 
 var e = Exit(manager);
-GuidanceTargetReader.TryRead(world, targets); Check(targets.Count == 1 && !targets[0].IsQuest, "one failed entry preserves valid exit");
+GuidanceTargetReader.TryRead(world, targets); Check(targets.Count == 1 && targets[0].Kind == GuidanceTargetKind.Exit, "one failed entry preserves valid exit");
 q.quest.ThrowOnRead = false;
-GuidanceTargetReader.TryRead(world, targets); Check(targets.Count == 1 && targets[0].IsQuest, "quest takes precedence over unrelated exits");
+GuidanceTargetReader.TryRead(world, targets); Check(targets.Count == 1 && targets[0].Kind == GuidanceTargetKind.Quest, "quest takes precedence over unrelated exits");
 GuidanceTargetReader.TryRead(world, targets, includeExits: true);
-Check(targets.Count == 2 && targets.Exists(target => target.IsQuest) && targets.Exists(target => !target.IsQuest),
+Check(targets.Count == 2 && targets.Exists(target => target.Kind == GuidanceTargetKind.Quest) && targets.Exists(target => target.Kind == GuidanceTargetKind.Exit),
     "passive selection can retain verified exit candidates beside a quest whose route may be unavailable");
 q.quest.List.Tracked = false;
 GuidanceTargetReader.TryRead(world, targets);
-Check(targets.Count == 1 && !targets[0].IsQuest && targets[0].Name == "Exit to Forest", "fallback names exit without quest claim");
+Check(targets.Count == 1 && targets[0].Kind == GuidanceTargetKind.Exit && targets[0].Name == "Exit to Forest", "fallback names exit without quest claim");
 Check(targets[0].ArrivalRadius == e.listener.interactionRange && targets[0].Priority == 3, "native interaction range only for real exit");
 e.listener.Interactable = false; Empty("locked exit"); e.listener.Interactable = true;
 e.map.awaitingDestruction = true; Empty("retiring exit icon"); e.map.awaitingDestruction = false;
@@ -160,6 +160,7 @@ e.listener.hoverTagOnMouseOver = Child().Add<HoverTagOnMouseOver>(); Empty("fore
 e.listener.interactionRange = float.PositiveInfinity; Empty("invalid native arrival range"); e.listener.interactionRange = 2;
 manager.icons.Insert(0, null); manager.icons.Add(new() { WasCollected = true });
 GuidanceTargetReader.TryRead(world, targets); Check(targets.Count == 1, "bad entries don't block valid candidate");
+EncounterTests.Run(Check);
 Console.WriteLine($"Passed {checks} guidance target checks.");
 
 internal static class Helpers

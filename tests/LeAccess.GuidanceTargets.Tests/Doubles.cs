@@ -1,4 +1,12 @@
-namespace UnityEngine.SceneManagement { internal struct Scene { internal int handle; } }
+namespace UnityEngine.SceneManagement
+{
+    internal struct Scene
+    {
+        internal int handle;
+        internal bool isLoaded, Valid;
+        internal bool IsValid() => Valid;
+    }
+}
 namespace UnityEngine
 {
     internal class Object
@@ -17,10 +25,11 @@ namespace UnityEngine
     internal class GameObject : Object
     {
         internal bool activeInHierarchy = true;
-        internal SceneManagement.Scene scene = new() { handle = 1 };
+        internal SceneManagement.Scene scene = new() { handle = 1, isLoaded = true, Valid = true };
         internal Transform transform;
         internal readonly List<Component> Components = new();
         internal GameObject() => transform = new Transform { gameObject = this };
+        internal T GetComponent<T>() where T : Component => Components.OfType<T>().FirstOrDefault();
         internal T Add<T>() where T : Component, new()
         {
             var component = new T { gameObject = this };
@@ -66,6 +75,7 @@ namespace UnityEngine
         internal bool isActiveAndEnabled => enabled && gameObject.activeInHierarchy;
     }
     internal class Canvas : Behaviour { }
+    internal class MeshRenderer : Component { internal bool enabled = true, forceRenderingOff; }
     internal class CanvasGroup : Behaviour { internal float alpha = 1; internal bool ignoreParentGroups; }
     internal class Sprite : Object { }
     internal class CanvasRenderer : Object { internal bool cull; internal float Alpha = 1; internal float GetAlpha() => Alpha; }
@@ -175,12 +185,16 @@ internal class QuestLocalization
     internal string GetQuestName(int _, string fallback) => "Localized " + fallback;
     internal string GetObjectiveActive(int _, int __, int ___, string fallback) => "Localized " + fallback;
 }
-namespace LeAccess.Accessibility.MapSections { internal readonly record struct MapSectionWorldSnapshot(int SceneHandle); }
+namespace LeAccess.Accessibility.MapSections
+{
+    internal readonly record struct MapSectionWorldSnapshot(int SceneHandle) { internal long Session { get; init; } }
+}
 namespace LeAccess.Accessibility.Utils { internal static class TextUtils { internal static string CleanText(string text) => text?.Trim(); } }
 namespace LeAccess.I18n
 {
     internal static class ModText
     {
+        internal static string Get(string key) => key;
         internal static string Format(string key, params object[] args) => key switch
         {
             "guidance.quest_marker" => $"{args[0]}. Objective marker: {args[1]}",

@@ -162,3 +162,17 @@ Actual controller/listening behavior still needs testing.
 QuestPanel's passive-point/idol counters describe campaign totals, so they are
 not presented as selected-quest rewards. Rewards use the information widget's
 per-quest reward rows. This feature introduces no quest audio ping.
+
+## Output acceptance follow-up
+
+The journal reproduced lost output when its state marked a candidate spoken
+before the native reader accepted it. Candidates now remain pending until
+`ScreenReader.TrySpeak` returns true. A failed manual read retains only the
+selection's request intent and rebuilds current description/objectives/rewards
+after recovery; changed, hidden, collected, unready or blocked ownership clears
+it. Automatic retries yield to accepted same-frame output. Foreground and selected
+quest identity are rechecked immediately before delivery. Existing deliberate
+manual gestures still interrupt, and accepted manual output suppresses brief
+duplicates. The source-linked journal suite passes **136 checks**, adding 12
+rejection, fresh-recovery and ownership regressions. Tests used managed speech
+stubs; the main no-deploy build has zero warnings/errors. Listening remains pending.

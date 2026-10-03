@@ -73,11 +73,16 @@ namespace LeAccess.Accessibility
     internal static class ScreenReader
     {
         internal static bool Available = true, SpokeThisFrame;
+        internal static bool OutputAccepted = true;
         internal static readonly List<(string Text, bool Interrupt)> Spoken = new();
         internal static bool IsAvailable() => Available;
         internal static void Speak(string text, bool interrupt)
+            => TrySpeak(text, interrupt);
+        internal static bool TrySpeak(string text, bool interrupt = true)
         {
+            if (!Available || !OutputAccepted) return false;
             Spoken.Add((text,interrupt)); SpokeThisFrame = true;
+            return true;
         }
     }
 }

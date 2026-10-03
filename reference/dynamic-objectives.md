@@ -70,13 +70,13 @@ Bundle SHA256:
 The updated installed interop compiles the member calls. Old build-25672295
 native-address tables were not used for this reader.
 
-`LeAccess.DynamicObjectives.Tests` passes **78 checks**, linking both actual
+`LeAccess.DynamicObjectives.Tests` passes **90 checks**, linking both actual
 quest services for cross-reader pacing. Coverage includes exact flags and
 reciprocal hierarchy, external prefab identity, visible progress, empty and
 foreign labels, encounter scene/current membership, menus, typing, hidden
 content expiry, lifecycle, pending eligibility, shared deadlines and fairness
 with both streams continuously pending. Existing automatic quest tests pass
-**100 checks**, including absent/collected providers and unready-source recovery.
+**116 checks**, including absent/collected providers and unready-source recovery.
 The main build with deployment
 disabled has zero compiler warnings/errors.
 
@@ -84,3 +84,12 @@ Runtime remains necessary to confirm dynamic row creation, the native flags
 used by each dungeon type, actual fade timing and online listening. Modifier
 text is evidence of the displayed modifier; it does not establish the location
 or timing of an environmental danger.
+
+The output-acceptance follow-up reproduced lost instructions and a spent shared
+cooldown after rejected native output. Dynamic candidates are now acknowledged,
+and their shared pacing/fairness turn recorded, only after `ScreenReader.TrySpeak`
+accepts the combined current text. Rejection retains current pending eligibility;
+fresh replacement text must settle and hidden/expired widgets are discarded.
+The 12 added source-linked regressions cover unchanged and changed recovery,
+expiry, shared-clock preservation and campaign/dynamic turn fairness. No saved
+failed text is replayed; current native labels are read at the existing poll cadence.

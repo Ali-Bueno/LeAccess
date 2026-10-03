@@ -20,6 +20,11 @@ successful live focus and listening remain unverified.
   quantity, including empty stacks. No item or tooltip model is constructed
   for brief speech. Invalid, foreign or collected selected entries declare an
   unavailable selection, preventing whole-panel fallback and stale focus.
+- Manual forge inspection now adds its visible native ready preview, modifier
+  explanation, readable glyph preview, and current forging-potential heading
+  and value. When native `canForge` is false, it instead adds the exact visible
+  unavailable reason, readable from another live selected forge control after
+  the native forge button has been hidden. Brief navigation stays unchanged.
 - Filter bounds now include their own visible range heading: four potential
   ranges and the prefix/suffix count ranges. For example, the old generic speech
   was `Min: 2`; the new speech is `Legendary Potential. Min: 2`. Native localized
@@ -35,7 +40,7 @@ successful live focus and listening remain unverified.
 Production entry points:
 `Accessibility/Announcements/CraftingControlReader.cs`,
 `CraftingSelectionReader.cs`, `CraftingMaterialReader.cs`,
-`FilterRangeControlReader.cs`, and the early specialized branches in
+`ForgeSummaryReader.cs`, `FilterRangeControlReader.cs`, and the specialized branches in
 `ElementAnnouncer.BuildAnnouncementText`. These readers perform no input,
 selection, item, filter, player or network writes and add no hooks/dependencies.
 
@@ -121,6 +126,43 @@ The existing `UiFocusOwnership` path supplies immediate foreground/loading,
 visibility and same-frame ownership checks. Manual details preserve the
 existing owned `InfoForTooltip` path; no new tooltip builder or hook was added.
 
+### Manual forge summary and unavailable reasons
+
+The `CraftingSlotManager` component is on the installed `ForgePanel` root.
+Its exact serialized labels are descendants of that root:
+
+| Member | Installed visible source |
+|---|---|
+| `singleSuccessChanceString` | `MainContent/SuccessChanceHolder/singleSuccessChance` |
+| `modifierDetails` | `MainContent/Modifier Item/Modifier Details TMP` |
+| `glyphsPreviewText` | `MainContent/SuccessChanceHolder/SuccessChance (1)/Glyphs` |
+| `cannotForgeText` | `MainContent/BottomVisuals/cannotForgeText` |
+| `typeOfForgeText` and `currentForgingPotentialText` | The `CurrentForgingPotential` heading and owned value under `SuccessChance (1)` |
+
+Current native `SetForgeButtonInteractable` (RVA `0x11725D0`) writes `canForge`
+at `0x1172615`. Its blocked branch hides the forge action at `0x1172680`,
+writes the supplied native reason into `cannotForgeText` at `0x11726C6`,
+and shows that label. Its ready branch hides the old reason and writes the
+native preview string at `0x11728C3`. Wrapper fields are at
+`CraftingSlotManager.cs:1689`, `:1816`, `:1831`, `:1876`, `:1891`, `:1906`
+and `:2056`. The installed `GameAssembly.dll` hash was rechecked unchanged
+for this follow-up.
+
+`ForgeSummaryReader` requires the live navigation owner to be that exact native
+manager and the inspected GameObject to be its current native matrix rectangle.
+Every field must be visible and belong to that manager. `canForge` also gates
+which group can contribute: retained preview fields cannot be spoken during a
+blocked state, and retained failure text cannot be spoken after recovery. All
+content is read afresh, without native actions or model construction. The
+existing `TryReadDetails` path adds this summary after selected-control details;
+the brief path never invokes it. No extra localization keys are needed.
+
+Rich-text styling is cleaned, but any fragment containing an unresolved TMP
+`<sprite>` tag is excluded whole. The installed glyph template contains symbolic
+content such as `<sprite=1> and maybe`; stripping its icon would destroy its
+meaning. Symbol interpretation, min/max forging-cost values and additional
+critical-success presentation remain outside this bounded reader.
+
 Current file SHA-256:
 
 | Installed file | SHA-256 |
@@ -139,12 +181,18 @@ current method map in `%TEMP%/LeAccess-hazards-25690669-20261003/`.
 
 ## Validation and limits
 
-`dotnet run --project tests/LeAccess.MenuReading.Tests` passes **266 checks**,
+`dotnet run --project tests/LeAccess.MenuReading.Tests` passes **296 checks**,
 including **53 prior checks** in `CraftingTests.cs` and `FilterRangeTests.cs`,
-and **35 new checks** in `CraftingSelectionTests.cs`. Source-linked scratch
+**35 selector checks** in `CraftingSelectionTests.cs`, and **30 new manual
+forge checks** in `ForgeSummaryTests.cs`. Source-linked scratch
 baselines independently reproduce missing native selector focus and missing
 localized material speech with each integration branch removed. Repository
 source remained intact during those baseline runs.
+The new source-linked manual-preview integration regression also failed before
+the production summary fix. Its checks cover ready/blocked/recovered states,
+the hidden forge action, live action inspection, exact selection changes,
+visible/foreign/blank labels, unresolved symbols, native localized reasons,
+tooltip preservation and lifecycle/foreground gates.
 Checks include action distinction, disabled wrapping, native descriptions,
 updated/reused rows, markup-only/hidden/foreign labels, exact button/range/input
 ownership, native lifetimes, localized text, empty fields and popup ownership.
@@ -159,7 +207,7 @@ and brief versus manual tooltip population.
 
 Rune/glyph live focus, native interface casting and spoken output remain
 unverified in gameplay. No guessed matrix indexing, item matching, selection
-or model creation was added. The general forge summary/preview, unavailable-reason explanation,
-advanced affix comparison/combined-tier fields, sealed-affix dropdown, and other
+or model creation was added. Symbolic preview content, forging-cost ranges,
+additional critical-success presentation, advanced affix comparison/combined-tier fields, sealed-affix dropdown, and other
 filter condition types also remain outside these fixes. Full forging/filter
 workflows, gamepad focus updates and listening still require gameplay checks.

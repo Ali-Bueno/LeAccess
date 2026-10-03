@@ -31,7 +31,7 @@ it. Proximity is not objective completion or proof of entering a shop/room.
 ## Choosing a destination
 
 Only currently displayed minimap markers with validated local source ownership
-are eligible. Pinned active quest markers precede main and side quest markers.
+are eligible for ordinary quest/exit guidance. Pinned active quest markers precede main and side quest markers.
 The current target remains selected at equal priority so movement alone does
 not silently change the destination. Native journal quest tracking controls this
 priority; existing F6/right-stick-down reporting remains available independently.
@@ -43,6 +43,16 @@ and explicitly says that this exit is not confirmed for the current quest. A
 nearby exit might lead back to the previous zone; this is a landmark for the
 player to choose, not an inferred best route or a dungeon solution.
 
+A validated [Morditas return arrow](hazard-sources.md) temporarily supersedes
+ordinary markers, using the game's actual gauntlet target. Its first stable
+announcement bypasses the usual six-second gap and pending ambient narration
+because the encounter has a short abandonment countdown. The native countdown,
+current-frame accepted speech and foreground content still have priority. This
+target keeps the one-second settle, requires a verified walking route and uses
+the existing speech/sound switches; the optional zone-exit range and switch do
+not apply. A failed return route stays silent rather than pointing to another
+quest. When the arrow hides, normal selection resumes.
+
 ## Verification and pacing
 
 The service reuses the owned-agent and complete-NavMesh-path protections of
@@ -53,7 +63,9 @@ native navigation ray. A tiny reached corner is skipped only if the shortcut
 also passes that ray, so a nearby wall bend is not skipped merely by distance.
 Dynamic geometry is checked at query time, not guaranteed forever.
 
-There is at most one path calculation per half-second probe. Untested candidates
+There is at most one path calculation per half-second probe. The early return
+pass shares the normal probe turn when it finds an eligible return target;
+without one it does not consume the ordinary route turn. Untested candidates
 are examined before retrying failures, so several blocked quests cannot starve
 a reachable exit. Failed candidates retry in order after at least three seconds.
 With an eligible destination retained, only one failed higher-priority candidate
@@ -73,6 +85,13 @@ have priority. Speech uses noninterrupting output and its own pacing; the backen
 unreliable busy flag cannot hold back all guidance indefinitely. Deferred
 announcements always describe the current observation. Audio output failure does not disable screen-reader
 feedback, and sound remains available without a detected screen reader.
+
+Speech state and cadence advance only after `TrySpeak` accepts output. A rejected
+target name cannot unlock its pulse while the reader is available. Retry uses
+the current target, direction and distance; hidden, changed, suspended and new
+session candidates cannot accept a stale acknowledgement. Failed turns or
+near-marker reports do not consume their speech turn. Acceptance is a transport
+result, not confirmation that playback completed.
 
 ## Configuration
 
@@ -99,7 +118,9 @@ reader/sample/device, audio arbitration/recovery and first-segment obstacles.
 The existing manual orientation and native target-reader suites remain
 regression checks. These are not an audible runtime confirmation.
 
-The suite now passes **353 checks**. A regression reproduces an old queued pulse
+The suite now passes **398 checks**. Acceptance regressions also reproduce a
+rejected target caption incorrectly unlocking its pulse in an isolated old-behavior
+source copy. A regression reproduces an old queued pulse
 surviving a target change while the new destination name waits for speech. Such
 an ineligible pulse now releases its pending audio turn, allowing objects, NPCs
 and terrain to continue. It can request a fresh turn once the new target is

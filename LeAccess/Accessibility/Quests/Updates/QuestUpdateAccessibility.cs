@@ -84,10 +84,12 @@ internal static class QuestUpdateAccessibility
             _stashReady = Observe(provider.getPlayerStashQuestListHolder(), Stash);
             bool canSpeak = _canOwnAnnouncement && !higherPriorityPending && !ScreenReader.SpokeThisFrame &&
                 ScreenReader.IsAvailable() && CanAnnounceAt(now) && !ShouldYieldToDynamic;
-            if (TryTake(canSpeak, stackalloc bool[] { _campaignReady, _monolithReady, _stashReady }, out var change))
+            if (TryTake(canSpeak, stackalloc bool[] { _campaignReady, _monolithReady, _stashReady }, out var change, out int source))
             {
                 string text = Format(change);
-                ScreenReader.Speak(text, interrupt: false);
+                if (!ScreenReader.TrySpeak(text, interrupt: false)) return;
+                UpdateSources[source].Acknowledge(change);
+                _nextSource = (source + 1) % UpdateSources.Length;
                 RecordAnnouncement(now);
                 Plugin.Log.LogInfo($"[Quest update] {text}");
             }
@@ -101,15 +103,16 @@ internal static class QuestUpdateAccessibility
         }
     }
 
-    private static bool TryTake(bool canSpeak, ReadOnlySpan<bool> ready, out QuestProgressChange change)
+    private static bool TryTake(bool canSpeak, ReadOnlySpan<bool> ready, out QuestProgressChange change, out int source)
     {
         change = default;
+        source = -1;
         if (!canSpeak) return false;
         for (int offset = 0; offset < UpdateSources.Length; offset++)
         {
             int index = (_nextSource + offset) % UpdateSources.Length;
-            if (!UpdateSources[index].TryTake(ready[index], out change)) continue;
-            _nextSource = (index + 1) % UpdateSources.Length;
+            if (!UpdateSources[index].TryTake(ready[index], out change, acknowledge: false)) continue;
+            source = index;
             return true;
         }
         return false;

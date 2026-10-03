@@ -196,6 +196,8 @@ public static class ElementAnnouncer
         bool restricted = ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent;
         string brief = BuildAnnouncementText(go, restricted);
         text = BuildAnnouncementText(go, restricted, includeDetails: true);
+        if (!restricted && ForgeSummaryReader.TryRead(go, out string forgeSummary))
+            text = ScreenContentTracker.Combine(new[] { text, forgeSummary });
         if (string.IsNullOrWhiteSpace(text) || text == brief) { text = null; return false; }
         _lastAnnouncedInstanceId = go.GetInstanceID();
         _lastAnnounceTime = Time.unscaledTime;

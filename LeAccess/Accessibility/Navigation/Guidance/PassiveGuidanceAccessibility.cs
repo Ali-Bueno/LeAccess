@@ -27,7 +27,7 @@ internal static class PassiveGuidanceAccessibility
     private static ConfigEntry<float> _exitRange;
     private static long _session;
     private static int? _selected;
-    private static double _nextProbe, _nextAlternateProbe;
+    private static double _nextProbe, _nextAlternateProbe, _nextUrgentProbe;
     private static string _lastFailure;
 
     internal static void Initialize(ConfigFile config)
@@ -48,7 +48,19 @@ internal static class PassiveGuidanceAccessibility
         Reset();
     }
 
-    internal static void Update(bool otherContentActive = false, bool otherSpeechPending = false)
+    internal static void Update(bool otherContentActive = false, bool otherSpeechPending = false) =>
+        UpdateCore(otherContentActive, otherSpeechPending, encounterOnly: false);
+
+    internal static void UpdateUrgent(bool otherContentActive = false)
+    {
+        if (_enabled?.Value != true || !EncounterGuidanceTargets.HasTrackedPointers) return;
+        double now = Time.unscaledTimeAsDouble;
+        if (now < _nextUrgentProbe || now < _nextProbe) return;
+        _nextUrgentProbe = now + PollSeconds;
+        UpdateCore(otherContentActive, false, encounterOnly: true);
+    }
+
+    private static void UpdateCore(bool otherContentActive, bool otherSpeechPending, bool encounterOnly)
     {
         if (_enabled?.Value != true || !_speech.Value && (!_sound.Value || _volume.Value == 0))
         { Reset(); return; }
@@ -61,14 +73,25 @@ internal static class PassiveGuidanceAccessibility
                 IsAlive(input) && input.isInputFieldActive || IsAlive(keyboard) && keyboard._enabled)
             { Suspend(); return; }
             double now = Time.unscaledTimeAsDouble;
-            if (now < _nextProbe) return;
-            _nextProbe = now + PollSeconds;
+            if (!encounterOnly && now < _nextProbe) return;
+            if (!encounterOnly) _nextProbe = now + PollSeconds;
             if (!MapSectionWorld.TryCapturePlayer(out var world)) { Suspend(); return; }
-            if (_session != world.Session) { Reset(); _session = world.Session; _nextProbe = now + PollSeconds; }
+            if (_session != world.Session)
+            {
+                Reset(); _session = world.Session;
+                if (!encounterOnly) _nextProbe = now + PollSeconds;
+                _nextUrgentProbe = now + PollSeconds;
+            }
             var camera = Camera.main;
             if (!IsAlive(camera) || !camera.isActiveAndEnabled) { Suspend(); return; }
             Targets.Clear();
-            if (!GuidanceTargetReader.TryRead(world, Targets, includeExits: _exits.Value))
+            if (encounterOnly)
+            {
+                EncounterGuidanceTargets.Collect(world, Targets);
+                if (Targets.Count == 0) return;
+                _nextProbe = now + PollSeconds;
+            }
+            else if (!GuidanceTargetReader.TryRead(world, Targets, includeExits: _exits.Value))
             {
                 Suspend();
                 ReportFailure(GuidanceTargetReader.LastFailure);
@@ -77,7 +100,7 @@ internal static class PassiveGuidanceAccessibility
             var position = new Vector3((float)world.X, (float)world.Y, (float)world.Z);
             if (!TrySelect(position, now, out var target)) { Suspend(); return; }
             var route = GuidanceRouteProbe.Read(world, target.Position, verifyNext: true);
-            if (!route.Complete || !target.IsQuest && route.Distance > route.BodyWidth * _exitRange.Value)
+            if (!route.Complete || target.Kind == GuidanceTargetKind.Exit && route.Distance > route.BodyWidth * _exitRange.Value)
             {
                 Unavailable[target.Id] = new(now + UnavailableRetrySeconds, target.Priority, target.Name);
                 // A failed alternate probe cannot invalidate the retained target. This tick emits no cached direction.
@@ -90,16 +113,16 @@ internal static class PassiveGuidanceAccessibility
             Unavailable.Remove(target.Id);
             if (_selected != target.Id) _nextAlternateProbe = now + AlternateRetrySeconds;
             _selected = target.Id;
-            var value = new PassiveGuidanceObservation(world.Session, target.Id, target.Name, target.IsQuest,
+            var value = new PassiveGuidanceObservation(world.Session, target.Id, target.Name, target.Kind,
                 GuidanceRouteProbe.Convert(position), GuidanceRouteProbe.Convert(target.Position),
                 GuidanceRouteProbe.Convert(route.Next), GuidanceRouteProbe.Convert(camera.transform.forward),
                 GuidanceRouteProbe.Convert(camera.transform.right), route.Distance, route.BodyWidth, route.Complete);
             if (!State.Observe(value, now)) { Audio.Silence(); return; }
             if (State.NearMarker) Audio.Silence();
             bool readerAvailable = ScreenReader.IsAvailable();
-            if (_speech.Value && readerAvailable && !otherSpeechPending && !ScreenReader.SpokeThisFrame &&
-                State.TryTakeSpeech(now, out var announcement))
-                Speak(announcement);
+            if (_speech.Value && readerAvailable && (!otherSpeechPending || target.Kind == GuidanceTargetKind.EncounterReturn) && !ScreenReader.SpokeThisFrame &&
+                State.TryTakeSpeech(now, out var announcement, acknowledge: false) && Speak(announcement))
+                State.Acknowledge(announcement, now);
             if (_sound.Value && _volume.Value > 0 && State.PulseDue(now) &&
                 (!_speech.Value || !readerAvailable || State.HasAnnouncedTarget))
             {
@@ -123,7 +146,7 @@ internal static class PassiveGuidanceAccessibility
         foreach (var candidate in Targets)
         {
             float distance = (candidate.Position - position).sqrMagnitude;
-            if ((!candidate.IsQuest && !_exits.Value) || Unavailable.ContainsKey(candidate.Id) ||
+            if ((candidate.Kind == GuidanceTargetKind.Exit && !_exits.Value) || Unavailable.ContainsKey(candidate.Id) ||
                 !float.IsFinite(distance) || string.IsNullOrWhiteSpace(candidate.Name)) continue;
             if (found && (candidate.Priority > target.Priority || candidate.Priority == target.Priority &&
                 (target.Id == _selected || candidate.Id != _selected &&
@@ -138,7 +161,7 @@ internal static class PassiveGuidanceAccessibility
         bool retryFound = false;
         foreach (var candidate in Targets)
         {
-            if ((!candidate.IsQuest && !_exits.Value) || !Unavailable.TryGetValue(candidate.Id, out var failed) ||
+            if ((candidate.Kind == GuidanceTargetKind.Exit && !_exits.Value) || !Unavailable.TryGetValue(candidate.Id, out var failed) ||
                 now < failed.RetryAt || found && candidate.Priority >= target.Priority) continue;
             if (retryFound && (failed.RetryAt > earliest || failed.RetryAt == earliest && candidate.Id >= retry.Id)) continue;
             retry = candidate;
@@ -151,7 +174,7 @@ internal static class PassiveGuidanceAccessibility
         return true;
     }
 
-    private static void Speak(PassiveGuidanceSpeech value)
+    private static bool Speak(PassiveGuidanceSpeech value)
     {
         string text = value.Kind switch
         {
@@ -159,10 +182,11 @@ internal static class PassiveGuidanceAccessibility
             PassiveGuidanceSpeechKind.Turn => ModText.Format("guidance.automatic.turn", ModText.Get(value.Direction)),
             _ => ModText.Format("guidance.automatic.target", value.Name, ModText.Get(value.Direction), Math.Ceiling(value.Distance))
         };
-        if (!value.IsQuest && value.Kind != PassiveGuidanceSpeechKind.Turn)
+        if (value.TargetKind == GuidanceTargetKind.Exit && value.Kind != PassiveGuidanceSpeechKind.Turn)
             text += ". " + ModText.Get("guidance.exit_unconfirmed");
-        ScreenReader.Speak(text, interrupt: false);
+        if (!ScreenReader.TrySpeak(text, interrupt: false)) return false;
         Plugin.Log.LogInfo($"[Automatic orientation] {text}");
+        return true;
     }
 
     private static void ReportFailure(string message)
@@ -183,7 +207,7 @@ internal static class PassiveGuidanceAccessibility
         Expired.Clear();
         _selected = null;
         _session = 0;
-        _nextProbe = _nextAlternateProbe = 0;
+        _nextProbe = _nextAlternateProbe = _nextUrgentProbe = 0;
     }
 
     internal static void Cleanup()

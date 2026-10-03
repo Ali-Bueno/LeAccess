@@ -11,11 +11,6 @@ using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Navigation.Guidance;
 
-internal readonly record struct GuidanceTarget(int Id, string Name, Vector3 Position, float ArrivalRadius, bool IsQuest)
-{
-    internal int Priority { get; init; }
-}
-
 internal static class GuidanceTargetReader
 {
     internal static string LastFailure { get; private set; }
@@ -26,11 +21,13 @@ internal static class GuidanceTargetReader
         LastFailure = null;
         try
         {
+            EncounterGuidanceTargets.Collect(world, targets);
+            if (targets.Count > 0) return true;
             var manager = MinimapIconManager.Instance;
             if (!IsAlive(manager) || !manager.isActiveAndEnabled || !IsAlive(manager.minimap) ||
-                !manager.minimap.isActiveAndEnabled) return false;
+                !manager.minimap.isActiveAndEnabled) return targets.Count > 0;
             var icons = manager.icons;
-            if (icons is null || icons.WasCollected) return false;
+            if (icons is null || icons.WasCollected) return targets.Count > 0;
             var seen = new HashSet<int>();
             for (int i = 0; i < icons.Count; i++)
             {
@@ -50,14 +47,15 @@ internal static class GuidanceTargetReader
                 }
                 catch (Exception ex) { LastFailure ??= ex.GetType().Name + ": " + ex.Message; }
             }
-            if (!includeExits && targets.Exists(target => target.IsQuest)) targets.RemoveAll(target => !target.IsQuest);
+            if (!includeExits && targets.Exists(target => target.Kind != GuidanceTargetKind.Exit))
+                targets.RemoveAll(target => target.Kind == GuidanceTargetKind.Exit);
             return targets.Count > 0 || LastFailure is null;
         }
         catch (Exception ex)
         {
             LastFailure = ex.GetType().Name + ": " + ex.Message;
-            targets.Clear();
-            return false;
+            targets.RemoveAll(target => target.Kind != GuidanceTargetKind.EncounterReturn);
+            return targets.Count > 0;
         }
     }
 
@@ -96,7 +94,7 @@ internal static class GuidanceTargetReader
             if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(text)) continue;
             // The native circle and direction arrow share one owner. Its center is a marker, not a completion trigger.
             target = new GuidanceTarget(owner.GetInstanceID(), ModText.Format("guidance.quest_marker", title, text),
-                icon.transform.position, 0, true)
+                icon.transform.position, 0, GuidanceTargetKind.Quest)
             {
                 Priority = state.trackStatus == SavedQuest.TrackStatus.FORCE_TRACKED ? 0 : quest.mainLineQuest ? 1 : 2
             };
@@ -129,7 +127,7 @@ internal static class GuidanceTargetReader
         Vector3 position = listener.transform.position;
         if (string.IsNullOrWhiteSpace(name) || !float.IsFinite(range) || range <= 0 || !Finite(position) ||
             !listener.CanInteract()) return false;
-        target = new GuidanceTarget(listener.GetInstanceID(), ModText.Format("guidance.exit_to", name), position, range, false)
+        target = new GuidanceTarget(listener.GetInstanceID(), ModText.Format("guidance.exit_to", name), position, range, GuidanceTargetKind.Exit)
         { Priority = 3 };
         return true;
     }

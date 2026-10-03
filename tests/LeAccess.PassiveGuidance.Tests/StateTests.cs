@@ -3,7 +3,7 @@ using LeAccess.Accessibility.Navigation.Guidance;
 
 internal static partial class Program
 {
-    private static PassiveGuidanceObservation Sample(float distance = 12) => new(1, 10, "Tracked objective", true,
+    private static PassiveGuidanceObservation Sample(float distance = 12) => new(1, 10, "Tracked objective", GuidanceTargetKind.Quest,
         Vector3.Zero, new(0, 0, distance), new(0, 0, distance), Vector3.UnitZ, Vector3.UnitX, distance, 1, true);
 
     private static void StateTests()

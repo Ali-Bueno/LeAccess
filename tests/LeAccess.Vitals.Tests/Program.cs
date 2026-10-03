@@ -15,6 +15,7 @@ void Start()
     ModText.Initialize(null,null);
     config = new ConfigFile();
     Application.isFocused = ScreenReader.Available = VitalsProbe.Available = GameplayInputState.Gameplay = true;
+    ScreenReader.OutputAccepted = true;
     LE.UI.LoadingScreen.IsVisible = NavigationAudioState.IsSuspended = VitalsProbe.Throw = false;
     EpochInputManager.instance.isInputFieldActive = ScreenKeyboardManager.Instance._enabled = false;
     VitalsProbe.Reads = VitalsInput.Calls = 0;
@@ -93,7 +94,7 @@ try
     Last("Life and mana unavailable",true,"manual missing probe feedback");
     VitalsProbe.Available = true;
 
-    foreach (string gate in new[] {"focus","loading","reader"})
+    foreach (string gate in new[] {"focus","loading"})
     {
         Start(); Tick(0); Values(4,4);
         Application.isFocused = gate != "focus";
@@ -163,6 +164,54 @@ try
     Check(Plugin.Log.Warnings.Count == 1,"same probe failure logged once");
     VitalsProbe.Throw = false; Values(5,5); Tick(.3);
     Check(ScreenReader.Spoken.Count == 0,"exception resets baseline");
+    Start(); Tick(0); Values(9,9); ScreenReader.OutputAccepted = false; Tick(.1);
+    Check(ScreenReader.Spoken.Count == 0 && Plugin.Log.Information.Count == 0, "rejected vitals output is not logged as delivery");
+    ScreenReader.OutputAccepted = true; Tick(.15);
+    Check(VitalsProbe.Reads == 2 && ScreenReader.Spoken.Count == 0,"rejected automatic output retains the100ms sample interval without replaying between polls");
+    Values(8,8); ScreenReader.OutputAccepted = true; Tick(.21);
+    Last("Life 8 percent. Mana 8 percent",true,"recovered critical loss reads fresh percentages with critical priority");
+    Tick(.32); Check(ScreenReader.Spoken.Count == 1,"accepted recovered band is acknowledged once");
+    Start(); Tick(0); Values(9,9); ScreenReader.OutputAccepted = false; Tick(.1);
+    Values(99,99); ScreenReader.OutputAccepted = true; Tick(.21);
+    Check(ScreenReader.Spoken.Count == 0,"recovery to the acknowledged band discards old rejected critical values");
+    Start(); Tick(0); Values(9,9); ScreenReader.OutputAccepted = false; Tick(.1);
+    Values(74,74); ScreenReader.OutputAccepted = true; Tick(.21);
+    Last("Life 74 percent. Mana 74 percent",false,"current ordinary band replaces rejected critical reading without stale interruption");
+    Start(); Tick(0); Values(9,9); ScreenReader.OutputAccepted = false; Tick(.1);
+    Values(double.NaN,8); ScreenReader.OutputAccepted = true; Tick(.21);
+    Last("Mana 8 percent",true,"recovery excludes a currently unavailable resource from rejected combined values");
+    Values(100,8); Tick(.32);
+    Check(ScreenReader.Spoken.Count == 1,"restored health in original band cannot replay rejected health history");
+    Start(); Tick(0); Values(9,9); ScreenReader.OutputAccepted = false; Tick(.1,keyboard:true);
+    ScreenReader.OutputAccepted = true; Tick(.21);
+    Last("Life 9 percent. Mana 9 percent",true,"rejected manual report does not consume a current automatic crossing");
+    Start(); config.Set("AutomaticAnnouncements",false); Values(9,9); ScreenReader.OutputAccepted = false; Tick(0,keyboard:true);
+    Values(8,8); ScreenReader.OutputAccepted = true; Tick(.11);
+    Check(ScreenReader.Spoken.Count == 0,"rejected manual-only input is never deferred into a later frame");
+    Tick(.12,keyboard:true);
+    Last("Life 8 percent. Mana 8 percent",true,"a later explicit manual edge retries fresh current values");
+    Start(); Tick(0); Values(9,9); ScreenReader.Available = false; Tick(.1);
+    Check(VitalsProbe.Reads == 2 && ScreenReader.Spoken.Count == 0,"reader outage keeps live source validation and sampling active");
+    Values(8,8); ScreenReader.Available = true; Tick(.21);
+    Last("Life 8 percent. Mana 8 percent",true,"reader reconnect preserves acknowledged baseline and reads fresh critical loss");
+    Start(); Tick(0); Values(9,9); ScreenReader.OutputAccepted = false; Tick(.1);
+    VitalsProbe.Available = false; Tick(.21); VitalsProbe.Available = true;
+    Values(8,8); ScreenReader.OutputAccepted = true; Tick(.32);
+    Check(ScreenReader.Spoken.Count == 0,"invalid player discards rejected crossings before recovery");
+    Values(4,4); Tick(.43);
+    Last("Life 4 percent. Mana 4 percent",true,"revalidated player establishes baseline before a new critical crossing");
+    Start(); Tick(0); Values(9,9); ScreenReader.Available = false; Tick(.1);
+    Values(8,8,2); Tick(.21); ScreenReader.Available = true; Tick(.32);
+    Check(ScreenReader.Spoken.Count == 0,"new session during reader outage discards previous player crossings");
+    Start(); Tick(0); ScreenReader.Available = false; Values(98,98); Tick(.1);
+    ScreenReader.Available = true; Values(97,97); Tick(.21);
+    Check(ScreenReader.Spoken.Count == 0,"reader recovery without a crossed band cannot fabricate a full report");
+    Start(); ScreenReader.Available = false; Values(9,9); Tick(0);
+    ScreenReader.Available = true; Values(8,8); Tick(.11);
+    Check(ScreenReader.Spoken.Count == 0,"first live observation during reader outage remains a true silent baseline");
+    Start(); Tick(0); ScreenReader.Available = false; Values(9,9); Tick(.1);
+    Values(100,100); Tick(.21); ScreenReader.Available = true; Tick(.32);
+    Check(ScreenReader.Spoken.Count == 0,"full recovery before reconnect discards earlier critical values without replay");
     VitalsAccessibility.Cleanup(); int reads = VitalsProbe.Reads;
     Tick(.4,keyboard:true,controller:true);
     Check(VitalsProbe.Reads == reads && ScreenReader.Spoken.Count == 0,"cleanup disables update and input");

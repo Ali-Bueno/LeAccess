@@ -65,5 +65,12 @@ dialogue turns, cinematic/video subtitles, nearby NPC barks and notifications,
 including the current Morditas countdown occurrence. Their source ownership,
 settling and submission expiry remain in the individual readers; see
 [announcement lifecycle](announcement-lifecycle.md) and [NPC subtitles](npc-subtitles.md).
-Other stateful gameplay/menu readers still need acceptance-path review. This
-batch does not establish universal replay or recovery across the whole mod.
+Quest-journal reading now uses the same focus-bound contract. Automatic quest
+and dynamic-objective updates commit their shared pace/fairness only on accepted
+output; see [quest updates](quest-updates.md). [Vitals](vitals-api.md) keep a
+silent first/session baseline and retry current resource crossings. [Orientation](automatic-orientation.md)
+does not acknowledge a target or unlock its speech-dependent pulse after rejection;
+manual direction reports advance progress comparison only when accepted.
+Gameplay manual reports remain explicit button requests, without delayed replay.
+Other stateful menu, zone, map and nearby-entity readers still need acceptance-path
+review. This does not establish universal recovery across the whole mod.

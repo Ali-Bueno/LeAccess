@@ -123,7 +123,13 @@ public class CraftingMaterialSelectorPanel : CustomNavigable
 public class CraftingRunesAndGlyphsPanel : CustomNavigable
 { public Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase _selectables; public int _selectedRowIndex, _selectedColumnIndex; }
 public class CraftingSlotManager : CustomNavigable
-{ public Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase selectables; public Vector2Int currentlySelectedIdx; }
+{
+    public Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase selectables;
+    public Vector2Int currentlySelectedIdx;
+    public bool canForge;
+    public TextMeshProUGUI singleSuccessChanceString, glyphsPreviewText, cannotForgeText, modifierDetails, typeOfForgeText, currentForgingPotentialText;
+    public UnityEngine.UI.Button forgeButton;
+}
 public class MaterialContainerUI : UnityEngine.Behaviour
 {
     public IItemContainer container;

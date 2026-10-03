@@ -123,6 +123,7 @@
   "quest.update_completed": "Quest completed: {0}",
   "quest.update_failed": "Quest failed: {0}",
   "guidance.quest_marker": "{0}. Objective marker: {1}",
+  "guidance.encounter_return": "Return to the Morditas encounter",
   "guidance.automatic.target": "Orientation: {0}. Next stretch: {1}. About {2} units along the path",
   "guidance.automatic.turn": "Next stretch: {0}",
   "guidance.automatic.near_marker": "Near the map marker for {0}",

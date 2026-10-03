@@ -9,7 +9,7 @@ describe this build only; production code does not use them as offsets.
 | Vitals | Actual local health, ward and mana changes use the existing critical/band reader. This reports player state, not the shape or timing of an incoming attack. |
 | Native warning/modal text | The [window reader](dungeon-warning-reading.md) reads the focused visible warning. A modal's existence is not proof of a nearby environmental hazard. |
 | Encounter abandonment | `RageOfMorditasOutOfGauntletNotification` renders a localized countdown when all players have left the gauntlet. The [typed notification reader](announcement-lifecycle.md) owns its text and restart lifecycle. |
-| Morditas return arrow | `RageOfMorditasGauntletWarningPointerVisualController` exposes an actual target and local player transform. It is a return-to-encounter indicator; it is not yet an orientation target. |
+| Morditas return arrow | The native arrow supplies a guarded local return target for manual and automatic orientation. Automatic guidance still requires a verified route. |
 | Attack telegraphs and dangerous ground | General visual-only damage areas still lack a verified unified player-facing source. Ability object names, visual effects and haptics are insufficient to infer hostility, affected floor, safe direction or time to impact. |
 
 ## Countdown evidence
@@ -43,10 +43,9 @@ method, game method or audio device was executed for this inspection.
 before calling `SetPointerActive`; when the pointer has not loaded yet, it
 retains that negated status. Pointer `Init` (`151CC60`) stores its supplied
 look-at target and obtains the local player's transform from
-`PlayerFinder.getLocalActorSync`. These are useful future orientation sources,
-but require live ownership/lifecycle checks and distinct wording from an
-ordinary quest marker. The current mod does not infer a safe route from this
-arrow or claim that the region outside it deals damage.
+`PlayerFinder.getLocalActorSync`. The reader uses distinct return-to-encounter
+wording, not a quest or zone-exit label. The arrow alone does not establish a
+safe route or imply that the region outside it deals damage.
 
 Further current-build checks resolve `UnityExtensions.CleanNulls` (`955990`)
 and `Component.get_transform` (`40192B0`) after `getLocalActorSync`: the stored
@@ -58,16 +57,52 @@ The asynchronous `CreateGauntletWarningVisual.MoveNext` (`1535F00`) supplies the
 gauntlet visual controller's own transform as the target. Its native body
 **inlines** pointer initialization, including both stored transforms and the
 `SetActive` call. An `Init` postfix alone therefore cannot reliably discover
-these pointers. Future tracking needs a verified non-inlined lifecycle source,
-local-sync identity and loaded-scene checks, and cleanup on world changes.
+these pointers. A read-only postfix on Unity's actual `FixedUpdate` callback
+registers the pointer instead. Its fresh native address has no other method
+aliases and passes the installed signature audit: 60 declarations / 59 targets.
 
 The installed catalog resolves `GauntletWarningPointerVisualControllerSoftRef`
 to `assets_b8a1e08455f403cb.bundle`. Its two-object prefab contains
 `RageOfMorditas_WarningPointerVFX` and an initially inactive `Pointer` child;
 the latter owns an enabled `MeshRenderer`. The controller's `pointerObject`
 reference names that child. This is a world indicator, not a screen-space label.
-These asset/native observations are evidence for a later adapter, not implemented
-orientation or live confirmation of visibility.
+These asset/native observations identify the source, not live confirmation of
+visibility or audible direction.
+
+## Return guidance ownership and timing
+
+`EncounterGuidanceTargets` requires the pointer, its owned renderer and target
+to be active in the captured player's loaded world. The renderer must be enabled
+and not force-hidden. The target must be the exact gauntlet controller whose
+pointer field refers back; its encounter sync must also refer back, and both
+native states must still be `Gauntlet`. The stored player transform must match
+the current local sync. Online ownership follows that sync's current, reciprocal,
+living player visuals without requiring a server gameplay actor; offline follows
+the current living actor. Network sync components may inhabit other loaded
+scenes, while player presentation and the target must belong to the active world.
+The captured player session must still match. Destroyed/unloaded sources expire;
+plugin cleanup clears the registry. No scene-wide object scan is used.
+
+While the arrow qualifies, its return target temporarily supersedes ordinary
+quest/exit targets. Manual F6/right-stick-down preserves an explicit bearing-only
+fallback when no route can be verified. Automatic orientation keeps the existing
+complete-path, floor, next-segment and camera checks; it does not redirect toward
+an unrelated quest when that return route fails. Hiding the native arrow ends
+return guidance and allows ordinary target selection again.
+
+The installed data gives the abandonment countdown four seconds. A newly stable
+return target therefore bypasses the ordinary six-second narration gap, retaining
+the one-second target settling and current-frame speech guard. An early pass runs
+after the native abandonment notice and before ambient quest/world narration,
+at most twice per second. A successful urgent probe occupies the normal probe
+turn too. Menus, typing, dialogue, loading, pause, unavailable local ownership and
+foreground subtitles still gate output. Existing automatic sound/speech settings
+apply; exit-specific switches/range limits do not classify this as a zone exit.
+
+Source-linked target tests now pass 148 checks, including 57 encounter ownership,
+lifecycle and online/offline regressions. The passive service/state suite covers
+early priority, accepted-output pacing and stale acknowledgement. No game,
+networking action, movement or audio device was invoked during validation.
 
 Live checks remain: countdown appearance and return/restart while objectives
 and loot are updating, online ownership of the return arrow, and actual

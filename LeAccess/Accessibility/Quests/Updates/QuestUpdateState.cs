@@ -91,7 +91,7 @@ internal sealed class QuestUpdateState
         _sourceBaseline = signature;
     }
 
-    internal bool TryTake(bool canSpeak, out QuestProgressChange change)
+    internal bool TryTake(bool canSpeak, out QuestProgressChange change, bool acknowledge = true)
     {
         change = default;
         if (!canSpeak) return false;
@@ -106,7 +106,16 @@ internal sealed class QuestUpdateState
         }
         if (selected == null) return false;
         change = _pending[selected].Change;
-        _pending.Remove(selected);
+        if (acknowledge) Acknowledge(change);
+        return true;
+    }
+
+    internal bool Acknowledge(QuestProgressChange change)
+    {
+        string key = change.Quest.Key;
+        if (_candidates.ContainsKey(key) || _unavailable.Contains(key) ||
+            !_pending.TryGetValue(key, out var pending) || pending.Change != change) return false;
+        _pending.Remove(key);
         return true;
     }
 

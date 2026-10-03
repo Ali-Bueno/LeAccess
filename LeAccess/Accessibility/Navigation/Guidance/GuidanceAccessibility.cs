@@ -76,10 +76,12 @@ internal static class GuidanceAccessibility
                     text += ". " + ModText.Get(route.DirectOpen == false ? "guidance.direct_blocked" : "guidance.route_unverified");
             }
             string change = Progress.Observe(world.Session, target.Id, route.Complete, route.Distance,
-                GuidanceRouteProbe.Convert(target.Position), route.BodyWidth);
+                GuidanceRouteProbe.Convert(target.Position), route.BodyWidth, acknowledge: false);
             if (change != null && !nearMarker) text += ". " + ModText.Get(change);
-            if (!target.IsQuest) text += ". " + ModText.Get("guidance.exit_unconfirmed");
-            ScreenReader.Speak(text, interrupt: true);
+            if (target.Kind == GuidanceTargetKind.Exit) text += ". " + ModText.Get("guidance.exit_unconfirmed");
+            if (!ScreenReader.TrySpeak(text, interrupt: true)) return;
+            Progress.Observe(world.Session, target.Id, route.Complete, route.Distance,
+                GuidanceRouteProbe.Convert(target.Position), route.BodyWidth);
             Plugin.Log.LogInfo($"[Orientation] route={route.Complete} target={target.Id}: {text}");
         }
         catch (Exception ex)

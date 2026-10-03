@@ -48,11 +48,12 @@ internal static class Program
         Application.isFocused = true; LE.UI.LoadingScreen.IsVisible = false; SceneList.Gameplay = true;
         GameplayInputState.Gameplay = true; NavigationAudioState.IsSuspended = false;
         ScreenReader.Available = true; ScreenReader.SpokeThisFrame = false; ScreenReader.Messages.Clear();
+        ScreenReader.OutputAccepted = true;
         Time.unscaledTimeAsDouble = 0; LeAccess.Plugin.Log.Warnings.Clear(); DynamicObjectiveAccessibility.Reset();
     }
     private static void Main()
     {
-        ProbeTests(); MorditasTests(); ServiceTests(); PendingPriorityTests(); SharedPacingTests(); SharedFairnessTests();
+        ProbeTests(); MorditasTests(); ServiceTests(); PendingPriorityTests(); SharedPacingTests(); SharedFairnessTests(); AcceptanceTests();
         Console.WriteLine($"Dynamic objective tests passed: {_checks} checks.");
     }
     private static void ProbeTests()
@@ -202,6 +203,60 @@ internal static class Program
         DynamicObjectiveAccessibility.Reset(); row.objectivesDisplayed[0].text.text="Take the boss exit"; Both(); Both();
         Check(ScreenReader.Messages.Count==3,"Resetting a dynamic tracker does not erase the shared campaign speech deadline");
         Both(2.1); Check(ScreenReader.Messages.Count==4&&ScreenReader.Messages.Last().Text.Contains("Take the boss exit"),"Reset dynamic instructions settle and wait for the shared turn");
+    }
+
+    private static void AcceptanceTests()
+    {
+        Reset(); var row = Row(Tracker(), "Current objectives", "Old instruction");
+        ScreenReader.OutputAccepted = false; Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 0 && DynamicObjectiveAccessibility.HasPendingContent && DynamicObjectiveAccessibility.HasPendingAnnouncement,
+            "Rejected dynamic instruction remains pending and eligible");
+        Check(QuestUpdateAccessibility.CanAnnounceAt(Time.unscaledTimeAsDouble),
+            "Rejected dynamic instruction does not spend the shared speech turn");
+        row.objectivesDisplayed[0].text.text = "Fresh instruction"; ScreenReader.OutputAccepted = true;
+        Tick(); Check(ScreenReader.Messages.Count == 0, "Rejected dynamic history yields while fresh text settles");
+        Tick(); Check(ScreenReader.Messages.Single().Text.EndsWith("Fresh instruction") && !DynamicObjectiveAccessibility.HasPendingContent,
+            "Recovery consumes only accepted fresh dynamic instructions");
+        Check(!QuestUpdateAccessibility.CanAnnounceAt(Time.unscaledTimeAsDouble), "Accepted dynamic output starts the shared deadline");
+        Tick(); Check(ScreenReader.Messages.Count == 1 && !DynamicObjectiveAccessibility.HasPendingAnnouncement,
+            "Accepted dynamic objective does not reserve another speech turn");
+        Reset(); row = Row(Tracker(), "Current objectives", "Old instruction");
+        ScreenReader.OutputAccepted = false; Tick(); Tick();
+        row.gameObject.Active = false; ScreenReader.OutputAccepted = true; Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 0 && !DynamicObjectiveAccessibility.HasPendingAnnouncement,
+            "Hidden rejected dynamic instruction cannot replay after recovery");
+        Reset(); row = Row(Tracker(), "Current objectives", "Still current instruction");
+        ScreenReader.OutputAccepted = false; Tick(); Tick(); ScreenReader.OutputAccepted = true; Tick();
+        Check(ScreenReader.Messages.Single().Text.EndsWith("Still current instruction"),
+            "An unchanged rejected dynamic instruction retries without spending a failed speech deadline");
+        Reset(); var holder = PlayerFinder.Provider.Campaign;
+        var quest = new Quest { id = 1, Owner = holder.statefulQuestList };
+        var step = new QuestStep { quest = quest, id = 1 };
+        var tracked = new StatefulQuest { quest = quest, currentStep = step };
+        var objective = new StatefulObjective { statefulQuest = tracked,
+            objective = new Objective { quest = quest, questStep = step, id = 1, isIncremental = true } };
+        tracked.objectives.Add(objective); holder.statefulQuestList.trackedQuests.Add(tracked);
+        row = Row(Tracker(), "Dynamic instructions", "Current dynamic turn"); row.gameObject.Active = false;
+        void Both(double elapsed=.11)
+        {
+            Time.unscaledTimeAsDouble += elapsed; ScreenReader.SpokeThisFrame = false;
+            QuestUpdateAccessibility.Update();
+            DynamicObjectiveAccessibility.Update(higherPriorityPending:QuestUpdateAccessibility.HasPriorityOverDynamic);
+        }
+        Both(); Both(); objective.progress = 1; Both(); Both();
+        row.gameObject.Active = true; objective.progress = 2; Both(); Both();
+        ScreenReader.OutputAccepted = false; Both(2.1);
+        Check(ScreenReader.Messages.Count == 1 && DynamicObjectiveAccessibility.HasPendingAnnouncement &&
+            !QuestUpdateAccessibility.HasPriorityOverDynamic && QuestUpdateAccessibility.CanAnnounceAt(Time.unscaledTimeAsDouble),
+            "Rejected dynamic output preserves its ready fairness turn and the unspent shared clock");
+        ScreenReader.OutputAccepted = true; Both();
+        Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text.Contains("Current dynamic turn"),
+            "Recovery accepts the waiting dynamic turn before the continuously ready campaign counter");
+        Both(); Check(ScreenReader.Messages.Count == 2 && QuestUpdateAccessibility.HasPendingAnnouncement,
+            "Accepted dynamic recovery starts the shared deadline while campaign progress waits");
+        Both(2.1);
+        Check(ScreenReader.Messages.Count == 3 && ScreenReader.Messages.Last().Text.Contains("2/3"),
+            "Campaign receives its existing next fair turn after accepted dynamic recovery");
     }
 
     private static void SharedFairnessTests()

@@ -36,7 +36,7 @@ internal static class VitalsAccessibility
         if (_automatic == null) return;
         try
         {
-            if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible || !ScreenReader.IsAvailable())
+            if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible)
             { Reset(); return; }
 
             var input = EpochInputManager.instance;
@@ -70,20 +70,21 @@ internal static class VitalsAccessibility
             }
             int health = VitalsAnnouncementState.Percent(snapshot.Health, snapshot.MaxHealth);
             int mana = VitalsAnnouncementState.Percent(snapshot.Mana, snapshot.MaxMana);
-            var change = Announcements.Observe(health, mana);
+            var change = Announcements.Observe(health, mana, acknowledge: false);
             if (report)
             {
                 string healthText = health < 0 ? ModText.Get("vitals.health_unavailable") : HealthText(health);
                 string manaText = snapshot.ManaReplaced ? ModText.Get("vitals.mana_replaced")
                     : mana < 0 ? ModText.Get("vitals.mana_unavailable") : ManaText(mana);
-                Speak(Join(healthText, manaText), true);
+                if (Speak(Join(healthText, manaText), true)) Announcements.Acknowledge(health, mana);
             }
             else if (_automatic.Value && change.HasContent)
             {
                 // Keep critical damage audible even with a non-pausing menu open.
                 // Ordinary crossings queue through the existing speech sink.
-                Speak(Join(change.HealthPercent < 0 ? null : HealthText(change.HealthPercent),
-                    change.ManaPercent < 0 ? null : ManaText(change.ManaPercent)), change.Interrupt);
+                if (Speak(Join(change.HealthPercent < 0 ? null : HealthText(change.HealthPercent),
+                    change.ManaPercent < 0 ? null : ManaText(change.ManaPercent)), change.Interrupt))
+                    Announcements.Acknowledge(change.HealthPercent, change.ManaPercent);
             }
         }
         catch (Exception ex)
@@ -100,10 +101,11 @@ internal static class VitalsAccessibility
     private static string Join(string health, string mana) => string.IsNullOrEmpty(health) ? mana
         : string.IsNullOrEmpty(mana) ? health : health + ". " + mana;
 
-    private static void Speak(string text, bool interrupt)
+    private static bool Speak(string text, bool interrupt)
     {
-        ScreenReader.Speak(text, interrupt);
+        if (!ScreenReader.TrySpeak(text, interrupt)) return false;
         Plugin.Log.LogInfo($"[Vitals] {text}");
+        return true;
     }
 
     private static void Reset()

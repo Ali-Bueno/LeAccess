@@ -16,6 +16,7 @@ internal static class DynamicObjectiveAccessibility
     private static readonly List<DynamicObjectiveContent> Content = new();
     private static readonly HashSet<int> Visible = new(), PreviousVisible = new();
     private static readonly List<string> Announcements = new();
+    private static readonly Dictionary<int, string> Attempts = new();
     private static double _nextPoll;
     private static int _scene;
     private static IntPtr _character;
@@ -55,13 +56,15 @@ internal static class DynamicObjectiveAccessibility
             DynamicObjectiveProbe.Read(scene, Content);
             bool canSpeak = _canOwnAnnouncement && !higherPriorityPending && !ScreenReader.SpokeThisFrame &&
                 ScreenReader.IsAvailable() && QuestUpdateAccessibility.CanAnnounceAt(now);
-            Visible.Clear(); Announcements.Clear(); _hasReadyAnnouncement = false;
+            Visible.Clear(); Announcements.Clear(); Attempts.Clear(); _hasReadyAnnouncement = false;
+            bool unannouncedPending = false;
             foreach (var item in Content)
             {
                 if (!Visible.Add(item.Id)) continue;
-                bool pending = Tracker.Observe(item.Id, item.Text, canSpeak, out string announcement);
-                if (announcement != null) Announcements.Add(announcement);
-                else HasPendingContent |= pending;
+                bool pending = Tracker.Observe(item.Id, item.Text, canSpeak, out string announcement, acknowledge: false);
+                HasPendingContent |= pending;
+                if (announcement != null) { Announcements.Add(announcement); Attempts[item.Id] = announcement; }
+                else unannouncedPending |= pending;
                 _hasReadyAnnouncement |= Tracker.HasStableContent(item.Id);
             }
             foreach (int id in PreviousVisible)
@@ -70,7 +73,11 @@ internal static class DynamicObjectiveAccessibility
             foreach (int id in Visible) PreviousVisible.Add(id);
             string text = ScreenContentTracker.Combine(Announcements);
             if (string.IsNullOrWhiteSpace(text)) return;
-            ScreenReader.Speak(text, interrupt: false);
+            if (!ScreenReader.TrySpeak(text, interrupt: false)) return;
+            foreach (var attempt in Attempts) Tracker.Acknowledge(attempt.Key, attempt.Value);
+            HasPendingContent = unannouncedPending;
+            _hasReadyAnnouncement = false;
+            foreach (int id in Visible) _hasReadyAnnouncement |= Tracker.HasStableContent(id);
             QuestUpdateAccessibility.RecordAnnouncement(now, dynamic: true);
             Plugin.Log.LogInfo($"[Dynamic objective] {text}");
         }
@@ -86,6 +93,7 @@ internal static class DynamicObjectiveAccessibility
     internal static void Reset()
     {
         Tracker.Reset(); Content.Clear(); Visible.Clear(); PreviousVisible.Clear(); Announcements.Clear();
+        Attempts.Clear();
         _nextPoll = 0; _scene = 0; _character = IntPtr.Zero; HasPendingContent = false;
         _canOwnAnnouncement = false;
         _hasReadyAnnouncement = false;

@@ -17,15 +17,17 @@ internal static class ServiceTests
         GuidanceAccessibility.Cleanup(); RouteTests.Reset();
         Application.isFocused = true; LE.UI.LoadingScreen.IsVisible = false; Camera.main = new();
         NavigationAudioState.IsSuspended = false; GameplayInputState.Owned = true;
-        Input.Held.Clear(); Input.Down.Clear(); Input.Throw = false; ScreenReader.Spoken.Clear(); ScreenReader.Available = true;
+        Input.Held.Clear(); Input.Down.Clear(); Input.Throw = false; ScreenReader.Spoken.Clear(); ScreenReader.Available = ScreenReader.OutputAccepted = true;
         EpochInputManager.instance = new(); ScreenKeyboardManager.Instance = new();
         EpochInputManager.instance.rewiredPlayer.controllers.Joysticks.Items.Add(new());
         GuidanceTargetReader.Targets.Clear(); GuidanceTargetReader.Available = true; GuidanceTargetReader.Throw = false;
         GuidanceTargetReader.Reads = 0; LeAccess.Plugin.Log.Warnings.Clear(); LeAccess.Plugin.Log.Info.Clear();
+        EncounterGuidanceTargets.HasTrackedPointers = false;
+        EncounterGuidanceTargets.Reads = 0;
         _config = new(); GuidanceAccessibility.Initialize(_config);
     }
     private static void Add(int id = 1, string name = "Quest", float distance = 10, int priority = 0, bool quest = true) =>
-        GuidanceTargetReader.Targets.Add(new(id, name, new(0, 0, distance), 0, quest) { Priority = priority });
+        GuidanceTargetReader.Targets.Add(new(id, name, new(0, 0, distance), 0, quest ? GuidanceTargetKind.Quest : GuidanceTargetKind.Exit) { Priority = priority });
     private static string Request()
     {
         Input.Down.Add(KeyCode.F6); GuidanceAccessibility.Update(); Input.Down.Clear();
@@ -34,7 +36,7 @@ internal static class ServiceTests
 
     internal static void Run()
     {
-        InputEdges(); RequestsAndProgress(); Selection(); Gates(); Failures();
+        InputEdges(); RequestsAndProgress(); Selection(); Gates(); Failures(); AcceptanceAndEncounter();
         GuidanceAccessibility.Cleanup();
     }
 
@@ -125,6 +127,41 @@ internal static class ServiceTests
         Check(Request().Contains("Quest"), "Keyboard guidance still works when controller guidance is disabled.");
         Reset(); Add(); Input.Held.Add(KeyCode.F6); GuidanceAccessibility.Update();
         Check(ScreenReader.Spoken.Count == 0, "A held keyboard key without a down edge does not repeat.");
+    }
+
+    private static void AcceptanceAndEncounter()
+    {
+        Reset(); Add(); ScreenReader.OutputAccepted = false; Request();
+        Check(ScreenReader.Spoken.Count == 0 && LeAccess.Plugin.Log.Info.Count == 0, "Rejected manual guidance is not acknowledged or logged as delivered.");
+        MapSectionWorld.World = MapSectionWorld.World with { Z = 2 };
+        ScreenReader.OutputAccepted = true; GuidanceAccessibility.Update();
+        Check(ScreenReader.Spoken.Count == 0 && GuidanceTargetReader.Reads == 1, "A rejected manual edge is never deferred into later automatic guidance.");
+        string text = Request();
+        Check(text.Contains("guidance.route[Quest|guidance.direction.up|8]") && !text.Contains("guidance.closer"), "A later explicit request reads fresh distance without progress from an unheard baseline.");
+        MapSectionWorld.World = MapSectionWorld.World with { Z = 4 }; ScreenReader.OutputAccepted = false; Request();
+        MapSectionWorld.World = MapSectionWorld.World with { Z = 3 }; ScreenReader.OutputAccepted = true;
+        text = Request();
+        Check(text.Contains("|7]") && text.Contains("guidance.closer") && !text.Contains("guidance.farther"), "A rejected progress report cannot replace the last accepted distance baseline.");
+        ScreenReader.OutputAccepted = false; Request();
+        GuidanceTargetReader.Targets.Clear();
+        GuidanceTargetReader.Targets.Add(new(2, "Current", new(10, 0, 3), 0, GuidanceTargetKind.Quest));
+        ScreenReader.OutputAccepted = true; text = Request();
+        Check(text.Contains("guidance.route[Current|guidance.direction.right|10]") && !text.Contains("guidance.closer"), "Recovered manual guidance reads current identity, name and camera direction.");
+        MapSectionWorld.World = MapSectionWorld.World with { Session = 2, X = 2 };
+        text = Request();
+        Check(!text.Contains("guidance.closer") && !text.Contains("guidance.farther"), "Replacement player/session cannot inherit accepted progress.");
+        MapSectionWorld.Available = false; ScreenReader.OutputAccepted = false; Request();
+        MapSectionWorld.Available = true; ScreenReader.OutputAccepted = true; text = Request();
+        Check(!text.Contains("guidance.closer") && !text.Contains("guidance.farther"), "Invalid player ownership discards progress even when unavailable feedback is rejected.");
+
+        Reset(); Add(1, "Quest", 3);
+        GuidanceTargetReader.Targets.Add(new(2, "Return to event", new(0, 0, 100), 0, GuidanceTargetKind.EncounterReturn) { Priority = -1 });
+        text = Request();
+        Check(text.StartsWith("guidance.route[Return to event|") && !text.Contains("guidance.exit_unconfirmed"), "Encounter return priority wins a closer quest without treating the return region as an unconfirmed exit.");
+        NavMesh.Status = NavMeshPathStatus.PathPartial; NavMesh.Blocked = true; text = Request();
+        Check(text.StartsWith("guidance.bearing[Return to event|") && text.Contains("guidance.direct_blocked") && !text.Contains("guidance.exit_unconfirmed"), "Encounter kind retains verified-route versus blocked-bearing wording.");
+        Reset(); GuidanceTargetReader.Targets.Add(new(3, "Return to event", new(0, 0, 0.5f), 0, GuidanceTargetKind.EncounterReturn) { Priority = -1 });
+        Check(Request() == "guidance.near_marker[Return to event]", "Encounter arrival reports marker proximity without damage or event-completion claims.");
     }
 
     private static void Failures()
