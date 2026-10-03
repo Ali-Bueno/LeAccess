@@ -17,7 +17,7 @@ the latest installed build. Technical findings and reproduction notes live in
 - Forge affix actions, shard details, and localized rune/glyph names and quantities.
 - Visible dialogue, examination descriptions, NPC subtitles and cinematic text.
 - Nearby NPC, enemy, loot, destination and other-player names.
-- Health/mana feedback and directional navigation and world-object audio cues.
+- Health/mana/potion-charge feedback and directional navigation and world-object audio cues.
 - Automatic quest progress updates and spoken/audio orientation toward visible quest markers or named exits.
 - Local map sections, supported physical places and generated-room information.
 - English and Spanish mod speech, following the game language, with editable

@@ -43,7 +43,7 @@ namespace LeAccess.Accessibility.Navigation
 namespace LeAccess.Accessibility.Vitals
 {
     internal readonly record struct VitalsSnapshot(long Session, double Health, double MaxHealth,
-        double Mana, double MaxMana, bool ManaReplaced);
+        double Mana, double MaxMana, bool ManaReplaced, int Potions = -1, int MaxPotions = -1);
     internal static class VitalsProbe
     {
         internal static bool Available = true, Throw;

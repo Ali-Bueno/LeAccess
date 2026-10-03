@@ -46,6 +46,8 @@
   "vitals.health_unavailable": "Life unavailable",
   "vitals.mana_unavailable": "Mana unavailable",
   "vitals.mana_replaced": "Mana replaced by rage",
+  "vitals.potions": "Potions {0} of {1}",
+  "vitals.potions_count": "Potions {0}",
   "landmark.nearby": "Nearby: {0}",
   "map.section.oldroad_bridge_1": "Wooden bridge 1",
   "map.section.oldroad_bridge_2": "Wooden bridge 2",

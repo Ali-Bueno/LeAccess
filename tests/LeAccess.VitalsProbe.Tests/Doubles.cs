@@ -39,21 +39,27 @@ namespace UnityEngine
             return false;
         }
     }
-    internal class Behaviour : Object
+    internal class Component : Object
     {
         internal GameObject gameObject = new();
         internal Transform transform => gameObject.transform;
-        internal bool isActiveAndEnabled = true;
     }
+    internal class Behaviour : Component { internal bool isActiveAndEnabled = true; }
 }
 namespace EHG.Multiplayer
 { internal static class GameplayEnvironment { internal static bool IsOnlineClient; } }
-internal sealed class Actor : UnityEngine.Behaviour { internal BaseHealth health; internal BaseMana mana; }
+internal sealed class Actor : UnityEngine.Behaviour
+{ internal BaseHealth health; internal BaseMana mana; internal HealthPotion healthPotion; }
+internal class HealthPotionCharges : UnityEngine.Behaviour { internal int currentCharges = 3, maxCharges = 4; }
+internal sealed class HealthPotion : HealthPotionCharges { }
 internal sealed class ActorVisuals : UnityEngine.Behaviour { internal ActorSync actorSync; }
 internal class ActorSync : UnityEngine.Behaviour { }
 internal sealed class PlayerActorSync : ActorSync { internal LocalPlayer localPlayer; }
 internal sealed class LocalPlayer : UnityEngine.Behaviour
-{ internal ActorSync actorSync; internal BaseHealth playerHealth; internal BaseMana playerMana; }
+{
+    internal ActorSync actorSync; internal BaseHealth playerHealth; internal BaseMana playerMana;
+    internal HealthPotionCharges healthPotion;
+}
 internal sealed class BaseHealth : UnityEngine.Behaviour
 { internal Actor actor; internal float currentHealth = 76.5f; internal int maxHealth = 100; }
 internal sealed class BaseMana : UnityEngine.Behaviour

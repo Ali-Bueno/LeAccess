@@ -15,7 +15,9 @@ internal static class VitalsAccessibility
     private static ConfigEntry<bool> _automatic;
     private static ConfigEntry<KeyCode> _reportKey;
     private static ConfigEntry<bool> _controllerReport;
+    private static ConfigEntry<bool> _potionChanges;
     private static double _nextPoll;
+    private static int _potions = -1;
     private static long _session;
     private static bool _previousGameplayInput;
     private static string _lastFailure;
@@ -28,6 +30,8 @@ internal static class VitalsAccessibility
             "Read health and mana percentages during gameplay. Use None to disable the keyboard shortcut.");
         _controllerReport = config.Bind("Vitals", "ReportWithControllerView", true,
             "Read health and mana with the controller Back/View button. Native game bindings remain active.");
+        _potionChanges = config.Bind("Vitals", "AnnouncePotionCharges", true,
+            "Announce health potion charges when one is used or picked up. The report always includes them.");
         Reset();
     }
 
@@ -51,7 +55,7 @@ internal static class VitalsAccessibility
             _previousGameplayInput = gameplayInput;
 
             if (!_automatic.Value && !report)
-            { Announcements.Reset(); _session = 0; return; }
+            { Announcements.Reset(); _session = 0; _potions = -1; return; }
             double now = Time.unscaledTimeAsDouble;
             if (!report && now < _nextPoll) return;
             _nextPoll = now + PollSeconds;
@@ -59,6 +63,7 @@ internal static class VitalsAccessibility
             {
                 Announcements.Reset();
                 _session = 0;
+                _potions = -1;
                 _previousGameplayInput = false;
                 if (report) Speak(ModText.Get("vitals.unavailable"), true);
                 return;
@@ -66,8 +71,13 @@ internal static class VitalsAccessibility
             if (_session != snapshot.Session)
             {
                 Announcements.Reset();
+                _potions = -1;
                 _session = snapshot.Session;
             }
+            int potions = snapshot.Potions;
+            // The first readable charge count, or any count while announcements are off, is a silent baseline.
+            if (_potions < 0 || !_potionChanges.Value) _potions = potions;
+            string potionText = PotionText(snapshot);
             int health = VitalsAnnouncementState.Percent(snapshot.Health, snapshot.MaxHealth);
             int mana = VitalsAnnouncementState.Percent(snapshot.Mana, snapshot.MaxMana);
             var change = Announcements.Observe(health, mana, acknowledge: false);
@@ -76,15 +86,24 @@ internal static class VitalsAccessibility
                 string healthText = health < 0 ? ModText.Get("vitals.health_unavailable") : HealthText(health);
                 string manaText = snapshot.ManaReplaced ? ModText.Get("vitals.mana_replaced")
                     : mana < 0 ? ModText.Get("vitals.mana_unavailable") : ManaText(mana);
-                if (Speak(Join(healthText, manaText), true)) Announcements.Acknowledge(health, mana);
+                if (Speak(Join(Join(healthText, manaText), potionText), true))
+                {
+                    Announcements.Acknowledge(health, mana);
+                    _potions = potions;
+                }
             }
-            else if (_automatic.Value && change.HasContent)
+            else if (_automatic.Value && (change.HasContent || potions >= 0 && potions != _potions))
             {
+                bool potionChanged = potions >= 0 && potions != _potions;
                 // Keep critical damage audible even with a non-pausing menu open.
-                // Ordinary crossings queue through the existing speech sink.
-                if (Speak(Join(change.HealthPercent < 0 ? null : HealthText(change.HealthPercent),
-                    change.ManaPercent < 0 ? null : ManaText(change.ManaPercent)), change.Interrupt))
+                // Ordinary crossings and potion counts queue through the existing speech sink.
+                string vitals = Join(change.HealthPercent < 0 ? null : HealthText(change.HealthPercent),
+                    change.ManaPercent < 0 ? null : ManaText(change.ManaPercent));
+                if (Speak(Join(vitals, potionChanged ? potionText : null), change.Interrupt))
+                {
                     Announcements.Acknowledge(change.HealthPercent, change.ManaPercent);
+                    if (potionChanged) _potions = potions;
+                }
             }
         }
         catch (Exception ex)
@@ -98,6 +117,9 @@ internal static class VitalsAccessibility
 
     private static string HealthText(int percent) => ModText.Format("vitals.health", percent);
     private static string ManaText(int percent) => ModText.Format("vitals.mana", percent);
+    private static string PotionText(VitalsSnapshot snapshot) => snapshot.Potions < 0 ? null
+        : snapshot.MaxPotions > 0 ? ModText.Format("vitals.potions", snapshot.Potions, snapshot.MaxPotions)
+        : ModText.Format("vitals.potions_count", snapshot.Potions);
     private static string Join(string health, string mana) => string.IsNullOrEmpty(health) ? mana
         : string.IsNullOrEmpty(mana) ? health : health + ". " + mana;
 
@@ -112,6 +134,7 @@ internal static class VitalsAccessibility
     {
         Announcements.Reset();
         _session = 0;
+        _potions = -1;
         _nextPoll = 0;
         _previousGameplayInput = false;
     }
@@ -122,6 +145,7 @@ internal static class VitalsAccessibility
         _automatic = null;
         _reportKey = null;
         _controllerReport = null;
+        _potionChanges = null;
         _lastFailure = null;
         VitalsInput.Reset();
     }

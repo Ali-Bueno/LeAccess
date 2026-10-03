@@ -7,7 +7,7 @@ using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 namespace LeAccess.Accessibility.Vitals;
 
 internal readonly record struct VitalsSnapshot(long Session, double Health, double MaxHealth,
-    double Mana, double MaxMana, bool ManaReplaced);
+    double Mana, double MaxMana, bool ManaReplaced, int Potions = -1, int MaxPotions = -1);
 
 internal static class VitalsProbe
 {
@@ -18,6 +18,7 @@ internal static class VitalsProbe
         if (!scene.isLoaded) return false;
         BaseHealth health;
         BaseMana mana;
+        HealthPotionCharges potion;
         UnityEngine.Object player;
         if (GameplayEnvironment.IsOnlineClient)
         {
@@ -33,8 +34,10 @@ internal static class VitalsProbe
             player = visuals;
             health = local.playerHealth;
             mana = local.playerMana;
+            potion = local.healthPotion;
             if (!Owned(health, local.gameObject, scene)) health = null;
             if (!Owned(mana, local.gameObject, scene)) mana = null;
+            if (!Belongs(potion, local.gameObject, scene)) potion = null;
         }
         else
         {
@@ -43,6 +46,8 @@ internal static class VitalsProbe
             player = actor;
             health = actor.health;
             mana = actor.mana;
+            potion = actor.healthPotion;
+            if (!Belongs(potion, actor.gameObject, scene)) potion = null;
             if (!Owned(health, actor.gameObject, scene) || !IsAlive(health.actor) ||
                 health.actor.Pointer != actor.Pointer) health = null;
             if (!Owned(mana, actor.gameObject, scene)) mana = null;
@@ -65,8 +70,14 @@ internal static class VitalsProbe
             }
         }
         if (double.IsNaN(currentHealth) && double.IsNaN(currentMana) && !replaced) return false;
+        int potions = -1, maxPotions = -1;
+        if (IsAlive(potion) && potion.currentCharges >= 0)
+        {
+            potions = potion.currentCharges;
+            maxPotions = potion.maxCharges > 0 ? potion.maxCharges : -1;
+        }
         long session = ((long)(int)scene.handle << 32) | (uint)player.GetInstanceID();
-        snapshot = new VitalsSnapshot(session, currentHealth, maxHealth, currentMana, maxMana, replaced);
+        snapshot = new VitalsSnapshot(session, currentHealth, maxHealth, currentMana, maxMana, replaced, potions, maxPotions);
         return true;
     }
 
@@ -75,4 +86,8 @@ internal static class VitalsProbe
 
     private static bool Owned(Behaviour component, GameObject owner, Scene scene) =>
         Available(component, scene) && component.transform.IsChildOf(owner.transform);
+
+    // Potion charges are data on the player; the component need not be enabled to hold them.
+    private static bool Belongs(Component component, GameObject owner, Scene scene) => IsAlive(component) &&
+        (int)component.gameObject.scene.handle == (int)scene.handle && component.transform.IsChildOf(owner.transform);
 }

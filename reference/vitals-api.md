@@ -22,12 +22,23 @@ Downward crossings at 10 percent or less interrupt speech; other crossings queue
 Ordinary chip damage within a band is silent. Zero health remains eligible.
 
 During gameplay, press unmodified **R** or controller **Back/View** to read both
-percentages immediately, including when automatic reading is disabled. Holding
+percentages and potion charges immediately, including when automatic reading is disabled. Holding
 the control does not repeat. The shortcut is ignored while typing, using the
 screen keyboard or navigating menus. A View press that opens a native menu in the
 same frame as leaving gameplay can still report; it is never deferred until
 the menu closes. The mod passively observes these controls, so any native binding
 also runs. Controller hardware/template behavior still needs a live test.
+
+## Health potion charges
+
+Ported from D2R's belt reader. The report appends "Potions N of M" from
+`HealthPotionCharges.currentCharges`/`maxCharges`: offline `Actor.healthPotion`,
+online `LocalPlayer.healthPotion`, accepted only on the same player hierarchy
+and scene (the component need not be enabled). With automatic reading on, a
+changed count (use or pickup) queues the same text, joined to any vitals
+crossing in that sample; the first readable count and each new session are a
+silent baseline, and rejected output retries with the current count.
+`AnnouncePotionCharges = false` silences the automatic part only.
 
 Settings are created on the next launch in `BepInEx/config/LeAccess.cfg`:
 
@@ -36,6 +47,7 @@ Settings are created on the next launch in `BepInEx/config/LeAccess.cfg`:
 AutomaticAnnouncements = true
 ReportKey = R
 ReportWithControllerView = true
+AnnouncePotionCharges = true
 ```
 
 Use `None` for no keyboard shortcut, or disable controller reporting separately.

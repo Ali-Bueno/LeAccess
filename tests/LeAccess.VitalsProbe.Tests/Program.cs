@@ -12,6 +12,20 @@ actor.health = Health(actor.gameObject, actor);
 actor.mana = Mana(actor.gameObject);
 PlayerFinder.playerActorComponent = actor;
 Check(VitalsProbe.TryRead(out var snapshot), "offline valid");
+Check(snapshot.Potions == -1 && snapshot.MaxPotions == -1, "missing potion reads unknown charges");
+actor.healthPotion = new HealthPotion { gameObject = actor.gameObject, isActiveAndEnabled = false };
+Check(VitalsProbe.TryRead(out snapshot) && snapshot.Potions == 3 && snapshot.MaxPotions == 4,
+    "owned potion charges read even while the component is disabled");
+actor.healthPotion.maxCharges = 0;
+Check(VitalsProbe.TryRead(out snapshot) && snapshot.Potions == 3 && snapshot.MaxPotions == -1, "invalid maximum omitted");
+actor.healthPotion.currentCharges = -1;
+Check(VitalsProbe.TryRead(out snapshot) && snapshot.Potions == -1, "negative charges unknown");
+actor.healthPotion = new HealthPotion();
+Check(VitalsProbe.TryRead(out snapshot) && snapshot.Potions == -1, "foreign potion hierarchy excluded");
+actor.healthPotion = new HealthPotion { gameObject = actor.gameObject, Destroyed = true };
+Check(VitalsProbe.TryRead(out snapshot) && snapshot.Potions == -1 && snapshot.Health == 76.5,
+    "destroyed potion does not hide vitals");
+actor.healthPotion = null;
 Check(snapshot.Health == 76.5 && snapshot.MaxHealth == 100 && snapshot.Mana == 40.5 && snapshot.MaxMana == 80,
     "offline raw fractional fields");
 long offlineSession = snapshot.Session;
@@ -67,6 +81,12 @@ var visuals = new ActorVisuals { actorSync = sync };
 PlayerFinder.Local = local; PlayerFinder.playerActorVisuals = visuals;
 Check(VitalsProbe.TryRead(out snapshot) && snapshot.Health == 76.5 && snapshot.Mana == 40.5,
     "online exact local components");
+Check(snapshot.Potions == -1, "online missing potion unknown");
+local.healthPotion = new HealthPotionCharges { gameObject = local.gameObject, currentCharges = 1 };
+Check(VitalsProbe.TryRead(out snapshot) && snapshot.Potions == 1 && snapshot.MaxPotions == 4, "online local potion charges");
+local.healthPotion = new HealthPotionCharges();
+Check(VitalsProbe.TryRead(out snapshot) && snapshot.Potions == -1, "online foreign potion excluded");
+local.healthPotion = null;
 Check(snapshot.Session != offlineSession, "online player session distinct");
 local.playerHealth.currentHealth = 0;
 Check(VitalsProbe.TryRead(out snapshot) && snapshot.Health == 0, "online death zero");

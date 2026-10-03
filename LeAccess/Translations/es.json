@@ -46,6 +46,8 @@
   "vitals.health_unavailable": "Vida no disponible",
   "vitals.mana_unavailable": "Maná no disponible",
   "vitals.mana_replaced": "Maná sustituido por furia",
+  "vitals.potions": "Pociones {0} de {1}",
+  "vitals.potions_count": "Pociones {0}",
   "landmark.nearby": "Cerca: {0}",
   "map.section.oldroad_bridge_1": "Puente de madera 1",
   "map.section.oldroad_bridge_2": "Puente de madera 2",
