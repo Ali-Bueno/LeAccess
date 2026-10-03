@@ -22,8 +22,11 @@ internal static class CharacterTileTests
         tile.hardcoreTag.Active = false;
         Check(CharacterTileReader.TryRead(root, out text) && text == "Ali. Nivel 40 Paladín. Temporada", "inactive hardcore tag is not spoken");
         Check(!CharacterTileReader.TryRead(new GameObject(), out _), "non-tile control is not read as a character tile");
-        Check(TextUtils.ReadableObjectName("Close Button") == null && TextUtils.ReadableObjectName("Toggle(Clone)") == null,
-            "generic icon-only object names are never spoken");
+        Check(TextUtils.ReadableObjectName("Button") == null && TextUtils.ReadableObjectName("Toggle(Clone)") == null &&
+            TextUtils.ReadableObjectName("Image (1)") == null && TextUtils.ReadableObjectName("BtnButton") == null,
+            "bare role words are never spoken");
+        Check(TextUtils.ReadableObjectName("CloseButton") == "Close" && TextUtils.ReadableObjectName("Confirm Btn") == "Confirm" &&
+            TextUtils.ReadableObjectName("BackButton(Clone)") == "Back", "role words are stripped from icon-only names");
         Check(TextUtils.ReadableObjectName("SpecialOfferPanel") == "Special Offer Panel", "specific object names remain usable");
         return checks;
     }

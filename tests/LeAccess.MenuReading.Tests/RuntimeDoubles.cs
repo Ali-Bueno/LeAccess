@@ -120,7 +120,7 @@ namespace TMPro
     { public string text; public float alpha { get => color.a; set => color = new() { a = value }; } }
     public class TextMeshProUGUI : TMP_Text { }
     public class TMP_InputField : UnityEngine.UI.Selectable { public string text; public UnityEngine.Component placeholder; }
-    public class TMP_Dropdown : UnityEngine.UI.Selectable { public TMP_Text captionText; }
+    public class TMP_Dropdown : UnityEngine.UI.Selectable { public TMP_Text captionText; public int value; }
 }
 namespace UnityEngine.UI
 {

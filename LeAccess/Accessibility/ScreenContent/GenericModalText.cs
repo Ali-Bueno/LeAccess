@@ -12,7 +12,10 @@ namespace LeAccess.Accessibility.ScreenContent;
 internal sealed class GenericModalText
 {
     private readonly GameObject _root;
+    // Bounds the per-frame template search while a modal opens (about two seconds at 60 fps).
+    private const int MaxLateResolveAttempts = 120;
     private bool _resolved;
+    private int _attempts;
     private TMP_Text _title;
     private TMP_Text _message;
 
@@ -20,6 +23,7 @@ internal sealed class GenericModalText
 
     internal string ReadOpening()
     {
+        _resolved = false; _attempts = 0;
         Resolve();
         return ScreenContentReader.Read(_root, _title, _message, include: IsStatic);
     }
@@ -45,15 +49,18 @@ internal sealed class GenericModalText
     // ConfirmationModalBase fills its single IModalTemplate through SetTitle/SetMessage.
     private void Resolve()
     {
-        if (_resolved || !UiVisibility.IsVisible(_root)) return;
-        _resolved = true;
+        if (!UiVisibility.IsVisible(_root)) return;
+        if (_resolved && IsAlive(_title) && IsAlive(_message) && _title.gameObject.activeInHierarchy) return;
+        if (_attempts++ >= MaxLateResolveAttempts) return;
+        _title = _message = null;
         int count = 0;
         TMP_Text title = null, message = null;
         foreach (var template in _root.GetComponentsInChildren<LE.UI.PanelSystem.ModalTemplate>(false))
             if (IsAlive(template) && ++count == 1) { title = template._title; message = template._message; }
         foreach (var template in _root.GetComponentsInChildren<LE.UI.Components.ModalTemplate>(false))
             if (IsAlive(template) && ++count == 1) { title = template._title; message = template._message; }
-        if (count != 1) return;
+        if (count != 1) { _resolved = false; return; }
+        _resolved = true;
         _title = title;
         _message = message;
     }

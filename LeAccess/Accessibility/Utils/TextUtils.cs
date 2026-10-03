@@ -43,11 +43,17 @@ public static class TextUtils
         return System.Text.RegularExpressions.Regex.Replace(name, "([a-z])([A-Z])", "$1 $2").Trim();
     }
 
-    /// <summary>Returns the cleaned object name, or null when it is only a generic widget name.</summary>
+    private static readonly System.Text.RegularExpressions.Regex RoleWords = new(
+        @"\b(button|btn|toggle|slider|dropdown|background|image|icon|content|viewport|scroll|mask)\b|\(\d+\)",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+    /// <summary>Returns the cleaned object name without generic role words, or null when nothing meaningful remains.</summary>
     public static string ReadableObjectName(string rawName)
     {
         string name = CleanObjectName(rawName);
-        return IsGenericName(name) ? null : name;
+        if (string.IsNullOrEmpty(name)) return null;
+        name = System.Text.RegularExpressions.Regex.Replace(RoleWords.Replace(name, " "), @"\s+", " ").Trim();
+        return name.Length <= 2 ? null : name;
     }
 
     /// <summary>

@@ -124,4 +124,13 @@ Check(SettingsValueSpeech.Plan(true,"Volumen","60","Volumen","70","Volumen: 70")
 Check(SettingsValueSpeech.Plan(false,"Volumen","60","Música","30","Música: 30")=="Música: 30","different control speaks label and value");
 Check(SettingsValueSpeech.Plan(true,"Volumen","60","Música","30","Música: 30")=="Música: 30","changed label speaks everything");
 Check(SettingsValueSpeech.Plan(true,null,null,null,"On","On")=="On","unlabelled control falls back to full text");
+var gate=new SettingsValueGate();int rebuilds=0,spoken=0;double volume=50;
+void Frame(){if(gate.Changed(7,volume)){rebuilds++;spoken++;}}
+Frame();for(int i=0;i<30;i++)Frame();
+Check(rebuilds==0,"unchanged frames never rebuild the announcement");
+foreach(double v in new[]{51d,52d,53d}){volume=v;Frame();Frame();}
+Check(rebuilds==3,"each burst change rebuilds exactly once, so the final value is spoken");
+Check(!gate.Changed(8,1),"newly focused control is not a value change");
+Check(gate.Changed(8,2),"later change on the same control is a value change");
+Check(!gate.Changed(8,null)&&!gate.Changed(8,2),"unknown control signature resets the gate");
 Console.WriteLine($"Passed {checks} settings focus checks.");

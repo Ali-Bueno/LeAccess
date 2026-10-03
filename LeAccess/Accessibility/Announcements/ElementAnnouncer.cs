@@ -27,6 +27,7 @@ public static class ElementAnnouncer
     private static string _lastAnnouncementText;
     private static GameObject _pendingFocus;
     private const float AnnounceCooldown = 0.15f;
+    private static readonly Settings.SettingsValueGate ValueGate = new();
     private static string _builtLabel, _builtValue, _lastLabel, _lastValue;
 
     // Track toggle changes to announce state updates
@@ -51,6 +52,7 @@ public static class ElementAnnouncer
     {
         _lastAnnouncedInstanceId = 0;
         _lastAnnouncementText = null;
+        ValueGate.Reset();
         _cachedFocusedGo = null;
         _cachedFocusedId = 0;
     }
@@ -90,7 +92,8 @@ public static class ElementAnnouncer
 
         bool hasContext = !string.IsNullOrWhiteSpace(context);
         bool sameControl = instanceId == _lastAnnouncedInstanceId;
-        if (!hasContext && !speakValueChanges && sameControl && (now - _lastAnnounceTime) < AnnounceCooldown)
+        bool valueChanged = speakValueChanges && ValueGate.Changed(instanceId, ReadValueSignature(go));
+        if (!hasContext && !valueChanged && sameControl && (now - _lastAnnounceTime) < AnnounceCooldown)
             return;
 
         if (instanceId != _lastAnnouncedInstanceId) _lastAnnouncementText = null;
@@ -111,6 +114,19 @@ public static class ElementAnnouncer
             _lastAnnouncementText = text;
             ScreenReader.Speak(ScreenContentTracker.Combine(new[] { context, spoken }), interrupt);
         }
+    }
+
+    // Cheap per-frame stand-in for the control's value; null when no known value control.
+    private static double? ReadValueSignature(GameObject go)
+    {
+        var slider = go.GetComponent<Slider>() ?? go.GetComponentInChildren<Slider>();
+        if (slider != null) return slider.value;
+        var toggle = go.GetComponent<Toggle>() ?? go.GetComponentInChildren<Toggle>();
+        if (toggle != null) return toggle.isOn ? 1 : 0;
+        var dropdown = go.GetComponent<TMP_Dropdown>() ?? go.GetComponentInChildren<TMP_Dropdown>();
+        if (dropdown != null) return dropdown.value;
+        var chatToggle = go.GetComponent<ChatToggleField>();
+        return chatToggle != null ? (chatToggle.IsActive ? 1 : 0) : null;
     }
 
     internal static void FlushPendingFocus()

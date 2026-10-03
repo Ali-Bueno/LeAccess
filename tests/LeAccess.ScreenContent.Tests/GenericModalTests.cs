@@ -107,6 +107,25 @@ internal static class GenericModalTests
         check(ScreenReader.Messages.Count == 1, "A generic modal without typed header/body never rereads");
 
         ScreenContentAnnouncer.Reset(); ScreenReader.Messages.Clear();
+        var late = Build(new GenericNativeModal(), 0);
+        Focus(late.Panel); Frames();
+        int lateBase = ScreenReader.Messages.Count;
+        late.Message.text = "Before template."; Frames();
+        late.Title.gameObject.Parent.Add(new LE.UI.PanelSystem.ModalTemplate { _title = late.Title, _message = late.Message });
+        late.Message.text = "After template."; Frames();
+        check(ScreenReader.Messages.Count == lateBase + 1 && ScreenReader.Messages.Last().Text.EndsWith("After template."),
+            "A template that appears after the first frame is still resolved for header changes");
+        var replacement = Label(late.Root, "New title");
+        var newMessage = Label(late.Root, "New body.");
+        late.Title.gameObject.Parent.Active = false;
+        late.Root.Add(new LE.UI.PanelSystem.ModalTemplate { _title = replacement, _message = newMessage });
+        late.Root.Visible = false; Frames();
+        late.Root.Visible = true; Frames();
+        newMessage.text = "Newer body."; Frames();
+        check(ScreenReader.Messages.Last().Text.Contains("Newer body."),
+            "A re-instantiated template is re-resolved on the next opening");
+
+        ScreenContentAnnouncer.Reset(); ScreenReader.Messages.Clear();
         var warning = Build(new WarningConfirmationModal(), 1);
         Focus(warning.Panel); Frames();
         check(ScreenReader.Messages.SingleOrDefault().Text ==

@@ -25,3 +25,20 @@ internal static class SettingsValueSpeech
         sameControl && !string.IsNullOrEmpty(label) && label == lastLabel &&
         !string.IsNullOrEmpty(value) && value != lastValue ? value : fullText;
 }
+
+/// <summary>Detects a focused control's value change from a cheap signature, so unchanged frames skip the full rebuild.</summary>
+internal sealed class SettingsValueGate
+{
+    private int _id;
+    private double _signature;
+
+    internal bool Changed(int id, double? signature)
+    {
+        if (signature is null) { _id = 0; return false; }
+        bool changed = _id == id && _signature != signature.Value;
+        _id = id; _signature = signature.Value;
+        return changed;
+    }
+
+    internal void Reset() => _id = 0;
+}
