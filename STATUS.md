@@ -21,6 +21,9 @@ Startup, online play and listening on this build still need in-game validation.
 
 ## Next checks and remaining scope
 
+**Claude handoff:** [WHATS_NEXT.md](WHATS_NEXT.md) records the verified starting
+point, next investigations and working constraints requested by the user.
+
 **The user tests independently; do not launch the game without a new request.**
 First check startup/NVDA reconnect during quest/vitals changes, forge manual
 preview/unavailable reasons, and leaving/re-entering an active Morditas gauntlet
