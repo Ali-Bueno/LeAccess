@@ -1,5 +1,6 @@
 namespace UnityEngine
 {
+    public static class Time { public static int frameCount; }
     public class Object
     {
         private static int next;

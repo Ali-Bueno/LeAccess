@@ -29,14 +29,33 @@ internal static class WaypointReader
         if (!IsAlive(waypoint) || !UiVisibility.IsVisible(waypoint.gameObject)) return null;
         string name = ReadName(waypoint);
         if (name is null) return null;
-        var indicators = waypoint.questIndicators;
         var fragments = new List<string> { name };
-        if (waypoint.GetIsPlayerHere()) fragments.Add(ModText.Get("waypoint.here"));
-        if (!waypoint.GetIsActive()) fragments.Add(ModText.Get("waypoint.locked"));
-        if (IsAlive(indicators))
-            AddQuests(fragments, indicators.hasActiveMainQuest, indicators.hasActiveSideQuest,
-                indicators.hasPotentialMainQuest, indicators.haPotentialSideQuest);
+        fragments.AddRange(WaypointStates(waypoint));
         return fragments;
+    }
+
+    /// <summary>Here, locked and quest markers of a waypoint, without its name.</summary>
+    internal static List<string> WaypointStates(UIWaypoint waypoint)
+    {
+        var states = new List<string>();
+        if (waypoint.GetIsPlayerHere()) states.Add(ModText.Get("waypoint.here"));
+        if (!waypoint.GetIsActive()) states.Add(ModText.Get("waypoint.locked"));
+        var indicators = waypoint.questIndicators;
+        if (IsAlive(indicators))
+            AddQuests(states, indicators.hasActiveMainQuest, indicators.hasActiveSideQuest,
+                indicators.hasPotentialMainQuest, indicators.haPotentialSideQuest);
+        return states;
+    }
+
+    /// <summary>Here and quest markers of a region, without its name or count.</summary>
+    internal static List<string> RegionStates(UIWaypointRegion region)
+    {
+        var states = new List<string>();
+        if (IsAlive(region.playerLocation) && UiVisibility.IsVisible(region.playerLocation))
+            states.Add(ModText.Get("waypoint.here"));
+        AddQuests(states, region.hasActiveMainQuest, region.hasActiveSideQuest,
+            region.hasPotentialMainQuest, region.haPotentialSideQuest);
+        return states;
     }
 
     private static List<string> TryReadRegion(GameObject go)
@@ -46,10 +65,7 @@ internal static class WaypointReader
         string name = ReadLabel(region.regionLabel);
         if (name is null) return null;
         var fragments = new List<string> { name, ReadLabel(region.locationCountLabel) };
-        if (IsAlive(region.playerLocation) && UiVisibility.IsVisible(region.playerLocation))
-            fragments.Add(ModText.Get("waypoint.here"));
-        AddQuests(fragments, region.hasActiveMainQuest, region.hasActiveSideQuest,
-            region.hasPotentialMainQuest, region.haPotentialSideQuest);
+        fragments.AddRange(RegionStates(region));
         return fragments;
     }
 
@@ -74,6 +90,6 @@ internal static class WaypointReader
         return IsAlive(popup) ? ReadLabel(popup.description) : null;
     }
 
-    private static string ReadLabel(TMP_Text label) =>
+    internal static string ReadLabel(TMP_Text label) =>
         TextUtils.IsVisibleLabel(label) ? TextUtils.CleanText(label.text) : null;
 }

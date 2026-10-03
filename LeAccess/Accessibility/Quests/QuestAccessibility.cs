@@ -17,6 +17,10 @@ internal static class QuestAccessibility
     private static string _detailsKey;
 
     internal static bool HasActiveContent { get; private set; }
+    private static string _selectionKey;
+    private static int _selectionChangedFrame = -1;
+    // The world map applies a newly selected quest's location in the same or the next frame.
+    internal static bool SelectionChangedRecently => _selectionChangedFrame >= 0 && Time.frameCount - _selectionChangedFrame <= 1;
     internal static bool HasPendingContent => HasActiveContent && (Announcements.HasPendingContent || _detailsKey != null);
 
     internal static bool TryHandleFocus(GameObject element)
@@ -45,6 +49,7 @@ internal static class QuestAccessibility
             if (!QuestSelectionReader.TryRead(GetGenerator(), out var selection))
             { ClearSelection(); return; }
             HasActiveContent = true;
+            if (_selectionKey != selection.Key) { _selectionKey = selection.Key; _selectionChangedFrame = Time.frameCount; }
             if (_detailsKey != selection.Key) _detailsKey = null;
             bool prepared = Announcements.Observe(selection.Key, selection.Summary, selection.Objectives,
                 ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame,
@@ -147,7 +152,7 @@ internal static class QuestAccessibility
         if (IsAlive(panel) && IsAlive(panel.buttonGenerator)) { _generator = panel.buttonGenerator; return; }
     }
 
-    private static void ClearSelection() { Announcements.Reset(); _detailsKey = null; HasActiveContent = false; }
+    private static void ClearSelection() { Announcements.Reset(); _detailsKey = _selectionKey = null; HasActiveContent = false; }
     internal static void Reset() { ClearSelection(); _generator = null; _lastFailure = null; }
     private static void ReportFailure(Exception ex)
     {

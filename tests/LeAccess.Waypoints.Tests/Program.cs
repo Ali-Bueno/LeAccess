@@ -1,3 +1,4 @@
+using LeAccess.Accessibility;
 using LeAccess.Accessibility.Map;
 using LeAccess.I18n;
 using LE.UI.PanelSystem;
@@ -75,4 +76,48 @@ mapPanel.waypointDescriptionPopup.description.alpha = 1;
 var detached = Waypoint(worldRoot.Child(), "Torre");
 Check(Read(detached.gameObject, true) == "Torre. Misión: Atrapado", "world map panel owner reaches the popup");
 
+// Map selection poller.
+var mapObject = new GameObject();
+var map = mapObject.Add(new MapPanel
+{
+    mapTitle = Label(mapObject, "Era Antigua"), selectedLocationLabel = Label(mapObject, "Ciudad Eterna"),
+    selectedLocationLevelLabel = Label(mapObject, "Nivel 10"), focusedSceneID = "EoT"
+});
+var controller = mapObject.Add(new UIWaypointController());
+map.eras.Add(new MapPanel.UIEra { waypointController = controller });
+var here = Waypoint(mapObject.Child(), "Ciudad Eterna").Also(w => { w.sceneName = "EoT"; w.playerIsHere = true; });
+controller.waypointsInMenu.Add(here);
+var regionObject = mapObject.Child();
+var mapRegion = regionObject.Add(new UIWaypointRegion { regioniName = "Eterra", hasActiveSideQuest = true });
+controller.regionsInMenu.Add(mapRegion);
+void Frame(bool quest = false) { ScreenReader.SpokeThisFrame = false; MapSelectionAnnouncer.Update(map, quest); }
+void Reset() { ScreenReader.Messages.Clear(); MapSelectionAnnouncer.Reset(); }
+Reset(); Frame();
+Check(ScreenReader.Messages.Count == 1 && ScreenReader.Messages[0].Text == "Era Antigua. Ciudad Eterna. Nivel 10. Estás aquí" &&
+    ScreenReader.Messages[0].Interrupt, "opening the map speaks the era, selection, level and waypoint states");
+Frame();
+Check(ScreenReader.Messages.Count == 1, "unchanged selection is silent");
+map.selectedLocationLabel.text = "Puerto"; map.focusedSceneID = "Port";
+Frame();
+Check(ScreenReader.Messages[^1].Text == "Puerto. Nivel 10", "new location without a matching waypoint speaks label and level only");
+map.focusedSceneID = null; map.focusedRegionID = "Eterra"; map.selectedLocationLabel.text = "Eterra";
+Frame();
+Check(ScreenReader.Messages[^1].Text == "Eterra. Nivel 10. Misión secundaria activa", "focused region speaks its quest states");
+int count = ScreenReader.Messages.Count;
+map.selectedLocationLabel.text = "Otra"; Frame(quest: true);
+Check(ScreenReader.Messages.Count == count + 1 && ScreenReader.Messages[^1].Text.StartsWith("Otra. Nivel 10") &&
+    !ScreenReader.Messages[^1].Interrupt, "quest-driven selection queues its location after the quest brief");
+Frame();
+Check(ScreenReader.Messages.Count == count + 1, "quest-driven change is not repeated afterwards");
+count = ScreenReader.Messages.Count;
+map.selectedLocationLabel.text = "Nueva"; ScreenReader.SpokeThisFrame = true; MapSelectionAnnouncer.Update(map, false);
+Check(ScreenReader.Messages.Count == count, "focus path speech in the same frame is not doubled");
+map.CurrentEra = SceneList.Era.Divine; map.mapTitle.text = "Era Divina"; Frame();
+Check(ScreenReader.Messages[^1].Text.StartsWith("Era Divina."), "era change speaks the new map title");
+count = ScreenReader.Messages.Count;
+mapObject.Active = false; Frame(); mapObject.Active = true; Frame();
+Check(ScreenReader.Messages.Count == count + 1, "closing the map resets so reopening announces again");
+
 Console.WriteLine($"Waypoint tests passed: {checks} checks");
+
+static class Extensions { internal static T Also<T>(this T value, Action<T> action) { action(value); return value; } }

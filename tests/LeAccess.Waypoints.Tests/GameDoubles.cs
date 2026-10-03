@@ -8,16 +8,45 @@ internal class UIWaypoint : Component
     internal GameObject label;
     internal bool isActive = true, playerIsHere;
     internal WaypointQuestIndicators questIndicators;
+    internal string sceneName;
     internal bool GetIsActive() => isActive;
+    internal bool representsSceneInEra(string scene, SceneList.Era era) => sceneName == scene;
     internal bool GetIsPlayerHere() => playerIsHere;
 }
 internal sealed class UIWaypointStandard : UIWaypoint { internal TextMeshProUGUI locationLabel; }
 internal sealed class UIWaypointRegion : Component
 {
+    internal string regioniName;
     internal TextMeshProUGUI regionLabel, locationCountLabel;
     internal GameObject playerLocation;
     internal bool hasActiveMainQuest, hasActiveSideQuest, hasPotentialMainQuest, haPotentialSideQuest;
 }
 internal sealed class WaypointDescriptionPopup : Component { internal TextMeshProUGUI description; }
-internal sealed class MapPanel : Component { internal WaypointDescriptionPopup waypointDescriptionPopup; }
+internal static class SceneList { internal enum Era { Ancient, Divine } }
+internal sealed class UIWaypointController : Component
+{
+    internal Il2CppSystem.Collections.Generic.List<UIWaypoint> waypointsInMenu = new();
+    internal Il2CppSystem.Collections.Generic.List<UIWaypointRegion> regionsInMenu = new();
+}
+internal sealed class MapPanel : Component
+{
+    internal sealed class UIEra : NativeObject { internal UIWaypointController waypointController; }
+    internal WaypointDescriptionPopup waypointDescriptionPopup;
+    internal TextMeshProUGUI mapTitle, selectedLocationLabel, selectedLocationLevelLabel;
+    internal SceneList.Era CurrentEra;
+    internal string focusedSceneID, focusedRegionID;
+    internal Il2CppSystem.Collections.Generic.List<UIEra> eras = new();
+    internal string GetFocusedSceneID() => focusedSceneID;
+    internal string GetFocusedRegionID() => focusedRegionID;
+}
+namespace Il2CppSystem.Collections.Generic
+{
+    internal class List<T> : NativeObject
+    {
+        private readonly System.Collections.Generic.List<T> _values = new();
+        internal int Count => _values.Count;
+        internal T this[int index] => _values[index];
+        internal void Add(T item) => _values.Add(item);
+    }
+}
 namespace LE.UI.PanelSystem { internal sealed class WorldMapPanel : Component { internal MapPanel _mapPanel; } }

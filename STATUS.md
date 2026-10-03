@@ -71,6 +71,7 @@ requested. No release or new ZIP has been requested.
 | Classes/masteries/realm | Character-select tiles read name, level/mastery, cycle and hardcore tag. Season/legacy labels; descriptions manual. Disabled retained carousel and background mastery rejected. 102 checks; listening pending. |
 | Skills/assigned buttons | Verified assignments and learned/unlock state; rejected briefs/details retry the current owned selection. 189 checks; listening pending. |
 | Passive nodes | Native name/description; empty names retry at a bounded rate, rejected details rebuild while selection remains owned. 107 checks; listening pending. |
+| World map/waypoints | Map selection (cursor, region or quest) reads location, level, "here", locked and quest markers; quest-driven moves queue after the brief. Waypoint/region focus uses the same typed reader. 26 checks; whether controller focus reaches waypoints needs a live check. [Details](reference/waypoint-map.md) |
 | Quest journal | Current state/objectives and manual history retained; rejected briefs/details retry only while selection remains owned. 136 checks; listening pending. |
 | Automatic quest updates | Failed output preserves current pending changes, shared pacing and fair turns with dynamic objectives. 116 checks. [Evidence](reference/quest-updates.md). Listening pending. |
 | Character name editing | User confirms the latest typing/return fix works. Circle keeps the name; physical entry and owned device transitions retain focus. Eight hooks, 160 checks. |

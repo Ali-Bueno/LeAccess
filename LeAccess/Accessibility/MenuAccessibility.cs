@@ -15,6 +15,7 @@ using LeAccess.Accessibility.Zones;
 using LeAccess.Accessibility.Skills;
 using LeAccess.Accessibility.WorldCues;
 using LeAccess.Accessibility.Passives;
+using LeAccess.Accessibility.Map;
 using LeAccess.Accessibility.Quests;
 using LeAccess.Accessibility.Vitals;
 using LeAccess.Accessibility.Landmarks;
@@ -60,6 +61,7 @@ public class MenuAccessibility : MonoBehaviour
         if (SettingsFocusAnnouncer.Update()) _lastPolledSelection = 0;
         else PollSelectedControl();
         ElementAnnouncer.FlushPendingFocus();
+        MapSelectionAnnouncer.Update(OpenWorldMap.Find(), QuestAccessibility.SelectionChangedRecently);
         CharacterNameAccessibility.Update();
         InventoryAccessibility.Update(readDetails);
         if (readDetails && !SkillAccessibility.HasActiveContent && !InventoryAccessibility.HasActiveContent)

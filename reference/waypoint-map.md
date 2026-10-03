@@ -33,8 +33,29 @@ quest buttons. `MapPanel` is itself a navigable (`HandleNavigateInput`, `SelectR
 quest reference shows it moves quest selection without focusing a descendant, so waypoint
 navigation may likewise bypass `Selectable` focus.
 
+## Selection poller (controller navigation)
+
+`MapSelectionAnnouncer.Update(map, questMoved)` runs from `MenuAccessibility.LateUpdate`
+after `FlushPendingFocus`. `OpenWorldMap.Find()` resolves the map from the registered
+`NavigableID.WORLD_MAP_PANEL` navigable (`WorldMapPanel._mapPanel`), no scene search.
+
+- Change key: `GetFocusedSceneID()`, `GetFocusedRegionID()` and the `selectedLocationLabel` text.
+  Speaks the label and `selectedLocationLevelLabel` as displayed, then `WaypointReader` states
+  of the `UIWaypoint` where `representsSceneInEra(scene, CurrentEra)` (searched through
+  `eras[].waypointController.waypointsInMenu`), else of the `UIWaypointRegion` whose
+  `regioniName` equals the focused region id.
+- `mapTitle` is spoken with the first selection after opening and whenever `CurrentEra`
+  changes (the quest reader never reads it).
+- Quest-driven moves: when the selected quest changed in this or the previous frame
+  (`QuestAccessibility.SelectionChangedRecently`), the location is queued after the quest brief
+  instead of interrupting it. `HasActiveContent` cannot be used: the map always owns a selected
+  quest, so it stays true while the map is open.
+- A selection already spoken by the focus path in the same frame is recorded, not doubled.
+- A closed or hidden map resets state, so reopening announces again.
+
 ## Needs live verification
 
+- Whether `regioniName` equals `focusedRegionID`, and that `selectedLocationLabel` updates the same frame as the focused ids.
 - Which object `UiFocusOwnership.TryGetSelected` returns on the map with the controller: is
   it inside a `UIWaypoint`/`UIWaypointRegion`? If not, add a hook on `MapPanel.SelectLocation`
   / `FocusOnRegion` (or poll `focusedSceneID`/`focusedRegionID`) feeding the same reader.
@@ -44,4 +65,4 @@ navigation may likewise bypass `Selectable` focus.
 - Whether quest flags are set while the indicators are hidden (`ShowIndicators(false)`).
 - Whether the description popup is open for the focused waypoint on controller.
 
-Tests: `tests/LeAccess.Waypoints.Tests` (17 checks, doubles only).
+Tests: `tests/LeAccess.Waypoints.Tests` (26 checks, doubles only).
