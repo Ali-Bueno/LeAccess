@@ -41,6 +41,7 @@ internal class MasteryButton : Component
 }
 internal class CharacterTile : Component
 { internal TextMeshProUGUI charName, charLvlAndMastery, charCycle; internal GameObject hardcoreTag; }
+internal class CharacterStatDisplayLineItem : Component { internal TMP_Text _statValueDisplay; }
 internal class MasteryButtonTooltip : Component { internal string masteryName; }
 internal class MultiButtonsActionPrompt : Component { }
 internal class InputDependantPrompt : Component { }

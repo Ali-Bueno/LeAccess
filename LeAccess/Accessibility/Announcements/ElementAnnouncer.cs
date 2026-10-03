@@ -1,3 +1,4 @@
+using LeAccess.Accessibility.CharacterSheet;
 using LeAccess.I18n;
 using ChatView;
 using LeAccess.Accessibility.CharacterCreation;
@@ -242,6 +243,7 @@ public static class ElementAnnouncer
             return merchantTab;
         if (CharacterTileReader.TryRead(go, out string tileText)) return tileText;
         if (WaypointReader.TryRead(go, includeDetails, out string waypointText)) return waypointText;
+        if (CharacterStatLineReader.TryRead(go, out string statText)) return statText;
         if (ClassSelectionReader.TryReadControl(go, out var classSelection))
             return string.IsNullOrWhiteSpace(classSelection.Name) ? null :
                 ScreenContentTracker.Combine(new[] { classSelection.Name, includeDetails ? classSelection.Description : null });

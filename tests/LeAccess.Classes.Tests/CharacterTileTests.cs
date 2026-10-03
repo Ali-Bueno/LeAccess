@@ -1,4 +1,5 @@
 using LeAccess.Accessibility.CharacterCreation;
+using LeAccess.Accessibility.CharacterSheet;
 using LeAccess.Accessibility.Utils;
 using TMPro;
 using UnityEngine;
@@ -28,6 +29,16 @@ internal static class CharacterTileTests
         Check(TextUtils.ReadableObjectName("CloseButton") == "Close" && TextUtils.ReadableObjectName("Confirm Btn") == "Confirm" &&
             TextUtils.ReadableObjectName("BackButton(Clone)") == "Back", "role words are stripped from icon-only names");
         Check(TextUtils.ReadableObjectName("SpecialOfferPanel") == "Special Offer Panel", "specific object names remain usable");
+
+        var statRoot = new GameObject();
+        var line = statRoot.Add(new CharacterStatDisplayLineItem());
+        statRoot.Child().Add(new TextMeshProUGUI { text = "Armadura" });
+        line._statValueDisplay = statRoot.Child().Add(new TextMeshProUGUI { text = "1250" });
+        var focused = statRoot.Child();
+        Check(CharacterStatLineReader.TryRead(focused, out text) && text == "Armadura. 1250", "stat line reads its name then its typed value");
+        line._statValueDisplay.text = "";
+        Check(!CharacterStatLineReader.TryRead(focused, out _), "a stat line without a value falls back to the generic reader");
+        Check(!CharacterStatLineReader.TryRead(new GameObject(), out _), "non-stat controls are not read as stat lines");
         return checks;
     }
 }
