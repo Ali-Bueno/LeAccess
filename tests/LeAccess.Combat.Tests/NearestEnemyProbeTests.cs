@@ -48,6 +48,17 @@ internal static class NearestEnemyProbeTests
         closer.Destroyed = true;
         check(Find() == "Lobo", "Destroyed Unity visual is excluded");
         closer.Destroyed = false;
+        closer.gameObject.scene = new UnityEngine.SceneManagement.Scene { handle = 2, Unloaded = true };
+        check(Find() == "Lobo", "Unloaded online registry entry cannot hide current nearest enemy");
+        closer.gameObject.scene = new UnityEngine.SceneManagement.Scene { handle = 2 };
+        check(Find() == "Excluded", "Loaded additive online registry entry remains eligible");
+        closer.gameObject.scene = player.gameObject.scene;
+        closer.gameObject.activeInHierarchy = false;
+        check(Find() == "Lobo", "Inactive online owner cannot supply a current enemy");
+        closer.gameObject.activeInHierarchy = true;
+        closer.gameObject.WasCollected = true;
+        check(Find() == "Lobo", "Collected online owner rejected before native access");
+        closer.gameObject.WasCollected = false;
         Registry(null, player, nearest);
         check(Find() == "Lobo", "Null entries and the local player are excluded");
 

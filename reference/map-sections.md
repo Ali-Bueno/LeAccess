@@ -1,10 +1,10 @@
 # Map sections and environment descriptions
 
 Initially implemented for Steam 1.5.0.1, build 25663618. All 58 fixed profiles
-(750 sections) were regenerated from the installed Steam 1.5.1, build 25672295,
-on 2026-10-02. Geometry and ownership guards were unchanged; the verified build
+(750 sections) were regenerated from installed Steam build 25690669,
+on 2026-10-03, alongside the three tent canopy profiles. Geometry and ownership guards were unchanged; the verified build
 hash was refreshed because the previous hash correctly disabled those catalogs
-after the game update. See [regeneration provenance](map-section-build-25672295.json).
+after the game update. See [regeneration provenance](map-section-build-25690669.json).
 Default speech identifies concrete
 structures and rooms when the player reaches them. The user explicitly prefers
 these local landmarks over generic material changes or an entry summary.

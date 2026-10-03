@@ -22,7 +22,25 @@ internal static class QuestUpdateAccessibility
     private static IntPtr _character;
     private static string _lastFailure;
     private static int _nextSource;
+    private static bool _canOwnAnnouncement, _campaignReady, _monolithReady, _stashReady;
+    private static bool _preferDynamic;
+    internal static bool AutomaticUpdatesEnabled => _enabled is not null && _enabled.Value;
+    internal static double MinimumUpdateIntervalSeconds
+    {
+        get
+        {
+            double interval = _speechInterval?.Value ?? NearestEnemyAnnouncementState.DefaultSpeechIntervalSeconds;
+            return double.IsFinite(interval) && interval > 0 ? interval : NearestEnemyAnnouncementState.DefaultSpeechIntervalSeconds;
+        }
+    }
     internal static bool HasPendingContent => Campaign.HasPendingContent || Monolith.HasPendingContent || Stash.HasPendingContent;
+    internal static bool HasPendingAnnouncement => _canOwnAnnouncement &&
+        (Campaign.HasReadyContent && _campaignReady || Monolith.HasReadyContent && _monolithReady || Stash.HasReadyContent && _stashReady);
+    private static bool ShouldYieldToDynamic => _preferDynamic && DynamicObjectiveAccessibility.HasPendingAnnouncement;
+    internal static bool HasPriorityOverDynamic => HasPendingAnnouncement && !ShouldYieldToDynamic;
+    internal static bool CanAnnounceAt(double now) => now >= _nextSpeech;
+    internal static void RecordAnnouncement(double now, bool dynamic = false)
+    { _nextSpeech = now + MinimumUpdateIntervalSeconds; _preferDynamic = !dynamic; }
 
     internal static void Initialize(ConfigFile config)
     {
@@ -36,13 +54,18 @@ internal static class QuestUpdateAccessibility
 
     internal static void Update(bool otherContentActive = false, bool higherPriorityPending = false)
     {
+        _canOwnAnnouncement = false;
         if (_enabled == null || !_enabled.Value) { Reset(); return; }
         try
         {
+            bool gameplayAccess = QuestAnnouncementEligibility.HasGameplayAccess(otherContentActive, _character);
+            _canOwnAnnouncement = gameplayAccess;
             if (LE.UI.LoadingScreen.IsVisible) return;
             var scene = SceneManager.GetActiveScene();
             if (!scene.isLoaded) return;
             if (!SceneList.TryGetNonDefaultSceneDetails(scene.name, out _)) { Reset(); return; }
+            var provider = PlayerFinder.getLocalStatefulQuestListProvider();
+            if (provider is null || provider.WasCollected) { _canOwnAnnouncement = false; return; }
             double now = Time.unscaledTimeAsDouble;
             if (now < _nextPoll) return;
             _nextPoll = now + PollSeconds;
@@ -51,30 +74,27 @@ internal static class QuestUpdateAccessibility
             var character = PlayerFinder.getPlayerData();
             if (character is null || character.WasCollected) return;
             if (_character != character.Pointer)
-            { Reset(); _character = character.Pointer; _nextPoll = now + PollSeconds; }
-            var provider = PlayerFinder.getLocalStatefulQuestListProvider();
-            if (provider is null || provider.WasCollected) return;
-            bool campaignReady = Observe(provider.getPlayerQuestListHolder(), Campaign);
-            bool monolithReady = Observe(provider.getPlayerMonolithQuestListHolder(), Monolith);
-            bool stashReady = Observe(provider.getPlayerStashQuestListHolder(), Stash);
-            var input = EpochInputManager.instance;
-            var keyboard = ScreenKeyboardManager.Instance;
-            bool typing = IsAlive(input) && input.isInputFieldActive || IsAlive(keyboard) && keyboard._enabled;
-            bool canSpeak = Application.isFocused && !NavigationAudioState.IsSuspended &&
-                !typing && !otherContentActive && !higherPriorityPending && !ScreenReader.SpokeThisFrame &&
-                ScreenReader.IsAvailable() && now >= _nextSpeech && GameplayInputState.OwnsInput();
-            if (TryTake(canSpeak, stackalloc bool[] { campaignReady, monolithReady, stashReady }, out var change))
+            {
+                Reset(); _character = character.Pointer; _nextPoll = now + PollSeconds;
+                gameplayAccess = QuestAnnouncementEligibility.HasGameplayAccess(otherContentActive, _character);
+            }
+            _canOwnAnnouncement = gameplayAccess;
+            _campaignReady = Observe(provider.getPlayerQuestListHolder(), Campaign);
+            _monolithReady = Observe(provider.getPlayerMonolithQuestListHolder(), Monolith);
+            _stashReady = Observe(provider.getPlayerStashQuestListHolder(), Stash);
+            bool canSpeak = _canOwnAnnouncement && !higherPriorityPending && !ScreenReader.SpokeThisFrame &&
+                ScreenReader.IsAvailable() && CanAnnounceAt(now) && !ShouldYieldToDynamic;
+            if (TryTake(canSpeak, stackalloc bool[] { _campaignReady, _monolithReady, _stashReady }, out var change))
             {
                 string text = Format(change);
                 ScreenReader.Speak(text, interrupt: false);
-                double interval = _speechInterval.Value;
-                if (!double.IsFinite(interval) || interval <= 0) interval = NearestEnemyAnnouncementState.DefaultSpeechIntervalSeconds;
-                _nextSpeech = now + interval;
+                RecordAnnouncement(now);
                 Plugin.Log.LogInfo($"[Quest update] {text}");
             }
         }
         catch (Exception ex)
         {
+            _canOwnAnnouncement = false;
             if (_lastFailure == ex.Message) return;
             _lastFailure = ex.Message;
             Plugin.Log.LogWarning($"Quest updates unavailable: {ex.Message}");
@@ -119,6 +139,8 @@ internal static class QuestUpdateAccessibility
     internal static void Reset()
     {
         Campaign.Reset(); Monolith.Reset(); Stash.Reset();
+        _canOwnAnnouncement = _campaignReady = _monolithReady = _stashReady = false;
+        _preferDynamic = false;
         _character = IntPtr.Zero; _nextPoll = 0; _nextSpeech = 0; _nextSource = 0;
     }
 

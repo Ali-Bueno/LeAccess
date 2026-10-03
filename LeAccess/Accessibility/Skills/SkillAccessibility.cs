@@ -76,6 +76,8 @@ internal static class SkillAccessibility
                 announcement = ScreenContentTracker.Combine(new[] { brief, details.Details, details.LiveDetails });
             }
             if (announcement == null) return;
+            if (!SkillSelectionReader.TryRead(out var current, includeDetails: false) || current.Key != selection.Key)
+            { ClearSelection(); return; }
             HasPendingContent = false;
             ScreenReader.Speak(announcement, interrupt: true);
             Plugin.Log.LogInfo($"[{(readDetails ? "Skill details" : "Skill")}] {announcement}");

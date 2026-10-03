@@ -16,7 +16,14 @@ namespace EHG.Multiplayer { internal static class GameplayEnvironment { public s
 namespace UnityEngine { internal static class Time { public static double unscaledTimeAsDouble; } }
 namespace UnityEngine.SceneManagement
 {
-    internal struct Scene { public int handle; public string name; }
+    internal struct Scene
+    {
+        public int handle;
+        public string name;
+        public bool Unloaded;
+        public bool isLoaded => !Unloaded;
+        public bool IsValid() => handle > 0;
+    }
     internal static class SceneManager
     {
         public static Scene Current = new() { handle = 1, name = "Test area" };

@@ -1,6 +1,7 @@
 using System;
 using LeAccess.Accessibility.Utils;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Combat;
@@ -15,7 +16,8 @@ internal static class NearestEnemyProbe
         LastStatus = "online visuals unavailable";
         LastFailure = null;
         var manager = ActorManager.instance;
-        if (!IsAlive(manager) || !IsAlive(player)) return null;
+        var scene = SceneManager.GetActiveScene();
+        if (!IsAlive(manager) || !IsAvailable(player, scene)) return null;
         var groups = manager.visuals;
         var alignment = player.getAlignment();
         if (groups == null || groups.WasCollected || !IsAlive(alignment)) return null;
@@ -39,7 +41,7 @@ internal static class NearestEnemyProbe
                 {
                     examined++;
                     var enemy = enemies[index];
-                    if (!IsAlive(enemy) || enemy.Pointer == player.Pointer || !enemy.isActiveAndEnabled ||
+                    if (!IsAvailable(enemy, scene) || enemy.Pointer == player.Pointer ||
                         enemy.dead || enemy.isInvalidTarget()) continue;
                     var enemyAlignment = enemy.getAlignment();
                     if (!IsAlive(enemyAlignment) || !alignment.IsFoe(enemyAlignment)) continue;
@@ -62,7 +64,8 @@ internal static class NearestEnemyProbe
         LastStatus = "offline actors unavailable";
         LastFailure = null;
         var manager = ActorManager.instance;
-        if (!IsAlive(manager) || !IsAlive(player)) return null;
+        var scene = SceneManager.GetActiveScene();
+        if (!IsAlive(manager) || !IsAvailable(player, scene)) return null;
         var groups = manager.actors;
         var alignment = player.GetAlignment();
         if (groups is null || groups.WasCollected || !IsAlive(alignment)) return null;
@@ -85,7 +88,7 @@ internal static class NearestEnemyProbe
                 {
                     examined++;
                     var enemy = enemies[index];
-                    if (!IsAlive(enemy) || enemy.Pointer == player.Pointer || !enemy.isActiveAndEnabled ||
+                    if (!IsAvailable(enemy, scene) || enemy.Pointer == player.Pointer ||
                         enemy.isInvalidTarget()) continue;
                     var enemyAlignment = enemy.GetAlignment();
                     if (!IsAlive(enemyAlignment) || !alignment.IsFoe(enemyAlignment)) continue;
@@ -110,7 +113,7 @@ internal static class NearestEnemyProbe
         var sync = actor.actorSync;
         var linkedActor = IsAlive(sync) ? sync.gameplayActor : null;
         var visuals = IsAlive(linkedActor) && linkedActor.Pointer == actor.Pointer ? sync.actorVisuals : null;
-        if (IsAlive(visuals) && visuals.isActiveAndEnabled && !visuals.dead)
+        if (IsAvailable(visuals, actor.gameObject.scene) && !visuals.dead)
         {
             name = CleanDisplay(visuals.BaseDisplayInformation);
             if (!string.IsNullOrWhiteSpace(name)) { LastStatus += " name_source=owned_visuals"; return name; }
@@ -128,6 +131,11 @@ internal static class NearestEnemyProbe
 
     private static string CleanDisplay(BaseDisplayInformation display)
         => IsAlive(display) ? TextUtils.CleanText(display.GetLocalizedName()) : null;
+
+    internal static bool IsAvailable(Behaviour component, Scene scene) =>
+        scene.IsValid() && scene.isLoaded && IsAlive(component) && component.isActiveAndEnabled &&
+        IsAlive(component.gameObject) && component.gameObject.activeInHierarchy &&
+        component.gameObject.scene.IsValid() && component.gameObject.scene.isLoaded;
 
     private static string ReadName(BaseDisplayInformation display)
     {

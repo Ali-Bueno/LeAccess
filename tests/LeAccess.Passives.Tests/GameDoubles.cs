@@ -63,12 +63,14 @@ namespace LE.UI.Tooltips
     {
         internal static int Builds;
         internal static bool ReturnNull;
+        internal static Action OnBuild;
         internal static NodeTooltipInfo GetNodeTooltipInfo(SkillTreeNode node, bool showAltText)
         {
             Builds++;
             if (ReturnNull) return null;
             var result = new NodeTooltipInfo(node, showAltText) { Name = node.Name, Description = node.Description };
             result.Refresh();
+            OnBuild?.Invoke();
             return result;
         }
     }

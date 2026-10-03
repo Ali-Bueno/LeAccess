@@ -139,7 +139,8 @@ internal sealed class AbilityLocalization : NativeObject
     internal readonly Dictionary<Ability, string> Names = new();
     internal readonly Dictionary<Ability, string> Descriptions = new();
     internal string GetName(Ability ability) { Guard(); return Names.GetValueOrDefault(ability, ability.abilityName); }
-    internal string GetDescription(Ability ability) { Guard(); return Descriptions.GetValueOrDefault(ability); }
+    internal Action OnDescription;
+    internal string GetDescription(Ability ability) { Guard(); OnDescription?.Invoke(); return Descriptions.GetValueOrDefault(ability); }
 }
 internal sealed class SkillLocalization : NativeObject
 {

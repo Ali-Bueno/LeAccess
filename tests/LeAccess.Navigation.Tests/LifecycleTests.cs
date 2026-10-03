@@ -21,6 +21,7 @@ internal static class LifecycleTests
         PlayerReplacementRejectsForeignNavigationData();
         OnlineVisualRadiusSetsWarningReach();
         StaleSceneAndInactiveCameraSuspendRadar();
+        OwnedDetachedVisualsRemainPlayable();
     }
 
     private static void ProbeReacquiresCollectedObjects()
@@ -298,6 +299,50 @@ internal static class LifecycleTests
         Camera.main.isActiveAndEnabled = true;
         Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _),
             "Valid scene and live camera restore probing.");
+        ResetHost();
+    }
+
+    private static void OwnedDetachedVisualsRemainPlayable()
+    {
+        ResetHost();
+        PlayerFinder.Player.Agent.radius = 0.1f;
+        var actor = new Actor { Radius = float.NaN };
+        PlayerFinder.Actor = actor;
+        var visuals = new ActorVisuals { gameObject = new GameObject(), Radius = 0.6f };
+        var sync = new ActorSync { gameObject = new GameObject(), gameplayActor = actor, actorVisuals = visuals };
+        actor.actorSync = sync;
+        PlayerFinder.playerActorVisuals = visuals;
+        var probe = new RadarWorldProbe();
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out var snapshot),
+            "The local Actor's exact sync authorizes detached visuals without a hierarchy guess.");
+        Program.Near(snapshot.BodyRadius, 0.6f, "Detached owned visuals provide their actual body size.");
+        PlayerFinder.playerActorVisuals = new ActorVisuals { gameObject = new GameObject(), Radius = 5, dead = true };
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out snapshot),
+            "A stale dead legacy visual cache cannot override the currently owned sync visual.");
+        Program.Near(snapshot.BodyRadius, 0.6f, "Legacy cached size cannot replace the proven sync visual size.");
+        PlayerFinder.playerActorVisuals = null;
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out snapshot),
+            "An available local sync supplies visuals before the optional legacy cache is populated.");
+        Program.Near(snapshot.BodyRadius, 0.6f, "A missing legacy cache cannot shrink the known sync-owned body.");
+        sync.gameplayActor = new Actor { gameObject = new GameObject() };
+        Program.Check(!probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _),
+            "A sync that lost its local Actor backlink cannot authorize navigation.");
+        sync.gameplayActor = actor;
+        visuals.dead = true;
+        Program.Check(!probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _),
+            "The actual sync-owned player's death suspends navigation.");
+        visuals.dead = false;
+        visuals.gameObject.activeInHierarchy = false;
+        Program.Check(!probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _),
+            "Inactive owned visual roots do not supply playable radar state.");
+        visuals.gameObject.activeInHierarchy = true;
+        visuals.WasCollected = true;
+        Program.Check(!probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _),
+            "Collected owned visuals are rejected before native access.");
+        visuals.WasCollected = false;
+        sync.gameObject.scene = new UnityEngine.SceneManagement.Scene { handle = 2 };
+        Program.Check(!probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _),
+            "A sync from another terrain scene cannot authorize the local radar.");
         ResetHost();
     }
 

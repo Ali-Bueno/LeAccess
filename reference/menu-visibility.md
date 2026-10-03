@@ -114,6 +114,14 @@ alone is never treated as proof that an unrelated panel occludes another.
 
 ## Follow-up regression review — 2026-10-03
 
+The subsequent native-window audit added the `NavigableMediator.FocusedPanel`
+ownership path. Its navigation object can live outside the actual focused panel;
+the old hierarchy fallback therefore rejected legitimate button cursor callbacks.
+Callbacks now use the live visible panel, releasing old controls immediately on a
+panel switch, without inventing a selected control for polling. Ten new checks
+raise the menu suite to 178. The [dungeon/modal reader](dungeon-warning-reading.md)
+adds independent body/instruction discovery; native navigation remains unchanged.
+
 Additional failures were reproduced with failing source-linked checks
 before their fixes:
 

@@ -35,7 +35,7 @@ internal static class PassiveAccessibility
         {
             bool read = PassiveSelectionReader.TryRead(out var selection);
             ReportStatus();
-            if (!read) { ResetSelection(); return; }
+            if (!read) { ResetSelection(PassiveSelectionReader.HasPendingModel); return; }
             HasActiveContent = true;
             if (_key != selection.Key)
             {
@@ -45,6 +45,8 @@ internal static class PassiveAccessibility
             HasPendingContent = Tracker.Observe(1, selection.Summary,
                 ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame, out string announcement);
             if (announcement is null) return;
+            if (!PassiveSelectionReader.TryRead(out var current) || current.Key != selection.Key)
+            { ResetSelection(PassiveSelectionReader.HasPendingModel); return; }
             HasPendingContent = false;
             ScreenReader.Speak(announcement, interrupt: true);
             Plugin.Log.LogInfo($"[Passive] {announcement}");
@@ -58,7 +60,9 @@ internal static class PassiveAccessibility
         {
             bool read = PassiveSelectionReader.TryRead(out var selection);
             ReportStatus();
-            if (!read) return false;
+            if (!read) { ResetSelection(PassiveSelectionReader.HasPendingModel); return false; }
+            if (!PassiveSelectionReader.TryRead(out var current) || current.Key != selection.Key)
+            { ResetSelection(PassiveSelectionReader.HasPendingModel); return false; }
             HasActiveContent = true;
             if (!ScreenReader.IsAvailable()) return true;
             if (_key != selection.Key) { Tracker.Reset(); _key = selection.Key; }
@@ -73,9 +77,9 @@ internal static class PassiveAccessibility
         catch (Exception ex) { ResetSelection(); ReportFailure(ex); return false; }
     }
 
-    private static void ResetSelection()
+    private static void ResetSelection(bool retainPendingModel = false)
     {
-        PassiveSelectionReader.Reset();
+        if (!retainPendingModel) PassiveSelectionReader.Reset();
         Tracker.Reset();
         _key = null;
         HasActiveContent = false;

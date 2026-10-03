@@ -71,15 +71,15 @@ public static class CombatAccessibility
             var visuals = online ? PlayerFinder.playerActorVisuals : null;
             var actor = online ? null : PlayerFinder.playerActorComponent;
             UnityEngine.Object player = online ? visuals : actor;
-            if (online ? !IsAlive(visuals) || !visuals.isActiveAndEnabled || visuals.dead
-                : !IsAlive(actor) || !actor.isActiveAndEnabled || actor.isDying())
+            var scene = SceneManager.GetActiveScene();
+            if (online ? !NearestEnemyProbe.IsAvailable(visuals, scene) || visuals.dead
+                : !NearestEnemyProbe.IsAvailable(actor, scene) || actor.isDying())
             {
                 Reset();
                 ReportStatus(online ? "online player unavailable or dead" : "offline player unavailable or dead", now);
                 return;
             }
 
-            var scene = SceneManager.GetActiveScene();
             long session = ((long)(int)scene.handle << 32) | (uint)player.GetInstanceID();
             if (session != _session)
             {

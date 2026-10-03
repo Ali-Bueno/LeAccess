@@ -25,6 +25,7 @@ internal sealed class QuestUpdateState
     private long _nextOrder;
 
     internal bool HasPendingContent => _pending.Keys.Any(key => !_unavailable.Contains(key));
+    internal bool HasReadyContent => _pending.Keys.Any(key => !_unavailable.Contains(key) && !_candidates.ContainsKey(key));
 
     internal void Observe(IReadOnlyList<QuestProgressSnapshot> quests, long source = 0)
     {

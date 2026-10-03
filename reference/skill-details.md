@@ -103,3 +103,10 @@ more information; verify costs/tags are understandable and no speech repeats
 while DPS changes. Scroll a long tooltip to check whether mask-culling limits
 some rows: this reader only consumes currently visible widgets. Passive-tree
 navigation is handled separately from these specialized-skill node readers.
+
+The additional 2026-10-03 service audit reproduced manual details speaking after
+foreground or selection changed during formatting. Speech now rechecks the
+current selected skill and foreground immediately before output. Six regression
+cases cover popup, dialogue, radial menu, loading, application focus and a new
+selected ability; the skill suite passes 177 checks. The main project builds with
+`SkipPluginDeployment=true`, zero warnings/errors. Listening remains pending.

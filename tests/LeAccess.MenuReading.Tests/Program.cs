@@ -307,4 +307,32 @@ Check(ScreenReader.Messages.Count == beforeToggleChange + 1 && ScreenReader.Mess
     "A settings toggle change is announced exactly once with its label");
 Reset();
 checks += VisibilityTests.Run();
+Reset();
+var mediator = new GameObject().Add(new NavigableMediator());
+var mediatedPanel = new GameObject().Add(new LE.UI.PanelSystem.Panel());
+var panelButton = Button(mediatedPanel.gameObject, "Entrar");
+var foreignButton = Button(new GameObject(), "Fondo");
+mediator.FocusedPanel = mediatedPanel;
+NavigationManager.currentlySelected = mediator;
+Check(UiFocusOwnership.Allows(panelButton), "Native mediator grants callbacks to its separately rooted focused panel");
+Check(!UiFocusOwnership.Allows(foreignButton), "Native mediator rejects callbacks outside its focused panel");
+Check(!UiFocusOwnership.TryGetSelected(out _), "A panel owner alone does not invent a polled control selection");
+ElementAnnouncer.AnnounceElement(panelButton);
+Check(ScreenReader.Messages.Single().Text == "Entrar", "Focused native panel button retains accessible cursor reading");
+var nextPanel = new GameObject().Add(new LE.UI.PanelSystem.Panel());
+var nextButton = Button(nextPanel.gameObject, "Cancelar");
+mediator.FocusedPanel = nextPanel;
+Check(!UiFocusOwnership.Allows(panelButton) && UiFocusOwnership.Allows(nextButton), "Mediator panel change immediately rejects retained callbacks");
+mediator.FocusedPanel = null;
+Check(!UiFocusOwnership.Allows(nextButton), "Unassigned mediator panel cannot retain focus");
+mediator.FocusedPanel = nextPanel;
+foreach (string gate in new[] { "collected", "disabled", "hidden", "mediator disabled" })
+{
+    nextPanel.WasCollected = gate == "collected";
+    nextPanel.Enabled = gate != "disabled";
+    nextPanel.gameObject.Active = gate != "hidden";
+    mediator.Enabled = gate != "mediator disabled";
+    Check(!UiFocusOwnership.Allows(nextButton), "Mediator focus rejects " + gate);
+}
+Reset();
 Console.WriteLine($"Menu reading tests passed: {checks} checks.");

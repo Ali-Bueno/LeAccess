@@ -207,6 +207,11 @@ public class CraftingMaterialsPanelSearchInputFieldNavigable : CustomNavigable
 {
     public TMPro.TMP_InputField inputField;
 }
+public class NavigableMediator : CustomNavigable
+{
+    public LE.UI.PanelSystem.Panel FocusedPanel;
+}
+namespace LE.UI.PanelSystem { public class Panel : UnityEngine.Behaviour { } }
 public static class NavigationManager { public static INavigable currentlySelected; }
 public static class PlayerFinder { public static UnityEngine.GameObject Player; public static UnityEngine.GameObject getPlayer() => Player; }
 public class MultiButtonsActionPrompt : UnityEngine.Component

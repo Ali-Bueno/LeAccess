@@ -53,6 +53,7 @@ namespace UnityEngine
         public GameObject() => transform = new Transform { gameObject = this };
         public readonly List<Component> Components = new();
         public bool activeInHierarchy = true;
+        public UnityEngine.SceneManagement.Scene scene = new() { handle = UnityEngine.SceneManagement.SceneManager.CurrentHandle };
         public T Add<T>(T component) where T : Component
         {
             component.gameObject = this;
@@ -99,10 +100,16 @@ namespace UnityEngine
 }
 namespace UnityEngine.SceneManagement
 {
-    internal struct Scene { public int handle; }
+    internal struct Scene
+    {
+        public int handle;
+        public bool isLoaded => handle != 0 && !SceneManager.Unloaded.Contains(handle);
+        public bool IsValid() => handle != 0;
+    }
     internal static class SceneManager
     {
         public static int CurrentHandle = 1;
+        public static readonly HashSet<int> Unloaded = new();
         public static Scene GetActiveScene() => new() { handle = CurrentHandle };
     }
 }

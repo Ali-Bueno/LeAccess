@@ -65,47 +65,41 @@ public class MenuAccessibility : MonoBehaviour
         if (readDetails && !SkillAccessibility.HasActiveContent && !InventoryAccessibility.HasActiveContent)
             ReadSelectedDetails();
         ZoneAnnouncer.Update();
-        GuidanceAccessibility.Update(ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
+        bool worldContentActive = ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
             InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
-            SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent);
+            SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent;
+        GuidanceAccessibility.Update(worldContentActive);
         VisibleSubtitleAnnouncer.Update(ScreenReader.SpokeThisFrame || ZoneAnnouncer.HasPendingContent ||
             InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
             SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent);
-        QuestUpdateAccessibility.Update(ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
-            InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
-            SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent,
+        QuestUpdateAccessibility.Update(worldContentActive,
             ZoneAnnouncer.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent);
-        MapSectionAccessibility.Update(ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
-            InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
-            SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent,
-            ZoneAnnouncer.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || QuestUpdateAccessibility.HasPendingContent);
-        GroundLootAccessibility.Update(ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || QuestUpdateAccessibility.HasPendingContent);
-        NpcSounds.Update(ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || QuestUpdateAccessibility.HasPendingContent);
+        DynamicObjectiveAccessibility.Update(worldContentActive,
+            ZoneAnnouncer.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || QuestUpdateAccessibility.HasPriorityOverDynamic);
+        bool questUpdatesPending = QuestUpdateAccessibility.HasPendingAnnouncement || DynamicObjectiveAccessibility.HasPendingAnnouncement;
+        MapSectionAccessibility.Update(worldContentActive,
+            ZoneAnnouncer.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || questUpdatesPending);
+        GroundLootAccessibility.Update(ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || questUpdatesPending);
+        NpcSounds.Update(ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || questUpdatesPending);
         NearbyPlayerAccessibility.Update(ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent ||
-            VisibleSubtitleAnnouncer.HasPendingContent || GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName || QuestUpdateAccessibility.HasPendingContent);
+            VisibleSubtitleAnnouncer.HasPendingContent || GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName || questUpdatesPending);
         WorldCueSounds.Update();
-        LandmarkAccessibility.Update(ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
-            InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
-            SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent,
+        LandmarkAccessibility.Update(worldContentActive,
             ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent ||
-            GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || QuestUpdateAccessibility.HasPendingContent);
+            GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || questUpdatesPending);
         NotificationAnnouncer.Update(ScreenReader.SpokeThisFrame || DialogueAnnouncer.HasActiveContent || InventoryAccessibility.HasPendingContent ||
             PassiveAccessibility.HasPendingContent || QuestAccessibility.HasPendingContent || CharacterNameAccessibility.HasPendingContent ||
             ControllerMenuAccessibility.HasActiveContent || SkillAccessibility.HasPendingContent || ClassCarouselHandler.HasPendingContent || ZoneAnnouncer.HasPendingContent ||
-            GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || LandmarkAccessibility.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || QuestUpdateAccessibility.HasPendingContent);
+            GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || LandmarkAccessibility.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || questUpdatesPending);
         ButtonPromptAnnouncer.Update(InventoryAccessibility.HasPendingContent || GroundLootAccessibility.HasPendingContent ||
             PassiveAccessibility.HasPendingContent || QuestAccessibility.HasPendingContent || CharacterNameAccessibility.HasPendingContent ||
             ControllerMenuAccessibility.HasPendingContent || SkillAccessibility.HasPendingContent || ClassCarouselHandler.HasPendingContent ||
-            ZoneAnnouncer.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || LandmarkAccessibility.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || QuestUpdateAccessibility.HasPendingContent);
+            ZoneAnnouncer.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || LandmarkAccessibility.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || questUpdatesPending);
         CombatAccessibility.Update(PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent || VisibleSubtitleAnnouncer.HasPendingContent);
-        VitalsAccessibility.Update(ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
-            InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
-            SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent);
-        PassiveGuidanceAccessibility.Update(ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
-            InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
-            SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent,
+        VitalsAccessibility.Update(worldContentActive);
+        PassiveGuidanceAccessibility.Update(worldContentActive,
             ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent ||
-            QuestUpdateAccessibility.HasPendingContent || GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName ||
+            questUpdatesPending || GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName ||
             NearbyPlayerAccessibility.HasPendingContent || LandmarkAccessibility.HasPendingContent);
     }
 

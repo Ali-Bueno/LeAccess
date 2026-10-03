@@ -177,6 +177,7 @@ Tick(); Tick(); Time.unscaledTimeAsDouble += 3; Tick();
 Check(LeAccess.Plugin.Log.Information.Count(line => line.StartsWith("[PassiveStatus]")) == diagnostics,
     "unchanged unavailable status never floods log");
 NodeTooltipContentBuilder.ReturnNull = false;
+Time.unscaledTimeAsDouble += .2;
 Tick(); Tick();
 Check(PassiveAccessibility.HasActiveContent && LeAccess.Plugin.Log.Information.Last(line => line.StartsWith("[PassiveStatus]")).Contains("ready"),
     "successful recovery logs native model source");
@@ -201,4 +202,54 @@ first.Name = "Recovered passive";
 Time.unscaledTimeAsDouble += .2;
 Check(PassiveSelectionReader.TryRead(out read) && read.Summary.Contains("Recovered passive"),
     "fallback retries a missing name without requiring a point, locale or selection change");
+PassiveAccessibility.Reset();
+first.Name = "";
+Tick();
+builds = NodeTooltipContentBuilder.Builds;
+for (int frame = 0; frame < 10; frame++) Tick();
+Check(NodeTooltipContentBuilder.Builds == builds && !PassiveAccessibility.HasActiveContent,
+    "service polling retains the pending native name retry deadline while releasing speech ownership");
+first.Name = "Service recovered passive";
+Time.unscaledTimeAsDouble += .2;
+Tick(); Tick();
+Check(PassiveAccessibility.HasActiveContent && ScreenReader.Messages.Last().Text.Contains(first.Name),
+    "service recovers a late native name once its retry deadline expires");
+PassiveAccessibility.Reset();
+NodeTooltipContentBuilder.ReturnNull = true;
+Tick();
+builds = NodeTooltipContentBuilder.Builds;
+for (int frame = 0; frame < 10; frame++) Tick();
+Check(NodeTooltipContentBuilder.Builds == builds && !PassiveAccessibility.HasPendingContent,
+    "service polling also bounds retries when the native builder returns no model");
+NavigationManager.currentlySelected = null;
+Tick();
+NodeTooltipContentBuilder.ReturnNull = false;
+NavigationManager.currentlySelected = owner;
+Tick(); Tick();
+Check(PassiveAccessibility.HasActiveContent && NodeTooltipContentBuilder.Builds == builds + 1,
+    "closing the passive tree releases its pending model so reopening reads immediately");
+foreach (string gate in new[] { "popup", "dialogue", "radial menu", "loading", "focus", "selection" })
+{
+    PassiveAccessibility.Reset();
+    spoken = ScreenReader.Messages.Count;
+    NodeTooltipContentBuilder.OnBuild = () =>
+    {
+        ScreenContentAnnouncer.HasActiveContent = gate == "popup";
+        LeAccess.Accessibility.Dialogue.DialogueAnnouncer.HasActiveContent = gate == "dialogue";
+        LeAccess.Accessibility.ControllerMenus.ControllerMenuAccessibility.HasActiveContent = gate == "radial menu";
+        LE.UI.LoadingScreen.IsVisible = gate == "loading";
+        Application.isFocused = gate != "focus";
+        if (gate == "selection") cells.Cells[2, 1] = second;
+    };
+    PassiveAccessibility.ReadCurrentDetails();
+    Check(ScreenReader.Messages.Count == spoken && !PassiveAccessibility.HasPendingContent,
+        "manual passive inspection cancels output when ownership changes during model construction: " + gate);
+    NodeTooltipContentBuilder.OnBuild = null;
+    ScreenContentAnnouncer.HasActiveContent = false;
+    LeAccess.Accessibility.Dialogue.DialogueAnnouncer.HasActiveContent = false;
+    LeAccess.Accessibility.ControllerMenus.ControllerMenuAccessibility.HasActiveContent = false;
+    LE.UI.LoadingScreen.IsVisible = false;
+    Application.isFocused = true;
+    cells.Cells[2, 1] = first;
+}
 Console.WriteLine($"Passed {checks} passive checks.");

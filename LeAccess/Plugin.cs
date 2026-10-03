@@ -40,7 +40,7 @@ public class Plugin : BasePlugin
         // Initialize screen reader
         if (!ScreenReader.Initialize())
         {
-            Log.LogWarning("No screen reader detected. TTS features will be disabled.");
+            Log.LogWarning("Screen reader unavailable; automatic connection checks remain active.");
         }
         else
         {
@@ -93,6 +93,7 @@ public class Plugin : BasePlugin
         LeAccess.Accessibility.Passives.PassiveAccessibility.Reset();
         LeAccess.Accessibility.Quests.QuestAccessibility.Reset();
         QuestUpdateAccessibility.Cleanup();
+        DynamicObjectiveAccessibility.Reset();
         GuidanceAccessibility.Cleanup();
         PassiveGuidanceAccessibility.Cleanup();
         LeAccess.Accessibility.Zones.ZoneAnnouncer.Reset();

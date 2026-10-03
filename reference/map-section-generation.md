@@ -1,5 +1,32 @@
 # Static map section generation
 
+## Steam asset refresh — build 25690669
+
+On 2026-10-03, all **58 fixed profiles / 750 sections** and all **three tent
+canopy profiles** were independently re-extracted from the installed sources
+for build hash `5cec0d5385ee8ac4d7d557676361703c0f058813`. The 57 generated
+layouts used `--scenes-from` with the previous accepted-scene evidence; Z12
+bridges and Z32 canopies used their separate extraction tools.
+
+Every anchor, source/collider guard, floor band, polygon and canopy contour
+compared structurally equal to the prior resources. All 58 scene/navigation
+bundle pairs and the tent mesh source also retained their previous SHA256.
+The new build binding is therefore supported by fresh extraction rather than
+a guessed hash replacement. Runtime build and ownership checks remain intact.
+There are still 6,118 generated polygon components and 2,205 collider guards;
+no new layouts or sections were added and no full scene census was repeated.
+
+[Current provenance](map-section-build-25690669.json) records installed source,
+tool and output hashes, classification and comparison results. Detailed
+extraction output and previous-resource backups are in
+`%TEMP%/LeAccess-map-refresh-25690669-20261003/`.
+
+The installed-data suite passes 51,203 checks and the runtime-place suite passes
+264, including four new independent canopy build-binding checks. Updating the
+test evidence before the resources reproduced both stale-catalog failures.
+The main build with `SkipPluginDeployment=true` has zero warnings/errors; no
+game, audio device or installed file was opened or modified for extraction.
+
 ## Steam 1.5.1 refresh — build 25672295
 
 On 2026-10-02 all **58 shipped profiles / 750 sections** were regenerated against

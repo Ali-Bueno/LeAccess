@@ -275,6 +275,13 @@ the user's actual route reaches.
 
 ## Exact tent presence and departure, 2026-10-02
 
+All three canopy meshes were independently re-extracted for Steam build
+25690669 on 2026-10-03. Source SHA256, dimensions, mesh counts and every contour
+match the prior extraction; the verified build binding was refreshed. See
+[current build provenance](map-section-build-25690669.json). The runtime-place
+suite now passes 264 checks, including explicit current-build acceptance and
+previous-build rejection for all three shipped canopies. Listening remains pending.
+
 Tent proximity no longer produces speech. `TentCanopy` uses the actual projected
 mesh faces strictly above the mesh's center-height plane. Their union retains
 concave boundaries, separate components and holes; an axis-aligned model box or

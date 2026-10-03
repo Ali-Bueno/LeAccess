@@ -56,6 +56,8 @@ namespace LeAccess.Accessibility
         { if (interrupt) throw new Exception("Quest updates must queue without interrupting"); Spoken.Add(text); SpokeThisFrame = true; }
     }
 }
+namespace LeAccess.Accessibility.Quests
+{ internal static class DynamicObjectiveAccessibility { internal static bool HasPendingAnnouncement { get; set; } } }
 namespace LeAccess
 {
     public static class Plugin { public static Logger Log = new(); }

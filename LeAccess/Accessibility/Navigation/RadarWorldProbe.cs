@@ -1,4 +1,5 @@
 using System;
+using LeAccess.Accessibility.MapSections;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SceneManagement;
@@ -57,7 +58,10 @@ internal sealed class RadarWorldProbe
             || !player.activeInHierarchy || (int)player.scene.handle != (int)scene.handle)
             return Unavailable("local player unavailable");
         var visuals = PlayerFinder.playerActorVisuals;
-        if (visuals is not null && (!Owned(visuals, player) || !visuals.isActiveAndEnabled || visuals.dead))
+        var localActor = PlayerFinder.playerActorComponent;
+        if ((visuals is not null || NavigationObjectLifetime.IsAlive(localActor) &&
+            NavigationObjectLifetime.IsAlive(localActor.actorSync)) &&
+            !MapPlayerVisuals.TryResolve(player, (int)scene.handle, out visuals))
             return Unavailable("local player inactive or dead");
 
         long session = ((long)(int)scene.handle << 32) | (uint)player.GetInstanceID();

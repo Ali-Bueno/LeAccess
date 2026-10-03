@@ -14,6 +14,7 @@ internal sealed class InstalledInterop : IDisposable
 
     internal InstalledInterop(string gameDirectory)
     {
+        InteropFingerprint.Verify(gameDirectory);
         string interop = Path.Combine(gameDirectory, "BepInEx", "interop");
         string core = Path.Combine(gameDirectory, "BepInEx", "core");
         if (!Directory.Exists(interop) || !Directory.Exists(core))

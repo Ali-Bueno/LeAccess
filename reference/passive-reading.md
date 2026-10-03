@@ -105,6 +105,14 @@ inventory/skill refresh cadence. A regression first failed with a name arriving
 later on the same node; recovery and bounded retries now pass in the 85-check
 passive suite. Production builds without warnings/errors; listening remains pending.
 
+The additional service audit reproduced a retry bug that the reader-only test
+missed: `PassiveAccessibility.Update` reset the reader after every pending name,
+discarding its retry deadline. Pending empty/null models now retain that deadline
+while speech ownership is released; closing the tree still clears the cache.
+Before speaking, automatic/manual output rechecks the current foreground and
+node identity after model construction. The source-linked suite passes 95 checks,
+including six foreground/selection changes during native-model construction.
+
 Controller listening remains pending: open Passives, move between nodes, compare
 name/points/requirements with the shown tooltip, allocate a point and switch
 mastery tabs. Check that reopening reads the current node and that respec/modal

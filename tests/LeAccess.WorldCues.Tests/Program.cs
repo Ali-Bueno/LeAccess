@@ -274,6 +274,18 @@ Check(!probe.TryCapture(out _), "Retained loot from another scene cannot produce
 PlayerFinder.player.scene = new(2);
 Check(!probe.TryCapture(out _) && !probe.HasWorld, "A retained player from another scene cannot own the world snapshot");
 
+Reset(); probe = new(); coin = Coin();
+Camera.main.isActiveAndEnabled = false;
+Check(!probe.TryCapture(out _) && !probe.HasWorld,
+    "A disabled main camera cannot authorize a new world-cue snapshot");
+Camera.main.isActiveAndEnabled = true;
+Check(probe.TryCapture(out _), "Reactivated main camera restores live world cues");
+Camera.main.isActiveAndEnabled = false;
+Check(!probe.TryCapture(out _) && !probe.HasWorld,
+    "Reacquiring the same disabled cached camera cannot retain world cues");
+Camera.main = new();
+Check(probe.TryCapture(out _), "A new enabled camera restores cues after disabled-camera suspension");
+
 state = new();
 target = new(1, new(WorldCueCategory.Coins, 1), 1, 5, 0, 1);
 nearby = new WorldCueTarget?[] { target, target with { Key = new(WorldCueCategory.Equipment, 2) },

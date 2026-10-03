@@ -59,11 +59,18 @@ within the player's radius. The NavMesh is already built for the selected agent'
 footprint. A dead/inactive player or unavailable camera, agent or sampled origin suspends the
 radar; missing data is never reported as a wall. A path that goes around a wall
 does not make the direct probe open.
-Player and component ownership must match the active scene and local hierarchy;
+Player and navigation-agent ownership must match the active scene and local hierarchy;
 a still-live old `LocalPlayer.instance.navMeshAgent` cannot supply another
 player's radius or query filter. Disabled agent components remain usable when
 their owner is active, as required by native controller movement. Inactive cameras
 are rejected; persistent gameplay cameras need not belong to the player's scene.
+Visual rigs additionally use the shared `MapPlayerVisuals` identity check: an
+owned Actor's `actorSync.gameplayActor` must point back to that exact Actor before
+its detached `actorVisuals` is accepted. A stale legacy visual cache cannot replace
+that authoritative rig. Dead, disabled, collected or foreign owned rigs remain
+ineligible. Eleven new regressions reproduce the former rejection of this valid
+ownership graph; the navigation suite now passes 447 checks. This does not establish
+the user's live offline hierarchy without a gameplay observation.
 
 `RadarEngine` is independent of Unity. It confirms changes by traveled distance,
 or by two observations after the player stops. Different closing/opening depths

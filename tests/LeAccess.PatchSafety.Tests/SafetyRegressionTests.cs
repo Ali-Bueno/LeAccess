@@ -100,7 +100,7 @@ internal static class SafetyRegressionTests
         Check(!map.HasAddress(new MethodKey("Game", 0x06000009)), "missing native map entry is unverifiable");
         using var invalid = new MemoryStream(new byte[20]);
         Reject(() => NativeMethodMap.Read(invalid), "unknown map format must not pass");
-        return checks;
+        return checks + InteropFingerprintTests.Run();
     }
 
     private static MemoryStream BuildMap()

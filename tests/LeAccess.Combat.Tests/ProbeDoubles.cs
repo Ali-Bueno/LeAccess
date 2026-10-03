@@ -42,6 +42,19 @@ namespace UnityEngine
     {
         public Vector3 position;
     }
+
+    internal class GameObject : Object
+    {
+        public bool activeInHierarchy = true;
+        public SceneManagement.Scene scene = SceneManagement.SceneManager.GetActiveScene();
+    }
+
+    internal class Behaviour : Object
+    {
+        private GameObject _gameObject = new();
+        public GameObject gameObject { get { Guard(); return _gameObject; } set => _gameObject = value; }
+        public bool isActiveAndEnabled = true;
+    }
 }
 
 internal sealed class NativeList<T> : IEnumerable<T>
@@ -76,11 +89,10 @@ internal sealed class BaseDisplayInformation : UnityEngine.Object
     public string GetLocalizedName() { Guard(); Reads++; return Name; }
 }
 
-internal sealed class ActorVisuals : UnityEngine.Object
+internal sealed class ActorVisuals : UnityEngine.Behaviour
 {
     public UnityEngine.Transform transform = new();
     public Alignment Alignment;
-    public bool isActiveAndEnabled = true;
     public bool dead;
     public bool InvalidTarget;
     public BaseDisplayInformation BaseDisplayInformation;
@@ -111,11 +123,10 @@ internal sealed class ActorManager : UnityEngine.Object
     }
 }
 
-internal sealed class Actor : UnityEngine.Object
+internal sealed class Actor : UnityEngine.Behaviour
 {
     public UnityEngine.Transform transform = new();
     public Alignment Alignment;
-    public bool isActiveAndEnabled = true;
     public bool InvalidTarget, Dying, ThrowOnAlignment;
     public BaseDisplayInformation Display;
     public ActorSync actorSync;

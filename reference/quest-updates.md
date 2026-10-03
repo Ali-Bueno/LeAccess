@@ -66,7 +66,7 @@ Temporary analysis lives under `%TEMP%/LeAccess-quest-updates-20261002`.
 ## Validation and limits
 
 `dotnet run --project tests/LeAccess.QuestUpdates.Tests/LeAccess.QuestUpdates.Tests.csproj`
-passes 85 checks against source-linked state, probe and service code: quiet baseline, settling,
+passes 100 checks against source-linked state, probe and service code: quiet baseline, settling,
 coalescing, duplicate prevention, completion/failure, invalid/foreign ownership,
 counter formatting, history omission, lifecycle, source replacement, initial
 synchronization, menus/loading/focus/typing gates, priority, speech intervals,
@@ -81,8 +81,17 @@ starve the other ready lists. Coalescing keeps the latest revision and preserves
 the original waiting position; unavailable or still-settling entries do not
 block another ready entry. Both starvation paths were reproduced before the fix.
 
-This covers the authoritative local quest lists. Separate dynamic Monolith
-objective-description widgets that are not backed by a stateful quest are not
-represented by this reader. Very short state transitions between polls can be
+This covers the authoritative local quest lists. Separate dungeon/Monolith and
+Morditas widgets use the [dynamic instruction reader](dynamic-objectives.md),
+which shares this service's automatic-update setting and speech deadline.
+Queued updates retain `HasPendingContent`, but only eligible current gameplay
+updates expose `HasPendingAnnouncement` priority. Menus, typing, lost focus,
+loading and invalid player/character state release that priority immediately,
+including frames between polls, so native menu rejection notices can speak.
+Absent/collected providers and unready pending sources also release priority
+without deleting known progression. Eligible, settled stateful and dynamic
+updates alternate shared speech turns when both streams remain continuously
+pending.
+Very short state transitions between polls can be
 coalesced into their latest settled state. Actual online/offline quest listening
 and zone-transition timing remain to be tested by the user.

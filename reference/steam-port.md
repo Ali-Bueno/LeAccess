@@ -1,5 +1,66 @@
 # Steam 1.5 port — 2026-10-01
 
+## Steam build 25690669 — 2026-10-03 audit
+
+Read-only inspection found a further Steam update, completed at
+**08:45:57 UTC** (`steamapps/appmanifest_899770.acf`, `buildid`/`TargetBuildID`
+25690669). `GameAssembly.dll` and `global-metadata.dat` changed at 08:45:55 UTC;
+metadata remains version 39. The game's `Last Epoch_Data/build_hash.txt` is now
+`5cec0d5385ee8ac4d7d557676361703c0f058813`.
+
+Before the refresh, installed interop and `MethodAddressToToken.db` were dated
+2026-10-02 18:05:36 UTC. LE, Controls and Dialogue DLL hashes exactly match
+the older build 25672295 in `last epoch code/SOURCE.txt`; they do not establish
+compatibility with the current binary. Current SHA256 values:
+
+| Input | SHA256 |
+|---|---|
+| GameAssembly.dll | `FC83F941396282C0E489ED44FF4375130FB74F3C5D8CDF983696A9EFBDC9019A` |
+| global-metadata.dat | `A4F8B652DD3CCFCCE53E87B9ABCBA0ECDDF3798CF42C4C5F7C045DF3CACBF17D` |
+| Old MethodAddressToToken.db | `B0F83F24A2D079EDE78B2EA9B46E26A3F1880CA3CBC7CD5E624737F3320DEA11` |
+
+The installed BepInEx loader's `Il2CppInteropManager.ComputeHash` hashes the
+native binary, Unity-library filenames/content in native enumeration order,
+optional deobfuscation map, and Generator/Cpp2IL assembly versions. The same
+algorithm gives **`7a26edeca3c236cd07fb687a9f86dc3f`** now; the old
+`BepInEx/interop/assembly-hash.txt` recorded
+**`21f18fdbb578542d21a9d1229472e629`**. Generator is 1.5.3.0 and Cpp2IL is
+2022.1.0.0. `BepInEx/config/BepInEx.cfg` retains
+`UpdateInteropAssemblies=true`, so normal loader startup is configured to
+regenerate changed inputs.
+
+The prior hook audit passed 59 declarations despite this mismatch because it
+checked only installed interop signatures and the old address map. The audit now
+requires the loader fingerprint to match before accepting installed native data;
+its 46 standalone regression checks pass, and auditing the stale installation
+reproduced an actionable refresh failure.
+
+The installed Cpp2IL/Il2CppInterop generators were then run offline against the
+current binary and metadata, following the loader's initialization, attribute
+processing and generation steps. Output was isolated under
+`%TEMP%/LeAccess-audit-20261003/staged-game/`. The existing repair corrected 16
+orphan rows in the same five Unity assemblies. All 59 declarations / 58 native
+targets pass the new fingerprint-aware audit against that fresh output, and the
+plugin compiles against it without warnings/errors.
+
+After verifying unchanged input SHA256 values and absence of a game process,
+the 214 generated DLLs and two databases were installed and checked byte for
+byte; the matching fingerprint was copied last. Previous interop and plugin
+files are preserved in
+`C:\Users\ali-b\Documents\LeAccess backups\steam-build-25690669-20261003`.
+The normal installed-path native audit now passes too. No game or audio device
+was opened, and BepInEx's automatic generation configuration was retained. This
+establishes native target/signature compatibility for the installed inputs;
+startup and online listening on the new hotfix remain unverified.
+
+The ignored `last epoch code/` was fully replaced from the new interop using
+ILSpy 11.1.0.9782: LE 8,046 C# files, Controls 11, Dialogue 537, and the isolated
+6,535-line DataStoreList IL. `SOURCE.txt` records input hashes and equality with
+the installed copies. Five wrapper files changed public declarations, including
+minimap island connection helpers and queued additive enabling; no removed or
+changed method is referenced by the plugin. Old reference/native addresses remain
+historical evidence for their stated builds.
+
 ## Steam 1.5.1 — 2026-10-02
 
 The session ending 15:23 reports **1.5.1 / build 25672295**. Steam replaced

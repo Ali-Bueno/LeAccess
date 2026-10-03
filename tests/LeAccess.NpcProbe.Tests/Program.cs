@@ -359,4 +359,28 @@ Check(probe.TryCapture(1, out result) && result.Name == "Nombre mostrado" && res
     "Actual NPC name component retains precedence over database fallback");
 
 checks += ServiceTests.Run();
+
+WorldObjectClickListener.allListener.Clear();
+var retained = Candidate(0, 0, 1);
+retained.gameObject.scene = new() { handle = 0 };
+var live = Candidate(0, 0, 2);
+Check(probe.TryCapture(1, out result) && result.InstanceId == live.GetInstanceID(),
+    "An unloaded retained NPC cannot hide a farther live NPC");
+live.gameObject.scene = new() { handle = 0 };
+Check(!probe.TryCapture(1, out _), "An unloaded NPC registry cannot produce names or cues");
+live.gameObject.scene = new() { handle = SceneManager.CurrentHandle + 1 };
+Check(probe.TryCapture(1, out _), "Loaded additive or network-owned NPC scenes remain eligible");
+SceneManager.Unloaded.Add(live.gameObject.scene.handle);
+Check(!probe.TryCapture(1, out _), "A valid but unloaded NPC scene cannot retain a proximity target");
+SceneManager.Unloaded.Clear();
+PlayerFinder.player.scene = new() { handle = 0 };
+Check(!probe.TryCapture(1, out _), "An unloaded retained local player cannot own NPC proximity");
+PlayerFinder.player.scene = SceneManager.GetActiveScene();
+Check(probe.TryCapture(1, out _), "Reloading the local world restores NPC proximity");
+SceneManager.Unloaded.Add(PlayerFinder.player.scene.handle);
+Check(!probe.TryCapture(1, out _), "A valid but unloaded local world cannot authorize proximity");
+SceneManager.Unloaded.Clear();
+SceneManager.CurrentHandle = 0;
+Check(!probe.TryCapture(1, out _), "An invalid active scene cannot establish an NPC cue session");
+SceneManager.CurrentHandle = 2;
 Console.WriteLine($"NPC probe tests passed: {checks} checks.");

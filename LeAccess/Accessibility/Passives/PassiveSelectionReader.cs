@@ -27,6 +27,7 @@ internal static class PassiveSelectionReader
     private const double FallbackRetrySeconds = 0.2;
     internal static string LastStatus { get; private set; }
     internal static bool HasPassiveContext { get; private set; }
+    internal static bool HasPendingModel { get; private set; }
 
     internal static void Reset()
     {
@@ -35,12 +36,14 @@ internal static class PassiveSelectionReader
         _fallback = null;
         _revision = null;
         _nextFallbackRetry = 0;
+        HasPendingModel = false;
     }
 
     internal static bool TryRead(out PassiveSelection selection)
     {
         selection = default;
         HasPassiveContext = false;
+        HasPendingModel = false;
         LastStatus = "blocked by focus, loading or foreground content";
         if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible || ScreenContentAnnouncer.HasActiveContent ||
             DialogueAnnouncer.HasActiveContent || ControllerMenuAccessibility.HasActiveContent) return false;
@@ -114,14 +117,23 @@ internal static class PassiveSelectionReader
             if (!IsAlive(_node) || _node.Pointer != node.Pointer || _fallback is null || _fallback.WasCollected || _revision != revision)
             {
                 if (IsAlive(_node) && _node.Pointer == node.Pointer && _revision == revision &&
-                    Time.unscaledTimeAsDouble < _nextFallbackRetry) return Fail("native node tooltip name pending");
+                    Time.unscaledTimeAsDouble < _nextFallbackRetry)
+                {
+                    HasPendingModel = true;
+                    return Fail("native node tooltip name pending");
+                }
                 _node = node;
                 // The bare constructor and Refresh leave Name/Description unset.
                 _fallback = NodeTooltipContentBuilder.GetNodeTooltipInfo(node, false);
                 _revision = revision;
             }
             info = _fallback;
-            if (info is null || info.WasCollected) return Fail("native node tooltip builder returned no model");
+            if (info is null || info.WasCollected)
+            {
+                HasPendingModel = true;
+                _nextFallbackRetry = Time.unscaledTimeAsDouble + FallbackRetrySeconds;
+                return Fail("native node tooltip builder returned no model");
+            }
             LastStatus = "ready; native node tooltip builder";
         }
         else LastStatus = "ready; owned visible node tooltip";
@@ -132,6 +144,7 @@ internal static class PassiveSelectionReader
             {
                 _fallback = null;
                 _nextFallbackRetry = Time.unscaledTimeAsDouble + FallbackRetrySeconds;
+                HasPendingModel = true;
             }
             return Fail($"node name empty; {LastStatus}");
         }

@@ -19,6 +19,7 @@ internal static class ScreenContentAnnouncer
     internal static bool HasPendingContent { get; private set; }
     // Tutorial callouts remain readable while gameplay and controller menus keep their own input.
     internal static bool HasActiveContent => FindForeground() != null;
+    internal static bool HasWindowOwner(int id) => Sources.TryGetValue(id, out var source) && source.OwnsWindow != null;
 
     internal static bool OwnsFocus(GameObject element)
     {
@@ -94,7 +95,8 @@ internal static class ScreenContentAnnouncer
     }
 
     internal static void Track(GameObject root, TMP_Text header = null, TMP_Text body = null,
-        bool retainWhenHidden = false, Func<string> readText = null, bool blocksInput = true, bool separateWindow = false)
+        bool retainWhenHidden = false, Func<string> readText = null, bool blocksInput = true, bool separateWindow = false,
+        Func<bool> ownsWindow = null)
     {
         try
         {
@@ -108,6 +110,7 @@ internal static class ScreenContentAnnouncer
                 existing.BlocksInput |= blocksInput;
                 existing.SeparateWindow |= separateWindow;
                 if (readText != null) existing.ReadText = readText;
+                if (ownsWindow != null) existing.OwnsWindow = ownsWindow;
                 return;
             }
             var descendants = new List<int>();
@@ -123,7 +126,7 @@ internal static class ScreenContentAnnouncer
             Sources[id] = new Source
             {
                 Id = id, Root = root, Header = header, Body = body,
-                ReadText = readText,
+                ReadText = readText, OwnsWindow = ownsWindow,
                 OpenedFrame = Time.frameCount, Order = ++_sequence, RetainWhenHidden = retainWhenHidden,
                 BlocksInput = blocksInput, SeparateWindow = separateWindow
             };
@@ -167,6 +170,8 @@ internal static class ScreenContentAnnouncer
             Tracker.Reset();
             return;
         }
+        try { NativeWindowDiscovery.Update(); }
+        catch (Exception ex) { ReportFailure(ex); }
         Expired.Clear();
         Source foreground = null;
         foreach (var pair in Sources)
@@ -234,7 +239,8 @@ internal static class ScreenContentAnnouncer
 
     private static bool IsSourceVisible(Source source)
     {
-        bool visible = IsAlive(source.Root) && UiVisibility.HasVisiblePresentation(source.Root);
+        bool visible = IsAlive(source.Root) && (source.OwnsWindow == null || source.OwnsWindow()) &&
+            UiVisibility.HasVisiblePresentation(source.Root);
         if (source.RetainWhenHidden)
         {
             // Awake registers the exact tooltip once; visibility, not registration, determines opening order.
@@ -282,6 +288,7 @@ internal static class ScreenContentAnnouncer
         internal TMP_Text Header;
         internal TMP_Text Body;
         internal Func<string> ReadText;
+        internal Func<bool> OwnsWindow;
         internal int OpenedFrame;
         internal long Order;
         internal bool RetainWhenHidden;

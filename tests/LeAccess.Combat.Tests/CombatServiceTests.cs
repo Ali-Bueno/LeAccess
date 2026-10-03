@@ -58,6 +58,15 @@ internal static class CombatServiceTests
         var near = ActorAt(2, "Lobo", 1); var far = ActorAt(3, "Oso", 3);
         Reset(); Actors(near, far); near.Dying = true; CombatAccessibility.Update();
         check(ScreenReader.Messages.Single().Text == "Oso", "Dead nearest offline actor cannot hide a living hostile");
+        near.Dying = false;
+        near.gameObject.scene = new UnityEngine.SceneManagement.Scene { handle = 2, Unloaded = true };
+        Tick(.21);
+        check(ScreenReader.Messages.Count == 1, "Unloaded offline enemy cannot hide a living current enemy");
+        near.gameObject.scene = far.gameObject.scene;
+        near.gameObject.activeInHierarchy = false;
+        Tick(.42);
+        check(ScreenReader.Messages.Count == 1, "Inactive offline enemy owner cannot supply a name");
+        near.gameObject.activeInHierarchy = true;
         near.Dying = false; near.InvalidTarget = true; Tick(3);
         check(ScreenReader.Messages.Count == 1, "Invalid offline target is excluded");
         near.InvalidTarget = false; near.Alignment = friendly; Tick(6);
@@ -132,6 +141,41 @@ internal static class CombatServiceTests
             check(LeAccess.Plugin.Log.Messages.Count > 0, "Unavailable path leaves bounded diagnosis: " + mode);
         }
 
+        foreach (bool online in new[] { false, true })
+        {
+            foreach (string unavailable in new[] { "unloaded player scene", "invalid player scene", "inactive owner", "collected owner", "unloaded scene", "invalid scene" })
+            {
+                Reset();
+                GameplayEnvironment.IsOnlineClient = online;
+                PlayerFinder.playerActorVisuals = new ActorVisuals { Id = 1, Alignment = friendly };
+                var owner = online ? PlayerFinder.playerActorVisuals.gameObject : PlayerFinder.playerActorComponent.gameObject;
+                var originalScene = UnityEngine.SceneManagement.SceneManager.Current;
+                switch (unavailable)
+                {
+                    case "unloaded player scene": owner.scene = new() { handle = 2, Unloaded = true }; break;
+                    case "invalid player scene": owner.scene = default; break;
+                    case "inactive owner": owner.activeInHierarchy = false; break;
+                    case "collected owner": owner.WasCollected = true; break;
+                    case "unloaded scene": UnityEngine.SceneManagement.SceneManager.Current = new() { handle = 1, Unloaded = true }; break;
+                    case "invalid scene": UnityEngine.SceneManagement.SceneManager.Current = default; break;
+                }
+                CombatAccessibility.Update();
+                check(ScreenReader.Messages.Count == 0 && !LeAccess.Plugin.Log.Messages.Any(x => x.Contains("registry=")),
+                    $"{(online ? "Online" : "Offline")} combat stops before probing with {unavailable}");
+                UnityEngine.SceneManagement.SceneManager.Current = originalScene;
+                owner.WasCollected = false;
+            }
+        }
+
+        Reset();
+        PlayerFinder.playerActorComponent.gameObject.scene = new() { handle = 2 };
+        var additive = ActorAt(20, "Enemigo persistente", 2);
+        additive.gameObject.scene = new() { handle = 3 };
+        Actors(additive);
+        CombatAccessibility.Update();
+        check(ScreenReader.Messages.Single().Text == "Enemigo persistente",
+            "Loaded persistent player and offline registry remain eligible across scene ownership");
+
         Reset();
         var separated = ActorAt(20,null,2);
         separated.Display=null;
@@ -151,6 +195,11 @@ internal static class CombatServiceTests
         check(LeAccess.Plugin.Log.Messages.Any(m=>m.Contains("name_source=owned_visuals")),"Owned visual source diagnosed independently of simulation actor");
         int dataReads=separated.data.Reads;
         check(dataReads==2,"Owned custom display avoids unnecessary base-name localization");
+
+        Reset(); ownedVisuals.gameObject.scene = new() { handle = 2, Unloaded = true };
+        Actors(separated); CombatAccessibility.Update();
+        check(ScreenReader.Messages.Single().Text == "Skeleton", "Unloaded linked visuals fall back to current actor data");
+        ownedVisuals.gameObject.scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
 
         Reset(); separated.actorSync.gameplayActor=far; Actors(separated); CombatAccessibility.Update();
         check(ScreenReader.Messages.Single().Text=="Skeleton","Mismatched pooled sync cannot borrow another actor's visual name");

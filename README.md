@@ -1,8 +1,8 @@
 # LeAccess
 
 LeAccess is a screen-reader accessibility mod for **Last Epoch**, built as a
-BepInEx 6 IL2CPP plugin for Windows. The current target is Steam **1.5.1**,
-build **25672295**, with Unity **6000.4.8f1**.
+BepInEx 6 IL2CPP plugin for Windows. The current target is Steam build
+**25690669**, with Unity **6000.4.8f1**.
 
 See [STATUS.md](STATUS.md) for confirmed behavior, pending listening checks and
 the latest installed build. Technical findings and reproduction notes live in
@@ -11,6 +11,7 @@ the latest installed build. Technical findings and reproduction notes live in
 ## Accessibility features
 
 - Menu focus, settings, character classes, mastery descriptions and notifications.
+- Visible dungeon entry/exit, boss confirmation and native modal instructions.
 - Skill and passive details, equipped-skill buttons, inventory actions and quest
   journal reading.
 - Visible dialogue, examination descriptions, NPC subtitles and cinematic text.
@@ -36,9 +37,14 @@ Shared [menu visibility and focus checks](reference/menu-visibility.md) exclude
 hidden, faded and clipped labels, and reject retained background selection.
 Collected visual text follows screen rows, top to bottom and left to right;
 native controller navigation remains unchanged.
+Focused native [dungeon and warning windows](reference/dungeon-warning-reading.md)
+read their visible instructions and choices, including changes to tier information.
 During gameplay, new quests, current-objective changes (including counters) and
 completion are announced automatically. Saved quest history is initially silent;
 updates wait while menus or conversations own input.
+[Dynamic echo and encounter instructions](reference/dynamic-objectives.md)
+read their visible objective/modifier text and share pacing and turns with quest
+updates. Queued gameplay text yields to native notices while menus own input.
 Items announce their available actions with the button first; merchant items
 include purchase, sale or repurchase prices. Skills announce learned state and
 their declared level or passive-point requirement.
@@ -99,6 +105,8 @@ The shared [engineering policy](PRINCIPLES.md) targets PRISM. This revision stil
 uses the centralized Tolk/NVDA adapter; migration to PRISM remains outstanding.
 Game assemblies, decompiled game code, third-party DLLs and build outputs are
 excluded from this repository.
+The [speech connection](reference/screen-reader-lifecycle.md) retries automatically
+if a reader starts or restarts after the mod; failed outdated messages are not replayed.
 
 Follow the [Steam port notes](reference/steam-port.md) to set up the loader and
 interop generation. The included `LeAccess.InteropRepair` preloader handles the

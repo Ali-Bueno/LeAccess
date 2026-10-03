@@ -17,6 +17,7 @@ internal sealed class ScreenContentTracker
         }
         if (!_entries.TryGetValue(id, out var entry)) _entries[id] = entry = new Entry();
         bool stable = entry.Candidate == text;
+        entry.Stable = stable;
         entry.Candidate = text;
         if (entry.Spoken == text) return false;
         // Two matching observations allow text and localization to settle after the opening hook.
@@ -29,6 +30,8 @@ internal sealed class ScreenContentTracker
     }
 
     internal void Hide(int id) => _entries.Remove(id);
+    internal bool HasStableContent(int id) => _entries.TryGetValue(id, out var entry) &&
+        entry.Stable && entry.Spoken != entry.Candidate && !string.IsNullOrWhiteSpace(entry.Candidate);
     internal void Reset() => _entries.Clear();
 
     internal static string Combine(IEnumerable<string> fragments)
@@ -53,5 +56,6 @@ internal sealed class ScreenContentTracker
     {
         internal string Candidate;
         internal string Spoken;
+        internal bool Stable;
     }
 }

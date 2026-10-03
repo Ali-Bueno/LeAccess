@@ -87,3 +87,16 @@ No game was launched. Actual approach/listening still requires a fresh run;
 the existing NPC diagnostic should report source `dialogue database` when this
 fallback succeeds. This source label covers the verified database identity and
 native speaker name together, not direct speech of the database identifier.
+
+## Scene lifetime follow-up (2026-10-03)
+
+The proximity probe now requires a valid loaded active scene, a loaded local
+player scene and loaded NPC listener scenes. Previously, a retained active NPC
+in an unloaded scene could beat a live NPC in the registry and provide stale
+speech/audio. Loaded additive and network-owned scenes remain eligible; scene
+handles are not required to match the active scene.
+
+The NPC probe suite passes 109 checks, including eight new scene-lifetime
+regressions; the existing lifecycle suite passes 109 checks. The main build
+with `SkipPluginDeployment=true` has zero warnings/errors. These checks use
+source-linked doubles; online approach and listening remain unverified.

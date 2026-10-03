@@ -18,7 +18,7 @@ static class Program
 
     static void Main()
     {
-        StateTests(); ProbeTests(); ServiceTests(); SourceFairnessTests();
+        StateTests(); ProbeTests(); ServiceTests(); SourceFairnessTests(); PendingPriorityTests();
         Console.WriteLine($"Quest updates: {_checks} checks passed.");
     }
 
@@ -193,6 +193,56 @@ static class Program
 
     private static void Poll(bool menu = false, bool pending = false, double elapsed = 1)
     { Time.unscaledTimeAsDouble += elapsed; ScreenReader.SpokeThisFrame = false; QuestUpdateAccessibility.Update(menu, pending); }
+
+    private static void PendingPriorityTests()
+    {
+        ScreenReader.Spoken.Clear(); ScreenReader.Available = true; ScreenReader.SpokeThisFrame = false;
+        Application.isFocused = true; LE.UI.LoadingScreen.IsVisible = false; GameplayInputState.Owns = true;
+        NavigationAudioState.IsSuspended = false; EpochInputManager.instance.isInputFieldActive = false;
+        ScreenKeyboardManager.Instance._enabled = false; SceneList.Gameplay = true;
+        PlayerFinder.player = new(); PlayerFinder.Character = new(); PlayerFinder.Provider = new();
+        QuestUpdateAccessibility.Initialize(new ConfigFile());
+        var tracked = AddQuest(PlayerFinder.Provider.Campaign); tracked.objectives[0].objective.isIncremental = true;
+        Poll(); Poll(); tracked.objectives[0].progress = 1; Poll(pending: true); Poll(pending: true);
+        Check(QuestUpdateAccessibility.HasPendingContent && QuestUpdateAccessibility.HasPendingAnnouncement,
+            "A ready deferred update retains priority behind a higher-priority gameplay announcement");
+        QuestUpdateAccessibility.Update(otherContentActive: true);
+        Check(QuestUpdateAccessibility.HasPendingContent && !QuestUpdateAccessibility.HasPendingAnnouncement,
+            "A nonpausing inventory releases notification priority immediately between polls while retaining the quest queue");
+        foreach (string gate in new[] { "typing", "keyboard", "unfocused", "loading", "no-gameplay", "inactive-player", "collected-player" })
+        {
+            if(gate=="typing") EpochInputManager.instance.isInputFieldActive = true;
+            if(gate=="keyboard") ScreenKeyboardManager.Instance._enabled = true;
+            if(gate=="unfocused") Application.isFocused = false;
+            if(gate=="loading") LE.UI.LoadingScreen.IsVisible = true;
+            if(gate=="no-gameplay") GameplayInputState.Owns = false;
+            if(gate=="inactive-player") PlayerFinder.player.activeInHierarchy = false;
+            if(gate=="collected-player") PlayerFinder.player.WasCollected = true;
+            QuestUpdateAccessibility.Update();
+            Check(QuestUpdateAccessibility.HasPendingContent && !QuestUpdateAccessibility.HasPendingAnnouncement,
+                $"{gate} cannot block native menu notices while quest speech remains queued");
+            EpochInputManager.instance.isInputFieldActive=false; ScreenKeyboardManager.Instance._enabled=false;
+            Application.isFocused=true; LE.UI.LoadingScreen.IsVisible=false; GameplayInputState.Owns=true;
+            PlayerFinder.player.activeInHierarchy=true; PlayerFinder.player.WasCollected=false;
+        }
+        QuestUpdateAccessibility.Update(higherPriorityPending:true);
+        Check(QuestUpdateAccessibility.HasPendingAnnouncement,"Foreground gameplay restores pending priority without resampling");
+        var provider=PlayerFinder.Provider;
+        PlayerFinder.Provider=null; QuestUpdateAccessibility.Update();
+        Check(QuestUpdateAccessibility.HasPendingContent&&!QuestUpdateAccessibility.HasPendingAnnouncement,
+            "An absent provider immediately releases priority between samples without deleting known quest progression");
+        PlayerFinder.Provider=provider; provider.WasCollected=true; QuestUpdateAccessibility.Update();
+        Check(QuestUpdateAccessibility.HasPendingContent&&!QuestUpdateAccessibility.HasPendingAnnouncement,
+            "A collected provider cannot reserve priority for known queued progression");
+        provider.WasCollected=false; provider.Campaign.initialised=false; Poll(pending:true);
+        Check(QuestUpdateAccessibility.HasPendingContent&&!QuestUpdateAccessibility.HasPendingAnnouncement,
+            "Unready pending source reads yield world/notification priority without erasing their queue");
+        provider.Campaign.initialised=true; Poll(pending:true);
+        Check(QuestUpdateAccessibility.HasPendingAnnouncement,"A recovered ready source restores queued announcement eligibility");
+        Poll(elapsed:2);
+        Check(ScreenReader.Spoken.Count==1&&ScreenReader.Spoken.Single().Contains("1/10"),"Retained progress still delivers once after menus/typing end");
+        QuestUpdateAccessibility.Cleanup();
+    }
 
     private static void ServiceTests()
     {

@@ -28,6 +28,12 @@ internal static class UiFocusOwnership
             var component = navigation.TryCast<Component>();
             var behaviour = navigation.TryCast<Behaviour>();
             if (IsAlive(behaviour) && !behaviour.isActiveAndEnabled) return false;
+            var mediator = navigation.TryCast<NavigableMediator>();
+            if (IsAlive(mediator))
+            {
+                var panel = mediator.FocusedPanel;
+                return IsAlive(panel) && panel.isActiveAndEnabled && IsWithin(element, panel.gameObject);
+            }
             return IsAlive(component) && IsWithin(element, component.gameObject);
         }
         catch (System.Exception) { return false; }

@@ -25,11 +25,13 @@ internal sealed class NpcWorldProbe
             if (!float.IsFinite(rangeMultiplier) || rangeMultiplier <= 0 ||
                 NavigationAudioState.IsSuspended || !GameplayInputState.OwnsInput()) return false;
             var player = PlayerFinder.player;
-            if (!IsAlive(player) || !player.activeInHierarchy || !IsAlive(player.transform)) return false;
+            var scene = SceneManager.GetActiveScene();
+            if (!scene.IsValid() || !scene.isLoaded || !IsAlive(player) || !player.activeInHierarchy ||
+                !player.scene.IsValid() || !player.scene.isLoaded || !IsAlive(player.transform)) return false;
             var visuals = PlayerFinder.playerActorVisuals;
             if (visuals is not null && (!IsAlive(visuals) || !visuals.isActiveAndEnabled || visuals.dead)) return false;
 
-            long session = ((long)(int)SceneManager.GetActiveScene().handle << 32) | (uint)player.GetInstanceID();
+            long session = ((long)(int)scene.handle << 32) | (uint)player.GetInstanceID();
             if (session != _session) { Reset(); _session = session; }
             if (!IsAlive(_camera) || !_camera.isActiveAndEnabled) _camera = Camera.main;
             if (!IsAlive(_camera) || !_camera.isActiveAndEnabled || !IsAlive(_camera.transform)) return false;
@@ -53,6 +55,7 @@ internal sealed class NpcWorldProbe
                     var listener = listeners[index];
                     if (!IsAlive(listener) || !listener.isActiveAndEnabled ||
                         !IsAlive(listener.gameObject) || !listener.gameObject.activeInHierarchy ||
+                        !listener.gameObject.scene.IsValid() || !listener.gameObject.scene.isLoaded ||
                         !IsAlive(listener.transform)) continue;
                     float range = listener.interactionRange * rangeMultiplier;
                     if (!float.IsFinite(range) || range <= 0) continue;

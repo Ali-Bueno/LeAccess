@@ -287,4 +287,5 @@ Check(ScreenReader.Messages.Count == prior && TutorialTextReader.Read(tutorial) 
     "Hidden tutorial cannot emit controls or obsolete content");
 ReadingOrderTests.Run(Check);
 PopupVisibilityTests.Run(Check);
+NativeWindowTests.Run(Check);
 Console.WriteLine($"Screen content tests passed: {checks} checks.");

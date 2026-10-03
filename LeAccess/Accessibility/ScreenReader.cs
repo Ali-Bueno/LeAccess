@@ -5,14 +5,17 @@ using DavyKager;
 
 namespace LeAccess.Accessibility;
 
-/// <summary>
-/// Wrapper for Tolk screen reader library.
-/// Supports NVDA, JAWS, Window-Eyes, and other screen readers.
-/// </summary>
+/// <summary>Centralized output through the established Tolk transport.</summary>
 public static class ScreenReader
 {
+    // A stopped/restarting reader is checked at most once per second on the game thread.
+    private const double ReaderProbeIntervalSeconds = 1;
     private static bool _initialized;
     private static bool _available;
+    private static bool _connectionRequested;
+    private static double _nextProbeTime;
+    private static string _lastDetectedName;
+    private static string _lastFailure;
     private static int _lastSpeechFrame = -1;
     private static IntPtr _nvdaClient;
 
@@ -25,43 +28,46 @@ public static class ScreenReader
     /// </summary>
     public static bool Initialize()
     {
-        if (_initialized) return _available;
+        if (!_connectionRequested) _nextProbeTime = 0;
+        _connectionRequested = true;
+        return RefreshAvailability();
+    }
+
+    private static bool RefreshAvailability()
+    {
+        if (!_connectionRequested) return false;
+        double now = UnityEngine.Time.unscaledTimeAsDouble;
+        if (now < _nextProbeTime) return _available;
+        _nextProbeTime = now + ReaderProbeIntervalSeconds;
 
         try
         {
-            // Tolk loads this client by basename; Unity's working directory is
-            // the game root, while our bundled DLL belongs beside this plugin.
-            string client = Path.Combine(Path.GetDirectoryName(typeof(ScreenReader).Assembly.Location),
-                "nvdaControllerClient64.dll");
-            if (_nvdaClient == IntPtr.Zero && File.Exists(client))
-                _nvdaClient = NativeLibrary.Load(client);
-            Tolk.Load();
-            _initialized = true;
-
-            var name = Tolk.DetectScreenReader();
-            if (!string.IsNullOrEmpty(name))
+            if (!_initialized)
             {
-                DetectedScreenReader = name;
-                _available = true;
-                Plugin.Log.LogInfo($"Tolk initialized. Detected: {name}");
+                // Tolk loads this client by basename; Unity's working directory is
+                // the game root, while our bundled DLL belongs beside this plugin.
+                string client = Path.Combine(Path.GetDirectoryName(typeof(ScreenReader).Assembly.Location),
+                    "nvdaControllerClient64.dll");
+                if (_nvdaClient == IntPtr.Zero && File.Exists(client))
+                    _nvdaClient = NativeLibrary.Load(client);
+                Tolk.Load();
+                _initialized = Tolk.IsLoaded();
+                if (!_initialized) { FailConnection("Tolk.Load did not initialize the library"); return false; }
             }
-            else
+            string name = Tolk.DetectScreenReader();
+            _available = !string.IsNullOrEmpty(name);
+            DetectedScreenReader = _available ? name : "None";
+            if (_lastDetectedName != DetectedScreenReader)
             {
-                Plugin.Log.LogWarning("Tolk loaded but no screen reader detected");
-                _available = false;
+                _lastDetectedName = DetectedScreenReader;
+                if (_available) Plugin.Log.LogInfo($"Tolk available. Detected: {name}");
+                else Plugin.Log.LogWarning("Tolk loaded but no screen reader detected");
             }
-        }
-        catch (DllNotFoundException ex)
-        {
-            Plugin.Log.LogError($"Tolk DLL not found: {ex.Message}");
-            _available = false;
         }
         catch (Exception ex)
         {
-            Plugin.Log.LogError($"Failed to initialize Tolk: {ex.Message}");
-            _available = false;
+            FailConnection($"Tolk initialization/detection failed: {ex.GetType().Name}: {ex.Message}");
         }
-
         return _available;
     }
 
@@ -72,16 +78,20 @@ public static class ScreenReader
     /// <param name="interrupt">If true, interrupts current speech</param>
     public static void Speak(string text, bool interrupt = true)
     {
-        if (!_available || string.IsNullOrEmpty(text)) return;
+        if (string.IsNullOrEmpty(text) || !IsAvailable()) return;
 
         try
         {
-            Tolk.Output(text, interrupt);
-            _lastSpeechFrame = UnityEngine.Time.frameCount;
+            if (Tolk.Output(text, interrupt))
+            {
+                _lastSpeechFrame = UnityEngine.Time.frameCount;
+                _lastFailure = null;
+            }
+            else FailConnection("Tolk.Output returned false");
         }
         catch (Exception ex)
         {
-            Plugin.Log.LogError($"Tolk.Output failed: {ex.Message}");
+            FailConnection($"Tolk.Output failed: {ex.GetType().Name}: {ex.Message}");
         }
     }
 
@@ -98,7 +108,7 @@ public static class ScreenReader
     /// </summary>
     public static void Silence()
     {
-        if (!_available) return;
+        if (!IsAvailable()) return;
 
         try
         {
@@ -106,7 +116,7 @@ public static class ScreenReader
         }
         catch (Exception ex)
         {
-            Plugin.Log.LogError($"Tolk.Silence failed: {ex.Message}");
+            FailConnection($"Tolk.Silence failed: {ex.GetType().Name}: {ex.Message}");
         }
     }
 
@@ -115,7 +125,7 @@ public static class ScreenReader
     /// </summary>
     public static void Braille(string text)
     {
-        if (!_available || string.IsNullOrEmpty(text)) return;
+        if (string.IsNullOrEmpty(text) || !IsAvailable()) return;
 
         try
         {
@@ -123,30 +133,41 @@ public static class ScreenReader
         }
         catch (Exception ex)
         {
-            Plugin.Log.LogError($"Tolk.Braille failed: {ex.Message}");
+            FailConnection($"Tolk.Braille failed: {ex.GetType().Name}: {ex.Message}");
         }
     }
 
     /// <summary>
     /// Check if a screen reader is available.
     /// </summary>
-    public static bool IsAvailable() => _available;
+    public static bool IsAvailable() => RefreshAvailability();
 
     /// <summary>
     /// Check if the screen reader is currently speaking.
     /// </summary>
     public static bool IsSpeaking()
     {
-        if (!_available) return false;
+        if (!IsAvailable()) return false;
 
         try
         {
             return Tolk.IsSpeaking();
         }
-        catch
+        catch (Exception ex)
         {
+            FailConnection($"Tolk.IsSpeaking failed: {ex.GetType().Name}: {ex.Message}");
             return false;
         }
+    }
+
+    private static void FailConnection(string failure)
+    {
+        _available = false;
+        DetectedScreenReader = "None";
+        _nextProbeTime = UnityEngine.Time.unscaledTimeAsDouble + ReaderProbeIntervalSeconds;
+        if (_lastFailure == failure) return;
+        _lastFailure = failure;
+        Plugin.Log.LogError(failure);
     }
 
     /// <summary>
@@ -154,8 +175,6 @@ public static class ScreenReader
     /// </summary>
     public static void Shutdown()
     {
-        if (!_initialized && _nvdaClient == IntPtr.Zero) return;
-
         try
         {
             if (_initialized) Tolk.Unload();
@@ -167,9 +186,15 @@ public static class ScreenReader
 
         _initialized = false;
         _available = false;
+        _connectionRequested = false;
+        _nextProbeTime = 0;
+        _lastSpeechFrame = -1;
+        _lastDetectedName = _lastFailure = null;
+        DetectedScreenReader = "None";
         if (_nvdaClient != IntPtr.Zero)
         {
-            NativeLibrary.Free(_nvdaClient);
+            try { NativeLibrary.Free(_nvdaClient); }
+            catch (Exception ex) { Plugin.Log.LogError($"NVDA client unload failed: {ex.Message}"); }
             _nvdaClient = IntPtr.Zero;
         }
     }

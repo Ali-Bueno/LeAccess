@@ -55,6 +55,9 @@ internal static class TentCanopyTests
         using var reader = new StreamReader(stream);
         string installed = reader.ReadToEnd();
         using var data = JsonDocument.Parse(installed);
+        const string currentBuild = "5cec0d5385ee8ac4d7d557676361703c0f058813";
+        check(data.RootElement.GetProperty("buildHash").GetString() == currentBuild,
+            "Shipped canopies bind independently recorded build 25690669 re-extraction evidence");
         TentCanopy.Initialize(data.RootElement.GetProperty("buildHash").GetString());
         var locations = new Dictionary<string, Vector3> {
             ["Tent_01"] = new(-.7260318f,0,-.21210042f),
@@ -76,6 +79,10 @@ internal static class TentCanopyTests
             root.name=mesh.name;
             var point=locations[mesh.name];point.y=min.y;
             check(At(point.x,point.y,point.z), "installed " + mesh.name + " source-linked covered point has genuine canopy coverage");
+            TentCanopy.Initialize("bf5a46c674908886ecdabb6e9906b8a3bf81ec5b");
+            check(!At(point.x,point.y,point.z) && !TentCanopy.IsAvailable(renderer),
+                "previous build cannot borrow current " + mesh.name + " canopy geometry");
+            TentCanopy.Initialize(currentBuild);
             check(!At(max.x+1,min.y), "installed " + mesh.name + " approach stays silent");
             RuntimeSceneryPlaces.Reset();MapPlayerFloor.Reset();
             var world=new MapSectionWorldSnapshot(99,99,scene.name,scene.path,point.x,point.y,point.z,.5,null);

@@ -301,6 +301,23 @@ internal static class SelectionTests
         check(ScreenReader.Messages.Last().Text == "Bola de fuego. Not equipped. Not learned. Required level: 8",
             "Changed native lock and assignment state update automatically without a manual description request");
         SkillAccessibility.Reset();
+        foreach (string gate in new[] { "popup", "dialogue", "radial menu", "loading", "focus", "selection" })
+        {
+            fixture = Reset();
+            Localization.Abilities.OnDescription = () =>
+            {
+                ScreenContentAnnouncer.HasActiveContent = gate == "popup";
+                DialogueAnnouncer.HasActiveContent = gate == "dialogue";
+                ControllerMenuAccessibility.HasActiveContent = gate == "radial menu";
+                LE.UI.LoadingScreen.IsVisible = gate == "loading";
+                Application.isFocused = gate != "focus";
+                if (gate == "selection") fixture.Icon.ability = new Ability { abilityName = "New selection" };
+            };
+            SkillAccessibility.Update(readDetails: true);
+            check(ScreenReader.Messages.Count == 0 && !SkillAccessibility.HasPendingContent,
+                "Manual skill inspection cancels output when ownership changes during detail formatting: " + gate);
+        }
+        Reset();
         CheckFirstOpening(check);
     }
 

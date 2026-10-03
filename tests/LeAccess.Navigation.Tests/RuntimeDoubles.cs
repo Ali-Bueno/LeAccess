@@ -8,6 +8,7 @@ namespace UnityEngine
         public bool WasCollected { get; set; }
         public bool Destroyed { get; set; }
         public int GetInstanceID() => _id;
+        public IntPtr Pointer => new(_id);
         public static bool operator ==(Object left, Object right)
         {
             if ((left?.WasCollected ?? false) || (right?.WasCollected ?? false))
@@ -161,9 +162,15 @@ internal static class PlayerFinder
 }
 internal class Actor : UnityEngine.Component
 {
+    public ActorSync actorSync;
     public bool isActiveAndEnabled = true;
     public float Radius;
     public float getRadius() => Radius;
+}
+internal class ActorSync : UnityEngine.Component
+{
+    public Actor gameplayActor;
+    public ActorVisuals actorVisuals;
 }
 internal class ActorVisuals : UnityEngine.Component
 {
@@ -171,6 +178,11 @@ internal class ActorVisuals : UnityEngine.Component
     public bool dead;
     public float Radius;
     public float getRadius() => Radius;
+}
+namespace LeAccess.Accessibility.MapSections
+{
+    internal static class MapPlaceDiagnostics
+    { internal static void Report(string reason, string detail) { } }
 }
 internal class LocalPlayer : UnityEngine.Object
 {

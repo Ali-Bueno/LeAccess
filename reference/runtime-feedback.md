@@ -433,6 +433,19 @@ still needs to confirm audible output. The movement tutorial also spoke again.
    open a menu while a drop is targeted. Repeat with mouse hover. Confirm names
    follow only the current visible target and no stale pickup repeats.
 
+## Combat scene lifetime review — 2026-10-03
+
+Nearest-enemy readers now reject invalid/unloaded scenes and inactive or collected
+player/enemy owners before consulting positions or names. A nearer retained entry
+from an unloaded scene previously concealed a valid living enemy; this failure
+was reproduced in the source-linked suite. Offline sync-linked visual names also
+require a live scene, falling back to the selected Actor's own localized data.
+Loaded additive/persistent scenes remain eligible: scene equality alone cannot
+establish that a registered network entity is foreign. The combat suite passes
+156 checks, including 20 added lifetime/positive-coverage checks. No targeting,
+movement, hostility or network state is modified; live online listening remains
+pending.
+
 ## D2R reading behavior transferred
 
 The comparison used the local `d2r-access` sources: `game_text_reader.cpp` and

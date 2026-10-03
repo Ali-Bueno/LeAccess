@@ -45,7 +45,7 @@ internal sealed class WorldCueProbe
         long session = ((long)(int)SceneManager.GetActiveScene().handle << 32) | (uint)player.GetInstanceID();
         if (_session != session) { Reset(); _session = session; }
         if (!IsAlive(_camera) || !_camera.isActiveAndEnabled) _camera = Camera.main;
-        if (!IsAlive(_camera) || !IsAlive(_camera.transform)) return false;
+        if (!IsAlive(_camera) || !_camera.isActiveAndEnabled || !IsAlive(_camera.transform)) return false;
         _position = player.transform.position;
         _right = _camera.transform.right;
         _forward = _camera.transform.forward;

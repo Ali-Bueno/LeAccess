@@ -104,6 +104,12 @@ chunks and audible/directional synthesized fallback. The world-cue suite passes
 **149 checks**, including native sound identity, rejection of foreign/inactive
 objects, generic fallback, shared arbitration and existing playback lifecycle.
 
+The camera-lifetime follow-up adds four checks (153 world-cue checks total).
+Reacquiring `Camera.main` now verifies that the returned camera is enabled;
+previously, reacquiring the same disabled cached camera could still authorize
+directional world cues. Reactivating it or replacing it with an enabled camera
+restores detection. No game or audio device was opened for these checks.
+
 ```powershell
 dotnet run --project tests/LeAccess.NaturalAudio.Tests/LeAccess.NaturalAudio.Tests.csproj
 dotnet run --project tests/LeAccess.NaturalAudio.Tests/LeAccess.NaturalAudio.Tests.csproj -p:OmitNaturalAudioResources=true -- --missing
