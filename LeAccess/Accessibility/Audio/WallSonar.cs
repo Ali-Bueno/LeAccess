@@ -151,6 +151,11 @@ public static class WallSonar
         try
         {
             _debugCounter++;
+            if (!Plugin.ContinuousSonarEnabled)
+            {
+                SilenceAll();
+                return;
+            }
 
             var playerGO = PlayerFinder.getPlayer();
             if (playerGO == null)
