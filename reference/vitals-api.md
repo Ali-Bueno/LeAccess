@@ -18,7 +18,10 @@ current percentage. Without this, each cast or regeneration cycle across 75 or
 50 spoke twice (a 2026-10-02 session logged ~700 mana readings in an hour,
 mostly 62/75 pairs). Example: 100 → 62 reads 62; 75, 62, 76 stay silent; 45
 reads 45; 51 is silent; 75 reads 75. An explicit report re-baselines both.
-Downward crossings at 10 percent or less interrupt speech; other crossings queue.
+Life crossings down to 10 percent or less interrupt speech; other crossings queue.
+Mana never interrupts, and below 10 percent it speaks only its first step and
+empty (0): running dry is routine for casters, and the same session logged ~120
+interrupting mana readings from 5 down to 0. A recovery to 10 or more re-arms it.
 Ordinary chip damage within a band is silent. Zero health remains eligible.
 
 During gameplay, press unmodified **R** or controller **Back/View** to read both

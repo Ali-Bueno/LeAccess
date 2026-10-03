@@ -14,15 +14,15 @@ internal sealed class VitalsAnnouncementState
     private const int CriticalPercent = 10;
     // A one-band rise is regeneration between casts or hits; only clearer recoveries speak.
     private const int RecoveryBands = 2;
-    private readonly Meter _health = new();
-    private readonly Meter _mana = new();
+    private readonly Meter _health = new(routineLow: false);
+    // Running low on mana is routine for casters, not danger: no interrupts, few steps below ten.
+    private readonly Meter _mana = new(routineLow: true);
 
     internal VitalsChange Observe(int healthPercent, int manaPercent, bool acknowledge = true)
     {
-        int previousHealth = _health.Previous, previousMana = _mana.Previous;
+        int previousHealth = _health.Previous;
         int health = _health.Observe(healthPercent, acknowledge), mana = _mana.Observe(manaPercent, acknowledge);
-        bool interrupt = health >= 0 && health <= CriticalPercent && previousHealth > health ||
-            mana >= 0 && mana <= CriticalPercent && previousMana > mana;
+        bool interrupt = health >= 0 && health <= CriticalPercent && previousHealth > health;
         return new VitalsChange(health, mana, interrupt);
     }
 
@@ -53,8 +53,11 @@ internal sealed class VitalsAnnouncementState
 
     private sealed class Meter
     {
+        private readonly bool _routineLow;
         private int _band = -1;
         internal int Previous { get; private set; } = -1;
+
+        internal Meter(bool routineLow) => _routineLow = routineLow;
 
         internal int Observe(int percent, bool acknowledge)
         {
@@ -65,6 +68,10 @@ internal sealed class VitalsAnnouncementState
             bool unchanged = band == _band;
             // A quiet small rise keeps the spoken band, so falling back into it stays silent.
             bool quiet = unchanged || band < _band && _band - band < RecoveryBands;
+            // Below ten a routine meter speaks its first step and empty only.
+            bool routineLow = _routineLow && !baseline && percent < CriticalPercent &&
+                Previous < CriticalPercent && (percent > 0 || Previous == 0);
+            quiet |= routineLow;
             if (baseline || unchanged || !quiet && acknowledge) Acknowledge(percent);
             // Changed bands remain relative to accepted output after rejection.
             // The first live sample is always a silent baseline.

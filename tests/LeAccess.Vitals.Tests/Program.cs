@@ -86,7 +86,7 @@ try
     Values(4,4,2); Tick(.1);
     Check(ScreenReader.Spoken.Count == 0,"new session establishes baseline");
     Values(3,3,2); Tick(.21);
-    Last("Life 3 percent. Mana 3 percent",true,"new session subsequent loss");
+    Last("Life 3 percent",true,"new session subsequent loss; routine low mana step quiet");
     VitalsProbe.Available = false; Tick(.32);
     Values(1,1,2); VitalsProbe.Available = true; Tick(.43);
     Check(ScreenReader.Spoken.Count == 1,"missing probe resets baseline");
@@ -128,7 +128,7 @@ try
     Values(9,double.NaN,replaced:true); Tick(.43);
     Last("Life 9 percent",true,"critical health while rage replaces mana");
     Values(9,4); Tick(.54);
-    Last("Mana 4 percent",true,"resource resumes last known mana baseline");
+    Last("Mana 4 percent",false,"resource resumes last known mana baseline; mana never interrupts");
 
     foreach (string typing in new[] {"field","keyboard"})
     {
@@ -179,7 +179,7 @@ try
     Last("Life 74 percent. Mana 74 percent",false,"current ordinary band replaces rejected critical reading without stale interruption");
     Start(); Tick(0); Values(9,9); ScreenReader.OutputAccepted = false; Tick(.1);
     Values(double.NaN,8); ScreenReader.OutputAccepted = true; Tick(.21);
-    Last("Mana 8 percent",true,"recovery excludes a currently unavailable resource from rejected combined values");
+    Last("Mana 8 percent",false,"recovery excludes a currently unavailable resource from rejected combined values");
     Values(100,8); Tick(.32);
     Check(ScreenReader.Spoken.Count == 1,"restored health in original band cannot replay rejected health history");
     Start(); Tick(0); Values(9,9); ScreenReader.OutputAccepted = false; Tick(.1,keyboard:true);
@@ -199,7 +199,7 @@ try
     Values(8,8); ScreenReader.OutputAccepted = true; Tick(.32);
     Check(ScreenReader.Spoken.Count == 0,"invalid player discards rejected crossings before recovery");
     Values(4,4); Tick(.43);
-    Last("Life 4 percent. Mana 4 percent",true,"revalidated player establishes baseline before a new critical crossing");
+    Last("Life 4 percent",true,"revalidated player establishes baseline before a new critical crossing; routine low mana quiet");
     Start(); Tick(0); Values(9,9); ScreenReader.Available = false; Tick(.1);
     Values(8,8,2); Tick(.21); ScreenReader.Available = true; Tick(.32);
     Check(ScreenReader.Spoken.Count == 0,"new session during reader outage discards previous player crossings");
