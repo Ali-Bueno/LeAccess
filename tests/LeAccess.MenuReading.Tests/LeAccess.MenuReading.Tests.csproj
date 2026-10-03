@@ -15,6 +15,7 @@
     <Compile Include="../../LeAccess/Accessibility/Announcements/ForgeSummaryReader.cs" Link="ForgeSummaryReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/FilterRangeControlReader.cs" Link="FilterRangeControlReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Settings/SettingsFocusAnnouncer.cs" Link="SettingsFocusAnnouncer.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Settings/SettingsSpeechState.cs" Link="SettingsSpeechState.cs" />
     <Compile Include="../../LeAccess/Accessibility/Settings/SettingsValueReader.cs" Link="SettingsValueReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/UiVisibility.cs" Link="UiVisibility.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/UiScreenGeometry.cs" Link="UiScreenGeometry.cs" />

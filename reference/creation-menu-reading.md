@@ -120,3 +120,10 @@ change-realm action in character details. Navigate all five base classes and eac
 mastery: expect short names on focus and the exact current description on the
 manual gesture, without activation or adjacent-mastery speech. The user-confirmed
 [character-name keyboard behavior](character-name-reading.md) was not changed.
+
+## Character select tiles
+
+`CharacterTileReader` speaks an existing character's `charName`, `charLvlAndMastery`,
+`charCycle` and, only while its object is active, `hardcoreTag` text, all in the
+game's own localized text. Popup mode no longer falls back to generic object names
+("Button", "Toggle"); it uses tooltip text or stays silent. Needs an in-game check.

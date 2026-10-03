@@ -182,4 +182,5 @@ first.gameObject.Child().Add(new TextMeshProUGUI { text = "Unrelated ambiguous l
 Check(!MasteryReader.TryGetMasteryInfo(first.gameObject, out _, out _), "ambiguous untyped labels never guessed");
 checks += CreationTabTests.Run(Reset);
 checks += CreationRealmTests.Run(Reset);
+checks += CharacterTileTests.Run(Reset);
 Console.WriteLine($"Classes: {checks} checks passed.");

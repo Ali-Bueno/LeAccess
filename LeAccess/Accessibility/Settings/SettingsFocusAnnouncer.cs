@@ -7,31 +7,30 @@ namespace LeAccess.Accessibility.Settings;
 
 internal static class SettingsFocusAnnouncer
 {
-    private static int _owner, _tab;
-    private static string _heading;
+    private static readonly SettingsHeadingTracker Heading = new();
+    private static GameObject _panel;
     private static string _lastFailure;
 
     internal static bool Update()
     {
         try
         {
-            if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible ||
-                ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
+            if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible) { Reset(); return false; }
+            if (ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
                 !SettingsFocusReader.TryRead(out var current))
-            { Reset(); return false; }
+            { Heading.Retain(_panel is not null && UiVisibility.IsVisible(_panel)); return false; }
+            _panel = current.Panel;
             if (!ScreenReader.IsAvailable()) return true;
 
             string heading = ScreenContentTracker.Combine(new[] { current.TabName, current.TabSummary });
-            bool changed = _owner != current.OwnerId || _tab != current.TabId || _heading != heading;
+            bool changed = Heading.Update(current.OwnerId, current.TabId, heading);
             if (UiVisibility.IsVisible(current.Selected))
-                ElementAnnouncer.AnnounceElement(current.Selected, interrupt: true, context: changed ? heading : null);
+                ElementAnnouncer.AnnounceElement(current.Selected, interrupt: true, context: changed ? heading : null,
+                    speakValueChanges: true);
             else if (changed && !string.IsNullOrWhiteSpace(heading))
                 ScreenReader.Speak(heading, interrupt: true);
             if (changed && !string.IsNullOrWhiteSpace(heading))
                 Plugin.Log.LogInfo($"[Settings] {heading}");
-            _owner = current.OwnerId;
-            _tab = current.TabId;
-            _heading = heading;
             return true;
         }
         catch (System.Exception ex)
@@ -55,5 +54,5 @@ internal static class SettingsFocusAnnouncer
         return true;
     }
 
-    internal static void Reset() { _owner = _tab = 0; _heading = null; }
+    internal static void Reset() { Heading.Reset(); _panel = null; }
 }

@@ -39,6 +39,8 @@ internal class MasteryButton : Component
     internal string classDescription, classDescriptionLocalizationKey;
     internal Il2CppSystem.Collections.Generic.List<string> passiveBonuses, bonusDescriptionLocalizationKey;
 }
+internal class CharacterTile : Component
+{ internal TextMeshProUGUI charName, charLvlAndMastery, charCycle; internal GameObject hardcoreTag; }
 internal class MasteryButtonTooltip : Component { internal string masteryName; }
 internal class MultiButtonsActionPrompt : Component { }
 internal class InputDependantPrompt : Component { }

@@ -110,3 +110,12 @@ the setting name. No value setter or navigation method is called.
 Final focused validation: 63 settings-source checks, 73 menu lifecycle/reading
 checks and 79 shared input-binding checks. Production build is clean. No new hook
 or dependency; audible behavior still needs the next user test.
+
+## Value-only updates and heading retention
+
+When the same settings control keeps its label but its value changes (slider hold,
+toggle), only the new value is spoken, without the 0.15 s same-control cooldown, so
+the final value of a burst is always heard (`SettingsValueSpeech`). A different
+control still speaks label and value. The tab heading is remembered while the same
+`SettingsUIManager` stays visible, so dropdown lists and popups no longer repeat it;
+it resets on panel close, loading screen or window focus loss (`SettingsHeadingTracker`).

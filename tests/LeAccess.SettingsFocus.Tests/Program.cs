@@ -112,4 +112,16 @@ Setup(4);a=Challenge("Invisible",true);a.challengeNameText.alpha=0;EmptySummary(
 Setup(4);a=Challenge("Invisible",true);a.challengeEnabledDescription.canvasRenderer.cull=true;EmptySummary("culled challenge state excluded");
 Setup(2);a=Challenge("Hidden challenge under wrong tab",true);EmptySummary("challenge state read only in native challenges tab");
 Check(!SettingsFocusReader.TryReadTabDetails(out _), "other tabs cannot read background challenge details");
+
+var heading=new SettingsHeadingTracker();
+Check(heading.Update(1,2,"Gráficos"),"first heading is spoken");
+Check(!heading.Update(1,2,"Gráficos"),"unchanged heading is not repeated");
+heading.Retain(true);Check(!heading.Update(1,2,"Gráficos"),"dropdown/popup gap with visible panel keeps heading");
+heading.Retain(false);Check(heading.Update(1,2,"Gráficos"),"heading re-spoken after panel close and reopen");
+Check(heading.Update(1,3,"Sonido"),"tab change speaks new heading");
+Check(SettingsValueSpeech.Plan(true,"Volumen","50","Volumen","60","Volumen: 60")=="60","same control value burst speaks value only");
+Check(SettingsValueSpeech.Plan(true,"Volumen","60","Volumen","70","Volumen: 70")=="70","burst ends with the final value");
+Check(SettingsValueSpeech.Plan(false,"Volumen","60","Música","30","Música: 30")=="Música: 30","different control speaks label and value");
+Check(SettingsValueSpeech.Plan(true,"Volumen","60","Música","30","Música: 30")=="Música: 30","changed label speaks everything");
+Check(SettingsValueSpeech.Plan(true,null,null,null,"On","On")=="On","unlabelled control falls back to full text");
 Console.WriteLine($"Passed {checks} settings focus checks.");

@@ -150,7 +150,7 @@ namespace LE.Settings
 }
 namespace LeAccess.Accessibility.Settings
 {
-    internal readonly record struct SettingsFocusSnapshot(int OwnerId, int TabId, UnityEngine.GameObject Selected, string TabName, string TabSummary);
+    internal readonly record struct SettingsFocusSnapshot(int OwnerId, int TabId, UnityEngine.GameObject Selected, string TabName, string TabSummary, UnityEngine.GameObject Panel = null);
     internal static class SettingsFocusReader
     {
         internal static SettingsFocusSnapshot? Current;
@@ -263,6 +263,8 @@ namespace LeAccess.Accessibility.CharacterCreation
     internal readonly record struct ClassSelection(string Name, string Description);
     internal static class ClassSelectionReader
     { internal static bool TryReadControl(UnityEngine.GameObject go, out ClassSelection selection) { selection = default; return false; } }
+    internal static class CharacterTileReader
+    { internal static bool TryRead(UnityEngine.GameObject go, out string text) { text = null; return false; } }
     internal static class ClassCarouselHandler
     { internal static bool TryHandleFocus(UnityEngine.GameObject go) => false; }
     public static class MasteryReader

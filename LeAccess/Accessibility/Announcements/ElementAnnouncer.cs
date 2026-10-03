@@ -26,6 +26,7 @@ public static class ElementAnnouncer
     private static string _lastAnnouncementText;
     private static GameObject _pendingFocus;
     private const float AnnounceCooldown = 0.15f;
+    private static string _builtLabel, _builtValue, _lastLabel, _lastValue;
 
     // Track toggle changes to announce state updates
     internal static readonly Dictionary<int, bool> TogglePreviousStates = new();
@@ -61,7 +62,7 @@ public static class ElementAnnouncer
     /// <summary>
     /// Announces a UI element to the screen reader.
     /// </summary>
-    public static void AnnounceElement(GameObject go, bool interrupt = true, string context = null)
+    public static void AnnounceElement(GameObject go, bool interrupt = true, string context = null, bool speakValueChanges = false)
     {
         ResetFocusIfUnowned();
         if (!UiFocusOwnership.HasForegroundAccess(go)) return;
@@ -87,7 +88,8 @@ public static class ElementAnnouncer
         var now = Time.unscaledTime;
 
         bool hasContext = !string.IsNullOrWhiteSpace(context);
-        if (!hasContext && instanceId == _lastAnnouncedInstanceId && (now - _lastAnnounceTime) < AnnounceCooldown)
+        bool sameControl = instanceId == _lastAnnouncedInstanceId;
+        if (!hasContext && !speakValueChanges && sameControl && (now - _lastAnnounceTime) < AnnounceCooldown)
             return;
 
         if (instanceId != _lastAnnouncedInstanceId) _lastAnnouncementText = null;
@@ -99,10 +101,14 @@ public static class ElementAnnouncer
         var text = BuildAnnouncementText(go, popupActive || dialogueActive);
         if (hasContext || !string.IsNullOrWhiteSpace(text) && text != _lastAnnouncementText)
         {
+            string spoken = hasContext || !speakValueChanges ? text :
+                Settings.SettingsValueSpeech.Plan(sameControl, _lastLabel, _lastValue, _builtLabel, _builtValue, text);
+            _lastLabel = _builtLabel;
+            _lastValue = _builtValue;
             var debugParent = go.transform.parent?.name ?? "no-parent";
             Plugin.Log.LogDebug($"[Element] name={go.name}, parent={debugParent}");
             _lastAnnouncementText = text;
-            ScreenReader.Speak(ScreenContentTracker.Combine(new[] { context, text }), interrupt);
+            ScreenReader.Speak(ScreenContentTracker.Combine(new[] { context, spoken }), interrupt);
         }
     }
 
@@ -213,9 +219,11 @@ public static class ElementAnnouncer
         string label = null;
         string value = null;
         string description = null;
+        _builtLabel = _builtValue = null;
 
         if (!restrictToControl && Items.MerchantMenuReader.TryReadTab(go, out string merchantTab))
             return merchantTab;
+        if (CharacterTileReader.TryRead(go, out string tileText)) return tileText;
         if (ClassSelectionReader.TryReadControl(go, out var classSelection))
             return string.IsNullOrWhiteSpace(classSelection.Name) ? null :
                 ScreenContentTracker.Combine(new[] { classSelection.Name, includeDetails ? classSelection.Description : null });
@@ -331,8 +339,7 @@ public static class ElementAnnouncer
             // A popup's body belongs to its content reader, not to an icon-only button's ancestors.
             string controlText = ScreenContentReader.Read(go, null, null);
             if (string.IsNullOrWhiteSpace(controlText))
-                controlText = go.GetComponent<InfoForTooltip>() != null && !string.IsNullOrWhiteSpace(label)
-                    ? label : TextUtils.CleanObjectName(go.name);
+                controlText = !string.IsNullOrWhiteSpace(label) ? label : TextUtils.ReadableObjectName(go.name);
             return ScreenContentTracker.Combine(new[] { controlText, value });
         }
 
@@ -388,6 +395,8 @@ public static class ElementAnnouncer
                 return directText;
         }
 
+        _builtLabel = label;
+        _builtValue = value;
         return FormatAnnouncement(label, value, includeDetails ? description : null, go, isDisabledOption);
     }
 

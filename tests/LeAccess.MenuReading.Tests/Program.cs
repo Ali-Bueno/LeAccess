@@ -261,7 +261,8 @@ Reset();
 LeAccess.I18n.ModText.SetLanguage("es");
 var soundRow = new GameObject(); Label(soundRow, "Volumen principal");
 var volume = soundRow.Child("Slider").Add(new Slider { value = 50 });
-SettingsFocusReader.Current = new(10, 2, volume.gameObject, "Sonido", null);
+var settingsRoot = new GameObject();
+SettingsFocusReader.Current = new(10, 2, volume.gameObject, "Sonido", null, settingsRoot);
 bool TickSettings()
 { ScreenReader.SpokeThisFrame = false; Time.unscaledTime += 1; return SettingsFocusAnnouncer.Update(); }
 Check(TickSettings() && ScreenReader.Messages.Single().Text == "Sonido. Volumen principal: 50",
@@ -269,8 +270,23 @@ Check(TickSettings() && ScreenReader.Messages.Single().Text == "Sonido. Volumen 
 TickSettings();
 Check(ScreenReader.Messages.Count == 1, "Header removal does not repeat a stable first control");
 volume.value = 35; TickSettings();
-Check(ScreenReader.Messages.Last().Text == "Volumen principal: 35" && ScreenReader.Messages.Count == 2,
-    "Settings values refresh without a new focus-cursor event");
+Check(ScreenReader.Messages.Last().Text == "35" && ScreenReader.Messages.Count == 2,
+    "Settings values refresh with only the value, without a new focus-cursor event");
+volume.value = 36; ScreenReader.SpokeThisFrame = false; SettingsFocusAnnouncer.Update();
+volume.value = 37; Time.unscaledTime += 0.01f; SettingsFocusAnnouncer.Update();
+Check(ScreenReader.Messages.Count == 4 && ScreenReader.Messages.Last().Text == "37", "A fast value burst is not throttled and ends on the final value");
+var musicRow = new GameObject(); Label(musicRow, "Música");
+var music = musicRow.Child("Slider").Add(new Slider { value = 20 });
+SettingsFocusReader.Current = new(10, 2, music.gameObject, "Sonido", null, settingsRoot); TickSettings();
+Check(ScreenReader.Messages.Last().Text == "Música: 20", "A different control speaks label and value");
+ScreenReader.Messages.Clear();
+SettingsFocusReader.Current = null; TickSettings();
+SettingsFocusReader.Current = new(10, 2, music.gameObject, "Sonido", null, settingsRoot); TickSettings();
+Check(ScreenReader.Messages.Count == 0, "Heading is not repeated after a dropdown/popup gap while the panel stays visible");
+SettingsFocusReader.Current = null; settingsRoot.Active = false; TickSettings(); settingsRoot.Active = true;
+SettingsFocusReader.Current = new(10, 2, music.gameObject, "Sonido", null, settingsRoot); TickSettings();
+Check(ScreenReader.Messages.Last().Text == "Sonido. Música: 20", "Heading is spoken again after the panel closed and reopened");
+ScreenReader.Messages.Clear(); ScreenReader.Messages.Add(("", false)); ScreenReader.Messages.Add(("", false)); // keep the count the next checks expect
 SettingsFocusReader.Current = new(11, 4, null, "Desafíos", "Modo extremo. Desactivado");
 TickSettings();
 Check(ScreenReader.Messages.Last().Text == "Desafíos. Modo extremo. Desactivado",
@@ -293,8 +309,9 @@ Application.isFocused = true; TickSettings();
 Check(ScreenReader.Messages.Count == 6, "Focus restoration renews context once");
 SettingsFocusReader.Current = null;
 Check(!TickSettings() && !SettingsFocusAnnouncer.ReadCurrentDetails(), "Closing settings releases focus and manual detail ownership");
-SettingsFocusReader.Current = new(10, 2, volume.gameObject, "Sonido", null); TickSettings();
-Check(ScreenReader.Messages.Last().Text == "Sonido. Volumen principal: 35",
+var settingsPanel = new GameObject();
+SettingsFocusReader.Current = new(10, 2, volume.gameObject, "Sonido", null, settingsPanel); TickSettings();
+Check(ScreenReader.Messages.Last().Text == "Sonido. Volumen principal: 37",
     "Reopening renews the same selected control with current value");
 var boolRow = new GameObject(); Label(boolRow, "Filtro de lenguaje");
 var boolSetting = boolRow.Child().Add(new Toggle { isOn = true });
@@ -303,8 +320,8 @@ int beforeToggleChange = ScreenReader.Messages.Count;
 boolSetting.isOn = false; ElementAnnouncer.HandleToggleValueChange(boolSetting, false, "native");
 Check(ScreenReader.Messages.Count == beforeToggleChange, "Settings polling owns the value instead of duplicating the native toggle callback");
 TickSettings();
-Check(ScreenReader.Messages.Count == beforeToggleChange + 1 && ScreenReader.Messages.Last().Text == "Filtro de lenguaje: Desactivado",
-    "A settings toggle change is announced exactly once with its label");
+Check(ScreenReader.Messages.Count == beforeToggleChange + 1 && ScreenReader.Messages.Last().Text == "Desactivado",
+    "A settings toggle change is announced exactly once as its value only");
 Reset();
 checks += VisibilityTests.Run();
 Reset();

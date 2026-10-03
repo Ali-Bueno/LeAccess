@@ -8,7 +8,8 @@ using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 namespace LeAccess.Accessibility.Settings;
 
 internal readonly record struct SettingsFocusSnapshot(
-    int OwnerId, int TabId, GameObject Selected, string TabName, string TabSummary);
+    int OwnerId, int TabId, GameObject Selected, string TabName, string TabSummary,
+    GameObject Panel = null);
 
 internal static class SettingsFocusReader
 {
@@ -55,7 +56,7 @@ internal static class SettingsFocusReader
                 !tab.transform.IsChildOf(controller.transform) || !UiVisibility.IsVisible(tab.gameObject)) return false;
             string title = ReadUniqueLabel(tab.gameObject);
             string summary = (SettingsTab)tabId == SettingsTab.Challenges ? SettingsChallengeReader.Read(owner) : null;
-            snapshot = new(owner.GetInstanceID(), tabId, ReadSelection(owner), title, summary);
+            snapshot = new(owner.GetInstanceID(), tabId, ReadSelection(owner), title, summary, manager.gameObject);
             return true;
         }
         catch (Exception) { return false; }

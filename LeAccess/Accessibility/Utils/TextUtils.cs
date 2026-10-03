@@ -43,6 +43,13 @@ public static class TextUtils
         return System.Text.RegularExpressions.Regex.Replace(name, "([a-z])([A-Z])", "$1 $2").Trim();
     }
 
+    /// <summary>Returns the cleaned object name, or null when it is only a generic widget name.</summary>
+    public static string ReadableObjectName(string rawName)
+    {
+        string name = CleanObjectName(rawName);
+        return IsGenericName(name) ? null : name;
+    }
+
     /// <summary>
     /// Checks if a name is a generic UI element name.
     /// </summary>

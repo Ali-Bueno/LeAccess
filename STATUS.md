@@ -59,7 +59,7 @@ requested. No release or new ZIP has been requested.
 | Native hook safety | 46 checks; fresh build 25690669, 60 declarations / 59 distinct native targets including the return-arrow callback. |
 | Reader recovery | Bounded reconnection; covered readers acknowledge accepted output and retry current content. 41 transport checks plus service regressions. [Scope/limits](reference/screen-reader-lifecycle.md); listening pending. |
 | Early online/offline selection | Empty native nullable no longer throws during readiness polling or erases the first click; observation failures retain intent, dispatch remains once-only. 56 checks; fresh startup listening pending. |
-| Menus/focus | Native mediator callbacks follow FocusedPanel; typed forge/material selections and background/faded guards. 296 menu + 63 settings-source checks. [Audit and limits](reference/menu-visibility.md); listening pending. |
+| Menus/focus | Settings sliders/toggles speak only the new value while focus stays; headings no longer repeat after dropdowns; popups never speak raw object names; controller button names localized. Native mediator callbacks follow FocusedPanel; typed forge/material selections and background/faded guards. 296 menu + 63 settings-source checks. [Audit and limits](reference/menu-visibility.md); listening pending. |
 | Mod localization | Automatic game language, en/es catalogs, override and per-key fallback; 376 checks. |
 | Return from Start | Character creation owner/control restored after pause closes; 134 checks. User confirms it works. |
 | Internal panel chatter | Removed; background Forge/Skill Tree opening or closing no longer speaks object names. |
@@ -68,7 +68,7 @@ requested. No release or new ZIP has been requested.
 | Visible subtitles | Distinct dialogue turns and current rendered/submitted lines recover after rejection; stale or expired content is discarded. 73 dialogue + 166 subtitle checks. Inspected Rogue opening narrative remains audio-only. |
 | Hints/notifications | Button-first hints retained. Countdown reads once per restart with menu/typing priority; rejected batch output keeps current sources pending. 79 binding/prompt + 115 notification checks. [Evidence](reference/announcement-lifecycle.md). |
 | Controller menu/zones | Announces opening with neutral stick, then selected localized option; fully faded wheels/sectors cannot speak retained models. 40 checks. Listening pending. |
-| Classes/masteries/realm | Season/legacy labels; descriptions manual. Disabled retained carousel and background mastery rejected. 102 checks; listening pending. |
+| Classes/masteries/realm | Character-select tiles read name, level/mastery, cycle and hardcore tag. Season/legacy labels; descriptions manual. Disabled retained carousel and background mastery rejected. 102 checks; listening pending. |
 | Skills/assigned buttons | Verified assignments and learned/unlock state; rejected briefs/details retry the current owned selection. 189 checks; listening pending. |
 | Passive nodes | Native name/description; empty names retry at a bounded rate, rejected details rebuild while selection remains owned. 107 checks; listening pending. |
 | Quest journal | Current state/objectives and manual history retained; rejected briefs/details retry only while selection remains owned. 136 checks; listening pending. |
