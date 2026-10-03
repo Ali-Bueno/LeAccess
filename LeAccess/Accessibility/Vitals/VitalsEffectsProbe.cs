@@ -27,7 +27,7 @@ internal static class VitalsEffectsProbe
                 if (!IsAlive(entry) || !entry.gameObject.activeInHierarchy) continue;
                 var buff = entry.uiBuff;
                 if (buff == null || buff.WasCollected) continue;
-                string name = TextUtils.CleanText(buff.getName());
+                string name = TextUtils.CleanText(LocalizedName(buff));
                 if (string.IsNullOrWhiteSpace(name)) continue;
                 string text = entry.stacks > 1 ? name + " " + entry.stacks : name;
                 if (!effects.Contains(text)) effects.Add(text);
@@ -35,5 +35,13 @@ internal static class VitalsEffectsProbe
         }
         catch (Exception ex) { LastFailure = ex.GetType().Name + ": " + ex.Message; }
         return effects;
+    }
+
+    // UIBuff.getName returns the raw display name; ailments also expose the game's localized one.
+    private static string LocalizedName(UIBuff buff)
+    {
+        var ailment = buff.TryCast<Ailment>();
+        string localized = IsAlive(ailment) ? ailment.getLocalizedName(false) : null;
+        return string.IsNullOrWhiteSpace(localized) ? buff.getName() : localized;
     }
 }
