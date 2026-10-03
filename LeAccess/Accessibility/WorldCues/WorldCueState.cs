@@ -6,7 +6,30 @@ namespace LeAccess.Accessibility.WorldCues;
 internal enum WorldCueCategory { Coins, Equipment, Interactable }
 internal readonly record struct WorldCueKey(WorldCueCategory Category, int InstanceId);
 internal readonly record struct WorldCueTarget(long Session, WorldCueKey Key, float Distance, float Range,
-    float Pan, float Forward, NaturalCueKind? Sound = null);
+    float Pan, float Forward, NaturalCueKind? Sound = null, float Gain = 1);
+
+// D2RAccess ground_item_service.cpp: exits, waypoints and the stash loop from beyond their
+// native click radius so the player can walk to them; other objects keep the native radius.
+internal static class WorldCueReach
+{
+    // A sounding target keeps its turn this far past its edge, so walking along the edge cannot chop it.
+    internal const float ExitMargin = 0.5f;
+    // Landmarks fade to this share of full volume at the edge of their audible range.
+    internal const float FarGain = 0.35f;
+
+    internal static bool IsLandmark(NaturalCueKind? kind) =>
+        kind is NaturalCueKind.Portal or NaturalCueKind.ZoneTransition or NaturalCueKind.Stash;
+
+    internal static float Limit(float range, bool held) => held ? range + ExitMargin : range;
+
+    // Full volume inside the native radius, fading linearly to FarGain at the audible edge.
+    internal static float Gain(float distance, float nativeRange, float audibleRange)
+    {
+        if (!(distance > nativeRange) || !(audibleRange > nativeRange)) return 1;
+        float t = Math.Clamp((distance - nativeRange) / (audibleRange - nativeRange), 0, 1);
+        return FarGain + (1 - FarGain) * (1 - t);
+    }
+}
 
 internal sealed class WorldCueState
 {

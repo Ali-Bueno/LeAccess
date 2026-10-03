@@ -15,10 +15,14 @@ internal static class WorldCueSounds
     private const double AudioRetrySeconds = 5;
     private const int AudioBufferMilliseconds = 100; // Match the existing terrain output buffer.
     private const double DiagnosticIntervalSeconds = 5;
+    // Roughly the visible play area; D2RAccess landmarks loop within a comparable radius.
+    private const int DefaultLandmarkRangeMetres = 12;
+    private const int MaxLandmarkRangeMetres = 30;
     private static readonly WorldCueProbe World = new();
     private static readonly WorldCueState State = new();
     private static ConfigEntry<bool> _enabled;
     private static ConfigEntry<int> _volume;
+    private static ConfigEntry<int> _landmarkRange;
     private static RadarAudioOutput _audio;
     private static double _nextPoll, _nextAudioRetry;
     private static long _session;
@@ -35,6 +39,9 @@ internal static class WorldCueSounds
             "Repeat distinct directional sounds while coins, equipment and usable world objects remain nearby.");
         _volume = config.Bind(ConfigSection, "Volume", 100,
             new ConfigDescription("World object cue volume in percent.", new AcceptableValueRange<int>(0, 100)));
+        _landmarkRange = config.Bind(ConfigSection, "LandmarkRange", DefaultLandmarkRangeMetres,
+            new ConfigDescription("Metres from which portals, waypoints, zone exits and the stash keep sounding, quieter when far. " +
+                "0 limits them to the game's click range.", new AcceptableValueRange<int>(0, MaxLandmarkRangeMetres)));
         Plugin.Log.LogInfo("World sounds configured (coins, equipment, interactables; current or nearest per category)");
     }
 
@@ -50,6 +57,7 @@ internal static class WorldCueSounds
             if (suspension != null) { ReportStatus(suspension, now); Suspend(); return; }
             if (now < _nextPoll) return;
             _nextPoll = now + PollSeconds;
+            World.LandmarkRange = Math.Clamp(_landmarkRange.Value, 0, MaxLandmarkRangeMetres);
             bool found = World.TryCapture(out var target);
             if (World.LastFailure != null) ReportFailure(World.LastFailure);
             if (!World.HasWorld)
@@ -79,7 +87,7 @@ internal static class WorldCueSounds
             if (!WorldAudioReservation.TryBegin(WorldAudioSource.Object, now,
                 WorldCueSynthesizer.Duration(target.Key.Category, target.Sound), AudioBufferMilliseconds)) return;
             _audio.Play(WorldCueSynthesizer.Synthesize(target.Key.Category, target.Pan, target.Forward,
-                _volume.Value / 100f, target.Sound));
+                _volume.Value / 100f * target.Gain, target.Sound));
             if (NaturalCueBank.LastFailure != null && _lastSampleFailure != NaturalCueBank.LastFailure)
             {
                 _lastSampleFailure = NaturalCueBank.LastFailure;
@@ -142,6 +150,7 @@ internal static class WorldCueSounds
         _audio?.Dispose();
         _audio = null;
         _enabled = null;
+        _landmarkRange = null;
         _nextPoll = _nextAudioRetry = 0;
         _lastFailure = null;
         _lastSampleFailure = null;

@@ -307,5 +307,49 @@ Check(output.Plays == 3, "The remaining interactable continues repeating after l
 Check(LeAccess.Plugin.Log.Info.Count(x => x.StartsWith("[World cue]")) == 2,
     "Looping playback does not produce a per-beep information log");
 WorldCueSounds.Cleanup();
+// Landmarks: exits, waypoints and the stash sound from beyond their native click radius.
+Reset(); probe = new();
+var waypoint = Interactable(-8); waypoint.interactionRange = 2; waypoint.ServiceKey = "service.waypoint";
+Check(!probe.TryCapture(out _), "Without a landmark range a waypoint is limited to its native radius");
+probe.LandmarkRange = 12;
+Check(probe.TryCapture(out target) && target.Sound == NaturalCueKind.Portal && target.Pan == -1,
+    "A waypoint eight metres away sounds within the landmark range");
+Check(Math.Abs(target.Gain - WorldCueReach.Gain(8, 2, 12)) < 1e-6 && target.Gain < 1 && target.Gain > WorldCueReach.FarGain,
+    "A distant landmark is quieter but still audible");
+var lever = Interactable(-6); lever.interactionRange = 2;
+Check(probe.TryCapture(out target) && target.Key.InstanceId == waypoint.GetInstanceID(),
+    "An ordinary object beyond its native radius does not take the landmark's turn");
+lever.transform.position = new(-1.5f, 0, 0);
+Check(probe.TryCapture(out target) && target.Key.InstanceId == lever.GetInstanceID() && target.Gain == 1 && target.Sound == null,
+    "A nearer object within its native radius plays at full volume");
+WorldObjectClickListener.allListener.Remove(lever);
+waypoint.transform.position = new(-1, 0, 0);
+Check(probe.TryCapture(out target) && target.Gain == 1, "Within its native radius a landmark plays at full volume");
+waypoint.transform.position = new(-12.3f, 0, 0);
+Check(probe.TryCapture(out target) && target.Key.InstanceId == waypoint.GetInstanceID(),
+    "A sounding landmark keeps its turn just past the audible edge");
+waypoint.transform.position = new(-12.6f, 0, 0);
+Check(!probe.TryCapture(out _), "Beyond the edge margin the landmark stops");
+waypoint.transform.position = new(-12.3f, 0, 0);
+Check(!probe.TryCapture(out _), "Re-entering needs the real edge, not the held margin");
+waypoint.ServiceKey = "service.merchant"; waypoint.transform.position = new(-8, 0, 0);
+Check(!probe.TryCapture(out _), "A distant non-landmark service keeps its native radius");
+var door = Interactable(-2.3f); door.interactionRange = 2;
+Check(!probe.TryCapture(out _), "Just outside the native radius an ordinary object is silent");
+door.transform.position = new(-1.9f, 0, 0);
+Check(probe.TryCapture(out _), "Inside, it sounds");
+door.transform.position = new(-2.3f, 0, 0);
+Check(probe.TryCapture(out target) && target.Key.InstanceId == door.GetInstanceID(),
+    "Stepping just past the edge does not chop a sounding object");
+Check(Math.Abs(WorldCueReach.Gain(12, 2, 12) - WorldCueReach.FarGain) < 1e-6 && WorldCueReach.Gain(1, 2, 12) == 1 &&
+    WorldCueReach.Gain(5, 2, 2) == 1 && WorldCueReach.Gain(float.NaN, 2, 12) == 1,
+    "Landmark gain is full inside, FarGain at the edge, and safe for degenerate ranges");
+Check(WorldCueReach.IsLandmark(NaturalCueKind.ZoneTransition) && WorldCueReach.IsLandmark(NaturalCueKind.Stash) &&
+    !WorldCueReach.IsLandmark(NaturalCueKind.Chest) && !WorldCueReach.IsLandmark(null),
+    "Exits, waypoints and the stash are landmarks; chests are not");
+Reset(); WorldCueSounds.Initialize(new ConfigFile()); waypoint = Interactable(-8); waypoint.interactionRange = 2;
+waypoint.ServiceKey = "service.waypoint"; Tick(0);
+Check(RadarAudioOutput.Instances.Single().Plays == 1, "The default configuration lets a waypoint sound from eight metres");
+WorldCueSounds.Cleanup();
 checks += NaturalIdentityTests.Run();
 Console.WriteLine($"World cue tests passed: {checks} checks.");

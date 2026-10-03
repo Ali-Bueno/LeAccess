@@ -55,6 +55,29 @@ then leave its native interaction radius. Open a real menu and collect the loot;
 both actions should stop that target's sound. Compare the bounded diagnostics if
 a nearby visible item remains silent.
 
+## Landmark reach (live report, 2026-10-03)
+
+The user reported portal sounds that "stop or stutter". The 20:43 log shows the
+camp waypoint (`sound=Portal`) at its native `interactionRange=2.00`: five cues,
+then `outOfRange=3` once the player stepped away, and at the edge each poll
+alternated in and out, silencing the cue in progress.
+
+`WorldCueReach` follows D2RAccess `ground_item_service.cpp`, where exits,
+waypoints and the stash are loop-only landmarks audible well beyond reach:
+
+- Portals, waypoints, zone transitions and the stash sound up to
+  `[World object sounds] LandmarkRange` metres (default 12, 0-30; 0 restores the
+  native radius). Volume is full inside the native radius and fades linearly to
+  `FarGain` (35 percent) at the edge. Native `CanInteract()` reads no position,
+  so a distant exit still passes it.
+- Other interactables keep the native radius; a nearer one inside its radius
+  still takes the category's turn.
+- A target that was sounding keeps its turn `ExitMargin` (0.5 m) past its edge;
+  re-entry needs the real edge, so the boundary cannot chop it.
+
+Identity is read only for interactables between the native and landmark radii.
+The world-cue suite passes 169 checks; listening is pending.
+
 ## Continuous sonar lifecycle follow-up
 
 The separate optional continuous wall sonar now yields whenever native gameplay

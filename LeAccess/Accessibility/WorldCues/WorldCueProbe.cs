@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ItemFiltering;
+using LeAccess.Accessibility.Audio;
 using LeAccess.Accessibility.Npcs;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -19,6 +20,9 @@ internal sealed class WorldCueProbe
     private WorldCueTarget _nearest;
     private float _lootRange;
     private readonly bool[] _categoryPreferred = new bool[3];
+    private readonly int[] _held = new int[3];
+    /// <summary>Audible radius in metres for exits, waypoints and the stash; at most the native radius disables it.</summary>
+    internal float LandmarkRange { get; set; }
     internal WorldCueTarget?[] Targets { get; } = new WorldCueTarget?[3];
     private int _coins, _equipment, _objects, _outOfRange, _filtered, _unavailable;
     private int _missingItemData, _nonEquipment, _missingLabel;
@@ -118,6 +122,7 @@ internal sealed class WorldCueProbe
             _preferred = preferred;
             _found = true;
         }
+        for (int i = 0; i < _held.Length; i++) _held[i] = Targets[i]?.Key.InstanceId ?? 0;
         target = _nearest;
         return _found;
     }
@@ -142,12 +147,23 @@ internal sealed class WorldCueProbe
         Vector3 offset = owner.transform.position - _position;
         if (IsAlive(listener) && listener.controllerTargetingUsePlayerY) offset.y = 0;
         float distance = offset.magnitude;
-        if (!float.IsFinite(range) || range <= 0 || !float.IsFinite(distance) || distance > range)
+        int id = owner.GetInstanceID();
+        int categoryIndex = (int)category;
+        bool held = _held[categoryIndex] == id;
+        NaturalCueKind? sound = null;
+        bool soundRead = false;
+        float audible = range;
+        if (interactable && float.IsFinite(range) && range > 0 && LandmarkRange > range && float.IsFinite(distance) &&
+            distance > WorldCueReach.Limit(range, held) && distance <= WorldCueReach.Limit(LandmarkRange, held))
+        {
+            sound = WorldCueIdentityReader.ReadKind(listener);
+            soundRead = true;
+            if (WorldCueReach.IsLandmark(sound)) audible = LandmarkRange;
+        }
+        if (!float.IsFinite(range) || range <= 0 || !float.IsFinite(distance) || distance > WorldCueReach.Limit(audible, held))
         { _outOfRange++; return; }
         bool preferred = _selected != IntPtr.Zero && (IsAlive(listener) && _selected == listener.Pointer || _selected == owner.Pointer ||
             IsAlive(label) && _selected == label.Pointer);
-        int id = owner.GetInstanceID();
-        int categoryIndex = (int)category;
         var previous = Targets[categoryIndex];
         if (previous.HasValue && (!preferred && _categoryPreferred[categoryIndex] || preferred == _categoryPreferred[categoryIndex] &&
             (distance > previous.Value.Distance || distance == previous.Value.Distance && id >= previous.Value.Key.InstanceId))) return;
@@ -158,8 +174,9 @@ internal sealed class WorldCueProbe
             pan = Math.Clamp(Vector3.Dot(offset, _right), -1, 1);
             forward = Math.Clamp(Vector3.Dot(offset, _forward), -1, 1);
         }
-        var sound = interactable ? WorldCueIdentityReader.ReadKind(listener) : null;
-        Targets[categoryIndex] = new(_session, new(category, id), distance, range, pan, forward, sound);
+        if (interactable && !soundRead) sound = WorldCueIdentityReader.ReadKind(listener);
+        float gain = WorldCueReach.IsLandmark(sound) ? WorldCueReach.Gain(distance, range, LandmarkRange) : 1;
+        Targets[categoryIndex] = new(_session, new(category, id), distance, range, pan, forward, sound, gain);
         _categoryPreferred[categoryIndex] = preferred;
     }
 
@@ -198,5 +215,6 @@ internal sealed class WorldCueProbe
         _camera = null; _session = 0; _lootListeners.Clear(); LastFailure = null;
         HasWorld = false;
         Array.Clear(Targets, 0, Targets.Length);
+        Array.Clear(_held, 0, _held.Length);
     }
 }
