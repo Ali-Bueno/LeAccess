@@ -10,6 +10,8 @@ Ported from the D2R mod (`docs/boss-life.md`). Config: `[Combat feedback] Announ
 - Death is spoken once as 0 percent (dead flag or health 0 after a living baseline), then the boss is forgotten. A boss that leaves the registry unseen-dead is forgotten silently and re-baselined if it returns.
 - Speech uses `ScreenReader.TrySpeak`; only accepted output is acknowledged, a rejected attempt retries with fresh values.
 - Polled every 200 ms while the window is focused. A loading screen, scene change or disabling the option forgets all baselines; a pausing menu keeps them.
+- Only bosses inside the main camera viewport speak (a sighted player follows the bar of a boss on screen); off-screen bosses, e.g. a party fight elsewhere in the zone, update their bands silently and end silently.
+- Below 10 percent only the first per-point step is spoken, then the death: a fast kill would otherwise queue 5, 4, 3, 2, 1 behind other speech. A recovery to 10 or more re-arms it.
 - Log: `[Boss life] <text>`.
 
 ## Data sources (`last epoch code/`)

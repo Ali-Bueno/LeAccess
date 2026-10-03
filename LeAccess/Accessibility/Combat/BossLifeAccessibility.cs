@@ -40,8 +40,10 @@ internal static class BossLifeAccessibility
 
             var scene = SceneManager.GetActiveScene();
             if (scene.handle != _scene) { State.Reset(); _scene = scene.handle; }
-            var samples = GameplayEnvironment.IsOnlineClient ? BossLifeProbe.Read(PlayerFinder.playerActorVisuals)
-                : BossLifeProbe.Read(PlayerFinder.playerActorComponent);
+            var camera = Camera.main;
+            if (camera != null && !camera.isActiveAndEnabled) camera = null;
+            var samples = GameplayEnvironment.IsOnlineClient ? BossLifeProbe.Read(PlayerFinder.playerActorVisuals, camera)
+                : BossLifeProbe.Read(PlayerFinder.playerActorComponent, camera);
             if (BossLifeProbe.LastFailure is not null) ReportFailure(BossLifeProbe.LastFailure);
             if (samples == null) return;
 

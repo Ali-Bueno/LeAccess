@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using LeAccess.Accessibility.Vitals;
+using UnityEngine;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Combat;
@@ -9,7 +10,15 @@ internal static class BossLifeProbe
 {
     internal static string LastFailure => HostileRegistry.LastFailure;
 
-    internal static List<BossSample> Read(ActorVisuals player)
+    // A sighted player follows a boss's bar while the boss is on screen; without a camera all are audible.
+    internal static bool OnScreen(Camera camera, Vector3 position)
+    {
+        if (camera == null) return true;
+        var viewport = camera.WorldToViewportPoint(position);
+        return viewport.z > 0 && viewport.x >= 0 && viewport.x <= 1 && viewport.y >= 0 && viewport.y <= 1;
+    }
+
+    internal static List<BossSample> Read(ActorVisuals player, Camera camera)
     {
         var samples = new List<BossSample>();
         bool walked = HostileRegistry.Visit(player, (enemy, _) =>
@@ -22,12 +31,13 @@ internal static class BossLifeProbe
             var bar = enemy.TryCast<IOverheadBar>();
             if (bar == null) return;
             int percent = VitalsAnnouncementState.Percent(bar.HealthNormalized, 1);
-            samples.Add(new BossSample(enemy.GetInstanceID(), name, percent, enemy.dead));
+            samples.Add(new BossSample(enemy.GetInstanceID(), name, percent, enemy.dead,
+                OnScreen(camera, enemy.transform.position)));
         });
         return walked ? samples : null;
     }
 
-    internal static List<BossSample> Read(Actor player)
+    internal static List<BossSample> Read(Actor player, Camera camera)
     {
         var samples = new List<BossSample>();
         bool walked = HostileRegistry.Visit(player, (enemy, _) =>
@@ -39,7 +49,7 @@ internal static class BossLifeProbe
             if (string.IsNullOrWhiteSpace(name)) return;
             float current = health.currentHealth;
             int percent = VitalsAnnouncementState.Percent(current, health.maxHealth);
-            samples.Add(new BossSample(enemy.GetInstanceID(), name, percent, current <= 0));
+            samples.Add(new BossSample(enemy.GetInstanceID(), name, percent, current <= 0, OnScreen(camera, enemy.position())));
         });
         return walked ? samples : null;
     }
