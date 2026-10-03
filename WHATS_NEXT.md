@@ -26,8 +26,11 @@ Read `STATUS.md`, then `PRINCIPLES.md`, before changing code.
   enemy presence audio cues (D2R growl/swoop, on by default); character-sheet stat lines;
   enemy scan (F7 / right stick up); character-select tiles; world-map waypoint and
   selection reading; controller button names localized ("Triángulo", "L3").
-- Fixes from a review of the above: icon-only popup buttons keep a name, settings
-  no longer rebuild every frame, nearest-enemy status string no longer grows.
+- Fixes from two independent reviews of the above: icon-only popup buttons keep a
+  name, settings no longer rebuild every frame, nearest-enemy status string no longer
+  grows, world-map poll failures cannot stop the rest of LateUpdate, enemy-cue sight
+  snaps targets onto the NavMesh (off-mesh bosses still sound), brief absences keep
+  cue cadence, boss life narrates on-screen bosses only.
 
 ## First live checks for the user
 
