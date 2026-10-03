@@ -44,6 +44,13 @@ Installed `13fc9c9` with the game closed; previous plugin/config backed up to
 - Portal/waypoint sound stopped beyond 2 m and stuttered at the edge; landmarks now
   sound from 12 m with fading and an edge margin ([world-object-sounds](reference/world-object-sounds.md)).
 
+- Second report: loops still sputtered. Cause: 0.3 s excerpts of 10-15 s D2R loops
+  repeated with gaps. Now whole recordings through a continuous D2R-style loop mixer
+  (`e411d5d`, installed; backup `pre-loops-e19b556-20261003`). Listen for: seamless
+  portal/waypoint hum, gold/equipment loops fading with distance, no clicks on pickup,
+  loudness against the game (`[World object sounds] Volume`, `LoopRange`, `Loops`).
+  The old `LandmarkRange` key in the cfg is now unused.
+
 Re-check these four first; then the list below.
 
 ## First live checks for the user
