@@ -117,7 +117,7 @@ namespace UnityEngine
 namespace TMPro
 {
     public class TMP_Text : UnityEngine.UI.MaskableGraphic
-    { public string text; public float alpha { get => color.a; set => color = new() { a = value }; } }
+    { public string text; public UnityEngine.Bounds textBounds; public float alpha { get => color.a; set => color = new() { a = value }; } }
     public class TextMeshProUGUI : TMP_Text { }
     public class TMP_InputField : UnityEngine.UI.Selectable { public string text; public UnityEngine.Component placeholder; }
     public class TMP_Dropdown : UnityEngine.UI.Selectable { public TMP_Text captionText; public int value; }

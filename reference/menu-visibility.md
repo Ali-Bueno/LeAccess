@@ -16,6 +16,14 @@ outside the viewport and a child label extends back on screen. Missing/zero-size
 layout anchors remain valid owners, while zero-sized rendered labels do not
 supply text. Explicit masks still clip those child labels.
 
+Exception, found live on 2026-10-03: the main-menu "Partida sin conexión" label
+(`scene_Login` `PlayOfflineButton/TextMeshPro Text`) is serialized 0x0 under a
+`VerticalLayoutGroup` that controls width only, so its height stays 0 while its
+Overflow text renders. The size test added in `7710258` silenced the button. A
+TMP label with a zero dimension now counts when its own `textBounds` has a
+finite positive width and height; empty text, transparency and culling still
+hide it. Other graphics keep the zero-size rule.
+
 Unknown projection is distinct from proven invisibility. For a WorldSpace
 canvas, `worldCamera` is an event camera and does not establish which cameras
 render its text; neither its absence, disabled state nor depth can prove that

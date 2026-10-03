@@ -11,6 +11,7 @@ namespace Il2CppInterop.Runtime.InteropTypes.Arrays
 namespace UnityEngine
 {
     public struct Vector2 { public float x, y; }
+    public struct Bounds { public Vector3 size; }
     public struct Vector3
     {
         public float x, y, z;

@@ -43,6 +43,18 @@ internal static class VisibilityTests
         rect.Bounds = new(100, 100, 0, 0);
         Check(UiVisibility.IsVisible(textGo) && !UiVisibility.IsVisibleGraphic(text),
             "Zero-sized layout anchors survive but cannot present rendered text");
+        // Main-menu PlayOfflineButton: the layout sizes only the label's width; Overflow text still renders.
+        rect.Bounds = new(100, 100, 176, 0);
+        text.textBounds = new() { size = new(150, 24, 0) };
+        Check(UiVisibility.IsVisibleGraphic(text) && TextUtils.GetTextFromHierarchy(textGo) == "Visible",
+            "A zero-height label whose text renders is read");
+        text.textBounds = new() { size = new(float.NaN, 24, 0) };
+        Check(!UiVisibility.IsVisibleGraphic(text), "Non-finite text bounds prove nothing");
+        text.textBounds = default;
+        Check(!UiVisibility.IsVisibleGraphic(text), "A zero-height label without rendered text stays hidden");
+        text.alpha = 0; text.textBounds = new() { size = new(150, 24, 0) };
+        Check(!UiVisibility.IsVisibleGraphic(text), "Rendered bounds do not override transparency");
+        text.alpha = 1; text.textBounds = default;
         rect.Bounds = new(float.NaN, 100, 100, 30);
         Check(!UiVisibility.IsVisible(textGo), "Invalid coordinates cannot become visible labels");
         rect.Bounds = new(100, 100, 100, 30);

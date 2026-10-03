@@ -1,4 +1,5 @@
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
@@ -53,7 +54,15 @@ internal static class UiScreenGeometry
         if (IsAlive(renderer) && (renderer.cull || !float.IsFinite(renderer.GetAlpha()) || renderer.GetAlpha() <= 0))
             return false;
         var rect = graphic.rectTransform;
-        return !IsAlive(graphic.canvas) || IsAlive(rect) && rect.rect.width > 0 && rect.rect.height > 0;
+        if (!IsAlive(graphic.canvas)) return true;
+        if (!IsAlive(rect)) return false;
+        if (rect.rect.width > 0 && rect.rect.height > 0) return true;
+        // Overflowing text in a layout that sizes one axis keeps a zero rectangle yet renders
+        // (main-menu PlayOfflineButton label height 0); its own text bounds prove presence.
+        var text = graphic.TryCast<TMP_Text>();
+        if (!IsAlive(text)) return false;
+        var size = text.textBounds.size;
+        return float.IsFinite(size.x) && float.IsFinite(size.y) && size.x > 0 && size.y > 0;
     }
 
     internal static bool HasVisiblePresentation(GameObject element)
