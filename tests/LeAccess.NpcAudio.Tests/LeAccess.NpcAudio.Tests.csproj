@@ -6,6 +6,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/Audio/NpcCueSynthesizer.cs" Link="NpcCueSynthesizer.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/CuePlacement.cs" Link="CuePlacement.cs" />
     <Compile Include="../../LeAccess/Accessibility/Npcs/NpcCueTiming.cs" Link="NpcCueTiming.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/EntityCueCadence.cs" Link="EntityCueCadence.cs" />
   </ItemGroup>
 </Project>

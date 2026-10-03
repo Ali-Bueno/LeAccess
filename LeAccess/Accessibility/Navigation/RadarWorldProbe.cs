@@ -47,6 +47,10 @@ internal sealed class RadarWorldProbe
     private float _openDepthInBodyWidths;
     private readonly NumericsVector2[] _axes = new NumericsVector2[4];
     private readonly RadarReading[] _readings = new RadarReading[4];
+    private Vector3 _origin;
+    private float _originRadius;
+    private int _originAgentType, _originAreaMask;
+    private bool _hasOrigin;
     public string UnavailableReason { get; private set; }
 
     public bool TryCapture(float openDepthInBodyWidths, out RadarWorldSnapshot snapshot)
@@ -123,13 +127,27 @@ internal sealed class RadarWorldProbe
         snapshot = new RadarWorldSnapshot(
             new NumericsVector2(origin.position.x, origin.position.z), _axes, _readings, _settings, session,
             agentRadius, bodyRadius, agentTypeId, areaMask);
+        _origin = origin.position;
+        _originRadius = agentRadius;
+        _originAgentType = agentTypeId;
+        _originAreaMask = areaMask;
+        _hasOrigin = true;
         UnavailableReason = null;
         return true;
+    }
+
+    // Terrain line of sight from the last captured origin; the NavMesh edge lies one agent radius inside walls.
+    public bool HasLineOfSight(Vector3 target)
+    {
+        if (!_hasOrigin) return false;
+        if (!NavMesh.RaycastFilter(_origin, target, out var hit, _originAgentType, _originAreaMask)) return true;
+        return HorizontalDistance(hit.position, target) <= _originRadius;
     }
 
     private bool Unavailable(string reason)
     {
         UnavailableReason = reason;
+        _hasOrigin = false;
         return false;
     }
 
@@ -176,6 +194,7 @@ internal sealed class RadarWorldProbe
         _camera = null;
         _settings = null;
         _hasCameraFrame = false;
+        _hasOrigin = false;
         _session = 0;
     }
 }

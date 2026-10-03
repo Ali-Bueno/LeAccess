@@ -89,6 +89,7 @@ public class MenuAccessibility : MonoBehaviour
         NearbyPlayerAccessibility.Update(ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent ||
             VisibleSubtitleAnnouncer.HasPendingContent || GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName || questUpdatesPending);
         WorldCueSounds.Update();
+        EnemyCueSounds.Update();
         LandmarkAccessibility.Update(worldContentActive,
             ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent ||
             GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || questUpdatesPending);

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../LeAccess/Accessibility/Audio/CuePlacement.cs" Link="CuePlacement.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/EntityCueCadence.cs" Link="EntityCueCadence.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/EnemyCueSynthesizer.cs" Link="EnemyCueSynthesizer.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/NpcCueSynthesizer.cs" Link="NpcCueSynthesizer.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/RadarCueSynthesizer.cs" Link="RadarCueSynthesizer.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/WorldAudioReservation.cs" Link="WorldAudioReservation.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/RadarModel.cs" Link="RadarModel.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/Guidance/GuidanceGeometry.cs" Link="GuidanceGeometry.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Combat/EnemyScanReport.cs" Link="EnemyScanReport.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Combat/EnemyCueSelection.cs" Link="EnemyCueSelection.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Combat/EnemyCueTracker.cs" Link="EnemyCueTracker.cs" />
+  </ItemGroup>
+</Project>

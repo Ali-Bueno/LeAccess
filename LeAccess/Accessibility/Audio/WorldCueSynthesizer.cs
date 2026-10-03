@@ -11,7 +11,6 @@ internal static class WorldCueSynthesizer
     private const double CoinsHz = 2100;
     private const double EquipmentHz = 1250;
     private const double InteractableHz = 420;
-    private const double RearPitch = 0.8;
     private const double Level = 0.24;
     private const double AttackSeconds = 0.004;
     private const double ReleaseSeconds = 0.015;
@@ -45,11 +44,9 @@ internal static class WorldCueSynthesizer
         var selected = NaturalKind(category, kind);
         if (selected.HasValue && NaturalCueBank.TryBuild(selected.Value, pan, forward, gain, out var natural)) return natural;
         double duration = SynthesizedDuration(category);
-        double safeGain = float.IsFinite(gain) ? Math.Clamp(gain, 0, 1) : 0;
-        double rightAxis = float.IsFinite(pan) ? Math.Clamp(pan, -1, 1) : 0;
-        double frontAxis = float.IsFinite(forward) ? Math.Clamp(forward, -1, 1) : 1;
-        double pitch = 1 + (RearPitch - 1) * Math.Clamp(-frontAxis, 0, 1);
-        double left = Math.Sqrt((1 - rightAxis) / 2), right = Math.Sqrt((1 + rightAxis) / 2);
+        double safeGain = CuePlacement.Gain(gain);
+        var placement = new CuePlacement(pan, forward);
+        double pitch = placement.Pitch, left = placement.Left, right = placement.Right;
         int frames = (int)Math.Round(duration * SampleRate);
         var samples = new float[frames * Channels];
         for (int frame = 0; frame < frames; frame++)

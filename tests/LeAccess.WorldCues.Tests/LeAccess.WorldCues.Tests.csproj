@@ -8,6 +8,7 @@
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/WorldCues/*.cs" Link="WorldCues/%(Filename)%(Extension)" />
     <Compile Include="../../LeAccess/Accessibility/Audio/WorldCueSynthesizer.cs" Link="WorldCueSynthesizer.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/CuePlacement.cs" Link="CuePlacement.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/NaturalCueBank.cs" Link="NaturalCueBank.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/PcmWaveReader.cs" Link="PcmWaveReader.cs" />
     <EmbeddedResource Include="../../LeAccess/Sounds/*.wav" LogicalName="LeAccess.Sounds.%(Filename)%(Extension)" />

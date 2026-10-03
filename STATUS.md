@@ -1,7 +1,7 @@
 # STATUS — Last Epoch
 
 **Updated:** 2026-10-03 (Claude session). Spam fixes (vitals, places/NPCs, generic
-modals, settings), D2R ports (potions, effects, boss life), enemy scan, world-map
+modals, settings), D2R ports (potions, effects, boss life), enemy scan and audio cues, world-map
 waypoints, character tiles and localized button names; see [WHATS_NEXT.md](WHATS_NEXT.md).
 All 54 host suites pass; the rebuilt plugin is installed for Steam **25690669**.
 Startup, online play and listening on this build still need in-game validation.
@@ -68,7 +68,7 @@ requested. No release or new ZIP has been requested.
 | Visible subtitles | Distinct dialogue turns and current rendered/submitted lines recover after rejection; stale or expired content is discarded. 73 dialogue + 166 subtitle checks. Inspected Rogue opening narrative remains audio-only. |
 | Hints/notifications | Button-first hints retained. Countdown reads once per restart with menu/typing priority; rejected batch output keeps current sources pending. 79 binding/prompt + 115 notification checks. [Evidence](reference/announcement-lifecycle.md). |
 | Controller menu/zones | Announces opening with neutral stick, then selected localized option; fully faded wheels/sectors cannot speak retained models. 40 checks. Listening pending. |
-| Classes/masteries/realm | Character-select tiles read name, level/mastery, cycle and hardcore tag. Season/legacy labels; descriptions manual. Disabled retained carousel and background mastery rejected. 102 checks; listening pending. |
+| Classes/masteries/realm | Character-select tiles read name, level/mastery, cycle and hardcore tag; character-sheet stat lines read name and value ([sheet](reference/character-sheet.md)). Season/legacy labels; descriptions manual. Disabled retained carousel and background mastery rejected. 102 checks; listening pending. |
 | Skills/assigned buttons | Verified assignments and learned/unlock state; rejected briefs/details retry the current owned selection. 189 checks; listening pending. |
 | Passive nodes | Native name/description; empty names retry at a bounded rate, rejected details rebuild while selection remains owned. 107 checks; listening pending. |
 | World map/waypoints | Map selection (cursor, region or quest) reads location, level, "here", locked and quest markers; quest-driven moves queue after the brief. Waypoint/region focus uses the same typed reader. 26 checks; whether controller focus reaches waypoints needs a live check. [Details](reference/waypoint-map.md) |
@@ -86,6 +86,7 @@ requested. No release or new ZIP has been requested.
 | Nearby player names | Nearest other player's public displayed name inside the native player interaction radius; 29 checks. Online listening pending. |
 | Quest ping | Removed as requested. Optional continuous sonar now also mutes in non-pausing menus and after failed queries. 48 radar/audio checks. |
 | Nearest enemy | Owned visual display/ActorData; 156 checks. Latest log announces Reptador chamuscado and Ojo de Rahyeh offline. Audible results still need confirmation. |
+| Enemy cues | D2R port, on by default: ordinary enemies growl, nearest boss/miniboss swoops; max three streams in targeting range and walkable line of sight, faster when closer, camera-relative pan, shared audio queue with radar/NPC/world sounds. 133 checks; listening pending. [Details](reference/enemy-cues.md) |
 | Enemy scan | F7/right stick up: living hostile count in skill-targeting range, three nearest with camera-relative direction and distance, bosses tagged. Shared hostile registry walk (nearest enemy, boss life, scan). 20 checks; listening pending. [Details](reference/enemy-scan.md) |
 | Boss life | D2R port: bosses/minibosses read "Name, 74 percent" on band falls, death once as 0; on-screen bosses only, one step below 10 percent; first sighting silent, queued speech. 31 checks. Online bar scale (`IOverheadBar.HealthNormalized`) and live bosses unverified. [Details](reference/boss-life.md) |
 | Life/mana | Falls read the band; one-band rises (regeneration between casts) stay silent, ending the 62/75 mana spam. [Rules](reference/vitals-api.md). Potion charges speak on use/pickup and in the R/Back/View report (D2R belt port); the report also lists HUD debuffs. 497 checks. Online hierarchy, controller mapping and listening pending. |

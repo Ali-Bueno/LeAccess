@@ -10,6 +10,7 @@
     <Compile Include="../../LeAccess/Accessibility/Players/*.cs" Link="%(Filename)%(Extension)" />
     <Compile Include="../../LeAccess/Accessibility/Npcs/NpcNameAnnouncementState.cs" Link="NpcNameAnnouncementState.cs" />
     <Compile Include="../../LeAccess/Accessibility/Npcs/NpcCueTiming.cs" Link="NpcCueTiming.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/EntityCueCadence.cs" Link="EntityCueCadence.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
   </ItemGroup>
 </Project>

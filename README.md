@@ -97,6 +97,9 @@ During gameplay, push the **right stick up** from neutral, or press **F7**, for 
 [enemy scan](reference/enemy-scan.md). It speaks how many living hostile enemies are
 within the game's skill-targeting range, then the three nearest with their direction
 (relative to the camera) and distance in units. Bosses and minibosses are tagged.
+Without a button, [enemy cues](reference/enemy-cues.md) growl for up to three
+nearby enemies in sight (a deeper swoop for a boss), panned on screen and faster
+when closer; `[Enemy cues]` in the configuration turns them off or adjusts them.
 
 [Automatic orientation](reference/automatic-orientation.md) also works without a
 button. It names a stable visible destination with a verified walking route,

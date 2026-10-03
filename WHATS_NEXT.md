@@ -23,6 +23,7 @@ Read `STATUS.md`, then `PRINCIPLES.md`, before changing code.
   repeat after dropdowns.
 - New: potion charges on use/pickup and in the R/Back report; harmful effects in
   the report (localized ailment names); boss/miniboss life bands (on-screen only);
+  enemy presence audio cues (D2R growl/swoop, on by default); character-sheet stat lines;
   enemy scan (F7 / right stick up); character-select tiles; world-map waypoint and
   selection reading; controller button names localized ("Triángulo", "L3").
 - Fixes from a review of the above: icon-only popup buttons keep a name, settings
@@ -39,13 +40,15 @@ Read `STATUS.md`, then `PRINCIPLES.md`, before changing code.
 6. Loot-filter rule editor and stash tab setup: one opening read, quiet scrolling.
 7. Character select: name, level/mastery, cycle, hardcore.
 8. R/Back report: potions and "Efectos: …" in Spanish.
+9. Enemy cues: growls left/right/behind, boss swoop, silence behind walls and in menus;
+   loudness against the game; `[Enemy cues] Volume/Bosses/Ordinary` if needed.
 
 ## Next work
 
 - Items in the previous handoff that remain open: output-acceptance coverage in
   general menus, map/zone recovery, nearby-entity recovery, advanced filter/forge
   conditions, visual attack telegraphs (see `reference/hazard-sources.md`).
-- D2R ports not yet done: enemy presence audio cues, ailment change cues (needs a
+- D2R ports not yet done: attack-reach ping, ailment change cues (needs a
   spam-safe design), death place. Analysis notes are in this session's commits.
 - Settings heading reset relies on `SettingsUIManager` becoming invisible on close;
   confirm live.

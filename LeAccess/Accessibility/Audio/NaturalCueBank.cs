@@ -12,9 +12,8 @@ internal static class NaturalCueBank
 {
     internal const int SampleRate = 48000;
     internal const int Channels = 2;
-    // Sound design retains the existing world cue level and rear pitch distinction.
+    // Sound design retains the existing world cue level; CuePlacement supplies the rear pitch distinction.
     private const float PeakLevel = 0.24f;
-    private const double RearPitch = 0.8;
     private const double AttackSeconds = 0.004;
     private const double ReleaseSeconds = 0.015;
     private static readonly string[] ResourceNames =
@@ -40,12 +39,11 @@ internal static class NaturalCueBank
         float[] clip = GetClip(kind);
         samples = Array.Empty<float>();
         if (clip.Length == 0) return false;
-        double safeGain = float.IsFinite(gain) ? Math.Clamp(gain, 0, 1) : 0;
-        double rightAxis = float.IsFinite(pan) ? Math.Clamp(pan, -1, 1) : 0;
-        double frontAxis = float.IsFinite(forward) ? Math.Clamp(forward, -1, 1) : 1;
-        double pitch = 1 + (RearPitch - 1) * Math.Clamp(-frontAxis, 0, 1);
-        double left = Math.Sqrt((1 - rightAxis) / 2) * safeGain;
-        double right = Math.Sqrt((1 + rightAxis) / 2) * safeGain;
+        double safeGain = CuePlacement.Gain(gain);
+        var placement = new CuePlacement(pan, forward);
+        double pitch = placement.Pitch;
+        double left = placement.Left * safeGain;
+        double right = placement.Right * safeGain;
         samples = new float[clip.Length * Channels];
         for (int frame = 0; frame < clip.Length; frame++)
         {

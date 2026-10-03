@@ -67,6 +67,7 @@ public class Plugin : BasePlugin
         MapSectionAccessibility.Initialize(Config);
         NpcSounds.Initialize(Config);
         WorldCueSounds.Initialize(Config);
+        EnemyCueSounds.Initialize(Config);
         WallSonar.Initialize();
 
         // Register UI component for menu accessibility
@@ -111,6 +112,7 @@ public class Plugin : BasePlugin
         NpcSounds.Cleanup();
         LeAccess.Accessibility.Players.NearbyPlayerAccessibility.Reset();
         WorldCueSounds.Cleanup();
+        EnemyCueSounds.Cleanup();
         ReactiveRadar.Cleanup();
         WallSonar.Cleanup();
         WorldAudioReservation.Reset();

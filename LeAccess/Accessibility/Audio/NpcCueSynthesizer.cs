@@ -8,7 +8,6 @@ public static class NpcCueSynthesizer
     public const int SampleRate = 48000;
     public const int Channels = 2;
     public const double DurationSeconds = 0.084;
-    private const double RearPitch = 0.80;
     private const double AttackSeconds = 0.0035;
     private const double ReleaseSeconds = 0.012;
     private const double Level = 0.32;
@@ -27,12 +26,9 @@ public static class NpcCueSynthesizer
 
     public static float[] Synthesize(float pan, float forward, float gain)
     {
-        double safeGain = float.IsFinite(gain) ? Math.Clamp(gain, 0f, 1f) : 0;
-        double rightAxis = float.IsFinite(pan) ? Math.Clamp(pan, -1f, 1f) : 0;
-        double frontAxis = float.IsFinite(forward) ? Math.Clamp(forward, -1f, 1f) : 1;
-        double pitch = 1 + (RearPitch - 1) * Math.Clamp(-frontAxis, 0, 1);
-        double left = Math.Sqrt((1 - rightAxis) / 2);
-        double right = Math.Sqrt((1 + rightAxis) / 2);
+        double safeGain = CuePlacement.Gain(gain);
+        var placement = new CuePlacement(pan, forward);
+        double pitch = placement.Pitch, left = placement.Left, right = placement.Right;
         double textureBlend = 1 - Math.Exp(-2 * Math.PI * TextureCutoffHz * pitch / SampleRate);
         double texture = 0;
         int frames = (int)(DurationSeconds * SampleRate);

@@ -24,6 +24,18 @@ internal static class GuidanceGeometry
         return "guidance.direction." + Directions[(index + Directions.Length) % Directions.Length];
     }
 
+    // Horizontal bearing as stereo pan (screen right) and forward (screen up); zero when undefined.
+    internal static void Bearing(Vector3 delta, Vector3 forward, Vector3 right, out float pan, out float ahead)
+    {
+        pan = ahead = 0;
+        delta.Y = forward.Y = right.Y = 0;
+        if (!Finite(delta) || !Finite(forward) || !Finite(right) || delta.LengthSquared() <= 0 ||
+            forward.LengthSquared() <= 0 || right.LengthSquared() <= 0) return;
+        var bearing = Vector3.Normalize(delta);
+        pan = Math.Clamp(Vector3.Dot(bearing, Vector3.Normalize(right)), -1, 1);
+        ahead = Math.Clamp(Vector3.Dot(bearing, Vector3.Normalize(forward)), -1, 1);
+    }
+
     internal static bool TryRoute(IReadOnlyList<Vector3> corners, Vector3 origin, Vector3 destination,
         float tolerance, out float distance, out Vector3 next)
     {

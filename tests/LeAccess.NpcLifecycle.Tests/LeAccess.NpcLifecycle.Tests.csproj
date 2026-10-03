@@ -8,6 +8,7 @@
     <Compile Include="../../LeAccess/Accessibility/Audio/WorldAudioReservation.cs" Link="WorldAudioReservation.cs" />
     <Compile Include="../../LeAccess/Accessibility/Npcs/NpcSounds.cs" Link="NpcSounds.cs" />
     <Compile Include="../../LeAccess/Accessibility/Npcs/NpcCueTiming.cs" Link="NpcCueTiming.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/EntityCueCadence.cs" Link="EntityCueCadence.cs" />
     <Compile Include="../../LeAccess/Accessibility/Npcs/NpcNameAnnouncementState.cs" Link="NpcNameAnnouncementState.cs" />
   </ItemGroup>
 </Project>

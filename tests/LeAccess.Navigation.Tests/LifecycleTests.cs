@@ -17,6 +17,7 @@ internal static class LifecycleTests
         BodySizeJitterStillAllowsCues();
         DiagnosticHeartbeatIsBounded();
         SampledOriginAnchorsReadings();
+        LineOfSightUsesSampledOrigin();
         GameplayOwnershipAndDeathSuspendRadar();
         PlayerReplacementRejectsForeignNavigationData();
         OnlineVisualRadiusSetsWarningReach();
@@ -168,6 +169,30 @@ internal static class LifecycleTests
         Program.Near(snapshot.Position.Y, 11.7f, "Wall history anchors to the same Z origin as the rays");
         foreach (var reading in snapshot.Readings)
             Program.Near(reading.Depth, 2, "Depth remains relative to sampled origin without double correction");
+        ResetHost();
+    }
+
+    private static void LineOfSightUsesSampledOrigin()
+    {
+        ResetHost();
+        var probe = new RadarWorldProbe();
+        Program.Check(!probe.HasLineOfSight(new Vector3(1, 0, 0)), "No line of sight is claimed before a capture");
+        PlayerFinder.Player.Agent.agentTypeID = 7;
+        PlayerFinder.Player.Agent.areaMask = 5;
+        NavMesh.Depth = 5;
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _), "Capture before line of sight");
+        Program.Check(probe.HasLineOfSight(new Vector3(4, 0, 0)), "An unobstructed target is in sight");
+        Program.Check(NavMesh.Filters[^1] == (7, 5), "Line of sight uses the player's agent type and area mask");
+        Program.Check(probe.HasLineOfSight(new Vector3(0, 0, 5.9f)),
+            "A target within one agent radius past the NavMesh edge stays in sight");
+        Program.Check(!probe.HasLineOfSight(new Vector3(0, 0, 6.5f)), "A target farther behind the edge is hidden");
+        NavMesh.OriginAvailable = false;
+        Program.Check(!probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _) &&
+            !probe.HasLineOfSight(new Vector3(1, 0, 0)), "A failed capture withdraws line of sight");
+        NavMesh.OriginAvailable = true;
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _), "Capture resumes");
+        probe.Reset();
+        Program.Check(!probe.HasLineOfSight(new Vector3(1, 0, 0)), "Reset withdraws line of sight");
         ResetHost();
     }
 

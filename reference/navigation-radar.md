@@ -300,7 +300,7 @@ and whether game eligibility rejects every object behind a wall, remain runtime
 checks. Menus, dialogue/tutorials, inactive/dead players, unavailable objects,
 loading and lost focus suppress world cues without reopening devices.
 
-`WorldAudioReservation` coordinates terrain, NPC and world-object outputs using
+`WorldAudioReservation` coordinates terrain, NPC, world-object and [enemy](enemy-cues.md) outputs using
 FIFO requests and cue duration plus configured device buffering. A repeating NPC
 cannot monopolize the channel. Each output retains the existing managed-provider
 silence and event-confirmed recovery; no new Stop/Play cycle was introduced.
