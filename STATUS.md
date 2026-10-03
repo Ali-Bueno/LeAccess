@@ -1,9 +1,9 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-03. Added guarded Morditas return orientation and manual
-forge previews/reasons. Quest, vitals and guidance recovery now acknowledge
-accepted output before consuming state or pacing.
-All 51 host suites pass; the rebuilt plugin is installed for Steam **25690669**.
+**Updated:** 2026-10-03 (Claude session). Spam fixes (vitals, places/NPCs, generic
+modals, settings), D2R ports (potions, effects, boss life), enemy scan, world-map
+waypoints, character tiles and localized button names; see [WHATS_NEXT.md](WHATS_NEXT.md).
+All 54 host suites pass; the rebuilt plugin is installed for Steam **25690669**.
 Startup, online play and listening on this build still need in-game validation.
 
 ## Current installation
@@ -16,13 +16,13 @@ Startup, online play and listening on this build still need in-game validation.
 - **Speech:** centralized Tolk/NVDA, now with bounded reconnection; see [connection lifecycle](reference/screen-reader-lifecycle.md).
 - **Maps:** 750 fixed sections across 58 layouts and three tent canopies independently re-extracted for the new build. [Provenance](reference/map-section-build-25690669.json).
 - **Backup:** previous interop and plugin in `C:\Users\ali-b\Documents\LeAccess backups\steam-build-25690669-20261003`. Previous installation and personal configuration retained.
-- **Previous plugin:** commit `6ed6f31` installation preserved in `C:\Users\ali-b\Documents\LeAccess backups\pre-encounter-guidance-6ed6f31-20261003`.
+- **Previous plugin:** commit `8eae87e` installation and config preserved in `C:\Users\ali-b\Documents\LeAccess backups\pre-claude-audit-8eae87e-20261003`.
 - **Launch:** normally through Steam; online/offline remains the game's choice. No game or audio device was opened by this audit.
 
 ## Next checks and remaining scope
 
-**Claude handoff:** [WHATS_NEXT.md](WHATS_NEXT.md) records the verified starting
-point, next investigations and working constraints requested by the user.
+**Handoff:** [WHATS_NEXT.md](WHATS_NEXT.md) lists this session's changes, the first
+live checks for them, open work and the user's working rules.
 
 **The user tests independently; do not launch the game without a new request.**
 First check startup/NVDA reconnect during quest/vitals changes, forge manual
