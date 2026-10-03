@@ -1,22 +1,26 @@
 using LeAccess.Accessibility.Audio;
+using LeAccess.Accessibility.WorldCues;
 
 int checks = 0;
 void Check(bool result, string message)
 { checks++; if (!result) throw new InvalidOperationException(message); }
 const int Rate = WorldLoopBank.SampleRate;
 
-// Every supplied loop decodes whole, peak-normalized with D2R's level trims.
+// Every supplied loop decodes whole, peak-normalized with D2R's level trims; LE one-shots fill the mix headroom.
 foreach (var kind in new[] { NaturalCueKind.Gold, NaturalCueKind.Equipment, NaturalCueKind.Chest,
     NaturalCueKind.Stash, NaturalCueKind.Portal, NaturalCueKind.ZoneTransition, NaturalCueKind.Potion, NaturalCueKind.Tome })
 {
     var clip = WorldLoopBank.Get(kind);
     Check(clip.Length > 0 && WorldLoopBank.Has(kind), $"{kind} loop loads");
     float peak = clip.Max(Math.Abs);
-    float expected = 0.9f * MathF.Pow(10, (kind == NaturalCueKind.Chest ? 4 : kind == NaturalCueKind.Stash ? -4 : 0) / 20f);
+    bool oneShot = kind is NaturalCueKind.Gold or NaturalCueKind.Potion or NaturalCueKind.Tome;
+    float expected = oneShot ? 1 / WorldLoopSelection.MixGainLimit
+        : 0.9f * MathF.Pow(10, (kind == NaturalCueKind.Chest ? 4 : kind == NaturalCueKind.Stash ? -4 : 0) / 20f);
     Check(Math.Abs(peak - expected) < 1e-3, $"{kind} loop peaks at its trimmed level");
 }
 Check(WorldLoopBank.Get(NaturalCueKind.Portal).Length > 9 * Rate, "The portal loop is the whole recording, not a 300 ms excerpt");
-Check(WorldLoopBank.Get(NaturalCueKind.Stash).Length == Rate, "The short stash recording is padded to repeat once a second");
+foreach (var kind in new[] { NaturalCueKind.Stash, NaturalCueKind.Gold, NaturalCueKind.Potion, NaturalCueKind.Tome })
+    Check(WorldLoopBank.Get(kind).Length == Rate, $"The short {kind} recording is padded to repeat once a second");
 Check(!WorldLoopBank.Has(NaturalCueKind.Discovery) && WorldLoopBank.Get((NaturalCueKind)99).Length == 0,
     "Kinds without a loop and invalid kinds are empty");
 Check(WorldLoopBank.LastFailure == null, "No loop failed to load");

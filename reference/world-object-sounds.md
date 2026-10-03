@@ -82,7 +82,7 @@ The world-cue suite passes 169 checks; listening is pending.
 
 Second live report: the loop sounds still "sputter, as if the audio were not
 processed well". The log showed no device fault (`callback_stalls=0`, 70 ms
-maximum gap); the sounds themselves were the cause. `tools/import_d2r_audio.py`
+maximum gap); the sounds themselves were the cause. The import tool (now `tools/import_audio.py`)
 had cut the first 0.24-0.3 s of D2R loop recordings that run 10-15 s and the
 scheduler repeated that fragment with edge fades and gaps, interleaved with radar
 and NPC cues through `WorldAudioReservation`.
@@ -116,6 +116,11 @@ They now loop `loot/potion.ogg` and `loot/scroll.ogg` (the scroll click gets
 D2R's 24 dB boost and 0.9 limiter at import) within `LoopRange`, sharing the loot
 voices. They have no repeated-cue fallback: with `Loops=false` they stay silent,
 as before. Their listeners are excluded from generic interactables.
+
+Later on 2026-10-03 gold, potions, tomes, portals/waypoints and exits switched to
+Last Epoch recordings chosen by the user ([sound design](sound-design.md#last-epoch-recordings-user-choice-2026-10-03)).
+Every recording under a second now repeats once a second; the three one-shots
+take the mix's full headroom. Equipment, chests and the stash keep D2R.
 
 Not ported yet: D2R's magic/rare/legendary equipment loops (LE rarity is not
 mapped), door and quest-item loops, ancient bones. Tests: `LeAccess.WorldLoops.Tests` 45 checks

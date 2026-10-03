@@ -9,6 +9,8 @@
     <PackageReference Include="NAudio" Version="2.2.1" />
     <Compile Include="../../LeAccess/Accessibility/Audio/WorldLoopMixer.cs" Link="WorldLoopMixer.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/WorldLoopBank.cs" Link="WorldLoopBank.cs" />
+    <Compile Include="../../LeAccess/Accessibility/WorldCues/WorldLoopSelection.cs" Link="WorldLoopSelection.cs" />
+    <Compile Include="../../LeAccess/Accessibility/WorldCues/WorldCueState.cs" Link="WorldCueState.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/LoopVoice.cs" Link="LoopVoice.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/NaturalCueBank.cs" Link="NaturalCueBank.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/CuePlacement.cs" Link="CuePlacement.cs" />

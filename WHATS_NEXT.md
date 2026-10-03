@@ -53,7 +53,13 @@ Installed `13fc9c9` with the game closed; previous plugin/config backed up to
 - Potions were silent (own native registry, never read). Potions and experience/favor
   tomes now loop too (`a290b8a`, installed; backup `pre-potions-6e2790e-20261003`).
 
-Re-check these four first; then the list below.
+- Loot/landmark sounds: gold, potions, tomes, portals/waypoints and exits now use
+  Last Epoch recordings the user picked from the game's banks; equipment, chests and the
+  stash stay D2R ([sound design](reference/sound-design.md)). Listen for: gold and tome
+  loudness against equipment, exits confused with the game's own waypoint hum. Installed
+  with the game closed; backup `pre-le-sounds-20b4a8d-20261003`.
+
+Re-check these five first; then the list below.
 
 ## First live checks for the user
 

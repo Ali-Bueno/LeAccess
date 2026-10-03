@@ -1,9 +1,9 @@
 [
   {
     "asset": "gold.wav",
-    "source": "sounds/item loop sounds/loot/gold.ogg",
-    "source_sha256": "95356D3B94187AF2BB22EFDE05F35551DD59F3D32AE1ACEF6BFA560B5BA83504",
-    "asset_sha256": "9A214D32D3381362DD8105E04FA22791CC5D3B5B0DA98E3641700E7E17905A30",
+    "source": "Last Epoch_Data/StreamingAssets/UI.bank#sfx_ui_general_goldsmall",
+    "source_sha256": "1DF036690B89F1E4EBCA0933DBFC1C856AEFF4FF19CE50356F0834485F843662",
+    "asset_sha256": "EE97DE8CF39001504432C889653206FC0B0F8BC8180C746AE02B79D72C95A66B",
     "start_seconds": 0,
     "duration_seconds": 0.3
   },
@@ -33,17 +33,17 @@
   },
   {
     "asset": "portal.wav",
-    "source": "sounds/item loop sounds/exploration/portal.ogg",
-    "source_sha256": "B502A5B5934FBA1BEC88E08BC1BFFFF9C83CECD0AB8C8C88769E5B1BEF882CCB",
-    "asset_sha256": "D65DA472F31EF5EA16FB4517CD1CCCA855F3A6D10ABFDE7CE45D2429CB1530C3",
+    "source": "Last Epoch_Data/StreamingAssets/Ingame_Events.bank#sfx_soundevent_timerift_loop1",
+    "source_sha256": "F3D9F0CDC0D7E5ECE8990BA813483523CF794B2453C934E2EF0019120006DC45",
+    "asset_sha256": "F346D6280B96049E2D896618C24580D92A04C917F8A35741507D91558C6CC749",
     "start_seconds": 0,
     "duration_seconds": 0.3
   },
   {
     "asset": "zone_transition.wav",
-    "source": "sounds/item loop sounds/exploration/zone transition.ogg",
-    "source_sha256": "1BE6FC05E2F8131F16FF393B5FC6951916B0A464AAE8C7FC01CDC7BF5D0FDD97",
-    "asset_sha256": "8F9D0A3627B9F3AEB8DD2F0BB070EB4CDDA3222E0B32D69A1142059C44BD8F0D",
+    "source": "Last Epoch_Data/StreamingAssets/Environmental.bank#sfx_enviro_waypoint_loop_v2",
+    "source_sha256": "7BC87D79AC106C1F0F39E7D2D4CB5BB4625177BB88FC8D2A8563C83AF66D2744",
+    "asset_sha256": "A7B050869B6EBE96217581D45B24C489837081B708ADB1F77447F26B515986C8",
     "start_seconds": 0,
     "duration_seconds": 0.3
   },
@@ -73,9 +73,9 @@
   },
   {
     "asset": "Loops/gold.wav",
-    "source": "sounds/item loop sounds/loot/gold.ogg",
-    "source_sha256": "95356D3B94187AF2BB22EFDE05F35551DD59F3D32AE1ACEF6BFA560B5BA83504",
-    "asset_sha256": "0D7C2C5B748DE6BDDEB85E76DA8D13473CB636B2E3817696A405B369B98F5567",
+    "source": "Last Epoch_Data/StreamingAssets/UI.bank#sfx_ui_general_goldsmall",
+    "source_sha256": "1DF036690B89F1E4EBCA0933DBFC1C856AEFF4FF19CE50356F0834485F843662",
+    "asset_sha256": "456CD416C737EBCFA1B5B29F1FEF3EEE9927D7392F34238CD7FCDCA4FC735A0C",
     "start_seconds": 0,
     "duration_seconds": "whole"
   },
@@ -105,33 +105,33 @@
   },
   {
     "asset": "Loops/portal.wav",
-    "source": "sounds/item loop sounds/exploration/portal.ogg",
-    "source_sha256": "B502A5B5934FBA1BEC88E08BC1BFFFF9C83CECD0AB8C8C88769E5B1BEF882CCB",
-    "asset_sha256": "6464274BD190ED2497DA449F765548542E6799E01EFE360567942F959FC6470D",
+    "source": "Last Epoch_Data/StreamingAssets/Ingame_Events.bank#sfx_soundevent_timerift_loop1",
+    "source_sha256": "F3D9F0CDC0D7E5ECE8990BA813483523CF794B2453C934E2EF0019120006DC45",
+    "asset_sha256": "EEAB69E766DAA4016B483DB0CD1AE5C597BE278F936186A5A1C5DB01F728F1FA",
     "start_seconds": 0,
     "duration_seconds": "whole"
   },
   {
     "asset": "Loops/zone_transition.wav",
-    "source": "sounds/item loop sounds/exploration/zone transition.ogg",
-    "source_sha256": "1BE6FC05E2F8131F16FF393B5FC6951916B0A464AAE8C7FC01CDC7BF5D0FDD97",
-    "asset_sha256": "8DC0928EFF5ED289BC3ECC1A3AE22059C1354BB07B13506CA0394DA1CC155948",
+    "source": "Last Epoch_Data/StreamingAssets/Environmental.bank#sfx_enviro_waypoint_loop_v2",
+    "source_sha256": "7BC87D79AC106C1F0F39E7D2D4CB5BB4625177BB88FC8D2A8563C83AF66D2744",
+    "asset_sha256": "8C4E8B8A8B387A96B46E4745785F813DFE926EA3216855683B5B96D9BB2EE77B",
     "start_seconds": 0,
     "duration_seconds": "whole"
   },
   {
     "asset": "Loops/potion.wav",
-    "source": "sounds/item loop sounds/loot/potion.ogg",
-    "source_sha256": "0D78E7CFC343880C69E96FB4570FBC05DBC14CB828DA58DC28BE3B4C048B71BF",
-    "asset_sha256": "2C85C88C6596FB489AA1C13E6CAA4EC42BB83781A916979E0FD56FBB3116DF03",
+    "source": "Last Epoch_Data/StreamingAssets/Environmental.bank#sfx_ui_potion",
+    "source_sha256": "7BC87D79AC106C1F0F39E7D2D4CB5BB4625177BB88FC8D2A8563C83AF66D2744",
+    "asset_sha256": "F331665CBD07F187A35A7886264312EB62B5BAB2FF09B6DDCCCB6A49F903C43F",
     "start_seconds": 0,
     "duration_seconds": "whole"
   },
   {
     "asset": "Loops/tome.wav",
-    "source": "sounds/item loop sounds/loot/scroll.ogg",
-    "source_sha256": "032E414D75232DEB2D64DDDCEC365F89B967B25FDDDD0652B52B0F1768BA2D58",
-    "asset_sha256": "92FF8A55608FCF1248B3FEA09F254A84845FB960E82E0D32F14B5C5BA9C8C0CB",
+    "source": "Last Epoch_Data/StreamingAssets/UI.bank#sfx_ui_inventory_glyph",
+    "source_sha256": "1DF036690B89F1E4EBCA0933DBFC1C856AEFF4FF19CE50356F0834485F843662",
+    "asset_sha256": "431276C46F56938D4FFAF52848B5FAF25D86F7EA4A17E3A82ED507F31B38BB8F",
     "start_seconds": 0,
     "duration_seconds": "whole"
   }

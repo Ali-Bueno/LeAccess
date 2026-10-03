@@ -1,9 +1,10 @@
 using System;
 using System.IO;
+using LeAccess.Accessibility.WorldCues;
 
 namespace LeAccess.Accessibility.Audio;
 
-// Whole D2R loop recordings for the world loop mixer (D2RAccess ground_items.h SoundFiles).
+// Whole D2R and Last Epoch recordings for the world loop mixer (D2RAccess ground_items.h SoundFiles).
 internal static class WorldLoopBank
 {
     internal const int SampleRate = NaturalCueBank.SampleRate;
@@ -11,9 +12,12 @@ internal static class WorldLoopBank
     private const float PeakLevel = 0.9f;
     // D2RAccess user listening, 2026-09-26: the chest sat about 4 LU under the loot loops, the stash too loud.
     private const float ChestLevelDb = 4, StashLevelDb = -4;
-    // D2RAccess D2R_STASH_LOOP_SECONDS: the 0.3 s stash recording is padded to repeat once a second.
-    private const double StashLoopSeconds = 1;
-    // The longest supplied loop runs 15 s; this bounds a damaged resource.
+    // Last Epoch one-shots sit 6-11 dB under the loops at equal peak (reference/sound-design.md); they take
+    // all the mix headroom: the summed loop gain times their peak stays within full scale.
+    private static readonly float OneShotLevelDb = 20 * MathF.Log10(1 / (WorldLoopSelection.MixGainLimit * PeakLevel));
+    // D2RAccess D2R_STASH_LOOP_SECONDS: recordings shorter than a second are padded to repeat once a second.
+    private const double ShortLoopSeconds = 1;
+    // The longest supplied loop runs 17 s; this bounds a damaged resource.
     private const int MaximumFrames = SampleRate * 20;
     private static readonly Lazy<float[]>[] Clips = CreateClips();
 
@@ -41,6 +45,14 @@ internal static class WorldLoopBank
         _ => null
     };
 
+    private static float LevelDb(NaturalCueKind kind) => kind switch
+    {
+        NaturalCueKind.Chest => ChestLevelDb,
+        NaturalCueKind.Stash => StashLevelDb,
+        NaturalCueKind.Gold or NaturalCueKind.Potion or NaturalCueKind.Tome => OneShotLevelDb,
+        _ => 0
+    };
+
     private static Lazy<float[]>[] CreateClips()
     {
         var kinds = Enum.GetValues<NaturalCueKind>();
@@ -61,9 +73,8 @@ internal static class WorldLoopBank
             float peak = 0;
             foreach (float sample in samples) peak = Math.Max(peak, Math.Abs(sample));
             if (peak == 0) throw new InvalidDataException("Loop contains only silence.");
-            float levelDb = kind switch { NaturalCueKind.Chest => ChestLevelDb, NaturalCueKind.Stash => StashLevelDb, _ => 0 };
-            float scale = PeakLevel / peak * MathF.Pow(10, levelDb / 20);
-            int frames = kind == NaturalCueKind.Stash ? Math.Max(samples.Length, (int)(StashLoopSeconds * SampleRate)) : samples.Length;
+            float scale = PeakLevel / peak * MathF.Pow(10, LevelDb(kind) / 20);
+            int frames = Math.Max(samples.Length, (int)(ShortLoopSeconds * SampleRate));
             var loop = new float[frames];
             for (int frame = 0; frame < samples.Length; frame++) loop[frame] = samples[frame] * scale;
             return loop;

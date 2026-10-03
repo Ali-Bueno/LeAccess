@@ -1,7 +1,8 @@
 # Natural world sounds
 
-The mod now embeds short excerpts from the user's D2R sound collection, and the
-whole loop recordings for the continuous world loop mixer
+The mod now embeds short excerpts from the user's D2R sound collection and from
+Last Epoch's own FMOD banks ([user choice](sound-design.md#last-epoch-recordings-user-choice-2026-10-03)),
+and the whole recordings for the continuous world loop mixer
 ([continuous loops](world-object-sounds.md#continuous-loops-d2r-mixer-port-2026-10-03)).
 With loops on, gold, equipment, chests, the stash, portals and transitions use
 the loops; the excerpts below remain the fallback and the route sound. Gold,
@@ -10,18 +11,18 @@ camera-relative stereo placement. Rearward sounds have a lower pitch. The
 existing radar wall/opening sounds and NPC wooden taps remain unchanged.
 The original bright synthesized coin/equipment cues and the user's preference
 are preserved in [sound design](sound-design.md), including playable WAVs.
-Those are listening references; the D2R recordings remain active.
+Those are listening references, not active sounds.
 
 ## Meaning and availability
 
-| Audible meaning in Last Epoch | D2R recording | Duration |
+| Audible meaning in Last Epoch | Recording (D2R unless marked LE) | Duration |
 |---|---|---|
-| Gold pile | `loot/gold.ogg` | 300 ms |
+| Gold pile | LE `UI.bank` `sfx_ui_general_goldsmall` | 300 ms |
 | Equipment allowed by the native loot filter | `loot/normal equipment.ogg` | 300 ms |
 | Verified loot chest | `loot/chest.ogg` | 240 ms |
 | Stash | `loot/stash.ogg` | 240 ms |
-| Portal or waypoint | `exploration/portal.ogg` | 300 ms |
-| Zone or dungeon transition | `exploration/zone transition.ogg` | 300 ms |
+| Portal or waypoint | LE `Ingame_Events.bank` `sfx_soundevent_timerift_loop1` | 300 ms |
+| Zone or dungeon transition | LE `Environmental.bank` `sfx_enviro_waypoint_loop_v2` | 300 ms |
 | Automatic route direction | `exploration/unexplored room.ogg` | 350 ms |
 
 `discovered.ogg` (450 ms) and `inside unexplored room.ogg` (350 ms) are also
@@ -84,19 +85,23 @@ each recording.
 The source repository's MIT notice is retained at
 `LeAccess/Sounds/D2R-LICENSE.txt` and embedded in the plugin. Original relative
 paths, original SHA-256 hashes, excerpt durations and generated asset SHA-256
-hashes are recorded in `LeAccess/Sounds/provenance.json`. The D2R source files
+hashes are recorded in `LeAccess/Sounds/provenance.json`; a Last Epoch source is
+`<bank path>#<sample name>` with the whole bank's hash. The D2R source files
 were not changed. No external publication was performed.
 
-To reproduce the embedded assets with the already installed FFmpeg command:
+To reproduce the embedded assets with FFmpeg and vgmstream-cli
+(<https://github.com/vgmstream/vgmstream/releases>, r2117 used):
 
 ```powershell
-python tools/import_d2r_audio.py 'D:\code\c++\diablo 2 access project\d2r-access'
+python tools/import_audio.py 'D:\code\c++\diablo 2 access project\d2r-access' 'D:\games\steam\steamapps\common\Last Epoch' --vgmstream <path>\vgmstream-cli.exe
 ```
 
 This maintenance command converts the excerpts to mono, 48 kHz PCM16, removes
-metadata and writes their manifest. Ordinary `dotnet build` and installed
-playback require neither FFmpeg nor the D2R repository: the nine WAV excerpts
-are source assets embedded directly into the mod DLL.
+metadata and writes their manifest. It finds Last Epoch samples by name in the
+FSB5 name table and checks vgmstream reports the same name. Rerunning it
+reproduces the D2R assets byte for byte. Ordinary `dotnet build` and installed
+playback require none of these tools or sources: the nine WAV excerpts and the
+loops are embedded directly into the mod DLL.
 
 ## Verification
 
