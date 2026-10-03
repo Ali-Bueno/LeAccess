@@ -14,8 +14,11 @@ internal static class NativeWindowDiscovery
         var root = foreground.gameObject;
         int id = root.GetInstanceID();
         if (ScreenContentAnnouncer.HasWindowOwner(id)) return;
+        var panel = foreground.TryCast<Panel>();
+        var modal = IsAlive(panel) && !IsExplicitPanel(panel) ? new GenericModalText(root) : null;
         ScreenContentAnnouncer.Track(root, retainWhenHidden: true, separateWindow: true,
-            ownsWindow: () => OwnsWindow(foreground));
+            readText: modal is null ? null : modal.ReadOpening, ownsWindow: () => OwnsWindow(foreground),
+            readUpdate: modal is null ? null : modal.ReadHeader);
     }
 
     private static Behaviour ReadForeground()
@@ -69,12 +72,15 @@ internal static class NativeWindowDiscovery
     private static bool IsContentPanel(Panel panel)
     {
         var modal = panel.TryCast<IModal>();
-        return modal is not null && !modal.WasCollected ||
-            IsAlive(panel.TryCast<WarningConfirmationModal>()) || IsAlive(panel.TryCast<AlertModal>()) ||
-            IsAlive(panel.TryCast<LightlessArborEntrancePanel>()) || IsAlive(panel.TryCast<SoulfireBastionEntrancePanel>()) ||
-            IsAlive(panel.TryCast<TemporalSanctumEntrancePanel>()) || IsAlive(panel.TryCast<DungeonFloorExitPanel>()) ||
-            IsAlive(panel.TryCast<BossConfirmationPanel>());
+        return modal is not null && !modal.WasCollected || IsExplicitPanel(panel);
     }
+
+    // Explicit warning, alert and dungeon panels read their whole visible content; other IModal windows do not.
+    private static bool IsExplicitPanel(Panel panel) =>
+        IsAlive(panel.TryCast<WarningConfirmationModal>()) || IsAlive(panel.TryCast<AlertModal>()) ||
+        IsAlive(panel.TryCast<LightlessArborEntrancePanel>()) || IsAlive(panel.TryCast<SoulfireBastionEntrancePanel>()) ||
+        IsAlive(panel.TryCast<TemporalSanctumEntrancePanel>()) || IsAlive(panel.TryCast<DungeonFloorExitPanel>()) ||
+        IsAlive(panel.TryCast<BossConfirmationPanel>());
 
     private static bool IsVisibleOwner(Behaviour owner) =>
         IsAlive(owner) && owner.isActiveAndEnabled && UiVisibility.IsVisible(owner.gameObject);

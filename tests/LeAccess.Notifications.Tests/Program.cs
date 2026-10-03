@@ -20,6 +20,7 @@ internal static class Program
             OverlappingSourceRootsDoNotRepeatText();
             LifecycleInvalidatesStaleContent();
             PopupPriorityDoesNotReplayExpiredNotices();
+            DeliveredGenericModalReleasesQuickFeedback();
             DialoguePriorityDoesNotReplayExpiredNotices();
             ScreenReaderAvailabilityDefersVisibleContent();
             MenuFeedbackFollowsBriefSelection();
@@ -239,6 +240,25 @@ internal static class Program
         ScreenReader.Available = true;
         Tick();
         Check(ScreenReader.Messages.Single().Text == "Current notice", "Pending visible notice can speak when the backend is available");
+    }
+
+    private static void DeliveredGenericModalReleasesQuickFeedback()
+    {
+        Reset();
+        ScreenContentAnnouncer.HasActiveContent = true;
+        var feedback = Quick("Regla guardada");
+        NotificationAnnouncer.TrackQuick(feedback);
+        Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 0, "A generic modal still opening keeps priority over quick feedback");
+        ScreenContentAnnouncer.GenericWindowDelivered = true;
+        Tick();
+        Check(ScreenReader.Messages.Single() == ("Regla guardada", false),
+            "Quick feedback inside a delivered generic modal speaks passively before it expires");
+        Reset();
+        ScreenContentAnnouncer.HasActiveContent = ScreenContentAnnouncer.GenericWindowDelivered = true;
+        NotificationAnnouncer.GameplayDelivered(Countdown());
+        for (int frame = 0; frame < 3; frame++) { Time.frameCount++; NotificationAnnouncer.UpdateUrgent(); }
+        Check(ScreenReader.Messages.Count == 0, "The urgent countdown pass keeps full modal priority");
     }
 
     private static void DialoguePriorityDoesNotReplayExpiredNotices()
@@ -565,6 +585,7 @@ internal static class Program
         Application.isFocused = true;
         LE.UI.LoadingScreen.IsVisible = false;
         ScreenContentAnnouncer.HasActiveContent = false;
+        ScreenContentAnnouncer.GenericWindowDelivered = false;
         ScreenReader.Available = true;
         ScreenReader.OutputAccepted = true;
         ScreenReader.SpokeThisFrame = false;

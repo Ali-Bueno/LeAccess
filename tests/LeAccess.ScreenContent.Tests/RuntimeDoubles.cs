@@ -192,8 +192,10 @@ namespace LeAccess.Accessibility.Announcements
     }
     internal static class UiVisibility
     {
+        public static int PresentationChecks;
         public static bool HasVisiblePresentation(UnityEngine.GameObject root)
         {
+            PresentationChecks++;
             if (!IsVisible(root)) return false;
             var labels = root.GetComponentsInChildren<TMPro.TMP_Text>(true).Cast<UnityEngine.Component>()
                 .Concat(root.GetComponentsInChildren<UnityEngine.UI.Text>(true)).ToList();

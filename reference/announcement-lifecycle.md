@@ -22,6 +22,15 @@ it is waiting for. The screen-content suite links both actual announcers and
 runs the game's service order to check this interaction, latest deferred text,
 and blocking-modal release; its dialogue activity is not a writable test double.
 
+## Generic modal windows
+
+Focused panels found only through the `IModal` cast (loot-filter rule editor, pickers, stash configuration)
+read once on open: the single `IModalTemplate`'s `_title`/`_message` (`ConfirmationModalBase` fills them from
+`ConfirmationModalOpenData.Title/Message`), then visible text outside any `Selectable` or `ScrollRect`.
+Lists and control captions belong to focus navigation. While open, only a changed template header/body is
+reread, without interrupting; child modals and alt-tab do not repeat it; hiding rearms it. A delivered
+generic modal no longer withholds passive notifications. Explicit warning/alert/dungeon panels are unchanged.
+
 ## Encounter abandonment countdown
 
 The native encounter countdown is an abandonment instruction. It is not evidence

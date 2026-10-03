@@ -17,7 +17,8 @@ Recognized owners are Lightless Arbor, Soulfire Bastion and Temporal Sanctum
 entry panels, `DungeonFloorExitPanel`, `BossConfirmationPanel`,
 `WarningConfirmationModal`, `AlertModal`, and any focused panel which casts
 successfully to the native `IModal` interface. The optional interface cast
-extends coverage to native generic confirmation/picker implementations; a
+extends coverage to native generic confirmation/picker implementations, which
+read only once on open ([generic modal rule](announcement-lifecycle.md#generic-modal-windows)); a
 failed cast is not treated as a modal. Explicit dungeon and warning types
 remain supported independently of that cast.
 

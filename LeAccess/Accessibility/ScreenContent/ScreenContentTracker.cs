@@ -37,6 +37,16 @@ internal sealed class ScreenContentTracker
         return true;
     }
 
+    internal bool HasSpoken(int id) => _entries.TryGetValue(id, out var entry) && entry.Spoken != null;
+
+    // Records text as already delivered so only later changes are offered.
+    internal void Rebase(int id, string text)
+    {
+        if (!_entries.TryGetValue(id, out var entry)) _entries[id] = entry = new Entry();
+        entry.Candidate = entry.Spoken = text ?? string.Empty;
+        entry.Stable = true;
+    }
+
     internal void Hide(int id) => _entries.Remove(id);
     internal bool HasStableContent(int id) => _entries.TryGetValue(id, out var entry) &&
         entry.Stable && entry.Spoken != entry.Candidate && !string.IsNullOrWhiteSpace(entry.Candidate);

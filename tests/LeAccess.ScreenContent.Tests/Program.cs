@@ -310,6 +310,7 @@ Check(ScreenReader.Messages.Count == prior && TutorialTextReader.Read(tutorial) 
 ReadingOrderTests.Run(Check);
 PopupVisibilityTests.Run(Check);
 NativeWindowTests.Run(Check);
+GenericModalTests.Run(Check);
 DialoguePriorityTests.Run(Check);
 RejectedOutputTests.Run(Check);
 Console.WriteLine($"Screen content tests passed: {checks} checks.");

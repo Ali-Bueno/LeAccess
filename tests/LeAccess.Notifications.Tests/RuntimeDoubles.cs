@@ -182,7 +182,11 @@ namespace LeAccess.Accessibility.Navigation
 namespace LE.UI { internal static class LoadingScreen { public static bool IsVisible; } }
 namespace LeAccess.Accessibility.ScreenContent
 {
-    internal static class ScreenContentAnnouncer { public static bool HasActiveContent; }
+    internal static class ScreenContentAnnouncer
+    {
+        public static bool HasActiveContent, GenericWindowDelivered;
+        public static bool BlocksNotifications => HasActiveContent && !GenericWindowDelivered;
+    }
 }
 namespace LeAccess.Accessibility
 {

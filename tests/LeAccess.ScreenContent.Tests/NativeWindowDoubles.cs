@@ -25,4 +25,15 @@ namespace LE.UI.PanelSystem
     internal sealed class SoulfireBastionEntrancePanel : Panel { }
     internal sealed class TemporalSanctumEntrancePanel : Panel { }
     internal sealed class BossConfirmationPanel : Panel { }
+    internal sealed class ModalTemplate : UnityEngine.Component { public TMPro.TMP_Text _title, _message; }
+}
+
+namespace LE.UI.Components
+{ internal sealed class ModalTemplate : UnityEngine.Component { public TMPro.TMP_Text _title, _message; } }
+
+namespace UnityEngine.UI
+{
+    internal class Selectable : UnityEngine.Component { }
+    internal sealed class Button : Selectable { }
+    internal sealed class ScrollRect : UnityEngine.Component { }
 }

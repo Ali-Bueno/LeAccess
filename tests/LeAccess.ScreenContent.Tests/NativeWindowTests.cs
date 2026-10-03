@@ -11,7 +11,7 @@ internal static class NativeWindowTests
         void Frames() { for (int i = 0; i < 3; i++) { Time.frameCount++; ScreenContentAnnouncer.Update(); } }
         foreach (var panel in new Panel[] { new LightlessArborEntrancePanel(), new SoulfireBastionEntrancePanel(),
             new TemporalSanctumEntrancePanel(), new DungeonFloorExitPanel(), new BossConfirmationPanel(),
-            new WarningConfirmationModal(), new AlertModal(), new GenericNativeModal() })
+            new WarningConfirmationModal(), new AlertModal() })
         {
             ScreenContentAnnouncer.Reset(); ScreenReader.Messages.Clear();
             var root = new GameObject(); root.Add(panel);

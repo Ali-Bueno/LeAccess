@@ -20,6 +20,9 @@ internal static class ScreenContentAnnouncer
     internal static bool HasPendingContent { get; private set; }
     // Tutorial callouts remain readable while gameplay and controller menus keep their own input.
     internal static bool HasActiveContent => FindForeground() != null;
+    // A generic window whose opening text was delivered no longer withholds passive notices shown inside it.
+    internal static bool BlocksNotifications => FindForeground() is { } foreground &&
+        !(foreground.ReadUpdate != null && foreground.Announced);
     internal static bool HasWindowOwner(int id) => Sources.TryGetValue(id, out var source) && source.OwnsWindow != null;
 
     internal static bool OwnsFocus(GameObject element)
@@ -97,7 +100,7 @@ internal static class ScreenContentAnnouncer
 
     internal static void Track(GameObject root, TMP_Text header = null, TMP_Text body = null,
         bool retainWhenHidden = false, Func<string> readText = null, bool blocksInput = true, bool separateWindow = false,
-        Func<bool> ownsWindow = null)
+        Func<bool> ownsWindow = null, Func<string> readUpdate = null)
     {
         try
         {
@@ -112,6 +115,7 @@ internal static class ScreenContentAnnouncer
                 existing.SeparateWindow |= separateWindow;
                 if (readText != null) existing.ReadText = readText;
                 if (ownsWindow != null) existing.OwnsWindow = ownsWindow;
+                if (readUpdate != null) existing.ReadUpdate = readUpdate;
                 return;
             }
             var descendants = new List<int>();
@@ -127,7 +131,7 @@ internal static class ScreenContentAnnouncer
             Sources[id] = new Source
             {
                 Id = id, Root = root, Header = header, Body = body,
-                ReadText = readText, OwnsWindow = ownsWindow,
+                ReadText = readText, ReadUpdate = readUpdate, OwnsWindow = ownsWindow,
                 OpenedFrame = Time.frameCount, Order = ++_sequence, RetainWhenHidden = retainWhenHidden,
                 BlocksInput = blocksInput, SeparateWindow = separateWindow
             };
@@ -210,15 +214,29 @@ internal static class ScreenContentAnnouncer
         }
         try
         {
-            string text = foreground.ReadText != null ? foreground.ReadText() :
+            // An opened window with an update reader only reports later header/body changes, without interrupting.
+            bool update = foreground.ReadUpdate != null && foreground.Announced;
+            string text = update ? foreground.ReadUpdate() : foreground.ReadText != null ? foreground.ReadText() :
                 ScreenContentReader.Read(foreground.Root, foreground.Header, foreground.Body);
+            if (update && !Tracker.HasSpoken(foreground.Id))
+            {
+                // Regaining focus from a child window or the desktop resumes without repeating the window.
+                Tracker.Rebase(foreground.Id, text);
+                return;
+            }
+            if (update && string.IsNullOrWhiteSpace(text)) return;
             bool canSpeak = ScreenReader.IsAvailable() && (foreground.BlocksInput ||
                 !DialogueAnnouncer.HasActiveContent && !ScreenReader.SpokeThisFrame);
             HasPendingContent = Tracker.Observe(foreground.Id, text,
                 canSpeak, out string announcement, acknowledge: false);
             if (announcement == null) return;
-            if (!ScreenReader.TrySpeak(announcement, interrupt: true)) return;
+            if (!ScreenReader.TrySpeak(announcement, interrupt: !update)) return;
             Tracker.Acknowledge(foreground.Id, announcement);
+            if (foreground.ReadUpdate != null && !update)
+            {
+                foreground.Announced = true;
+                Tracker.Rebase(foreground.Id, foreground.ReadUpdate());
+            }
             HasPendingContent = false;
             Plugin.Log.LogInfo($"[ScreenContent] {announcement}");
         }
@@ -243,8 +261,9 @@ internal static class ScreenContentAnnouncer
 
     private static bool IsSourceVisible(Source source)
     {
-        bool visible = IsAlive(source.Root) && (source.OwnsWindow == null || source.OwnsWindow()) &&
-            UiVisibility.HasVisiblePresentation(source.Root);
+        bool visible = IsAlive(source.Root) && (source.OwnsWindow == null || source.OwnsWindow()) && IsPresented(source);
+        // Losing focus to a child window keeps the opening read; closing the window rearms it.
+        if (!visible && source.Announced && !(IsAlive(source.Root) && IsPresented(source))) source.Announced = false;
         if (source.RetainWhenHidden)
         {
             // Awake registers the exact tooltip once; visibility, not registration, determines opening order.
@@ -258,6 +277,14 @@ internal static class ScreenContentAnnouncer
             source.WasVisible = visible;
         }
         return visible;
+    }
+
+    private static bool IsPresented(Source source)
+    {
+        // Foreground queries repeat many times per frame; reuse a positive graphic walk, keep hierarchy visibility live.
+        if (source.PresentationFrame == Time.frameCount && source.Presented) return UiVisibility.IsVisible(source.Root);
+        source.PresentationFrame = Time.frameCount;
+        return source.Presented = UiVisibility.HasVisiblePresentation(source.Root);
     }
 
     private static bool IsInFront(Source source, Source current)
@@ -292,6 +319,7 @@ internal static class ScreenContentAnnouncer
         internal TMP_Text Header;
         internal TMP_Text Body;
         internal Func<string> ReadText;
+        internal Func<string> ReadUpdate;
         internal Func<bool> OwnsWindow;
         internal int OpenedFrame;
         internal long Order;
@@ -299,5 +327,8 @@ internal static class ScreenContentAnnouncer
         internal bool WasVisible;
         internal bool BlocksInput;
         internal bool SeparateWindow;
+        internal bool Announced;
+        internal bool Presented;
+        internal int PresentationFrame = -1;
     }
 }

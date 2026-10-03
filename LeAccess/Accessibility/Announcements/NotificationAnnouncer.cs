@@ -87,7 +87,8 @@ internal static class NotificationAnnouncer
         Attempts.Clear();
         Countdowns.BeginPass();
         Roots.Clear();
-        bool canSpeak = ScreenReader.IsAvailable() && !ScreenContentAnnouncer.HasActiveContent && !otherContentActive;
+        bool screenContent = countdownOnly ? ScreenContentAnnouncer.HasActiveContent : ScreenContentAnnouncer.BlocksNotifications;
+        bool canSpeak = ScreenReader.IsAvailable() && !screenContent && !otherContentActive;
         foreach (var entry in Sources)
         {
             try

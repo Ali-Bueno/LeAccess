@@ -12,7 +12,7 @@ namespace LeAccess.Accessibility.ScreenContent;
 internal static class ScreenContentReader
 {
     internal static string Read(GameObject root, TMP_Text header, TMP_Text body,
-        Func<TMP_Text, string> readLabel = null)
+        Func<TMP_Text, string> readLabel = null, Func<Component, bool> include = null)
     {
         if (!UiVisibility.IsVisible(root)) return null;
         var fragments = new List<UiReadingOrder.Fragment>();
@@ -22,11 +22,13 @@ internal static class ScreenContentReader
         // Limit discovery to the popup that the game's display lifecycle identified.
         var labels = root.GetComponentsInChildren<TMP_Text>(false);
         if (labels != null && !labels.WasCollected)
-            foreach (var label in labels) Add(root, label, fragments, seen, readLabel);
+            foreach (var label in labels)
+                if (include == null || include(label)) Add(root, label, fragments, seen, readLabel);
         var legacyLabels = root.GetComponentsInChildren<Text>(false);
         if (legacyLabels != null && !legacyLabels.WasCollected)
             foreach (var label in legacyLabels)
-                if (UiVisibility.IsVisibleGraphic(label) && !IsInputValue(label) && seen.Add(label.GetInstanceID()))
+                if (UiVisibility.IsVisibleGraphic(label) && !IsInputValue(label) && (include == null || include(label)) &&
+                    seen.Add(label.GetInstanceID()))
                     fragments.Add(new(label, TextUtils.CleanText(label.text)));
         return ScreenContentTracker.Combine(UiReadingOrder.Read(fragments));
     }
