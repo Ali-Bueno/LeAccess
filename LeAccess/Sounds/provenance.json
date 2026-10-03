@@ -118,5 +118,21 @@
     "asset_sha256": "8DC0928EFF5ED289BC3ECC1A3AE22059C1354BB07B13506CA0394DA1CC155948",
     "start_seconds": 0,
     "duration_seconds": "whole"
+  },
+  {
+    "asset": "Loops/potion.wav",
+    "source": "sounds/item loop sounds/loot/potion.ogg",
+    "source_sha256": "0D78E7CFC343880C69E96FB4570FBC05DBC14CB828DA58DC28BE3B4C048B71BF",
+    "asset_sha256": "2C85C88C6596FB489AA1C13E6CAA4EC42BB83781A916979E0FD56FBB3116DF03",
+    "start_seconds": 0,
+    "duration_seconds": "whole"
+  },
+  {
+    "asset": "Loops/tome.wav",
+    "source": "sounds/item loop sounds/loot/scroll.ogg",
+    "source_sha256": "032E414D75232DEB2D64DDDCEC365F89B967B25FDDDD0652B52B0F1768BA2D58",
+    "asset_sha256": "92FF8A55608FCF1248B3FEA09F254A84845FB960E82E0D32F14B5C5BA9C8C0CB",
+    "start_seconds": 0,
+    "duration_seconds": "whole"
   }
 ]

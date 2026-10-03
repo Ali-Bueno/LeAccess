@@ -87,6 +87,21 @@ internal sealed class GroundGoldVisuals : UnityEngine.MonoBehaviour
     internal GroundGoldLabel label = new();
     internal WorldObjectClickListener worldObjectClickListener = new();
 }
+internal sealed class GroundPotionVisuals : UnityEngine.MonoBehaviour
+{
+    internal static Registry<GroundPotionVisuals> all = new();
+    internal WorldObjectClickListener worldObjectClickListener = new();
+}
+internal sealed class GroundXPTomeVisuals : UnityEngine.MonoBehaviour
+{
+    internal static Registry<GroundXPTomeVisuals> all = new();
+    internal WorldObjectClickListener worldObjectClickListener = new();
+}
+internal sealed class GroundFavorTomeVisuals : UnityEngine.MonoBehaviour
+{
+    internal static Registry<GroundFavorTomeVisuals> all = new();
+    internal WorldObjectClickListener worldObjectClickListener = new();
+}
 internal sealed class GroundItemVisuals : UnityEngine.MonoBehaviour
 {
     internal static Registry<GroundItemVisuals> all = new();

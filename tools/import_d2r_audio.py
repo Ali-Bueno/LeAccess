@@ -21,22 +21,28 @@ CLIPS = (
     ("inside_unexplored_room", "item loop sounds/exploration/inside unexplored room.ogg", 0.35),
 )
 
+# D2RAccess cmake/GroundItems.cmake: short click recordings play 7-10 dB under the other
+# loops when peak-normalized alone; a boost lifts their body and a limiter holds the click.
+CLICK_BOOST = ["-af", "aformat=sample_fmts=flt,volume=24dB,alimiter=limit=0.9:level=false"]
+
 # Whole recordings for the continuous world loop mixer (D2RAccess item_audio.cpp loops each file).
 LOOPS = (
-    ("gold", "item loop sounds/loot/gold.ogg"),
-    ("equipment", "item loop sounds/loot/normal equipment.ogg"),
-    ("chest", "item loop sounds/loot/chest.ogg"),
-    ("stash", "item loop sounds/loot/stash.ogg"),
-    ("portal", "item loop sounds/exploration/portal.ogg"),
-    ("zone_transition", "item loop sounds/exploration/zone transition.ogg"),
+    ("gold", "item loop sounds/loot/gold.ogg", []),
+    ("equipment", "item loop sounds/loot/normal equipment.ogg", []),
+    ("chest", "item loop sounds/loot/chest.ogg", []),
+    ("stash", "item loop sounds/loot/stash.ogg", []),
+    ("portal", "item loop sounds/exploration/portal.ogg", []),
+    ("zone_transition", "item loop sounds/exploration/zone transition.ogg", []),
+    ("potion", "item loop sounds/loot/potion.ogg", []),
+    ("tome", "item loop sounds/loot/scroll.ogg", CLICK_BOOST),
 )
 
 
-def convert(source, destination, duration=None):
+def convert(source, destination, duration=None, filters=()):
     limit = ["-t", str(duration)] if duration else []
     subprocess.run([
         "ffmpeg", "-nostdin", "-v", "error", "-y", "-i", str(source), *limit,
-        "-map_metadata", "-1", "-vn", "-ac", "1", "-ar", "48000",
+        "-map_metadata", "-1", "-vn", *filters, "-ac", "1", "-ar", "48000",
         "-c:a", "pcm_s16le", "-fflags", "+bitexact", "-flags:a", "+bitexact", str(destination),
     ], check=True)
 
@@ -61,10 +67,10 @@ def main():
                            "start_seconds": 0, "duration_seconds": duration})
     loops = output / "Loops"
     loops.mkdir(exist_ok=True)
-    for name, relative in LOOPS:
+    for name, relative, filters in LOOPS:
         source = args.d2r_repository / "sounds" / relative
         destination = loops / (name + ".wav")
-        convert(source, destination)
+        convert(source, destination, filters=filters)
         provenance.append({"asset": "Loops/" + destination.name, "source": "sounds/" + relative,
                            "source_sha256": sha256(source), "asset_sha256": sha256(destination),
                            "start_seconds": 0, "duration_seconds": "whole"})

@@ -31,8 +31,8 @@ internal sealed class WorldCueProbe
     internal List<LoopCandidate> Loops { get; } = new();
     internal WorldCueTarget?[] Targets { get; } = new WorldCueTarget?[3];
     private int _coins, _equipment, _objects, _outOfRange, _filtered, _unavailable;
-    private int _missingItemData, _nonEquipment, _missingLabel;
-    internal string Diagnostics => $"registry={_coins}/{_equipment}/{_objects} outOfRange={_outOfRange} filtered={_filtered} unavailable={_unavailable} missingData={_missingItemData} nonEquipment={_nonEquipment} missingLabel={_missingLabel}";
+    private int _missingItemData, _nonEquipment, _missingLabel, _pickups;
+    internal string Diagnostics => $"registry={_coins}/{_equipment}/{_objects}/{_pickups} outOfRange={_outOfRange} filtered={_filtered} unavailable={_unavailable} missingData={_missingItemData} nonEquipment={_nonEquipment} missingLabel={_missingLabel}";
     internal string LastFailure { get; private set; }
     internal bool HasWorld { get; private set; }
     internal long Session => _session;
@@ -46,7 +46,7 @@ internal sealed class WorldCueProbe
         Array.Clear(_categoryPreferred, 0, _categoryPreferred.Length);
         Loops.Clear();
         _coins = _equipment = _objects = _outOfRange = _filtered = _unavailable = 0;
-        _missingItemData = _nonEquipment = _missingLabel = 0;
+        _missingItemData = _nonEquipment = _missingLabel = _pickups = 0;
         var player = PlayerFinder.player;
         if (!IsAlive(player) || !player.activeInHierarchy || !IsAlive(player.transform)) return false;
         var scene = SceneManager.GetActiveScene();
@@ -101,6 +101,23 @@ internal sealed class WorldCueProbe
                 }
                 catch (Exception ex) { LastFailure ??= ex.Message; }
 
+        // Potions and tomes have their own native registries and listeners, like gold.
+        var potions = GroundPotionVisuals.all;
+        if (potions is not null && !potions.WasCollected)
+            for (int i = 0; i < potions.Count; i++)
+                try { var item = potions[i]; if (IsAlive(item)) ConsiderPickup(item.worldObjectClickListener, item, NaturalCueKind.Potion); }
+                catch (Exception ex) { LastFailure ??= ex.Message; }
+        var experienceTomes = GroundXPTomeVisuals.all;
+        if (experienceTomes is not null && !experienceTomes.WasCollected)
+            for (int i = 0; i < experienceTomes.Count; i++)
+                try { var item = experienceTomes[i]; if (IsAlive(item)) ConsiderPickup(item.worldObjectClickListener, item, NaturalCueKind.Tome); }
+                catch (Exception ex) { LastFailure ??= ex.Message; }
+        var favorTomes = GroundFavorTomeVisuals.all;
+        if (favorTomes is not null && !favorTomes.WasCollected)
+            for (int i = 0; i < favorTomes.Count; i++)
+                try { var item = favorTomes[i]; if (IsAlive(item)) ConsiderPickup(item.worldObjectClickListener, item, NaturalCueKind.Tome); }
+                catch (Exception ex) { LastFailure ??= ex.Message; }
+
         var listeners = WorldObjectClickListener.allListener;
         if (listeners is not null && !listeners.WasCollected)
             for (int i = 0; i < listeners.Count; i++)
@@ -110,7 +127,10 @@ internal sealed class WorldCueProbe
                     if (!IsAlive(listener) || _lootListeners.Contains(listener.Pointer)) continue;
                     // Pooled/collected visuals can disappear before their listener leaves the other registry.
                     if (listener.GetComponent<GroundGoldVisuals>() is not null ||
-                        listener.GetComponent<GroundItemVisuals>() is not null) continue;
+                        listener.GetComponent<GroundItemVisuals>() is not null ||
+                        listener.GetComponent<GroundPotionVisuals>() is not null ||
+                        listener.GetComponent<GroundXPTomeVisuals>() is not null ||
+                        listener.GetComponent<GroundFavorTomeVisuals>() is not null) continue;
                     if (NpcWorldProbe.IsNpc(listener)) continue;
                     _objects++;
                     Consider(listener, listener, null, WorldCueCategory.Interactable);
@@ -172,14 +192,7 @@ internal sealed class WorldCueProbe
             if (!listener.CanInteract()) { _unavailable++; return; }
             sound = WorldCueIdentityReader.ReadKind(listener);
         }
-        float pan = 0, forward = 0;
-        // Metres ahead of the player along the camera, before normalizing, for the loop's rear pitch blend.
-        float front = offset.x * _forward.x + offset.z * _forward.z;
-        if (NormalizeXZ(ref offset))
-        {
-            pan = Math.Clamp(Vector3.Dot(offset, _right), -1, 1);
-            forward = Math.Clamp(Vector3.Dot(offset, _forward), -1, 1);
-        }
+        Place(offset, out float pan, out float forward, out float front);
         // An object with a whole D2R loop belongs to the loop mixer, never also to the repeated cue.
         if (sound.HasValue && Loopable?.Invoke(sound.Value) == true)
         {
@@ -199,6 +212,33 @@ internal sealed class WorldCueProbe
         float gain = WorldCueReach.IsLandmark(sound) ? WorldCueReach.Gain(distance, range, LandmarkRange) : 1;
         Targets[categoryIndex] = new(_session, new(category, id), distance, range, pan, forward, sound, gain);
         _categoryPreferred[categoryIndex] = preferred;
+    }
+
+    // Pickups without a repeated cue sound only through the loop mixer.
+    private void ConsiderPickup(WorldObjectClickListener listener, MonoBehaviour owner, NaturalCueKind kind)
+    {
+        _pickups++;
+        RememberLoot(listener);
+        if (Loopable?.Invoke(kind) != true) return;
+        if (!owner.isActiveAndEnabled || !IsAlive(owner.gameObject) || !owner.gameObject.activeInHierarchy ||
+            !IsAlive(owner.transform) || owner.gameObject.scene.handle != SceneManager.GetActiveScene().handle)
+        { _unavailable++; return; }
+        Vector3 offset = owner.transform.position - _position;
+        if (IsAlive(listener) && listener.controllerTargetingUsePlayerY) offset.y = 0;
+        float distance = offset.magnitude;
+        if (!float.IsFinite(distance) || distance > LoopRange) { _outOfRange++; return; }
+        Place(offset, out float pan, out _, out float front);
+        Loops.Add(new LoopCandidate(owner.GetInstanceID(), kind, distance, pan, front));
+    }
+
+    // Camera-relative pan and forward axis, plus metres ahead for the loop's rear pitch blend.
+    private void Place(Vector3 offset, out float pan, out float forward, out float front)
+    {
+        pan = forward = 0;
+        front = offset.x * _forward.x + offset.z * _forward.z;
+        if (!NormalizeXZ(ref offset)) return;
+        pan = Math.Clamp(Vector3.Dot(offset, _right), -1, 1);
+        forward = Math.Clamp(Vector3.Dot(offset, _forward), -1, 1);
     }
 
     private static IntPtr SelectedPointer()

@@ -48,7 +48,9 @@ else
 {
     double[] durations = { .30, .30, .24, .24, .30, .30, .45, .35, .35 };
     var signals = new List<float[]>();
-    foreach (NaturalCueKind kind in Enum.GetValues<NaturalCueKind>())
+    foreach (var loopOnly in new[] { NaturalCueKind.Potion, NaturalCueKind.Tome })
+        Check(!NaturalCueBank.TryBuild(loopOnly, 0, 1, 1, out _), $"{loopOnly} has no excerpt; it only loops");
+    foreach (NaturalCueKind kind in Enum.GetValues<NaturalCueKind>().Where(k => k < NaturalCueKind.Potion))
     {
         Check(NaturalCueBank.TryBuild(kind, 0, 1, 1, out var center), $"{kind} loads from the embedded resource");
         signals.Add(center);

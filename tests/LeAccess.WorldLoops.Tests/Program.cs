@@ -7,7 +7,7 @@ const int Rate = WorldLoopBank.SampleRate;
 
 // Every supplied loop decodes whole, peak-normalized with D2R's level trims.
 foreach (var kind in new[] { NaturalCueKind.Gold, NaturalCueKind.Equipment, NaturalCueKind.Chest,
-    NaturalCueKind.Stash, NaturalCueKind.Portal, NaturalCueKind.ZoneTransition })
+    NaturalCueKind.Stash, NaturalCueKind.Portal, NaturalCueKind.ZoneTransition, NaturalCueKind.Potion, NaturalCueKind.Tome })
 {
     var clip = WorldLoopBank.Get(kind);
     Check(clip.Length > 0 && WorldLoopBank.Has(kind), $"{kind} loop loads");

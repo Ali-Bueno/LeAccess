@@ -47,8 +47,8 @@ internal static class WorldCueSounds
         _volume = config.Bind(ConfigSection, "Volume", 100,
             new ConfigDescription("World object cue volume in percent.", new AcceptableValueRange<int>(0, 100)));
         _loops = config.Bind(ConfigSection, "Loops", true,
-            "Play gold, equipment, chests, the stash, portals, waypoints and zone exits as continuous D2R loops, " +
-            "several at once; false restores one short repeated cue per kind.");
+            "Play gold, equipment, potions, tomes, chests, the stash, portals, waypoints and zone exits as continuous " +
+            "D2R loops, several at once; false restores one short repeated cue per kind (potions and tomes go silent).");
         _loopRange = config.Bind(ConfigSection, "LoopRange", DefaultLoopRangeMetres,
             new ConfigDescription("Metres from which looping objects (and, with loops off, portals, waypoints, exits and the stash) " +
                 "sound, quieter when far. 0 limits them to the game's own range.", new AcceptableValueRange<int>(0, MaxLoopRangeMetres)));

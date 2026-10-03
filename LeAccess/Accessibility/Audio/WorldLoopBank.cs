@@ -36,6 +36,8 @@ internal static class WorldLoopBank
         NaturalCueKind.Stash => "stash",
         NaturalCueKind.Portal => "portal",
         NaturalCueKind.ZoneTransition => "zone_transition",
+        NaturalCueKind.Potion => "potion",
+        NaturalCueKind.Tome => "tome",
         _ => null
     };
 

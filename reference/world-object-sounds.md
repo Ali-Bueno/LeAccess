@@ -108,10 +108,19 @@ The mixer is now ported from D2RAccess `item_audio.cpp` / `ground_items.cpp`:
   interactables keep the native-range repeated cue; a kind whose loop failed to
   load falls back to its cue. `Loops=false` restores the old behaviour.
 
+Potions and tomes (follow-up report "las pociones no sonaron"): they were never
+read. They live in their own native registries like gold:
+`GroundPotionVisuals.all`, `GroundXPTomeVisuals.all`, `GroundFavorTomeVisuals.all`
+(`last epoch code/GroundPotionVisuals.cs` etc., each with `worldObjectClickListener`).
+They now loop `loot/potion.ogg` and `loot/scroll.ogg` (the scroll click gets
+D2R's 24 dB boost and 0.9 limiter at import) within `LoopRange`, sharing the loot
+voices. They have no repeated-cue fallback: with `Loops=false` they stay silent,
+as before. Their listeners are excluded from generic interactables.
+
 Not ported yet: D2R's magic/rare/legendary equipment loops (LE rarity is not
-mapped), door and quest-item loops. Tests: `LeAccess.WorldLoops.Tests` 41 checks
+mapped), door and quest-item loops, ancient bones. Tests: `LeAccess.WorldLoops.Tests` 45 checks
 (decoding, levels, seamless position, fades, release, clamping, pitch) and
-world cues 190 checks. Listening is pending.
+world cues 195 checks. Listening is pending.
 
 ## Continuous sonar lifecycle follow-up
 

@@ -11,6 +11,7 @@ void Reset()
 {
     WorldCueSounds.Cleanup(); WorldAudioReservation.Reset();
     GroundGoldVisuals.all = new(); GroundItemVisuals.all = new(); WorldObjectClickListener.allListener = new();
+    GroundPotionVisuals.all = new(); GroundXPTomeVisuals.all = new(); GroundFavorTomeVisuals.all = new();
     PlayerFinder.player = new(); PlayerFinder.playerActorVisuals = new(); Camera.main = new();
     EpochInputManager.instance = new();
     NavigationAudioState.IsSuspended = false; GameplayInputState.Owns = true;
@@ -376,6 +377,27 @@ Check(probe.TryCapture(out target) && target.Sound == NaturalCueKind.Portal && p
 probe.Loopable = null;
 Check(probe.TryCapture(out _) && probe.Loops.Count == 0 && probe.Targets[(int)WorldCueCategory.Coins].HasValue,
     "With loops off every object uses the repeated cue");
+
+// Potions and tomes: their own registries, loop-only.
+Reset(); probe = new(); WorldLoopBank.Available = true;
+probe.Loopable = WorldLoopBank.Has; probe.LoopRange = 12;
+var potion = new GroundPotionVisuals(); potion.transform.position = new(0, 0, 4);
+potion.worldObjectClickListener.gameObject = potion.gameObject;
+GroundPotionVisuals.all.Add(potion); WorldObjectClickListener.allListener.Add(potion.worldObjectClickListener);
+var tome = new GroundXPTomeVisuals(); tome.transform.position = new(3, 0, 0); GroundXPTomeVisuals.all.Add(tome);
+var favor = new GroundFavorTomeVisuals(); favor.transform.position = new(30, 0, 0); GroundFavorTomeVisuals.all.Add(favor);
+Check(!probe.TryCapture(out _) && probe.Loops.Count == 2 &&
+    probe.Loops.Any(l => l.Kind == NaturalCueKind.Potion && Math.Abs(l.Front - 4) < 1e-4) &&
+    probe.Loops.Any(l => l.Kind == NaturalCueKind.Tome && l.Right == 1),
+    "A potion and a near tome loop; their listeners are not generic interactables; a far tome is out of range");
+Check(probe.Diagnostics.Contains("registry=0/0/0/3"), "Pickups are counted in diagnostics");
+potion.gameObject.activeInHierarchy = false;
+Check(!probe.TryCapture(out _) && probe.Loops.Single().Kind == NaturalCueKind.Tome, "An inactive potion is silent");
+probe.Loopable = null;
+Check(!probe.TryCapture(out _) && probe.Loops.Count == 0, "With loops off potions and tomes stay silent, as before");
+GroundPotionVisuals.all.WasCollected = true; probe.Loopable = WorldLoopBank.Has;
+Check(!probe.TryCapture(out _) && probe.Loops.Single().Kind == NaturalCueKind.Tome, "A collected registry is never enumerated");
+WorldLoopBank.Available = false;
 
 // Selection: exits first, at most three chests, eight voices, D2R gain law and pile limit.
 var candidates = new List<LoopCandidate>();

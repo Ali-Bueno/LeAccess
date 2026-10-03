@@ -5,7 +5,9 @@ namespace LeAccess.Accessibility.Audio;
 
 internal enum NaturalCueKind
 {
-    Gold, Equipment, Chest, Stash, Portal, ZoneTransition, Discovery, UnexploredRoom, InsideUnexploredRoom
+    Gold, Equipment, Chest, Stash, Portal, ZoneTransition, Discovery, UnexploredRoom, InsideUnexploredRoom,
+    // Loop-only kinds: no short excerpt exists for them.
+    Potion, Tome
 }
 
 internal static class NaturalCueBank
