@@ -85,7 +85,7 @@ requested. No release or new ZIP has been requested.
 | Nearby player names | Nearest other player's public displayed name inside the native player interaction radius; 29 checks. Online listening pending. |
 | Quest ping | Removed as requested. Optional continuous sonar now also mutes in non-pausing menus and after failed queries. 48 radar/audio checks. |
 | Nearest enemy | Owned visual display/ActorData; 156 checks. Latest log announces Reptador chamuscado and Ojo de Rahyeh offline. Audible results still need confirmation. |
-| Life/mana | Percentage bands/critical priority recover from fresh values after rejection; R/Back/View remains an explicit current report. 423 checks. Online hierarchy, controller mapping and listening pending. |
+| Life/mana | Falls read the band; one-band rises (regeneration between casts) stay silent, ending the 62/75 mana spam. [Rules](reference/vitals-api.md). R/Back/View reads both. 470 checks. Online hierarchy, controller mapping and listening pending. |
 | Nearby landmarks | Inactive destination metadata can name active forest/camp entrances; listener/range/destination guards remain. Verified non-NPC services no longer require a hover tag. 86 probe + 54 lifecycle checks; listening pending. |
 | Spatial map sections | 750 guarded sections across 58 layouts, independently re-extracted against installed build 25690669; 16 Monolith layouts included. Entry overview defaults off. Listening pending. |
 | Live map places | Failed approach queries cannot imply tent departure; inactive query owners are rediscovered. Three verified canopies and shared online visual ownership retained. 264 runtime + 346 state + 161 service + 152 world checks. [Details](reference/runtime-map-places.md). Listening pending. |

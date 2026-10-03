@@ -8,10 +8,16 @@ new dependencies or native hooks.
 Automatic reading is enabled by default. Like the local D2R Access implementation
 (`src/vitals.h`, `vitals.cpp`, `vitals_service.cpp`), it samples every 100 ms and
 tracks percentage bands at 75, 50, 40, 30, 20, 10, 5, 4, 3, 2 and 1, plus zero.
-The first observation of each resource is silent. Crossing a band in either
-direction reads the current whole percentage, with life before mana when both
-change. Boundaries follow D2R exactly: 100 to 75 is silent; 75 to 74 reads 74;
-74 to 75 reads 75. Full recovery within the upper band is not a separate event.
+The first observation of each resource is silent. Falling into a lower band
+reads the current whole percentage, with life before mana when both change.
+Boundaries follow D2R: 100 to 75 is silent; 75 to 74 reads 74.
+
+Unlike D2R, a rise of only one band is silent and keeps the spoken band, so
+falling back into it is silent too; a rise of two or more bands reads the
+current percentage. Without this, each cast or regeneration cycle across 75 or
+50 spoke twice (a 2026-10-02 session logged ~700 mana readings in an hour,
+mostly 62/75 pairs). Example: 100 → 62 reads 62; 75, 62, 76 stay silent; 45
+reads 45; 51 is silent; 75 reads 75. An explicit report re-baselines both.
 Downward crossings at 10 percent or less interrupt speech; other crossings queue.
 Ordinary chip damage within a band is silent. Zero health remains eligible.
 

@@ -44,17 +44,21 @@ Change(state.Observe(2,2), 2,2,true,"two");
 Change(state.Observe(1,1), 1,1,true,"one");
 Change(state.Observe(0,0), 0,0,true,"empty");
 Change(state.Observe(0,0), -1,-1,false,"empty dedup");
-Change(state.Observe(1,1), 1,1,false,"recovery one");
+Change(state.Observe(1,1), -1,-1,false,"single-band recovery from empty stays quiet");
 Change(state.Observe(100,100), 100,100,false,"recovery full across bands");
 Change(state.Observe(75,75), -1,-1,false,"upper band stays silent");
 Change(state.Observe(100,100), -1,-1,false,"full is not special");
 
-foreach (int boundary in new[] {75,50,40,30,20,10,5,4,3,2,1})
+int[] bands = {75,50,40,30,20,10,5,4,3,2,1};
+for (int i = 0; i < bands.Length; i++)
 {
+    int boundary = bands[i];
     state.Reset();
     Change(state.Observe(boundary,-1), -1,-1,false,"boundary baseline " + boundary);
     Change(state.Observe(boundary-1,-1), boundary-1,-1,boundary-1 <= 10,"strict fall " + boundary);
-    Change(state.Observe(boundary,-1), boundary,-1,false,"exact recovery " + boundary);
+    Change(state.Observe(boundary,-1), -1,-1,false,"single-band rise stays quiet " + boundary);
+    Change(state.Observe(boundary-1,-1), -1,-1,false,"falling back into the spoken band stays quiet " + boundary);
+    if (i > 0) Change(state.Observe(bands[i-1],-1), bands[i-1],-1,false,"two-band recovery " + boundary);
 }
 
 state.Reset();
@@ -66,10 +70,11 @@ Change(state.Observe(100,-1), -1,-1,false,"partially available baseline");
 Change(state.Observe(74,9), 74,-1,false,"late mana takes independent baseline");
 Change(state.Observe(74,4), -1,4,true,"critical mana alone");
 Change(state.Observe(4,20), 4,20,true,"life falls while mana recovers");
-Change(state.Observe(9,10), 9,10,true,"mana falls while life recovers");
-Change(state.Observe(9,20), -1,20,false,"mana recovery queues");
-Change(state.Observe(-5,30), -1,30,false,"negative unavailable preserves health");
-Change(state.Observe(4,-1), 4,-1,true,"resumed health uses retained value");
+Change(state.Observe(9,10), -1,10,true,"mana falls while life rises one band");
+Change(state.Observe(9,20), -1,-1,false,"one-band mana rise stays quiet");
+Change(state.Observe(-5,30), -1,30,false,"two-band mana recovery; negative unavailable preserves health");
+Change(state.Observe(4,-1), -1,-1,false,"health back in its spoken band stays quiet");
+Change(state.Observe(3,-1), 3,-1,true,"resumed health falls from retained value");
 state.Reset();
 Change(state.Observe(0,0), -1,-1,false,"empty initial baseline");
 Change(state.Observe(100,100), 100,100,false,"empty baseline recovery");
@@ -92,4 +97,13 @@ state.Reset(); state.Observe(100,100,acknowledge:false); state.Observe(9,9,ackno
 Change(state.Observe(100,100,acknowledge:false),-1,-1,false,"returning to original band discards pending critical history");
 state.Reset();
 Change(state.Observe(8,8,acknowledge:false),-1,-1,false,"session reset discards pending crossing and establishes baseline");
+// Mana sequence from a real session: each cast crossed 75% and regeneration crossed it back.
+state.Reset();
+int spoken = 0;
+foreach (int mana in new[] {100,62,75,62,75,57,75,62,76,73,76,72,76,68,75,62,75,56,45,50,36,40,51,75,62,75,58,76,60,75,44,50,75})
+    if (state.Observe(-1, mana).ManaPercent >= 0) spoken++;
+Equal(6, spoken, "cast/regeneration cycles speak only real loss and recovery");
+state.Reset();
+state.Observe(100,-1); state.Observe(74,-1); state.Observe(100,-1);
+Change(state.Observe(45,-1), 45,-1,false,"loss below the spoken band speaks after a quiet rise");
 Console.WriteLine($"Passed {checks} vitals state checks.");

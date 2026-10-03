@@ -12,6 +12,8 @@ internal sealed class VitalsAnnouncementState
     // D2R src/vitals.h: Steps and CriticalPercent; retain its strict downward boundaries.
     private static readonly int[] Bands = { 75, 50, 40, 30, 20, 10, 5, 4, 3, 2, 1 };
     private const int CriticalPercent = 10;
+    // A one-band rise is regeneration between casts or hits; only clearer recoveries speak.
+    private const int RecoveryBands = 2;
     private readonly Meter _health = new();
     private readonly Meter _mana = new();
 
@@ -41,11 +43,12 @@ internal sealed class VitalsAnnouncementState
         return (int)Math.Floor(percent);
     }
 
+    // Index into Bands; larger is lower, and Bands.Length means empty.
     private static int Band(int percent)
     {
-        foreach (int boundary in Bands)
-            if (percent >= boundary) return boundary;
-        return 0;
+        for (int i = 0; i < Bands.Length; i++)
+            if (percent >= Bands[i]) return i;
+        return Bands.Length;
     }
 
     private sealed class Meter
@@ -60,10 +63,12 @@ internal sealed class VitalsAnnouncementState
             int band = Band(percent);
             bool baseline = _band < 0;
             bool unchanged = band == _band;
-            if (baseline || unchanged || acknowledge) Acknowledge(percent);
+            // A quiet small rise keeps the spoken band, so falling back into it stays silent.
+            bool quiet = unchanged || band < _band && _band - band < RecoveryBands;
+            if (baseline || unchanged || !quiet && acknowledge) Acknowledge(percent);
             // Changed bands remain relative to accepted output after rejection.
             // The first live sample is always a silent baseline.
-            return baseline || unchanged ? -1 : percent;
+            return baseline || quiet ? -1 : percent;
         }
 
         internal void Acknowledge(int percent)
