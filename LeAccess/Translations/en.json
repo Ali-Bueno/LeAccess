@@ -49,6 +49,7 @@
   "vitals.mana_replaced": "Mana replaced by rage",
   "vitals.potions": "Potions {0} of {1}",
   "vitals.potions_count": "Potions {0}",
+  "vitals.effects": "Effects: {0}",
   "landmark.nearby": "Nearby: {0}",
   "map.section.oldroad_bridge_1": "Wooden bridge 1",
   "map.section.oldroad_bridge_2": "Wooden bridge 2",
@@ -182,5 +183,11 @@
   "enemy_scan.entry_boss": "{0}, boss, {1}, about {2} units",
   "enemy_scan.unnamed": "Unknown enemy",
   "enemy_scan.direction_here": "right on you",
-  "enemy_scan.unavailable": "The enemy scan is currently unavailable"
+  "enemy_scan.unavailable": "The enemy scan is currently unavailable",
+  "waypoint.here": "You are here",
+  "waypoint.locked": "Locked",
+  "waypoint.quest_main_active": "Active main quest",
+  "waypoint.quest_side_active": "Active side quest",
+  "waypoint.quest_main_available": "Main quest available",
+  "waypoint.quest_side_available": "Side quest available"
 }

@@ -240,6 +240,16 @@ try
     Check(ScreenReader.Spoken.Count == 5,"re-enabling does not replay a change made while disabled");
     Tick(1.41,keyboard:true);
     Last("Life 74 percent. Mana 100 percent. Potions 1 of 4",true,"report reads potions while automatic potion speech is off");
+    Start(); Tick(0);
+    VitalsEffectsProbe.Effects.AddRange(new[] { "Poison 3", "Chill" });
+    Tick(.1); Check(ScreenReader.Spoken.Count == 0,"harmful effects are never announced automatically");
+    Tick(.2,keyboard:true);
+    Last("Life 100 percent. Mana 100 percent. Effects: Poison 3, Chill",true,"report lists harmful effects last");
+    VitalsEffectsProbe.Effects.Clear(); Tick(.3,keyboard:true);
+    Last("Life 100 percent. Mana 100 percent",true,"report omits effects when none are active");
+    ModText.SetLanguage("es"); VitalsEffectsProbe.Effects.Add("Veneno"); Tick(.4,keyboard:true);
+    Last("Vida 100 por ciento. Maná 100 por ciento. Efectos: Veneno",true,"Spanish effects label");
+    ModText.SetLanguage("en"); VitalsEffectsProbe.Effects.Clear();
     Start();
     VitalsAccessibility.Cleanup(); int reads = VitalsProbe.Reads;
     Tick(.4,keyboard:true,controller:true);

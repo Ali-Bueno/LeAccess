@@ -44,6 +44,12 @@ namespace LeAccess.Accessibility.Vitals
 {
     internal readonly record struct VitalsSnapshot(long Session, double Health, double MaxHealth,
         double Mana, double MaxMana, bool ManaReplaced, int Potions = -1, int MaxPotions = -1);
+    internal static class VitalsEffectsProbe
+    {
+        internal static readonly List<string> Effects = new();
+        internal static string LastFailure = null;
+        internal static List<string> Read() => new(Effects);
+    }
     internal static class VitalsProbe
     {
         internal static bool Available = true, Throw;

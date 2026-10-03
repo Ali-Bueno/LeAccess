@@ -86,7 +86,7 @@ internal static class VitalsAccessibility
                 string healthText = health < 0 ? ModText.Get("vitals.health_unavailable") : HealthText(health);
                 string manaText = snapshot.ManaReplaced ? ModText.Get("vitals.mana_replaced")
                     : mana < 0 ? ModText.Get("vitals.mana_unavailable") : ManaText(mana);
-                if (Speak(Join(Join(healthText, manaText), potionText), true))
+                if (Speak(Join(Join(Join(healthText, manaText), potionText), EffectsText()), true))
                 {
                     Announcements.Acknowledge(health, mana);
                     _potions = potions;
@@ -117,6 +117,14 @@ internal static class VitalsAccessibility
 
     private static string HealthText(int percent) => ModText.Format("vitals.health", percent);
     private static string ManaText(int percent) => ModText.Format("vitals.mana", percent);
+    // Harmful effects are read only on request; they change too often in combat to announce.
+    private static string EffectsText()
+    {
+        var effects = VitalsEffectsProbe.Read();
+        if (VitalsEffectsProbe.LastFailure != null) Plugin.Log.LogWarning($"Vitals effects unavailable: {VitalsEffectsProbe.LastFailure}");
+        return effects.Count == 0 ? null : ModText.Format("vitals.effects", string.Join(", ", effects));
+    }
+
     private static string PotionText(VitalsSnapshot snapshot) => snapshot.Potions < 0 ? null
         : snapshot.MaxPotions > 0 ? ModText.Format("vitals.potions", snapshot.Potions, snapshot.MaxPotions)
         : ModText.Format("vitals.potions_count", snapshot.Potions);

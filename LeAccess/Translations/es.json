@@ -49,6 +49,7 @@
   "vitals.mana_replaced": "Maná sustituido por furia",
   "vitals.potions": "Pociones {0} de {1}",
   "vitals.potions_count": "Pociones {0}",
+  "vitals.effects": "Efectos: {0}",
   "landmark.nearby": "Cerca: {0}",
   "map.section.oldroad_bridge_1": "Puente de madera 1",
   "map.section.oldroad_bridge_2": "Puente de madera 2",
@@ -182,5 +183,11 @@
   "enemy_scan.entry_boss": "{0}, jefe, {1}, unas {2} unidades",
   "enemy_scan.unnamed": "Enemigo desconocido",
   "enemy_scan.direction_here": "sobre ti",
-  "enemy_scan.unavailable": "El escaneo de enemigos no está disponible ahora"
+  "enemy_scan.unavailable": "El escaneo de enemigos no está disponible ahora",
+  "waypoint.here": "Estás aquí",
+  "waypoint.locked": "Bloqueado",
+  "waypoint.quest_main_active": "Misión principal activa",
+  "waypoint.quest_side_active": "Misión secundaria activa",
+  "waypoint.quest_main_available": "Misión principal disponible",
+  "waypoint.quest_side_available": "Misión secundaria disponible"
 }

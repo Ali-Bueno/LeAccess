@@ -40,6 +40,15 @@ crossing in that sample; the first readable count and each new session are a
 silent baseline, and rejected output retries with the current count.
 `AnnouncePotionCharges = false` silences the automatic part only.
 
+## Harmful effects (report only)
+
+The report ends with "Effects: Poison 3, Chill": the HUD debuff row
+(`BuffsUIManager.instance.debuffs`, active `BuffUIEntry` objects) with each
+`UIBuff.getName()` and stacks above one. The HUD row is the local player's on
+both online and offline clients. Effects are never announced automatically,
+since ailments start and stop constantly in combat (D2R only diff-gates poison).
+Live check pending: whether `getName()` returns localized names.
+
 Settings are created on the next launch in `BepInEx/config/LeAccess.cfg`:
 
 ```ini
