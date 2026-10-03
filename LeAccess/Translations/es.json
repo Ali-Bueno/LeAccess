@@ -3,6 +3,7 @@
   "login.waiting": "Cargando. Se continuará con tu elección cuando el juego esté listo.",
   "state.on": "Activado",
   "state.off": "Desactivado",
+  "dialogue.continue": "Continuar",
   "control.color_selector": "Selector de color",
   "control.text_field": "Campo de texto",
   "control.field_value": "{0}: {1}",

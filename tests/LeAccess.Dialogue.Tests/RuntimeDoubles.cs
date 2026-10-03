@@ -52,6 +52,7 @@ namespace PixelCrushers.DialogueSystem.TextMeshPro
         public UnityEngine.UI.Graphic panel;
         public TMPro.TMP_Text line;
         public TMPro.TMP_Text portraitName;
+        public UnityEngine.UI.Button continueButton;
     }
 
     internal sealed class TextMeshProResponseMenuControls

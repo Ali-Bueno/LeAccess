@@ -113,6 +113,7 @@ public static class ElementAnnouncer
             var debugParent = go.transform.parent?.name ?? "no-parent";
             Plugin.Log.LogDebug($"[Element] name={go.name}, parent={debugParent}");
             _lastAnnouncementText = text;
+            if (dialogueActive && DialogueAnnouncer.TakeLineFollower()) interrupt = false;
             ScreenReader.Speak(ScreenContentTracker.Combine(new[] { context, spoken }), interrupt);
         }
     }
@@ -239,6 +240,7 @@ public static class ElementAnnouncer
         string description = null;
         _builtLabel = _builtValue = null;
 
+        if (DialogueAnnouncer.IsContinueButton(go)) return ModText.Get("dialogue.continue");
         if (!restrictToControl && Items.MerchantMenuReader.TryReadTab(go, out string merchantTab))
             return merchantTab;
         if (CharacterTileReader.TryRead(go, out string tileText)) return tileText;

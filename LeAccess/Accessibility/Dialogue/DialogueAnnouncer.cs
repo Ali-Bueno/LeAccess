@@ -25,6 +25,9 @@ internal static class DialogueAnnouncer
     private static string _lastFailure;
     private static string _lastStatus;
     private static double _nextStatusSeconds;
+    // The game selects a response or the continue button as each line appears; that
+    // first focus speaks after the line instead of cutting it off.
+    private static long _linesSpoken, _linesFollowed;
 
     internal static bool HasPendingContent { get; private set; }
     internal static bool HasActiveContent
@@ -50,6 +53,35 @@ internal static class DialogueAnnouncer
                 element.transform.IsChildOf(_subtitle.panel.transform);
         }
         catch (Exception) { return false; }
+    }
+
+    /// <summary>True once per spoken line: the focus announced next should queue behind it.</summary>
+    internal static bool TakeLineFollower()
+    {
+        if (_linesFollowed == _linesSpoken) return false;
+        _linesFollowed = _linesSpoken;
+        return true;
+    }
+
+    /// <summary>The icon-only button that advances a line without responses.</summary>
+    internal static bool IsContinueButton(GameObject element)
+    {
+        try
+        {
+            if (!HasActiveContent || !IsAlive(element)) return false;
+            var dialogue = _ui.dialogue;
+            var responses = dialogue is not null && !dialogue.WasCollected ? dialogue.responseMenu : null;
+            return Continues(_subtitle, element) ||
+                dialogue is not null && !dialogue.WasCollected && Continues(dialogue.npcSubtitle, element) ||
+                responses is not null && !responses.WasCollected && Continues(responses.subtitleReminder, element);
+        }
+        catch (Exception) { return false; }
+    }
+
+    private static bool Continues(TextMeshProSubtitleControls controls, GameObject element)
+    {
+        var button = controls is not null && !controls.WasCollected ? controls.continueButton : null;
+        return IsAlive(button) && IsAlive(button.gameObject) && button.gameObject.GetInstanceID() == element.GetInstanceID();
     }
 
     internal static void ShowSubtitle(TextMeshProDialogueUI ui, Subtitle subtitle)
@@ -139,6 +171,7 @@ internal static class DialogueAnnouncer
             if (announcement == null) return;
             if (!ScreenReader.TrySpeak(announcement, interrupt: true)) return;
             Tracker.Acknowledge(_ui.GetInstanceID(), announcement);
+            _linesSpoken++;
             HasPendingContent = false;
             Plugin.Log.LogInfo($"[Dialogue] {announcement}");
         }
@@ -158,6 +191,7 @@ internal static class DialogueAnnouncer
         _responsesShown = false;
         _usingReminder = false;
         HasPendingContent = false;
+        _linesFollowed = _linesSpoken;
         Tracker.Reset();
     }
 

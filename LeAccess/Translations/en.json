@@ -3,6 +3,7 @@
   "login.waiting": "Loading. Your selection will continue when the game is ready.",
   "state.on": "On",
   "state.off": "Off",
+  "dialogue.continue": "Continue",
   "control.color_selector": "Color selector",
   "control.text_field": "Text field",
   "control.field_value": "{0}: {1}",

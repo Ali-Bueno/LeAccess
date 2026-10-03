@@ -323,6 +323,22 @@ flush queues that initial response without cutting the body. Later deliberate
 response navigation still interrupts. Three source-linked menu regressions cover
 this ordering, bringing that suite to 44 checks.
 
+### Automatic focus a frame later (live report, 2026-10-03)
+
+The same-frame guard was not enough: the 20:43 Steam log shows each `[Dialogue]`
+line followed by `[Element] Response Button 1` or `NPC Subtitle Continue Button`,
+and the user heard the NPC cut off whenever responses existed. The game selects
+its first response or the continue button a frame or more after the line.
+`DialogueAnnouncer` now counts accepted lines; `TakeLineFollower()` is true once
+per line, and `ElementAnnouncer` speaks that first dialogue focus without
+interrupting. Later navigation interrupts as before; a rejected line or a closed
+conversation leaves nothing to follow.
+
+The continue button (`TextMeshProSubtitleControls.continueButton`, checked on the
+current, NPC and reminder controls) is icon-only, so the fallback read its object
+name ("NPC Subtitle Continue"). It now reads the localized `dialogue.continue`
+("Continuar"). Dialogue 83 and menu-reading 303 checks pass.
+
 Discovery also reads `ConversationController.state.subtitle.formattedText` only
 when paired with the active UI's current subtitle controls and a visible matching
 prefix. Native `TextMeshProSubtitleControls.ShowSubtitle` (`0x1AEFB70`) calls

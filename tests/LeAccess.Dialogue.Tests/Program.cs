@@ -25,6 +25,7 @@ internal static class Program
             SubtitleReminderTransitions();
             ReminderTypewriter();
             RejectedOutputRetriesCurrentTurn();
+            AutomaticFocusFollowsLine();
             Console.WriteLine($"Dialogue tests passed: {_checks} checks.");
             return 0;
         }
@@ -396,6 +397,29 @@ internal static class Program
         ui.gameObject.Active = false; ScreenReader.OutputAccepted = true; Tick(); Tick();
         Check(ScreenReader.Messages.Count == 0 && !DialogueAnnouncer.HasPendingContent, "Hidden rejected dialogue expires before recovery");
         DialogueAnnouncer.Reset();
+    }
+
+    private static void AutomaticFocusFollowsLine()
+    {
+        var ui = Create();
+        var continueObject = ui.gameObject.Child();
+        ui.currentSubtitleControls.continueButton = continueObject.Add(new Button());
+        Check(!DialogueAnnouncer.TakeLineFollower(), "No line spoken yet: nothing to follow");
+        Check(!DialogueAnnouncer.IsContinueButton(continueObject), "The continue button is not owned before a line shows");
+        Show(ui, "Buena suerte."); Tick(); Tick();
+        Check(ScreenReader.Messages.Single().Text == "Erza: Buena suerte.", "The line is read");
+        Check(DialogueAnnouncer.IsContinueButton(continueObject), "The subtitle's own continue button is recognized");
+        Check(!DialogueAnnouncer.IsContinueButton(ui.gameObject.Child()), "Other dialogue controls are not the continue button");
+        Check(DialogueAnnouncer.TakeLineFollower(), "The first focus after a line queues behind it");
+        Check(!DialogueAnnouncer.TakeLineFollower(), "Later navigation may interrupt again");
+        Show(ui, "Otra cosa."); Tick(); Tick();
+        Check(DialogueAnnouncer.TakeLineFollower(), "Each new line queues its first focus again");
+        Show(ui, "Rechazada."); ScreenReader.OutputAccepted = false; Tick(); Tick();
+        Check(!DialogueAnnouncer.TakeLineFollower(), "A rejected line does not hold back the next focus");
+        ScreenReader.OutputAccepted = true;
+        Tick(); Tick();
+        DialogueAnnouncer.Reset();
+        Check(!DialogueAnnouncer.TakeLineFollower(), "Closing the conversation drops a pending follower");
     }
 
     private static void Tick() { Time.frameCount++; DialogueAnnouncer.Update(); }

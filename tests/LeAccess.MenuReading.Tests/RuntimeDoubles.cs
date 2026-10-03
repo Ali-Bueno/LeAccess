@@ -296,6 +296,10 @@ namespace LeAccess.Accessibility.Dialogue
         public static bool HasActiveContent, HasPendingContent;
         public static UnityEngine.GameObject Root;
         public static bool OwnsFocus(UnityEngine.GameObject go) => Root is not null && go.transform.IsChildOf(Root.transform);
+        public static UnityEngine.GameObject Continue;
+        public static bool LineToFollow;
+        public static bool IsContinueButton(UnityEngine.GameObject go) => Continue is not null && ReferenceEquals(go, Continue);
+        public static bool TakeLineFollower() { bool follow = LineToFollow; LineToFollow = false; return follow; }
     }
 }
 namespace LeAccess.Accessibility.Items
