@@ -9,10 +9,14 @@ namespace LeAccess.Accessibility.MapSections;
 internal static class MapSurfaceProbe
 {
     private static FootstepRaycastTrigger _trigger;
+    private static ActorVisuals _visuals;
     private static long _session;
     private static string _lastFailure;
     private static Il2CppReferenceArray<FootstepMaterial> _materials;
     private static Il2CppStructArray<float> _volumes;
+    private static double _nextDiscovery;
+    // Match the live-place reader's bounded retry for asynchronously loaded visual rigs.
+    private const double DiscoveryRetrySeconds = 1;
     // Native HandleStepRaycast (0x15B5340) adds this exact vertical origin offset.
     private const float NativeRayOriginOffset = 0.5f;
 
@@ -26,27 +30,30 @@ internal static class MapSurfaceProbe
             if (!scene.IsValid() || !scene.isLoaded || (int)scene.handle != world.SceneHandle ||
                 scene.name != world.SceneName || scene.path != world.ScenePath || !IsAlive(player) ||
                 !player.activeInHierarchy || (int)player.scene.handle != world.SceneHandle) return false;
-            if (_session != world.Session || !Owned(_trigger, player, world.SceneHandle))
+            if (_session != world.Session) { Reset(); _session = world.Session; }
+            MapPlaceDiagnostics.Begin(world);
+            if (!MapPlayerVisuals.TryResolve(player, world.SceneHandle, out var visuals)) return false;
+            if (!Same(_visuals, visuals)) { _visuals = visuals; _trigger = null; _nextDiscovery = 0; }
+            var visualRoot = visuals.gameObject;
+            if (!Owned(_trigger, visualRoot, world.SceneHandle))
             {
-                _session = world.Session;
                 _trigger = null;
-                var triggers = player.GetComponentsInChildren<FootstepRaycastTrigger>();
+                if (Time.unscaledTimeAsDouble < _nextDiscovery) return false;
+                _nextDiscovery = Time.unscaledTimeAsDouble + DiscoveryRetrySeconds;
+                var triggers = visualRoot.GetComponentsInChildren<FootstepRaycastTrigger>();
                 if (triggers is null || triggers.WasCollected) return false;
                 foreach (var candidate in triggers)
                 {
-                    if (!Owned(candidate, player, world.SceneHandle)) continue;
+                    if (!Owned(candidate, visualRoot, world.SceneHandle)) continue;
                     if (IsAlive(_trigger)) { _trigger = null; return false; }
                     _trigger = candidate;
                 }
             }
-            if (!Owned(_trigger, player, world.SceneHandle)) return false;
-            var visuals = _trigger.actorVisuals;
-            if (!Owned(visuals, player, world.SceneHandle) || visuals.dead ||
-                (IsAlive(PlayerFinder.playerActorVisuals) && !Same(visuals, PlayerFinder.playerActorVisuals))) return false;
+            if (!Owned(_trigger, visualRoot, world.SceneHandle) || !Same(_trigger.actorVisuals, visuals)) return false;
             var emitter = _trigger.emitter;
             var collider = _trigger.lastCollider;
             var holder = _trigger.lastHolder;
-            if (!Owned(emitter, player, world.SceneHandle) || emitter.ignoreSurfaceSound ||
+            if (!Owned(emitter, visualRoot, world.SceneHandle) || emitter.ignoreSurfaceSound ||
                 !Available(collider, world.SceneHandle) || !collider.enabled ||
                 !Available(holder, world.SceneHandle) || !holder.isActiveAndEnabled ||
                 !Same(collider.GetComponentInParent<FootstepSoundHolder>(), holder)) return false;
@@ -62,41 +69,47 @@ internal static class MapSurfaceProbe
             float distance = _trigger.raycastDistance;
             int mask = FootstepRaycastTrigger.raycastMask;
             if (feet is null || feet.WasCollected || !float.IsFinite(distance) || distance <= 0 || mask == 0) return false;
+            double clearance = MapPlayerFloor.HeightAllowance(world);
+            if (!double.IsFinite(world.Y) || !double.IsFinite(clearance)) return false;
+            bool contacted = false;
             foreach (var foot in feet)
             {
-                if (!Available(foot, world.SceneHandle) || !foot.IsChildOf(player.transform)) continue;
+                if (!Available(foot, world.SceneHandle) || !foot.IsChildOf(visualRoot.transform)) continue;
                 var position = foot.position;
                 if (!Finite(position)) continue;
                 var hits = Physics.RaycastAll(position + new Vector3(0, NativeRayOriginOffset, 0),
                     Vector3.down, distance, mask, QueryTriggerInteraction.Ignore);
                 if (hits is null || hits.WasCollected) continue;
                 Collider nearest = null;
-                FootstepSoundHolder nearestHolder = null;
+                RaycastHit nearestHit = default;
                 float nearestDistance = float.PositiveInfinity;
                 bool ambiguous = false;
                 foreach (var hit in hits)
                 {
                     var target = hit.collider;
-                    if (!Available(target, world.SceneHandle) || !target.enabled || target.isTrigger ||
+                    if (!Physical(target, mask, player, visualRoot) ||
                         !float.IsFinite(hit.distance) || hit.distance < 0 || hit.distance > distance) continue;
-                    var soundHolder = target.GetComponentInParent<FootstepSoundHolder>();
-                    if (!Available(soundHolder, world.SceneHandle) || !soundHolder.isActiveAndEnabled) continue;
                     if (hit.distance < nearestDistance)
-                    { nearest = target; nearestHolder = soundHolder; nearestDistance = hit.distance; ambiguous = false; }
+                    { nearest = target; nearestHit = hit; nearestDistance = hit.distance; ambiguous = false; }
                     else if (hit.distance == nearestDistance && !Same(target, nearest)) ambiguous = true;
                 }
-                if (ambiguous || !Same(nearest, collider) || !Same(nearestHolder, holder)) continue;
+                if (!IsAlive(nearest)) continue;
+                if (ambiguous || !Available(nearest, world.SceneHandle) || !Same(nearest, collider) ||
+                    !Finite(nearestHit.point) || !Finite(nearestHit.normal) || nearestHit.normal.y <= 0 ||
+                    Math.Abs(world.Y - nearestHit.point.y) > clearance ||
+                    IsAlive(nearest.GetComponentInParent<Actor>()) || IsAlive(nearest.GetComponentInParent<ActorVisuals>()) ||
+                    !Same(nearest.GetComponentInParent<FootstepSoundHolder>(), holder)) return false;
                 if (_materials is null || _materials.WasCollected) _materials = new Il2CppReferenceArray<FootstepMaterial>(2);
                 if (_volumes is null || _volumes.WasCollected) _volumes = new Il2CppStructArray<float>(2);
                 _materials[0] = _materials[1] = null;
                 _volumes[0] = _volumes[1] = 0;
                 // Local buffers only; never invoke Step, FootstepTrigger or audio playback.
                 holder.GetSurfaceSound(position, ref _materials, ref _volumes);
-                if (Dominant(_materials, _volumes) != current) continue;
-                textKey = current;
-                return true;
+                if (Dominant(_materials, _volumes) != current) return false;
+                contacted = true;
             }
-            return false;
+            if (contacted) textKey = current;
+            return contacted;
         }
         catch (Exception ex)
         {
@@ -163,11 +176,15 @@ internal static class MapSurfaceProbe
     }
 
     private static bool Finite(Vector3 value) => float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+    private static bool Physical(Collider collider, int mask, GameObject player, GameObject visualRoot) => IsAlive(collider) &&
+        IsAlive(collider.gameObject) && collider.gameObject.activeInHierarchy && collider.enabled && !collider.isTrigger &&
+        !collider.transform.IsChildOf(player.transform) && !collider.transform.IsChildOf(visualRoot.transform) &&
+        (mask & (1 << collider.gameObject.layer)) != 0;
     private static bool Same(UnityEngine.Object a, UnityEngine.Object b) => IsAlive(a) && IsAlive(b) && a.Pointer == b.Pointer;
     private static bool Available(Component component, int scene) => IsAlive(component) &&
         IsAlive(component.gameObject) && component.gameObject.activeInHierarchy && (int)component.gameObject.scene.handle == scene;
     private static bool Owned(Behaviour component, GameObject player, int scene) => Available(component, scene) &&
         component.isActiveAndEnabled && component.transform.IsChildOf(player.transform);
     internal static void Reset()
-    { _trigger = null; _session = 0; _lastFailure = null; _materials = null; _volumes = null; }
+    { _trigger = null; _visuals = null; _session = 0; _lastFailure = null; _materials = null; _volumes = null; _nextDiscovery = 0; }
 }

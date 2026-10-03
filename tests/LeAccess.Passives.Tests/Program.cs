@@ -190,4 +190,15 @@ Time.unscaledTimeAsDouble += 3;
 Check(!PassiveAccessibility.TryHandleFocus(cell) &&
     LeAccess.Plugin.Log.Information.Last(line => line.StartsWith("[PassiveStatus]")).Contains("not PassiveTreeNavigable"),
     "actual passive focus logs unexpected navigation instead of silent failure");
+NavigationManager.currentlySelected = owner;
+PassiveAccessibility.Reset();
+first.Name = "";
+Check(!PassiveSelectionReader.TryRead(out _), "unnamed native fallback remains unavailable");
+builds = NodeTooltipContentBuilder.Builds;
+for(int frame=0;frame<10;frame++) PassiveSelectionReader.TryRead(out _);
+Check(NodeTooltipContentBuilder.Builds == builds, "pending native name retries are bounded rather than rebuilding each frame");
+first.Name = "Recovered passive";
+Time.unscaledTimeAsDouble += .2;
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary.Contains("Recovered passive"),
+    "fallback retries a missing name without requiring a point, locale or selection change");
 Console.WriteLine($"Passed {checks} passive checks.");

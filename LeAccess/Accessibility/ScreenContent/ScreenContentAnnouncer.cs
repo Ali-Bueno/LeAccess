@@ -234,7 +234,7 @@ internal static class ScreenContentAnnouncer
 
     private static bool IsSourceVisible(Source source)
     {
-        bool visible = IsAlive(source.Root) && UiVisibility.IsVisible(source.Root);
+        bool visible = IsAlive(source.Root) && UiVisibility.HasVisiblePresentation(source.Root);
         if (source.RetainWhenHidden)
         {
             // Awake registers the exact tooltip once; visibility, not registration, determines opening order.

@@ -55,11 +55,7 @@ internal static class RuntimeSceneryPlaces
                 !NavMesh.SamplePositionFilter(position, out var origin, radius, agent.agentTypeID, agent.areaMask) ||
                 !SceneryFootprint.Finite(origin.position) || Math.Abs(position.y - origin.position.y) > clearance) return false;
             Candidate? selected = null;
-            HasValidObservation = !_lastTent.HasValue ||
-                Available(_lastTent.Value.Renderer, world.SceneHandle) &&
-                AllowedBranch(_lastTent.Value.Renderer.transform, player, world.SceneHandle) &&
-                SceneryFootprint.Classify(_lastTent.Value.Renderer.name, _lastTent.Value.Renderer.transform.parent?.name) == _lastTent.Value.Key &&
-                TentCanopy.IsAvailable(_lastTent.Value.Renderer);
+            HasValidObservation = CanConfirmDeparture(player, world.SceneHandle, position, bodyRadius, clearance);
             float nearest = float.PositiveInfinity;
             foreach (var candidate in Candidates)
             {
@@ -94,6 +90,19 @@ internal static class RuntimeSceneryPlaces
             if (_lastFailure != failure) { _lastFailure = failure; Plugin.Log?.LogWarning("Map scenery: " + failure); }
             return false;
         }
+    }
+
+    private static bool CanConfirmDeparture(GameObject player, int scene, Vector3 position, float radius, double clearance)
+    {
+        if (!_lastTent.HasValue) return true;
+        var previous = _lastTent.Value;
+        var renderer = previous.Renderer;
+        if (!Available(renderer, scene) || !AllowedBranch(renderer.transform, player, scene) ||
+            SceneryFootprint.Classify(renderer.name, renderer.transform.parent?.name) != previous.Key ||
+            !TentCanopy.IsAvailable(renderer) ||
+            !SceneryFootprint.TryClosest(renderer.transform, renderer.localBounds, position, out var closest)) return false;
+        // A failed approach query cannot prove that the player left the still-known canopy.
+        return Math.Abs(closest.y - position.y) > clearance || !TentCanopy.Contains(renderer, position, position, radius);
     }
 
     private static void Discover(Scene scene, GameObject player)

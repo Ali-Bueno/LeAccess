@@ -29,6 +29,7 @@ namespace UnityEngine
     {
         public bool activeInHierarchy = true;
         public bool Visible = true;
+        public bool HasPresentation = true;
         public string Text;
     }
     internal sealed class CanvasRenderer : Object { public bool cull { get; set; } }
@@ -97,6 +98,8 @@ namespace LeAccess.Accessibility.Announcements
 {
     internal static class UiVisibility
     {
+        public static bool HasVisiblePresentation(UnityEngine.GameObject root) =>
+            IsVisible(root) && root.HasPresentation;
         public static bool IsVisible(UnityEngine.GameObject root) =>
             root is not null && !root.WasCollected && root.activeInHierarchy && root.Visible;
     }

@@ -14,12 +14,14 @@ internal static class QuestUpdateAccessibility
     // Match the existing vitals reader's responsive 100 ms sampling budget.
     private const double PollSeconds = 0.1;
     private static readonly QuestUpdateState Campaign = new(), Monolith = new(), Stash = new();
+    private static readonly QuestUpdateState[] UpdateSources = { Campaign, Monolith, Stash };
     private static ConfigEntry<bool> _enabled;
     private static ConfigEntry<double> _speechInterval;
     private static double _nextPoll;
     private static double _nextSpeech;
     private static IntPtr _character;
     private static string _lastFailure;
+    private static int _nextSource;
     internal static bool HasPendingContent => Campaign.HasPendingContent || Monolith.HasPendingContent || Stash.HasPendingContent;
 
     internal static void Initialize(ConfigFile config)
@@ -61,9 +63,7 @@ internal static class QuestUpdateAccessibility
             bool canSpeak = Application.isFocused && !NavigationAudioState.IsSuspended &&
                 !typing && !otherContentActive && !higherPriorityPending && !ScreenReader.SpokeThisFrame &&
                 ScreenReader.IsAvailable() && now >= _nextSpeech && GameplayInputState.OwnsInput();
-            if (Campaign.TryTake(canSpeak && campaignReady, out var change) ||
-                Monolith.TryTake(canSpeak && monolithReady, out change) ||
-                Stash.TryTake(canSpeak && stashReady, out change))
+            if (TryTake(canSpeak, stackalloc bool[] { campaignReady, monolithReady, stashReady }, out var change))
             {
                 string text = Format(change);
                 ScreenReader.Speak(text, interrupt: false);
@@ -79,6 +79,20 @@ internal static class QuestUpdateAccessibility
             _lastFailure = ex.Message;
             Plugin.Log.LogWarning($"Quest updates unavailable: {ex.Message}");
         }
+    }
+
+    private static bool TryTake(bool canSpeak, ReadOnlySpan<bool> ready, out QuestProgressChange change)
+    {
+        change = default;
+        if (!canSpeak) return false;
+        for (int offset = 0; offset < UpdateSources.Length; offset++)
+        {
+            int index = (_nextSource + offset) % UpdateSources.Length;
+            if (!UpdateSources[index].TryTake(ready[index], out change)) continue;
+            _nextSource = (index + 1) % UpdateSources.Length;
+            return true;
+        }
+        return false;
     }
 
     private static bool Observe(StatefulQuestListHolder holder, QuestUpdateState state)
@@ -105,7 +119,7 @@ internal static class QuestUpdateAccessibility
     internal static void Reset()
     {
         Campaign.Reset(); Monolith.Reset(); Stash.Reset();
-        _character = IntPtr.Zero; _nextPoll = 0; _nextSpeech = 0;
+        _character = IntPtr.Zero; _nextPoll = 0; _nextSpeech = 0; _nextSource = 0;
     }
 
     internal static void Cleanup() { Reset(); _enabled = null; _speechInterval = null; _lastFailure = null; }

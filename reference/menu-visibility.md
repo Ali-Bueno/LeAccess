@@ -67,7 +67,7 @@ declared header/body references must belong to that popup. Foreground selection
 uses overlay-canvas render order or a shared hierarchy when comparable, with
 display chronology as the fallback. Nested native modals are tracked separately
 so a child notice does not make an older parent steal foreground speech.
-`LeAccess.ScreenContent.Tests` passes **87 checks** for this content lifecycle
+`LeAccess.ScreenContent.Tests` passes **94 checks** for this content lifecycle
 and ordering path.
 
 ## Coverage of menu families
@@ -98,7 +98,7 @@ quest rows and skill-stat rows use it. Domain fields such as item name followed
 by stats or quest title followed by state retain their meaningful structure.
 
 `LeAccess.MenuReading.Tests` links the actual visibility, geometry, focus,
-reading-order, text-detection and announcement sources: **165 checks**, including
+reading-order, text-detection and announcement sources: **168 checks**, including
 offscreen/partial rectangles, camera depth, scroll padding, disjoint masks,
 dropdown sorting boundaries, renderer fades, non-rendering parents, disabled
 native owners, indexed vertical lists, material-search ownership, modal return
@@ -111,3 +111,32 @@ Arbitrary nonrectangular stencil interiors, partially covered glyphs and every
 opaque overlay are not reconstructed from pixels. Native culling and actual
 foreground ownership handle those cases where available. Rectangle overlap
 alone is never treated as proof that an unrelated panel occludes another.
+
+## Follow-up regression review — 2026-10-03
+
+Additional failures were reproduced with failing source-linked checks
+before their fixes:
+
+- A registered popup could keep blocking other menus after all its graphics
+  faded, were culled or became disabled while its layout root stayed active.
+  Screen-content ownership now requires the same visible presentation check
+  as generic control reading. Reappearing graphics restore the popup; hiding
+  a newer popup releases an unchanged underlying window without replaying it.
+- Manual details for a foreground popup were rejected when a conversation
+  remained active underneath. Details now use the shared foreground check,
+  which gives the popup the same priority as automatic focus speech.
+- A row title positioned above its control could lose to a lower label merely
+  because the prefab serialized that lower label before the control. Generic
+  label and description selection now take the first eligible candidate in the
+  already computed screen order. Description checks cover the inverse prefab
+  arrangement too: upper description before the control, lower description
+  after it. Unknown geometry retains its existing source order.
+- The controller radial menu could read a retained sector model after its
+  presentation faded. Its menu, active radial and selected sector now require
+  visible presentation too; the controller-menu suite passes **40 checks**.
+
+The affected suites pass **168 menu + 94 screen-content checks**; the dependent
+notification and dialogue suites pass **50 + 63 checks**. Those suites preserve
+their explicit modal-state doubles; no additional source links are required.
+The plugin build remains clean with deployment disabled. These are host regressions;
+native controller/listening confirmation remains pending.

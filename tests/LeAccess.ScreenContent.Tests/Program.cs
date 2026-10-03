@@ -286,4 +286,5 @@ hintRoot.Visible = false; Frame(); Frame();
 Check(ScreenReader.Messages.Count == prior && TutorialTextReader.Read(tutorial) is null,
     "Hidden tutorial cannot emit controls or obsolete content");
 ReadingOrderTests.Run(Check);
+PopupVisibilityTests.Run(Check);
 Console.WriteLine($"Screen content tests passed: {checks} checks.");

@@ -54,3 +54,14 @@ them up; verify repetition and directional movement. Approach a dungeon entrance
 then leave its native interaction radius. Open a real menu and collect the loot;
 both actions should stop that target's sound. Compare the bounded diagnostics if
 a nearby visible item remains silent.
+
+## Continuous sonar lifecycle follow-up
+
+The separate optional continuous wall sonar now yields whenever native gameplay
+input ownership is lost, including an inventory/menu opened without pausing an
+online game. A failed native player query also clears the prior looping tones
+instead of retaining their last volumes. New valid gameplay probes restore the
+sound after either condition. The source-linked `LeAccess.RadarAudio.Tests`
+suite passes **48 checks**, including both reproduced failures and recovery;
+its sonar cases inject channels without opening an audio device. Continuous
+sonar remains opt-in and its existing sounds are unchanged.

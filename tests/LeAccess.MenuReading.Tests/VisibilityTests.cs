@@ -171,6 +171,18 @@ internal static class VisibilityTests
         TextDetector.FindLabelAndDescriptionAggressive(control, null, ref orderedName, ref orderedDescription);
         Check(orderedName == "Upper label", "Aggressive fallback keeps the same spatial order within its owned row");
         Check(TextDetector.FindAnyTextInParents(control, null) == "Upper label", "Last label fallback also uses visible spatial order");
+        row.Children.Remove(upper); row.Children.Add(upper);
+        orderedName = orderedDescription = null;
+        TextDetector.FindLabelInImmediateContainer(control, ref orderedName, ref orderedDescription, null);
+        Check(orderedName == "Upper label", "An upper visible label serialized after its control beats a lower label serialized before it");
+        upper.GetComponent<TextMeshProUGUI>().text = "The upper description belongs first in visual order.";
+        lower.GetComponent<TextMeshProUGUI>().text = "The lower description belongs last in visual order.";
+        row.Children.Remove(upper); row.Children.Insert(0, upper);
+        row.Children.Remove(lower); row.Children.Add(lower);
+        orderedName = orderedDescription = null;
+        TextDetector.FindLabelInImmediateContainer(control, ref orderedName, ref orderedDescription, null);
+        Check(orderedDescription == "The upper description belongs first in visual order.",
+            "An upper visible description serialized before its control beats a lower description serialized after it");
 
         var owner = root.Add(new Navigable());
         var first = textGo.Add(new Button());

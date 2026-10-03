@@ -101,8 +101,11 @@ internal static class PassiveGuidanceAccessibility
                 State.TryTakeSpeech(now, out var announcement))
                 Speak(announcement);
             if (_sound.Value && _volume.Value > 0 && State.PulseDue(now) &&
-                (!_speech.Value || !readerAvailable || State.HasAnnouncedTarget) &&
-                Audio.TryPlay(now, State.Pan, State.Forward, _volume.Value / 100f)) State.PulsePlayed(now);
+                (!_speech.Value || !readerAvailable || State.HasAnnouncedTarget))
+            {
+                if (Audio.TryPlay(now, State.Pan, State.Forward, _volume.Value / 100f)) State.PulsePlayed(now);
+            }
+            else Audio.CancelPending();
         }
         catch (Exception ex) { Suspend(); ReportFailure(ex.Message); }
     }

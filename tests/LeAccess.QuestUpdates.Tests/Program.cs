@@ -18,7 +18,7 @@ static class Program
 
     static void Main()
     {
-        StateTests(); ProbeTests(); ServiceTests();
+        StateTests(); ProbeTests(); ServiceTests(); SourceFairnessTests();
         Console.WriteLine($"Quest updates: {_checks} checks passed.");
     }
 
@@ -88,6 +88,14 @@ static class Program
         Settle(state, Q("b")); Settle(state, Q("b") with { Available = false });
         Check(!state.TryTake(true, out _), "invalid pending objective never delivered");
         Settle(state, Q("b")); Check(state.TryTake(true, out _), "valid pending survives unavailable sample");
+        state.Reset(); Settle(state, Q("baseline", "1"), Q("baseline", "2"));
+        Settle(state, Q("first", "1"), Q("first", "2"));
+        Check(state.TryTake(true, out change) && change.Quest.Key == "1", "the oldest first quest starts its pending batch");
+        Settle(state, Q("second", "1"), Q("first", "2"));
+        Check(state.TryTake(true, out change) && change.Quest.Key == "2",
+            "a rapidly requeued quest cannot reuse a dictionary slot ahead of an older pending quest");
+        Check(state.TryTake(true, out change) && change.Quest.Key == "1" && change.Quest.Revision == "second",
+            "the requeued quest retains its latest revision for the following turn");
     }
 
     private static StatefulQuest AddQuest(StatefulQuestListHolder holder, int id = 1)
@@ -151,6 +159,37 @@ static class Program
 
     private static bool Unavailable(StatefulQuestListHolder holder) =>
         QuestUpdateProbe.TryRead(holder, out var read) && read.Count == 1 && !read[0].Available;
+
+    private static void SourceFairnessTests()
+    {
+        ModText.SetLanguage("en"); ScreenReader.Spoken.Clear(); Time.unscaledTimeAsDouble = 0;
+        QuestUpdateAccessibility.Initialize(new ConfigFile());
+        PlayerFinder.Provider = new();
+        var campaign = AddQuest(PlayerFinder.Provider.Campaign, 1);
+        var monolith = AddQuest(PlayerFinder.Provider.Monolith, 2);
+        var stash = AddQuest(PlayerFinder.Provider.Stash, 3);
+        campaign.quest.displayName = "Campaign";
+        monolith.quest.displayName = "Monolith";
+        stash.quest.displayName = "Stash";
+        foreach (var tracked in new[] { campaign, monolith, stash }) tracked.objectives[0].objective.isIncremental = true;
+        Poll(); Poll();
+        foreach (var tracked in new[] { campaign, monolith, stash }) tracked.objectives[0].progress = 1;
+        Poll(menu: true); Poll(menu: true); Poll(elapsed: 2);
+        Check(ScreenReader.Spoken.Count == 1 && ScreenReader.Spoken.Last().Contains("Campaign"),
+            "the first ready quest list retains the established initial order");
+        campaign.objectives[0].progress = 2;
+        Poll(pending: true, elapsed: .11); Poll(pending: true, elapsed: .11); Poll(elapsed: 2);
+        Check(ScreenReader.Spoken.Count == 2 && ScreenReader.Spoken.Last().Contains("Monolith"),
+            "continuous campaign counters cannot starve an already queued monolith update");
+        campaign.objectives[0].progress = 3;
+        Poll(pending: true, elapsed: .11); Poll(pending: true, elapsed: .11); Poll(elapsed: 2);
+        Check(ScreenReader.Spoken.Count == 3 && ScreenReader.Spoken.Last().Contains("Stash"),
+            "a queued stash quest receives its turn before a recurring campaign update");
+        Poll(elapsed: 2);
+        Check(ScreenReader.Spoken.Count == 4 && ScreenReader.Spoken.Last().Contains("Campaign") && ScreenReader.Spoken.Last().Contains("3/10"),
+            "campaign updates still coalesce to their newest counter while the other native lists speak");
+        QuestUpdateAccessibility.Cleanup();
+    }
 
     private static void Poll(bool menu = false, bool pending = false, double elapsed = 1)
     { Time.unscaledTimeAsDouble += elapsed; ScreenReader.SpokeThisFrame = false; QuestUpdateAccessibility.Update(menu, pending); }

@@ -17,6 +17,7 @@ internal static class Program
             CallbackTimingSeparatesStallsFromPlayback();
             RecoveryWaitsForPlaybackCompletion();
             FailedReopenCanRetry();
+            _checks += WallSonarTests.Run();
             Console.WriteLine($"Radar audio tests passed: {_checks} checks; no audio device opened.");
             return 0;
         }

@@ -192,8 +192,6 @@ public static class ElementAnnouncer
     {
         text = null;
         if (!UiFocusOwnership.Allows(go)) return false;
-        if (ScreenContentAnnouncer.HasActiveContent && !ScreenContentAnnouncer.OwnsFocus(go) ||
-            DialogueAnnouncer.HasActiveContent && !DialogueAnnouncer.OwnsFocus(go)) return false;
         if (go.GetComponent<TMP_InputField>() != null || go.GetComponentInParent<TMP_InputField>() != null) return false;
         bool restricted = ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent;
         string brief = BuildAnnouncementText(go, restricted);

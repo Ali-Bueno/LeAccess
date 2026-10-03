@@ -98,6 +98,13 @@ and bounded failure-stage diagnostics.
 The follow-up builds with zero warnings/errors using `SkipPluginDeployment=true`;
 it was not launched or deployed by this feature investigation. No new dependency.
 
+The 2026-10-03 review found that a fallback built before its native name became
+available was cached permanently until points, locale or selection changed.
+An unnamed fallback is now discarded and retried at the existing 0.2-second
+inventory/skill refresh cadence. A regression first failed with a name arriving
+later on the same node; recovery and bounded retries now pass in the 85-check
+passive suite. Production builds without warnings/errors; listening remains pending.
+
 Controller listening remains pending: open Passives, move between nodes, compare
 name/points/requirements with the shown tooltip, allocate a point and switch
 mastery tabs. Check that reopening reads the current node and that respec/modal

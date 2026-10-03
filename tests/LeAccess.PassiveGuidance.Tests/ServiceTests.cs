@@ -110,6 +110,16 @@ internal static partial class Program
         Tick(2.5);
         Check(RadarAudioOutput.Plays == 1, "automatic guidance waits its turn behind world audio");
 
+        ResetService(); AddTarget(); Tick(0); Tick(0.5);
+        WorldAudioReservation.TryBegin(WorldAudioSource.Terrain, 1, 1, 50); Tick(1);
+        GuidanceTargetReader.Targets.Clear(); AddTarget(2, "Replacement");
+        Tick(1.5, pending: true); Tick(2.5, pending: true);
+        Check(WorldAudioReservation.TryBegin(WorldAudioSource.Object, 2.5, 0.5, 50),
+            "a guidance pulse waiting to name a replacement target cannot retain the head of the shared audio queue");
+        Tick(7);
+        Check(ScreenReader.Spoken.Count == 2 && ScreenReader.Spoken.Last().Contains("Replacement") && RadarAudioOutput.Plays == 1,
+            "replacement guidance reacquires audio after its identity is announced without losing narration state");
+
         ResetService(); AddTarget(); NavMesh.Status = NavMeshPathStatus.PathPartial; Settle(); Tick(4);
         Check(ScreenReader.Spoken.Count == 0 && RadarAudioOutput.Plays == 0, "partial route never emits a suggestive direction");
         Check(NavMesh.Calculations == 2, "unavailable marker path retries are throttled");

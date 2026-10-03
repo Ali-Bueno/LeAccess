@@ -99,6 +99,12 @@ reader/sample/device, audio arbitration/recovery and first-segment obstacles.
 The existing manual orientation and native target-reader suites remain
 regression checks. These are not an audible runtime confirmation.
 
+The suite now passes **353 checks**. A regression reproduces an old queued pulse
+surviving a target change while the new destination name waits for speech. Such
+an ineligible pulse now releases its pending audio turn, allowing objects, NPCs
+and terrain to continue. It can request a fresh turn once the new target is
+ready; this cancellation does not cut off a sample already playing.
+
 Listening checks: stand still with a visible objective, approach it around a
 wall, cross a bend, reach/leave the marker, open/close a menu, untrack it, and
 change zones. Verify direction and accelerating cadence without a key press.

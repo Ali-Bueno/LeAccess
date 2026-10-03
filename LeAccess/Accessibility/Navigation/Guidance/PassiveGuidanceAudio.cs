@@ -53,9 +53,11 @@ internal sealed class PassiveGuidanceAudio : IDisposable
 
     internal void Silence()
     {
-        WorldAudioReservation.Cancel(WorldAudioSource.Guidance);
+        CancelPending();
         _output?.Silence();
     }
+
+    internal void CancelPending() => WorldAudioReservation.Cancel(WorldAudioSource.Guidance);
 
     public void Dispose()
     {

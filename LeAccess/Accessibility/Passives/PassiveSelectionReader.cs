@@ -22,6 +22,9 @@ internal static class PassiveSelectionReader
     private static SkillTreeNode _node;
     private static NodeTooltipInfo _fallback;
     private static string _revision;
+    private static double _nextFallbackRetry;
+    // Match the existing inventory/skill refresh rate while native text becomes available.
+    private const double FallbackRetrySeconds = 0.2;
     internal static string LastStatus { get; private set; }
     internal static bool HasPassiveContext { get; private set; }
 
@@ -31,6 +34,7 @@ internal static class PassiveSelectionReader
         _node = null;
         _fallback = null;
         _revision = null;
+        _nextFallbackRetry = 0;
     }
 
     internal static bool TryRead(out PassiveSelection selection)
@@ -109,6 +113,8 @@ internal static class PassiveSelectionReader
             string revision = $"{node.pointsAllocated}:{node.maxPoints}:{node.requirementsMet}:{node.tree.unspentPoints}:{locale}";
             if (!IsAlive(_node) || _node.Pointer != node.Pointer || _fallback is null || _fallback.WasCollected || _revision != revision)
             {
+                if (IsAlive(_node) && _node.Pointer == node.Pointer && _revision == revision &&
+                    Time.unscaledTimeAsDouble < _nextFallbackRetry) return Fail("native node tooltip name pending");
                 _node = node;
                 // The bare constructor and Refresh leave Name/Description unset.
                 _fallback = NodeTooltipContentBuilder.GetNodeTooltipInfo(node, false);
@@ -120,7 +126,15 @@ internal static class PassiveSelectionReader
         }
         else LastStatus = "ready; owned visible node tooltip";
         string name = TextUtils.CleanText(info.Name);
-        if (string.IsNullOrWhiteSpace(name)) return Fail($"node name empty; {LastStatus}");
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            if (_fallback is not null && _fallback.Pointer == info.Pointer)
+            {
+                _fallback = null;
+                _nextFallbackRetry = Time.unscaledTimeAsDouble + FallbackRetrySeconds;
+            }
+            return Fail($"node name empty; {LastStatus}");
+        }
         string summary = ScreenContentTracker.Combine(new[] { name,
             ModText.Format("node.points", info.PointsAllocated, info.MaxPoints),
             ModText.Get(node.requirementsMet ? "node.available" : "node.locked") });

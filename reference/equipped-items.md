@@ -33,6 +33,13 @@ merchant reader share the same selection ownership and recheck it after building
 content. A slot change or removal during construction discards stale output.
 Names settle over two observations; unchanged equipment does not repeat.
 
+The 2026-10-03 follow-up also rechecks foreground ownership immediately before
+output. Previously a manual model read could still announce equipment after a
+modal, dialogue, controller menu, loading screen or focus loss began during that
+read: item identity alone remained valid. Five failing regressions reproduce
+those transitions; the inventory service now passes 178 checks. Native model
+coverage remains 102 checks. No game was launched.
+
 ## Native and localization evidence
 
 Resolved from the installed `BepInEx/interop/MethodAddressToToken.db` and inspected

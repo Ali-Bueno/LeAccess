@@ -4,8 +4,10 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 int checks=0;
-void Check(bool ok,string text){checks++;if(!ok)throw new Exception(text);}
+var failures=new List<string>();
+void Check(bool ok,string text){checks++;if(!ok)failures.Add(text);}
 FootstepMaterial Material(int a,int b,int c,int d)=>new(){soundEvent=new(){Guid=new(){Data1=a,Data2=b,Data3=c,Data4=d}}};
+RaycastHit Hit(Collider target,float distance)=>new(){collider=target,distance=distance,point=new(5,2,8),normal=new(0,1,0)};
 var wood=Material(-1599689582,1211331962,1259039645,693955642);
 var grass=Material(1422184698,1315540948,1827935151,1868116228);
 var unknown=Material(1,2,3,4);
@@ -19,7 +21,8 @@ var collider=ground.Add(new Collider());var holder=ground.Add(new ColliderFootst
 var foot=new GameObject{scene=scene,Parent=body};foot.transform.position=new(5,2,8);
 var trigger=body.Add(new FootstepRaycastTrigger{emitter=emitter,actorVisuals=visuals,lastCollider=collider,lastHolder=holder,feet=new(foot.transform)});
 player.Triggers=new(trigger);
-Physics.Hits=new(new RaycastHit{collider=collider,distance=0.6f});
+body.Triggers=new(trigger);
+Physics.Hits=new(Hit(collider,0.6f));
 var world=new MapSectionWorldSnapshot(10,20,"Map","map.unity",5,2,8,0.5,null);
 bool Read(out string key)=>MapSurfaceProbe.TryRead(world,out key);
 Check(Read(out var key)&&key=="map.surface.wood","verified wood plus fresh physical contact");
@@ -39,9 +42,23 @@ emitter.activeMaterials[1]=null;emitter.activeVolumes[1]=0;emitter.activeVolumes
 holder.A=grass;Check(!Read(out _),"same-collider changed floor sample excludes stale emitter");holder.A=wood;
 Physics.Hits=new();Check(!Read(out _),"teleport away from cached collider rejected");
 var otherGround=new GameObject{scene=scene};var otherCollider=otherGround.Add(new Collider());otherGround.Add(new ColliderFootstepSoundHolder{A=wood});
-Physics.Hits=new(new RaycastHit{collider=collider,distance=0.6f},new RaycastHit{collider=otherCollider,distance=0.2f});Check(!Read(out _),"nearer different floor blocks stale floor");
-Physics.Hits=new(new RaycastHit{collider=collider,distance=0.6f},new RaycastHit{collider=otherCollider,distance=0.6f});Check(!Read(out _),"equal-distance different contacts ambiguous");
-Physics.Hits=new(new RaycastHit{collider=collider,distance=0.6f});
+Physics.Hits=new(Hit(collider,0.6f),Hit(otherCollider,0.2f));Check(!Read(out _),"nearer different floor blocks stale floor");
+Physics.Hits=new(Hit(collider,0.6f),Hit(otherCollider,0.6f));Check(!Read(out _),"equal-distance different contacts ambiguous");
+Physics.Hits=new(Hit(collider,0.6f));
+var plainGround=new GameObject{scene=scene};var plainCollider=plainGround.Add(new Collider());
+Physics.Hits=new(Hit(collider,.6f),Hit(plainCollider,.2f));
+Check(!Read(out _),"a closer unnamed physical floor vetoes the old holder-bearing floor");
+var foreignScene=scene;foreignScene.handle=99;plainGround.scene=foreignScene;
+Check(!Read(out _),"a closer physical collider in another scene vetoes the cached floor");plainGround.scene=scene;
+Physics.Hits=new(new RaycastHit{collider=collider,distance=.6f,point=new(5,0,8),normal=new(0,1,0)});
+Check(!Read(out _),"a cached floor below the player's current height band cannot supply its surface");
+Physics.Hits=new(Hit(collider,.6f));
+var otherFoot=new GameObject{scene=scene,Parent=body};otherFoot.transform.position=new(5,2,8);
+trigger.feet=new(foot.transform,otherFoot.transform);
+Physics.FootHits.Enqueue(new(Hit(collider,.6f)));
+Physics.FootHits.Enqueue(new(Hit(plainCollider,.6f)));
+Check(!Read(out _),"a verified first foot cannot hide the other foot on unknown ground");
+Physics.FootHits.Clear();trigger.feet=new(foot.transform);
 collider.isTrigger=true;Check(!Read(out _),"trigger contacts ignored");collider.isTrigger=false;
 collider.enabled=false;Check(!Read(out _),"disabled cached collider rejected");collider.enabled=true;
 holder.Enabled=false;Check(!Read(out _),"inactive holder rejected");holder.Enabled=true;
@@ -64,12 +81,60 @@ holder.ignoreOverrides=false;emitter.useOverrideMaterials=false;
 var terrain=new TerrainFootstepSoundHolder{A=wood};ground.Add(terrain);ground.Components.Remove(holder);trigger.lastHolder=terrain;
 Check(Read(out key)&&key=="map.surface.wood","known terrain pure sampler supported");terrain.A=grass;Check(!Read(out _),"teleport within terrain collider detects fresh blend mismatch");
 ground.Components.Remove(terrain);ground.Components.Add(holder);trigger.lastHolder=holder;
-var extra=body.Add(new FootstepRaycastTrigger{emitter=emitter,actorVisuals=visuals});player.Triggers=new(trigger,extra);MapSurfaceProbe.Reset();Check(!Read(out _),"multiple owned triggers ambiguous");player.Triggers=new(trigger);Check(Read(out _),"local discovery retries after ambiguity");
+var extra=body.Add(new FootstepRaycastTrigger{emitter=emitter,actorVisuals=visuals});body.Triggers=new(trigger,extra);MapSurfaceProbe.Reset();Check(!Read(out _),"multiple owned triggers ambiguous");body.Triggers=new(trigger);Time.unscaledTimeAsDouble+=1;Check(Read(out _),"local discovery retries after ambiguity");
+var savedTriggers=body.Triggers;body.Triggers=new();MapSurfaceProbe.Reset();Check(!Read(out _),"not-yet-loaded visual rig is silent");
+int discoveryCount=body.Discoveries;
+for(int frame=0;frame<30;frame++)Read(out _);
+Check(body.Discoveries==discoveryCount,"missing local rig never rescans the hierarchy every frame");
+body.Triggers=savedTriggers;Time.unscaledTimeAsDouble+=1;Check(Read(out _),"late-loaded owned rig becomes available at bounded retry");
 scene.isLoaded=false;SceneManager.Scene=scene;Check(!Read(out _),"unloaded scene rejected");scene.isLoaded=true;SceneManager.Scene=scene;
 world=world with{ScenePath="foreign"};Check(!Read(out _),"stale snapshot scene path rejected");world=world with{ScenePath="map.unity"};
 Physics.Throw=true;Check(!Read(out _)&&!Read(out _)&&LeAccess.Plugin.Log.Warnings.Count==1,"native error diagnostics deduplicate");
 MapSurfaceProbe.Reset();Check(!Read(out _)&&LeAccess.Plugin.Log.Warnings.Count==2,"reset clears diagnostics");Physics.Throw=false;
 Check(Read(out _),"reset and native recovery restore capture");
+var actor=player.Add(new Actor());PlayerFinder.playerActorComponent=actor;
+var sync=player.Add(new ActorSync{gameplayActor=actor,actorVisuals=visuals});actor.actorSync=sync;
+body.Parent=null;body.Triggers=new(trigger);MapSurfaceProbe.Reset();
+Check(Read(out _),"cached local sync authorizes the detached online visual/footstep hierarchy");
+var oldVisualCache=PlayerFinder.playerActorVisuals;
+PlayerFinder.playerActorVisuals=new GameObject{scene=scene}.Add(new ActorVisuals());
+Check(Read(out _),"an exact sync backlink overrides an obsolete independent visual cache");
+PlayerFinder.playerActorVisuals=oldVisualCache;
+sync.gameplayActor=new GameObject{scene=scene}.Add(new Actor());
+Check(!Read(out _),"foreign gameplay backlink cannot authorize the detached rig");sync.gameplayActor=actor;
+actor.actorSync=null;Check(!Read(out _),"detached visual cache alone is never ownership evidence");actor.actorSync=sync;
+sync.actorVisuals=null;Check(!Read(out _),"owned sync with no visuals cannot borrow legacy cached visuals");sync.actorVisuals=visuals;
+trigger.actorVisuals=PlayerFinder.playerActorVisuals=new GameObject{scene=scene}.Add(new ActorVisuals());
+Check(!Read(out _),"foreign trigger visual pointer cannot bypass exact sync owner");trigger.actorVisuals=visuals;PlayerFinder.playerActorVisuals=visuals;
+var foreignEmitter=new GameObject{scene=scene,Parent=player}.Add(new FootstepSoundEmitter{activeMaterials=new(wood,null),activeVolumes=new(1f,0f)});
+trigger.emitter=foreignEmitter;Check(!Read(out _),"emitter under gameplay root but outside detached visual root is not owned");trigger.emitter=emitter;
+foot.Parent=player;Check(!Read(out _),"a gameplay foot outside the detached visual root is foreign");foot.Parent=body;
+var replacementBody=new GameObject{scene=scene};
+var replacementVisuals=replacementBody.Add(new ActorVisuals());sync.actorVisuals=replacementVisuals;
+Check(!Read(out _),"visual replacement invalidates the old trigger immediately within the same session");
+var replacementFoot=new GameObject{scene=scene,Parent=replacementBody};replacementFoot.transform.position=foot.transform.position;
+var replacementEmitter=replacementBody.Add(new FootstepSoundEmitter{activeMaterials=new(wood,null),activeVolumes=new(1f,0f)});
+var replacementTrigger=replacementBody.Add(new FootstepRaycastTrigger{actorVisuals=replacementVisuals,emitter=replacementEmitter,
+    lastCollider=collider,lastHolder=holder,feet=new(replacementFoot.transform)});
+replacementBody.Triggers=new(replacementTrigger);Time.unscaledTimeAsDouble+=1;
+Check(Read(out key)&&key=="map.surface.wood","replacement visual's own native emitter and feet recover capture");
+sync.actorVisuals=visuals;
+body.Parent=player;actor.actorSync=null;PlayerFinder.playerActorComponent=null;MapSurfaceProbe.Reset();
+Physics.Hits=new(Hit(collider,.6f));
+var selfCollider=body.Add(new Collider());
+Physics.Hits=new(Hit(selfCollider,.1f),Hit(collider,.6f));Check(Read(out _),"owned player/visual collision does not occlude real floor");
+Physics.Hits=new(Hit(plainCollider,.1f),Hit(collider,.6f));plainGround.layer=8;
+Check(Read(out _),"colliders outside native floor mask cannot occlude floor");plainGround.layer=7;
+plainCollider.isTrigger=true;Check(Read(out _),"trigger-only overlap does not occlude floor");plainCollider.isTrigger=false;
+plainCollider.enabled=false;Check(Read(out _),"disabled nearby collider does not occlude floor");plainCollider.enabled=true;
+plainGround.Active=false;Check(Read(out _),"inactive nearby collider does not occlude floor");plainGround.Active=true;
+foreach(var hit in new[]{new RaycastHit{collider=collider,distance=.6f,point=new(5,2,8),normal=new(1,0,0)},
+    new RaycastHit{collider=collider,distance=.6f,point=new(5,2,8),normal=new(0,-1,0)},
+    new RaycastHit{collider=collider,distance=.6f,point=new(float.NaN,2,8),normal=new(0,1,0)}})
+{
+    Physics.Hits=new(hit);Check(!Read(out _),"invalid physical contact cannot establish a floor surface");
+}
+Physics.Hits=new(Hit(collider,.6f));
 using var evidenceStream=typeof(FootstepMaterial).Assembly.GetManifestResourceStream("SurfaceAssetEvidence.json");
 using var evidence=System.Text.Json.JsonDocument.Parse(evidenceStream);
 foreach(var entry in evidence.RootElement.EnumerateArray())
@@ -82,4 +147,5 @@ foreach(var entry in evidence.RootElement.EnumerateArray())
     else Check(captured&&key=="map.surface."+(name.StartsWith("Water_")?"water":name.ToLowerInvariant()),"actual extracted surface GUID: "+name);
 }
 collider.Destroyed=true;Check(!Read(out _),"destroyed physical contact rejected");
+if(failures.Count>0)throw new Exception(string.Join("\n",failures));
 Console.WriteLine($"{checks} map surface checks passed.");

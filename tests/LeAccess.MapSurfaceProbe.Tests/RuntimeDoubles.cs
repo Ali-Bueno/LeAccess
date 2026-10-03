@@ -42,14 +42,18 @@ namespace UnityEngine
         internal SceneManagement.Scene scene;
         internal GameObject Parent;
         internal bool Active=true;
+        internal int layer=7;
+        internal AI.NavMeshAgent Agent;
+        internal int Discoveries;
         internal Transform transform;
         internal List<Component> Components=new();
         internal Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<FootstepRaycastTrigger> Triggers;
         internal bool activeInHierarchy=>Active&&(Parent is null||Parent.activeInHierarchy);
         internal GameObject(){transform=new(){gameObject=this};}
         internal T Add<T>(T c) where T:Component {c.gameObject=this;Components.Add(c);return c;}
+        internal T GetComponentInChildren<T>() where T:class => Agent as T;
         internal Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<T> GetComponentsInChildren<T>() where T:Component
-            =>new(Triggers?.Values.OfType<T>().ToArray()??Array.Empty<T>());
+        {Discoveries++;return new(Triggers?.Values.OfType<T>().ToArray()??Array.Empty<T>());}
     }
     internal class Collider:Component {internal bool enabled=true,isTrigger;}
     internal struct Vector3
@@ -59,18 +63,20 @@ namespace UnityEngine
         internal static Vector3 down=>new(0,-1,0);
         public static Vector3 operator+(Vector3 a,Vector3 b)=>new(a.x+b.x,a.y+b.y,a.z+b.z);
     }
-    internal struct RaycastHit {internal Collider collider;internal float distance;}
+    internal struct RaycastHit {internal Collider collider;internal float distance;internal Vector3 point,normal;}
     internal enum QueryTriggerInteraction {UseGlobal,Ignore,Collide}
+    internal static class Time {internal static double unscaledTimeAsDouble;}
     internal static class Physics
     {
         internal static Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<RaycastHit> Hits;
+        internal static readonly Queue<Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<RaycastHit>> FootHits=new();
         internal static Vector3 Origin,Direction;
         internal static float Distance;
         internal static int Mask,Calls;
         internal static QueryTriggerInteraction Query;
         internal static bool Throw;
         internal static Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<RaycastHit> RaycastAll(Vector3 o,Vector3 d,float distance,int mask,QueryTriggerInteraction query)
-        { Calls++;Origin=o;Direction=d;Distance=distance;Mask=mask;Query=query;if(Throw)throw new Exception("physics unavailable");return Hits; }
+        { Calls++;Origin=o;Direction=d;Distance=distance;Mask=mask;Query=query;if(Throw)throw new Exception("physics unavailable");return FootHits.Count>0?FootHits.Dequeue():Hits; }
     }
 }
 namespace UnityEngine.SceneManagement
@@ -79,7 +85,9 @@ namespace UnityEngine.SceneManagement
     internal static class SceneManager {internal static Scene Scene;internal static Scene GetActiveScene()=>Scene;}
 }
 internal class ActorVisuals:UnityEngine.Behaviour {internal bool dead;}
-internal static class PlayerFinder {internal static UnityEngine.GameObject player;internal static ActorVisuals playerActorVisuals;}
+internal class Actor:UnityEngine.Behaviour {internal ActorSync actorSync;}
+internal class ActorSync:UnityEngine.Behaviour {internal Actor gameplayActor;internal ActorVisuals actorVisuals;}
+internal static class PlayerFinder {internal static UnityEngine.GameObject player;internal static ActorVisuals playerActorVisuals;internal static Actor playerActorComponent;}
 internal class FootstepMaterial:UnityEngine.Object {internal EventReference soundEvent;}
 internal class EventReference:NativeObject {internal GuidFields Guid;internal bool IsNull;}
 internal struct GuidFields {internal int Data1,Data2,Data3,Data4;}
@@ -121,6 +129,15 @@ namespace LeAccess.Accessibility.Navigation
 namespace LeAccess.Accessibility.MapSections
 {
     internal readonly record struct MapSectionWorldSnapshot(long Session,int SceneHandle,string SceneName,string ScenePath,double X,double Y,double Z,double BodyRadius,int? Variant);
+    internal static class MapPlaceDiagnostics
+    { internal static void Begin(MapSectionWorldSnapshot world){} internal static void Report(string stage,string detail){} }
+}
+namespace UnityEngine.AI
+{
+    internal class NavMeshAgent:UnityEngine.Behaviour {internal float baseOffset;internal int agentTypeID;}
+    internal struct NavMeshBuildSettings {internal float agentClimb;}
+    internal static class NavMesh
+    {internal static NavMeshBuildSettings GetSettingsByID(int id)=>new();}
 }
 namespace LeAccess
 {

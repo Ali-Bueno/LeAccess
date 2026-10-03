@@ -28,6 +28,12 @@ var radial = new RadialMenu { _selectedSector = first };
 var menu = new ControllerMenu { FocusedRadialMenu = radial };
 var map = new ControllerMenuMap { controllerMenu = menu };
 ControllerManager.instance = new() { _CurrentMap_k__BackingField = map };
+menu.gameObject.HasPresentation = false;
+MenuFrame(); MenuFrame();
+Check(!ControllerMenuAccessibility.HasActiveContent && !ControllerMenuAccessibility.TryHandleFocus(new GameObject()) &&
+    ScreenReader.Messages.Count == 0 && !ControllerMenuAccessibility.HasPendingContent,
+    "A fully faded radial menu cannot retain focus or announce a hidden option from its model");
+menu.gameObject.HasPresentation = true;
 Check(ControllerMenuAccessibility.HasActiveContent && ControllerMenuAccessibility.TryHandleFocus(new GameObject()),
     "Dedicated visible radial menu owns generic/background focus even without a Unity Selectable");
 MenuFrame();
@@ -51,6 +57,11 @@ secondary._selected = false;
 MenuFrame(); MenuFrame();
 Check(ScreenReader.Messages.Count == 3 && !ControllerMenuAccessibility.HasPendingContent, "Retained unselected sector does not announce");
 secondary._selected = true;
+secondary.gameObject.HasPresentation = false;
+MenuFrame(); MenuFrame();
+Check(ScreenReader.Messages.Count == 3 && !ControllerMenuAccessibility.HasPendingContent,
+    "A faded selected sector cannot announce its retained localized option while the wheel stays visible");
+secondary.gameObject.HasPresentation = true;
 menu.gameObject.Visible = false;
 MenuFrame();
 Check(!ControllerMenuAccessibility.HasActiveContent, "Invisible startup/closed menu does not own focus");

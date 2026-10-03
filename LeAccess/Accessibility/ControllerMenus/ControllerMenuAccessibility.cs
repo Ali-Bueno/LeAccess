@@ -41,11 +41,11 @@ internal static class ControllerMenuAccessibility
                 _openingPending = true;
             }
             var radial = menu.FocusedRadialMenu;
-            if (!IsAlive(radial) || !radial._enabled || !UiVisibility.IsVisible(radial.gameObject))
+            if (!IsAlive(radial) || !radial._enabled || !UiVisibility.HasVisiblePresentation(radial.gameObject))
             { ClearSelection(); return; }
             var sector = radial._selectedSector;
             if (!IsAlive(sector) || !sector.isActiveAndEnabled || !sector._selected ||
-                !UiVisibility.IsVisible(sector.gameObject)) { ClearSelection(); AnnounceOpening(); return; }
+                !UiVisibility.HasVisiblePresentation(sector.gameObject)) { ClearSelection(); AnnounceOpening(); return; }
             int id = sector.GetInstanceID();
             if (id != _selectedSector) { ClearSelection(); _selectedSector = id; }
 
@@ -83,7 +83,7 @@ internal static class ControllerMenuAccessibility
         var controllerMap = map.TryCast<ControllerMenuMap>();
         if (controllerMap is null || controllerMap.WasCollected) return null;
         var menu = controllerMap.controllerMenu;
-        return IsAlive(menu) && menu.isActiveAndEnabled && menu._enabled && UiVisibility.IsVisible(menu.gameObject)
+        return IsAlive(menu) && menu.isActiveAndEnabled && menu._enabled && UiVisibility.HasVisiblePresentation(menu.gameObject)
             ? menu : null;
     }
 

@@ -228,19 +228,6 @@ public static class TextDetector
         }
         allTexts = UiReadingOrder.Order(allTexts, entry => entry.label);
 
-        int controlSiblingIndex = controlGo.transform.parent == parent
-            ? controlGo.transform.GetSiblingIndex()
-            : controlGo.transform.parent?.GetSiblingIndex() ?? 0;
-
-        foreach (var (text, textType, siblingIndex, _) in allTexts)
-        {
-            if (label == null && textType == TextType.Label && siblingIndex <= controlSiblingIndex)
-            {
-                label = text;
-                break;
-            }
-        }
-
         if (label == null)
         {
             foreach (var (text, textType, siblingIndex, _) in allTexts)
@@ -250,15 +237,6 @@ public static class TextDetector
                     label = text;
                     break;
                 }
-            }
-        }
-
-        foreach (var (text, textType, siblingIndex, _) in allTexts)
-        {
-            if (description == null && textType == TextType.Description && siblingIndex >= controlSiblingIndex)
-            {
-                description = text;
-                break;
             }
         }
 

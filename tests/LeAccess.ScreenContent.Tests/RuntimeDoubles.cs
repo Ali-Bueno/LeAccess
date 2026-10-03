@@ -192,6 +192,13 @@ namespace LeAccess.Accessibility.Announcements
     }
     internal static class UiVisibility
     {
+        public static bool HasVisiblePresentation(UnityEngine.GameObject root)
+        {
+            if (!IsVisible(root)) return false;
+            var labels = root.GetComponentsInChildren<TMPro.TMP_Text>(true).Cast<UnityEngine.Component>()
+                .Concat(root.GetComponentsInChildren<UnityEngine.UI.Text>(true)).ToList();
+            return labels.Count == 0 || labels.Any(IsVisibleGraphic);
+        }
         public static bool IsVisibleGraphic(UnityEngine.Component label) => label is not null && !label.WasCollected &&
             IsVisible(label.gameObject) && (label switch
             {

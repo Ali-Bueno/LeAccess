@@ -75,7 +75,16 @@ internal static class SceneryTests
         check(Read(out _), "native movement may disable the agent while its query settings remain owned and valid");
         check(!MapPlayerFloor.TryGetAgent(world, out _) && MapPlayerFloor.TryGetQueryAgent(world, out var queryAgent) && queryAgent.Pointer == agent.Pointer,
             "query availability does not authorize disabled agent to expand physical floor allowance");
-        agentObject.Active = false; check(!Read(out _), "inactive query owner still rejected"); agentObject.Active = true;
+        agentObject.Active = false; check(!Read(out _), "inactive query owner still rejected");
+        var replacementObject = Obj("Replacement NavMesh", player);
+        var replacementAgent = replacementObject.Add(new NavMeshAgent { radius = .1f, height = 2, agentTypeID = 3, areaMask = 11 });
+        player.Agent = replacementAgent;
+        check(MapPlayerFloor.TryGetQueryAgent(world, out queryAgent) && queryAgent.Pointer == replacementAgent.Pointer,
+            "inactive cached query owner cannot hide a replacement under the same player");
+        check(Read(out _), "scenery recovers after owned agent replacement without resetting the scene");
+        replacementObject.Active = false; player.Agent = agent; agentObject.Active = true;
+        check(MapPlayerFloor.TryGetQueryAgent(world, out queryAgent) && queryAgent.Pointer == agent.Pointer,
+            "query cache follows a second owner replacement even when native movement disables the component");
         MapPlayerFloor.Reset();
         check(Read(out _), "query settings rediscovered even when component is disabled at discovery");
         agent.Enabled = true;

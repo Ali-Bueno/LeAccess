@@ -38,11 +38,23 @@ There are no hooks, sound playback calls, input changes or game-field writes.
 
 ## Guards and limits
 
-Only one active player-owned trigger, its actual owned living actor visuals and
-emitter are accepted. Cached ownership is rechecked. Feet, collider and holder
-must remain active in the current loaded scene. A fresh raycast must identify
-the same nearest holder-bearing physical collider; equal-distance alternatives
-are ambiguous. This excludes stale cached contact after a teleport.
+Only one active trigger beneath the player's verified visual root and its owned
+emitter are accepted. `MapPlayerVisuals` shares the live-place reader's exact
+local actor/sync backlink checks, including a detached online visual hierarchy;
+an unrelated public visual cache cannot authorize it. Cached ownership is
+rechecked, and replacing that root invalidates the cached trigger immediately.
+Missing or ambiguous local rigs retry discovery once per second.
+
+Feet, collider and holder must remain active in the current loaded scene. Each
+owned foot's fresh raycast first chooses the nearest physical contact using the
+native mask, excluding triggers and the local player's own collision. A closer
+unknown collider or collider from another scene blocks the old holder rather
+than being skipped. Equal-distance alternatives are ambiguous. The selected
+contact must match the cached collider and holder, face upwards, have finite
+coordinates, and lie within the shared player's floor-height allowance. This
+excludes stale cached contact after a teleport and floors below an upper storey.
+One verified foot cannot override another foot's conflicting physical contact;
+feet with no contact do not alone veto a verified grounded foot.
 
 The known collider/terrain getter resamples the current foot position into local
 two-slot buffers cleared before reuse. Its dominant positive finite category

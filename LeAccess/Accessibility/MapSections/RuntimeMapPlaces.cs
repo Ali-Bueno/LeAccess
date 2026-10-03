@@ -32,7 +32,7 @@ internal static class RuntimeMapPlaces
                 !player.activeInHierarchy || (int)player.scene.handle != world.SceneHandle)
             { MapPlaceDiagnostics.Report("world-unavailable", "player or active scene does not match the current snapshot"); return false; }
             if (_session != world.Session) { Reset(); _session = world.Session; }
-            if (!TryGetVisualRoot(player, world.SceneHandle, out var visuals)) return false;
+            if (!MapPlayerVisuals.TryResolve(player, world.SceneHandle, out var visuals)) return false;
             if (!Same(_visuals, visuals)) { _visuals = visuals; _trigger = null; _nextDiscovery = 0; }
             var visualRoot = visuals.gameObject;
             if (!Owned(_trigger, visualRoot, world.SceneHandle))
@@ -90,41 +90,6 @@ internal static class RuntimeMapPlaces
             if (_lastFailure != failure) { _lastFailure = failure; Plugin.Log?.LogWarning("Map places: " + failure); }
             return false;
         }
-    }
-
-    private static bool TryGetVisualRoot(GameObject player, int scene, out ActorVisuals visuals)
-    {
-        visuals = null;
-        bool linked = false;
-        var actor = PlayerFinder.playerActorComponent;
-        if (IsAlive(actor))
-        {
-            if (!Available(actor, scene) || !actor.transform.IsChildOf(player.transform))
-            { MapPlaceDiagnostics.Report("actor-owner-mismatch", "cached local Actor does not belong to the current player"); return false; }
-            var sync = actor.actorSync;
-            if (IsAlive(sync))
-            {
-                if (!Available(sync, scene) || !Same(sync.gameplayActor, actor))
-                { MapPlaceDiagnostics.Report("sync-owner-mismatch", "cached ActorSync does not point back to the current local Actor"); return false; }
-                visuals = sync.actorVisuals;
-                linked = true;
-            }
-        }
-        if (!linked)
-        {
-            visuals = PlayerFinder.playerActorVisuals;
-            if (!Owned(visuals, player, scene))
-            { MapPlaceDiagnostics.Report("visual-owner-unavailable", "neither cached ActorSync ownership nor player-owned ActorVisuals is available"); return false; }
-        }
-        if (!Available(visuals, scene) || !visuals.isActiveAndEnabled || visuals.dead)
-        {
-            string detail = IsAlive(visuals)
-                ? $"enabled={visuals.isActiveAndEnabled}, dead={visuals.dead}, scene={(int)visuals.gameObject.scene.handle}, expectedScene={scene}"
-                : "owned ActorVisuals is absent or destroyed";
-            MapPlaceDiagnostics.Report("visual-inactive", detail);
-            return false;
-        }
-        return true;
     }
 
     private static bool TryContact(Vector3 position, float distance, int mask, GameObject player, GameObject visualRoot,

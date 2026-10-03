@@ -82,6 +82,12 @@ internal static class TentCanopyTests
             check(RuntimeSceneryPlaces.TryRead(world,out var place) && place.TextKey=="map.place.tent" &&
                 place.SpeechGroup==place.Identity && RuntimeSceneryPlaces.HasValidObservation,
                 "installed tent requires exact canopy and retains own entry identity");
+            NavMesh.Blocked = true;
+            check(!RuntimeSceneryPlaces.TryRead(world,out _) && !RuntimeSceneryPlaces.HasValidObservation,
+                "failed approach query while still inside the known canopy cannot establish departure");
+            NavMesh.Blocked = false;
+            check(RuntimeSceneryPlaces.TryRead(world,out _) && RuntimeSceneryPlaces.HasValidObservation,
+                "valid tent observation recovers after a blocked approach query");
             nav.radius=0;
             check(!RuntimeSceneryPlaces.TryRead(world,out _) && !RuntimeSceneryPlaces.HasValidObservation,
                 "missing authoritative navigation settings cannot establish departure");nav.radius=.1f;

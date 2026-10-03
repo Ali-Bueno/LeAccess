@@ -167,7 +167,7 @@ public static class WallSonar
             }
 
             // Mute when UI is open
-            if (!Plugin.ContinuousSonarEnabled || NavigationAudioState.IsSuspended)
+            if (!Plugin.ContinuousSonarEnabled || NavigationAudioState.IsSuspended || !GameplayInputState.OwnsInput())
             {
                 SilenceAll();
                 return;
@@ -186,6 +186,7 @@ public static class WallSonar
         }
         catch (Exception ex)
         {
+            SilenceAll();
             if (_debugCounter % 300 == 0)
                 Plugin.Log.LogWarning($"WallSonar error: {ex.Message}");
         }

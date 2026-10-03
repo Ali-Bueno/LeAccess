@@ -12,6 +12,7 @@ namespace LeAccess.Accessibility.Items
         internal static string Text;
         internal static string LastFailure => null;
         internal static int Reads;
+        internal static Action OnRead;
         internal static ItemData LastItem;
         internal static ItemContainerUI LastContainer;
         internal static bool OwnsSelection(ItemData item, ItemContainerUI container) =>
@@ -20,7 +21,7 @@ namespace LeAccess.Accessibility.Items
         internal static bool TryGetParameters(ItemData item, ItemContainerUI container, out TooltipItemManager.SlotType slot, out int mode)
         { slot = TooltipItemManager.SlotType.INVENTORY; mode = 0; return ParametersAvailable; }
         internal static bool TryRead(ItemData item, ItemContainerUI container, out string text)
-        { Reads++; LastItem = item; LastContainer = container; text = Text; return text != null; }
+        { Reads++; LastItem = item; LastContainer = container; OnRead?.Invoke(); text = Text; return text != null; }
     }
 }
 

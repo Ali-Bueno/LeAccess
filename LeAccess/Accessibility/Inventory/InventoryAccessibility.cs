@@ -114,7 +114,9 @@ internal static class InventoryAccessibility
                     }
                 }
             }
-            if (selectedData is not null && !InventorySelectionReader.OwnsSelection(selectedData, container))
+            var currentContainer = GetFocusedContainer();
+            if (!IsAlive(currentContainer) || currentContainer.Pointer != container.Pointer ||
+                selectedData is not null && !InventorySelectionReader.OwnsSelection(selectedData, container))
             { Reset(); return; }
             if (readDetails && hasTooltip && slotName != null)
                 requestedText = ScreenContentTracker.Combine(new[] { slotName, requestedText });

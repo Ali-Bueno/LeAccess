@@ -34,7 +34,8 @@ internal static class MapPlayerFloor
         agent = null;
         var player = PlayerFinder.player;
         if (!IsAlive(player) || !player.activeInHierarchy || (int)player.scene.handle != world.SceneHandle) return false;
-        bool owned = IsAlive(player) && IsAlive(_agent) && _agent.transform.IsChildOf(player.transform);
+        bool owned = IsAlive(_agent) && IsAlive(_agent.gameObject) && _agent.gameObject.activeInHierarchy &&
+            (int)_agent.gameObject.scene.handle == world.SceneHandle && _agent.transform.IsChildOf(player.transform);
         if (_session != world.Session || !owned)
         {
             _session = world.Session;

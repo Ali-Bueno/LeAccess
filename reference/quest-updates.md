@@ -66,12 +66,20 @@ Temporary analysis lives under `%TEMP%/LeAccess-quest-updates-20261002`.
 ## Validation and limits
 
 `dotnet run --project tests/LeAccess.QuestUpdates.Tests/LeAccess.QuestUpdates.Tests.csproj`
-passes 78 checks against source-linked state, probe and service code: quiet baseline, settling,
+passes 85 checks against source-linked state, probe and service code: quiet baseline, settling,
 coalescing, duplicate prevention, completion/failure, invalid/foreign ownership,
 counter formatting, history omission, lifecycle, source replacement, initial
 synchronization, menus/loading/focus/typing gates, priority, speech intervals,
 persistent backend busy flags, disabling and en/es speech. The production project
 builds cleanly with deployment disabled.
+
+Pending updates have an explicit enqueue order rather than relying on dictionary
+enumeration: a rapidly updated quest cannot reuse a removed dictionary slot and
+overtake an older pending quest. The service also rotates among the campaign,
+Monolith and stash lists after delivery, so recurring campaign counters cannot
+starve the other ready lists. Coalescing keeps the latest revision and preserves
+the original waiting position; unavailable or still-settling entries do not
+block another ready entry. Both starvation paths were reproduced before the fix.
 
 This covers the authoritative local quest lists. Separate dynamic Monolith
 objective-description widgets that are not backed by a stateful quest are not

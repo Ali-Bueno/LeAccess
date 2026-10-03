@@ -312,7 +312,7 @@ capture an affine frame; contour edge/distance calculations then run in managed
 code. Tests cover actual installed mesh points, model guards, holes/nonconvex
 boundaries, rotation/scale, stacked floors, entry/exit confirmation, loss/recovery,
 speech priority and Spanish service output. Current results: **251** runtime
-place checks, **346** map-state checks and **161** map-section service checks.
+place checks at that baseline, **346** map-state checks and **161** map-section service checks.
 Production compiles with no warnings/errors and deployment disabled during
 parallel work; no game was launched. Listening must still confirm which tent
 interiors the camp's baked walkable geometry actually lets the player enter.
@@ -321,3 +321,17 @@ These tent contours do not prove a merchant shop interior, kitchen or tavern.
 Merchant identity and the open shop interface remain their native interaction/UI
 readers' responsibility. Existing 750 fixed sections, physical floor labels and
 generated-room transitions remain available without guessing new room names.
+
+## Additional regression fixes, 2026-10-03
+
+Losing an approach query while still inside the last verified canopy no longer
+counts as leaving it. Departure now also requires the player's actual position
+to be outside that canopy or outside its floor allowance. Restored contact in
+the same tent remains silent; the existing two outside observations still apply.
+
+The shared floor-query cache now rediscovers the agent when its owning object
+becomes inactive or leaves the current scene. An active replacement under the
+same player can restore map readings without a scene reload. Disabling the agent
+component alone still preserves its usable query settings, as native movement
+requires. Nine added runtime-place checks reproduce failed approaches on all
+three tent meshes and replacement of inactive agent owners.

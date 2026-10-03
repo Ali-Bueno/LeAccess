@@ -169,6 +169,11 @@ ElementAnnouncer.AnnounceElement(cancel);
 Check(ScreenReader.Messages.Last() == ("Cancelar",true), "Deliberate movement within the popup interrupts immediately");
 ElementAnnouncer.AnnounceElement(play);
 Check(ScreenReader.Messages.Count == 2, "Underlying menu focus cannot interrupt the foreground popup");
+accept.Add(new InfoForTooltip { tooltipInfo = new TooltipInfo { nameText = "Aceptar", mainText = "Confirma la acción seleccionada." } });
+DialogueAnnouncer.Root = new GameObject(); DialogueAnnouncer.HasActiveContent = true;
+Check(ElementAnnouncer.TryReadDetails(accept, out var foregroundPopupDetails) &&
+    foregroundPopupDetails == "Aceptar. Confirma la acción seleccionada.",
+    "Manual popup details use the same foreground precedence as focus when a conversation remains underneath");
 Reset();
 DialogueAnnouncer.Root = modal; DialogueAnnouncer.HasActiveContent = true;
 ScreenReader.Speak("Grael: Sigue el camino.", true);

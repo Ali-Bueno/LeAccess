@@ -171,6 +171,28 @@ internal static class EquippedItemTests
         check(ScreenReader.Messages.Count == 0, "Selection changing during action construction cannot speak stale equipped item");
         LE.UI.Tooltips.ItemTooltipPromptHelper.OnRead = null;
         LE.UI.Tooltips.ItemTooltipPromptHelper.Actions.Clear();
+        equipment.currentlySelectedIdx = new() {x=2,y=0};
+        ItemTooltipModelReader.Text = "Crown of fire. Armor +12";
+        foreach (string gate in new[] {"modal", "dialogue", "controller", "loading", "unfocused"})
+        {
+            Reset();
+            ItemTooltipModelReader.OnRead = () =>
+            {
+                LeAccess.Accessibility.ScreenContent.ScreenContentAnnouncer.HasActiveContent = gate == "modal";
+                LeAccess.Accessibility.Dialogue.DialogueAnnouncer.HasActiveContent = gate == "dialogue";
+                LeAccess.Accessibility.ControllerMenus.ControllerMenuAccessibility.HasActiveContent = gate == "controller";
+                LE.UI.LoadingScreen.IsVisible = gate == "loading";
+                Application.isFocused = gate != "unfocused";
+            };
+            InventoryAccessibility.Update(readDetails:true);
+            check(ScreenReader.Messages.Count == 0 && !InventoryAccessibility.HasPendingContent,
+                "Foreground changing during manual equipment model construction cancels stale output: " + gate);
+            ItemTooltipModelReader.OnRead = null;
+            LeAccess.Accessibility.ScreenContent.ScreenContentAnnouncer.HasActiveContent = false;
+            LeAccess.Accessibility.Dialogue.DialogueAnnouncer.HasActiveContent = false;
+            LeAccess.Accessibility.ControllerMenus.ControllerMenuAccessibility.HasActiveContent = false;
+            LE.UI.LoadingScreen.IsVisible = false;Application.isFocused = true;
+        }
         ItemTooltipModelReader.Text = null;
         NavigationManager.currentlySelected = null;
         Reset();
