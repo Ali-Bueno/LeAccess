@@ -352,9 +352,10 @@ namespace LeAccess.Accessibility.Announcements
 {
     internal static class InputBindingText
     {
-        internal static readonly Dictionary<string, string> Bindings = new();
+        internal static readonly Dictionary<string, string> Bindings = new(), Localized = new();
+        internal static string LocalizeButton(string name) => name != null && Localized.TryGetValue(name, out var text) ? text : name;
         internal static string ReadAction(string name, bool keyboard = false, bool? holdOverride = null) => Hold(Bindings.GetValueOrDefault(name ?? ""), holdOverride);
-        internal static string ReadButtons(NativeList<ButtonInfo> buttons, bool? holdOverride = null) => Hold(string.Join(" + ", buttons.Select(x => x.ButtonName)), holdOverride);
+        internal static string ReadButtons(NativeList<ButtonInfo> buttons, bool? holdOverride = null) => Hold(string.Join(" + ", buttons.Select(x => LocalizeButton(x.ButtonName))), holdOverride);
         private static string Hold(string text, bool? hold) => hold == true && !string.IsNullOrWhiteSpace(text) ? LeAccess.I18n.ModText.Format("input.hold", text) : text;
     }
 }

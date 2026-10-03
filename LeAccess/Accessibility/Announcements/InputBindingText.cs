@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using LeAccess.Accessibility.Utils;
 using LeAccess.I18n;
 using Rewired;
@@ -31,7 +32,24 @@ internal static class InputBindingText
         if (button is null || button.WasCollected) return null;
         string name = TextUtils.CleanText(button.ButtonName);
         if (string.IsNullOrWhiteSpace(name)) return null;
-        return name;
+        return LocalizeButton(name);
+    }
+
+    // The game supplies English device identifiers (icons on screen); catalogs name them per language.
+    internal static string LocalizeButton(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return name;
+        var key = new StringBuilder("input.button.");
+        int prefix = key.Length;
+        bool separator = false;
+        foreach (char character in name.Trim().ToLowerInvariant())
+        {
+            if (!char.IsLetterOrDigit(character)) { separator = true; continue; }
+            if (separator && key.Length > prefix) key.Append('_');
+            key.Append(character);
+            separator = false;
+        }
+        return key.Length == prefix ? name : ModText.GetOrDefault(key.ToString(), name);
     }
 
     internal static string ReadButtons(Il2CppSystem.Collections.Generic.List<ButtonInfo> buttons, bool? holdOverride = null)

@@ -48,7 +48,7 @@ internal static class InventoryActionReader
                         var names = new List<string>();
                         foreach (string value in overrides)
                         {
-                            string name = TextUtils.CleanText(value);
+                            string name = InputBindingText.LocalizeButton(TextUtils.CleanText(value));
                             if (string.IsNullOrWhiteSpace(name)) { names.Clear(); break; }
                             if (!names.Contains(name)) names.Add(name);
                         }

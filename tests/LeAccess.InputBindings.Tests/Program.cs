@@ -54,7 +54,16 @@ Equal(null, InputBindingText.ReadButtons(new(null, Button("A"))), "missing modif
 Equal(null, InputBindingText.ReadButtons(new(Button(" "), Button("A"))), "nameless modifier invalidates whole binding");
 ModText.SetLanguage("es");
 Equal("Mantener Ctrl + A", InputBindingText.ReadButtons(new(Button("Ctrl", true), Button("A", true))), "Spanish hold wraps native chord once");
-Equal("Mantener Right Shoulder", InputBindingText.Read(Button("Right Shoulder", true)), "native device label preserved while mod grammar localizes");
+Equal("Mantener Botón superior derecho", InputBindingText.Read(Button("Right Shoulder", true)), "catalogued device label localizes inside hold grammar");
+Equal("Triángulo", InputBindingText.Read(Button("Triangle")), "PlayStation face button localized");
+Equal("L3 + R3", InputBindingText.ReadButtons(new(Button("Left Stick Button"), Button("Right Stick Button"))), "stick buttons use the short names shown elsewhere in game hints");
+Equal("Cruceta arriba", InputBindingText.LocalizeButton("D-Pad Up"), "punctuated identifier maps to its catalogue key");
+Equal("DualSense Cross", InputBindingText.Read(Button("DualSense Cross")), "uncatalogued native names stay unchanged");
+Equal("A", InputBindingText.Read(Button("A")), "single-letter buttons stay unchanged");
+Equal("-", InputBindingText.LocalizeButton("-"), "punctuation-only names stay unchanged");
+ModText.SetLanguage("en");
+Equal("Triangle", InputBindingText.Read(Button("Triangle")), "English keeps native identifiers");
+ModText.SetLanguage("es");
 ModText.SetLanguage("en");
 
 MultiButtonsActionPrompt Prompt(GameObject parent, string action, ButtonList buttons = null)

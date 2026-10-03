@@ -235,6 +235,10 @@ Check(LeAccess.Accessibility.Inventory.InventoryActionReader.Read(modern).Single
 actionPrompt._panelAction.GamepadButtonNamesOverride = new() { Values = new[] { "LT", "X" } };
 Check(LeAccess.Accessibility.Inventory.InventoryActionReader.Read(modern).Single() == "LT + X, Equipar",
     "Explicit gamepad overrides take priority over the ordinary action mapping");
+LeAccess.Accessibility.Announcements.InputBindingText.Localized["X"] = "Equis";
+Check(LeAccess.Accessibility.Inventory.InventoryActionReader.Read(modern).Single() == "LT + Equis, Equipar",
+    "Override button names pass through catalogue localization");
+LeAccess.Accessibility.Announcements.InputBindingText.Localized.Clear();
 actionPrompt._panelAction.MouseAndKeyboardButtonNamesOverride = new() { Values = new[] { "Shift", "Click" } };
 EpochInputManager.IsControllerActive = false;
 Check(LeAccess.Accessibility.Inventory.InventoryActionReader.Read(modern).Single() == "Shift + Click, Equipar",

@@ -28,6 +28,8 @@ internal sealed class TranslationCatalog
         _english = JsonSerializer.Deserialize<Dictionary<string, string>>(stream);
     }
 
+    internal bool Contains(string key) => key != null && _english.ContainsKey(key);
+
     internal string Get(CultureInfo culture, string key)
     {
         if (!_english.TryGetValue(key, out string fallback))

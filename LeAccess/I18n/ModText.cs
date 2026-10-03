@@ -27,6 +27,9 @@ internal static class ModText
 
     internal static string Get(string key) => _catalog.Get(_culture, key);
 
+    /// <summary>Resolves an optional key, returning the fallback without a warning when it is not catalogued.</summary>
+    internal static string GetOrDefault(string key, string fallback) => _catalog.Contains(key) ? Get(key) : fallback;
+
     internal static string Format(string key, params object[] arguments) =>
         _catalog.Format(_culture, key, arguments);
 
