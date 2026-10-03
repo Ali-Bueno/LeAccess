@@ -8,7 +8,7 @@ internal sealed class SceneryPresenceState
     private bool _tentSpoken, _outsideObserved, _exitPending;
     internal bool HasPendingContent => _places.HasPendingContent || _exitPending;
 
-    internal bool Observe(long session, string id, string text, bool tent, bool canSpeak, string exitText, out string result,
+    internal bool Observe(long session, string id, string text, bool tent, bool canSpeak, double now, string exitText, out string result,
         bool validObservation = true)
     {
         if (_session != session) { Reset(); _session = session; }
@@ -24,7 +24,7 @@ internal sealed class SceneryPresenceState
             _outsideObserved = true;
         }
         else _outsideObserved = _exitPending = false;
-        if (_places.Observe(session, validObservation ? id : _lastId, validObservation ? text : null, canSpeak, out result))
+        if (_places.Observe(session, validObservation ? id : _lastId, validObservation ? text : null, canSpeak, now, out result))
         {
             _tentSpoken = tent;
             return true;
@@ -32,6 +32,7 @@ internal sealed class SceneryPresenceState
         if (!_exitPending || !canSpeak || string.IsNullOrWhiteSpace(exitText)) return false;
         result = exitText;
         _tentSpoken = _exitPending = false;
+        _places.ForgetSpoken();
         return true;
     }
 

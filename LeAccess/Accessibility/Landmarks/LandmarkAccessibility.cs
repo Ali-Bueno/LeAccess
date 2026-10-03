@@ -33,9 +33,9 @@ internal static class LandmarkAccessibility
         if (_enabled == null) return;
         try
         {
-            if (!_enabled.Value || !Application.isFocused || LE.UI.LoadingScreen.IsVisible)
-            { Reset(); return; }
-            if (menuActive || NavigationAudioState.IsSuspended || !GameplayInputState.OwnsInput())
+            if (!_enabled.Value || LE.UI.LoadingScreen.IsVisible) { Reset(); return; }
+            // Losing focus keeps delivered memory so alt-tab does not repeat names.
+            if (menuActive || !Application.isFocused || NavigationAudioState.IsSuspended || !GameplayInputState.OwnsInput())
             {
                 // Revalidate the target on return, retaining delivered text so
                 // closing a menu beside the same sign does not repeat its name.

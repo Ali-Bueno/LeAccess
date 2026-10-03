@@ -30,7 +30,7 @@ internal static class NearbyPlayerAccessibility
             if (!found) { Names.Reset(); return; }
             if (!Names.Observe(target.Session, target.InstanceId, target.Name,
                 ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame && !otherSpeechPending,
-                out string announcement)) return;
+                now, out string announcement)) return;
             ScreenReader.Speak(announcement, interrupt: false);
             Plugin.Log.LogInfo($"[Nearby player] {announcement}");
         }

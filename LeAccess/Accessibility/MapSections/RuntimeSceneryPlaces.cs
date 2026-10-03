@@ -117,9 +117,9 @@ internal static class RuntimeSceneryPlaces
             if (renderers is null || renderers.WasCollected) continue;
             foreach (var renderer in renderers)
             {
-                if (!IsAlive(renderer) || !AllowedBranch(renderer.transform, player, (int)scene.handle)) continue;
+                if (!IsAlive(renderer)) continue;
                 string key = SceneryFootprint.Classify(renderer.name, renderer.transform.parent?.name);
-                if (key is null) continue;
+                if (key is null || !AllowedBranch(renderer.transform, player, (int)scene.handle)) continue;
                 var owner = key == "map.place.wagon" ? renderer.transform.parent : renderer.transform;
                 Candidates.Add(new Candidate(renderer, owner, key));
             }

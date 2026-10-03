@@ -137,7 +137,8 @@ try
         Check(!MapSectionAccessibility.HasPendingContent && MapSectionWorld.Captures == 2,"hard gate clears state " + gate);
         config.Enabled.Value = Application.isFocused = true; LE.UI.LoadingScreen.IsVisible = false;
         Tick(.41); Check(ScreenReader.Spoken.Count == 1,"hard gate recovery settles " + gate);
-        Tick(.62); Check(ScreenReader.Spoken.Count == 2,"hard gate recovery delivers " + gate);
+        Tick(.62); Check(ScreenReader.Spoken.Count == (gate == "focus" ? 1 : 2),
+            gate == "focus" ? "alt-tab keeps delivered places silent" : "hard gate recovery delivers " + gate);
     }
     Start(); Tick(0); Tick(.2,pending:true); Tick(.41,spoke:true);
     Check(ScreenReader.Spoken.Count == 0 && MapSectionAccessibility.HasPendingContent,"zone/current-frame speech gets priority");
@@ -175,23 +176,26 @@ try
     Check(ScreenReader.Spoken.Count == 1,"one uncertain floor sample does not repeat room");
     PcgMapSections.Available = false; Tick(1.68); Tick(1.89);
     PcgMapSections.Available = true; Tick(2.10); Tick(2.31);
-    Check(ScreenReader.Spoken.Count == 2,"confirmed departure rearms generated room");
+    Check(ScreenReader.Spoken.Count == 1,"brief confirmed departure does not repeat generated room");
+    PcgMapSections.Available = false; Tick(2.52); Tick(2.73);
+    PcgMapSections.Available = true; Tick(8.0); Tick(8.21);
+    Check(ScreenReader.Spoken.Count == 2,"departure of at least the repeat gap rearms generated room");
     PcgMapSections.Snapshot = new(1,"room-1",2,false,true,null,"map.section.tomb_room");
-    Tick(2.52); Tick(2.73);
+    Tick(8.42); Tick(8.63);
     Last("Cámara de la tumba 2. Salida","new room and exit spoken once");
     Check(!ScreenReader.Spoken.Last().Text.Contains("Conexiones"),"unverified connection count remains absent");
-    PcgMapSections.Snapshot = PcgMapSections.Snapshot with {Session=2}; Tick(2.94); Tick(3.15);
-    Check(ScreenReader.Spoken.Count == 4,"new generation rearms same room number");
+    PcgMapSections.Snapshot = PcgMapSections.Snapshot with {Session=2}; Tick(8.94); Tick(9.15);
+    Check(ScreenReader.Spoken.Count == 3,"same text in a new generation stays silent without a world session change");
     PcgMapSections.Snapshot = new(2,"room-2",3,false,false,3,null);
-    Tick(3.36,pending:true); Tick(3.57,pending:true);
+    Tick(9.36,pending:true); Tick(9.57,pending:true);
     PcgMapSections.Snapshot = new(2,"room-3",4,false,false,null,null);
-    Tick(3.78); Tick(3.99);
+    Tick(9.78); Tick(9.99);
     Last("Sala 4","latest generated location replaces pending room");
     Check(ScreenReader.Spoken.All(s => !s.Text.Contains("Sala 3")),"no stale generated room delivered");
-    ModText.SetLanguage("en"); Tick(4.20); Tick(4.41);
+    ModText.SetLanguage("en"); Tick(10.20); Tick(10.41);
     Last("Room 4","language changes settle current room text");
     PcgMapSections.Snapshot=PcgMapSections.Snapshot with{ConnectedPassages=3};
-    Tick(4.62);Tick(4.83);
+    Tick(10.62);Tick(10.83);
     Last("Room 4. Connections: 3","verified generated links use neutral wording without claiming open passages");
 
     Start(null); PcgMapSections.Available = true;
@@ -296,7 +300,10 @@ try
     Check(ScreenReader.Spoken.Count == 1, "single missing foot observation does not repeat place");
     RuntimeMapPlaces.Available = false; Tick(1.88); Tick(2.09);
     RuntimeMapPlaces.Available = true; Tick(2.30); Tick(2.51);
-    Check(ScreenReader.Spoken.Count == 2, "confirmed departure rearms live structure");
+    Check(ScreenReader.Spoken.Count == 1, "brief confirmed departure does not repeat live structure");
+    RuntimeMapPlaces.Available = false; Tick(2.72); Tick(2.93);
+    RuntimeMapPlaces.Available = true; Tick(8.0); Tick(8.21);
+    Check(ScreenReader.Spoken.Count == 2, "departure of at least the repeat gap rearms live structure");
 
     Start(); MapSectionWorld.Snapshot = MapSectionWorld.Snapshot with {SceneName="ControlledCourtyard",ScenePath="Assets/ControlledCourtyard.unity"};
     ModText.SetLanguage("es"); RuntimeMapPlaces.Available = true;
@@ -318,7 +325,7 @@ try
     Check(ScreenReader.Spoken.Count == 3, "adjoining hallway pieces share speech identity");
     PcgMapSections.Snapshot = PcgMapSections.Snapshot with {Session=2};
     Tick(1.67); Tick(1.88);
-    Check(ScreenReader.Spoken.Count == 4, "regeneration rearms hallway despite shared category");
+    Check(ScreenReader.Spoken.Count == 3, "regenerated hallway with identical text stays silent");
 
     Start(); MapSectionWorld.Snapshot = MapSectionWorld.Snapshot with {SceneName="Unmapped"};
     RuntimeMapPlaces.Available = true;
@@ -360,7 +367,10 @@ try
     Check(ScreenReader.Spoken.Count == 1, "one missing scenery sample does not rearm an already spoken place");
     RuntimeSceneryPlaces.Available = false; Tick(.83); Tick(1.04);
     RuntimeSceneryPlaces.Available = true; Tick(1.25);
-    Check(ScreenReader.Spoken.Count == 2, "confirmed departure rearms next valid arrival immediately");
+    Check(ScreenReader.Spoken.Count == 1, "confirmed departure shorter than the repeat gap stays silent");
+    RuntimeSceneryPlaces.Available = false; Tick(1.46); Tick(1.67);
+    RuntimeSceneryPlaces.Available = true; Tick(7.0);
+    Check(ScreenReader.Spoken.Count == 2, "confirmed departure of at least the repeat gap rearms next valid arrival immediately");
     Start(); MapSectionWorld.Snapshot = MapSectionWorld.Snapshot with { SceneName="Unmapped" };
     RuntimeSceneryPlaces.Available = true; Tick(0, pending:true);
     Check(ScreenReader.Spoken.Count == 0 && MapSectionAccessibility.HasPendingContent, "immediate scenery still yields to higher priority speech");
@@ -381,8 +391,8 @@ try
     RuntimeSceneryPlaces.Available=true;RuntimeSceneryPlaces.Place=new("tent-b","map.place.tent","tent-b");
     Tick(1.67);Last("Tienda de campaña", "new tent has independent arrival identity");
     RuntimeSceneryPlaces.Place=new("tent-c","map.place.tent","tent-c");
-    Tick(1.88);Check(ScreenReader.Spoken.Count==4, "distinct neighboring tents do not collapse by category");
-    Tick(2.09,menu:true);Tick(2.10);Check(ScreenReader.Spoken.Count==4, "menu return preserves actual tent entry");
+    Tick(1.88);Check(ScreenReader.Spoken.Count==3, "neighboring tents with the same text stay silent");
+    Tick(2.09,menu:true);Tick(2.10);Check(ScreenReader.Spoken.Count==3, "menu return preserves actual tent entry");
     RuntimeSceneryPlaces.Available=false;Tick(2.31,pending:true);Tick(2.52,pending:true);
     Check(MapSectionAccessibility.HasPendingContent, "tent exit defers to other reader content");
     RuntimeSceneryPlaces.Available=true;Tick(2.73);

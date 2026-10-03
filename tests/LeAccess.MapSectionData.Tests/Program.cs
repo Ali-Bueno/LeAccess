@@ -65,7 +65,7 @@ var state = new MapSectionState(); var messages = new List<string>();
 void Visit((double X,double Y,double Z) point)
 {
     var section = map.FindSection(point.X,point.Y,point.Z);
-    for (int i=0;i<2;i++) if (state.Observe(1,section,true,out string key)) messages.Add(ModText.Get(key));
+    for (int i=0;i<2;i++) if (state.Observe(1,section,true,0,out string key)) messages.Add(ModText.Get(key));
 }
 Visit((-35,0.07484054565429688,23));
 foreach (var point in SceneEvidence.FirstDeck.Concat(SceneEvidence.FirstSeams)) Visit(point);

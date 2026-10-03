@@ -342,3 +342,13 @@ same player can restore map readings without a scene reload. Disabling the agent
 component alone still preserves its usable query settings, as native movement
 requires. Nine added runtime-place checks reproduce failed approaches on all
 three tent meshes and replacement of inactive agent owners.
+
+## Repeat rule
+
+`MapSectionState` remembers the last spoken text. A later arrival (same or different
+id) with that text stays silent when it follows directly or after a confirmed absence
+shorter than `RepeatGapSeconds` (5 s); this covers footprint-edge flicker and adjacent
+same-named pieces. A different text, session change, `Reset()` or a longer absence
+re-arms speech. Losing window focus now behaves like a menu (memory kept, no speech),
+so alt-tab does not repeat places; loading and disabling still reset. Announcing the
+tent exit forgets the memory so re-entering speaks "tent" again.

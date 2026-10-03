@@ -15,6 +15,7 @@ void Check(bool condition, string message)
     checks++;
     if (!condition) throw new InvalidOperationException(message);
 }
+const double NpcAnnouncementRepeatGap = NpcNameAnnouncementState.RepeatGapSeconds;
 void Tick(double now, bool foregroundSpeech = false, bool otherPending = false)
 {
     ScreenReader.SpokeThisFrame = foregroundSpeech;
@@ -244,10 +245,12 @@ Check(!NpcSounds.HasPendingName, "Spoken name releases pending foreground priori
 
 namesConfig = Reset(); namesConfig.Set("AnnounceNames", true); Target(); Tick(0); Tick(0.11);
 NpcWorldProbe.Available = false; Tick(0.22); Target(); Tick(0.33); Tick(0.44);
-Check(ScreenReader.Messages.Count == 2, "Leaving and approaching the same NPC reads its name again");
-Target(id: 2); NpcWorldProbe.Target = NpcWorldProbe.Target with { Name = "NPC 1" }; Tick(0.55); Tick(0.66);
+Check(ScreenReader.Messages.Count == 1, "Range-edge flicker of the same NPC stays silent");
+NpcWorldProbe.Available = false; Tick(0.55); Target(); Tick(0.55 + NpcAnnouncementRepeatGap); Tick(0.66 + NpcAnnouncementRepeatGap);
+Check(ScreenReader.Messages.Count == 2, "Leaving the same NPC for at least the gap reads its name again");
+Target(id: 2); NpcWorldProbe.Target = NpcWorldProbe.Target with { Name = "NPC 1" }; Tick(0.77 + NpcAnnouncementRepeatGap); Tick(0.88 + NpcAnnouncementRepeatGap);
 Check(ScreenReader.Messages.Count == 3, "Distinct NPCs with identical display names retain distinct identities");
-Target(id: 2, session: 2); Tick(0.77); Tick(0.88);
+Target(id: 2, session: 2); Tick(0.99 + NpcAnnouncementRepeatGap); Tick(1.1 + NpcAnnouncementRepeatGap);
 Check(ScreenReader.Messages.Last().Text == "NPC 2" && ScreenReader.Messages.Count == 4,
     "Scene or player session change resets NPC name state");
 

@@ -66,9 +66,9 @@ internal static class MapSectionAccessibility
         if (_enabled == null) return;
         try
         {
-            if (!_enabled.Value || !Application.isFocused || LE.UI.LoadingScreen.IsVisible)
-            { Reset(); return; }
-            if (menuActive || NavigationAudioState.IsSuspended || !GameplayInputState.OwnsInput())
+            if (!_enabled.Value || LE.UI.LoadingScreen.IsVisible) { Reset(); return; }
+            // Losing focus keeps delivered memory so alt-tab does not repeat places.
+            if (menuActive || !Application.isFocused || NavigationAudioState.IsSuspended || !GameplayInputState.OwnsInput())
             {
                 HasPendingContent = false;
                 _nextPoll = 0;
@@ -81,10 +81,10 @@ internal static class MapSectionAccessibility
             ResolveSection(world, out string id, out string text, out string overview);
             bool canSpeak = ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame && !otherSpeechPending;
             bool describe = _describeMaps.Value && overview != null;
-            bool summarySpoken = describe && OverviewState.Observe(_session, "overview", overview, canSpeak, out _);
+            bool summarySpoken = describe && OverviewState.Observe(_session, "overview", overview, canSpeak, now, out _);
             if (summarySpoken) ScreenReader.Speak(overview, interrupt: false);
             bool summaryPending = describe && OverviewState.HasPendingContent;
-            bool announce = State.Observe(_session, id, text, canSpeak && !summarySpoken && !summaryPending, out string announcement);
+            bool announce = State.Observe(_session, id, text, canSpeak && !summarySpoken && !summaryPending, now, out string announcement);
             HasPendingContent = State.HasPendingContent || summaryPending;
             if (announce)
             {
@@ -96,7 +96,7 @@ internal static class MapSectionAccessibility
                 ModText.Format("landmark.nearby", ModText.Get(scenery.TextKey)) : null;
             bool scenerySpoken = SceneryState.Observe(world.Session, sceneryKnown ? scenery.SpeechGroup : null, sceneryText,
                 sceneryKnown && scenery.TextKey == "map.place.tent",
-                canSpeak && !HasPendingContent && !summarySpoken && !announce,
+                canSpeak && !HasPendingContent && !summarySpoken && !announce, now,
                 ModText.Get("map.place.left_tent"), out string nearbyText, RuntimeSceneryPlaces.HasValidObservation);
             HasPendingContent |= SceneryState.HasPendingContent;
             if (scenerySpoken)
@@ -109,7 +109,7 @@ internal static class MapSectionAccessibility
             string surface = _surfaces.Value && MapSurfaceProbe.TryRead(world, out string key) ? ModText.Get(key) : null;
             // Unknown samples cancel pending text but retain the last known surface to avoid footstep chatter.
             bool groundSpoken = SurfaceState.Observe(world.Session, "surface", surface,
-                canSpeak && !HasPendingContent && !summarySpoken && !announce && !scenerySpoken, out string groundText);
+                canSpeak && !HasPendingContent && !summarySpoken && !announce && !scenerySpoken, now, out string groundText);
             HasPendingContent |= SurfaceState.HasPendingContent;
             if (groundSpoken)
             {

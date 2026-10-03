@@ -1,6 +1,8 @@
 using System.Text.Json;
 using LeAccess.Accessibility.MapSections;
 
+double t = 0;
+const double Gap = MapSectionState.RepeatGapSeconds;
 int checks = 0;
 void Check(bool condition, string name) { checks++; if (!condition) throw new Exception(name); }
 void Invalid(string json, string name)
@@ -121,7 +123,7 @@ var componentState = new MapSectionState();
 var seamMessages = new List<string>();
 foreach (double x in new[] {2d,3d,4d,5d,6d,4d,2d})
     for (int sample = 0; sample < 2; sample++)
-        if (componentState.Observe(1,joined.FindSection(x,5,2),true,out string seamKey)) seamMessages.Add(seamKey);
+        if (componentState.Observe(1,joined.FindSection(x,5,2),true,t,out string seamKey)) seamMessages.Add(seamKey);
 Check(seamMessages.SequenceEqual(new[]{"section.joined"}),"crossing every component seam announces once");
 var islands = Map(Multi("islands",new[] {Component(0,0,4,4),Component(8,0,12,4)}));
 var islandsSection = islands.Sections[0];
@@ -157,44 +159,46 @@ Invalid(Catalog(Multi("same",new[]{Component(0,0,4,4)}),Section("same")),"logica
 
 var a = Map(Section("a")).Sections[0]; var b = Map(Section("b")).Sections[0];
 var state = new MapSectionState();
-Check(!state.Observe(1,a,true,out _) && state.HasPendingContent,"first entry observation pending");
-Check(state.Observe(1,a,true,out string key) && key == "section.a" && !state.HasPendingContent,"matching entry delivers");
-Check(!state.Observe(1,a,true,out _),"unchanged section silent");
-Check(!state.Observe(1,(MapSection)null,true,out _) && !state.HasPendingContent,"single outside drops pending");
-Check(!state.Observe(1,a,true,out _) && !state.Observe(1,a,true,out _),"outside flicker does not rearm");
-state.Observe(1,(MapSection)null,true,out _); state.Observe(1,(MapSection)null,true,out _);
-Check(!state.Observe(1,a,true,out _) && state.Observe(1,a,true,out _),"confirmed outside rearms return");
-Check(!state.Observe(1,b,false,out _) && !state.Observe(1,b,false,out _) && state.HasPendingContent,"blocked speech tracks current section");
-Check(!state.Observe(1,a,true,out _),"changed pending needs confirmation");
-Check(state.Observe(1,a,true,out key) && key == "section.a","old blocked section never emitted");
-Check(!state.Observe(2,a,true,out _) && state.Observe(2,a,true,out _),"session change resets same section");
+Check(!state.Observe(1,a,true,t,out _) && state.HasPendingContent,"first entry observation pending");
+Check(state.Observe(1,a,true,t,out string key) && key == "section.a" && !state.HasPendingContent,"matching entry delivers");
+Check(!state.Observe(1,a,true,t,out _),"unchanged section silent");
+Check(!state.Observe(1,(MapSection)null,true,t,out _) && !state.HasPendingContent,"single outside drops pending");
+Check(!state.Observe(1,a,true,t,out _) && !state.Observe(1,a,true,t,out _),"outside flicker does not rearm");
+state.Observe(1,(MapSection)null,true,t,out _); state.Observe(1,(MapSection)null,true,t,out _);
+t += Gap;
+Check(!state.Observe(1,a,true,t,out _) && state.Observe(1,a,true,t,out _),"confirmed outside of at least the gap rearms return");
+Check(!state.Observe(1,b,false,t,out _) && !state.Observe(1,b,false,t,out _) && state.HasPendingContent,"blocked speech tracks current section");
+Check(!state.Observe(1,a,true,t,out _),"changed pending needs confirmation");
+Check(!state.Observe(1,a,true,t,out _) && !state.HasPendingContent,"old blocked section never emitted and the heard text stays silent");
+Check(!state.Observe(2,a,true,t,out _) && state.Observe(2,a,true,t,out _),"session change resets same section");
 state.Reset();
 Check(!state.HasPendingContent,"reset clears pending");
-Check(!state.Observe(0,(MapSection)null,true,out _) && !state.Observe(0,(MapSection)null,true,out _),"empty session accepts outside observations");
-Check(!state.Observe(0,a,false,out _) && !state.Observe(0,a,false,out _),"no delivery while speech blocked");
-Check(state.Observe(0,a,true,out key) && key == "section.a","confirmed current section delivers when allowed");
-state.Reset(); state.Observe(1,a,false,out _); state.Observe(1,a,false,out _);
-state.Observe(1,(MapSection)null,false,out _); state.Observe(1,(MapSection)null,false,out _);
-Check(!state.Observe(1,(MapSection)null,true,out _) && !state.HasPendingContent,"outside never emits obsolete pending");
+Check(!state.Observe(0,(MapSection)null,true,t,out _) && !state.Observe(0,(MapSection)null,true,t,out _),"empty session accepts outside observations");
+Check(!state.Observe(0,a,false,t,out _) && !state.Observe(0,a,false,t,out _),"no delivery while speech blocked");
+Check(state.Observe(0,a,true,t,out key) && key == "section.a","confirmed current section delivers when allowed");
+state.Reset(); state.Observe(1,a,false,t,out _); state.Observe(1,a,false,t,out _);
+state.Observe(1,(MapSection)null,false,t,out _); state.Observe(1,(MapSection)null,false,t,out _);
+Check(!state.Observe(1,(MapSection)null,true,t,out _) && !state.HasPendingContent,"outside never emits obsolete pending");
 state.Reset();
-Check(!state.Observe(1,"roomA","Cave",true,out _) && state.Observe(1,"roomA","Cave",true,out key) && key == "Cave",
+Check(!state.Observe(1,"roomA","Cave",true,t,out _) && state.Observe(1,"roomA","Cave",true,t,out key) && key == "Cave",
     "string identity/text overload settles a localized room description");
-Check(!state.Observe(1,"roomA","Cave",true,out _),"stable room description silent");
-Check(!state.Observe(1,"roomB","Cave",true,out _) && state.HasPendingContent &&
-    state.Observe(1,"roomB","Cave",true,out key) && key == "Cave","different ids with same text announce distinct room entry");
-Check(!state.Observe(1,"roomB","Updated cave",true,out _) &&
-    state.Observe(1,"roomB","Updated cave",true,out key) && key == "Updated cave","same id changed text requires two matching observations");
-Check(!state.Observe(1,"roomB","Discarded text",false,out _) && !state.Observe(1,"roomB","Latest text",false,out _) &&
-    !state.Observe(1,"roomB","Latest text",false,out _) && state.HasPendingContent,"latest room text tracked while blocked");
-Check(state.Observe(1,"roomB","Latest text",true,out key) && key == "Latest text","deferred room text never speaks earlier description");
-state.Observe(1,null,"ignored outside description",false,out _); state.Observe(1,null,"ignored outside description",false,out _);
+Check(!state.Observe(1,"roomA","Cave",true,t,out _),"stable room description silent");
+Check(!state.Observe(1,"roomB","Cave",true,t,out _) && !state.HasPendingContent &&
+    !state.Observe(1,"roomB","Cave",true,t,out _),"different id with the same text directly after stays silent");
+Check(!state.Observe(1,"roomB","Updated cave",true,t,out _) &&
+    state.Observe(1,"roomB","Updated cave",true,t,out key) && key == "Updated cave","same id changed text requires two matching observations");
+Check(!state.Observe(1,"roomB","Discarded text",false,t,out _) && !state.Observe(1,"roomB","Latest text",false,t,out _) &&
+    !state.Observe(1,"roomB","Latest text",false,t,out _) && state.HasPendingContent,"latest room text tracked while blocked");
+Check(state.Observe(1,"roomB","Latest text",true,t,out key) && key == "Latest text","deferred room text never speaks earlier description");
+state.Observe(1,null,"ignored outside description",false,t,out _); state.Observe(1,null,"ignored outside description",false,t,out _);
 Check(!state.HasPendingContent,"null identity always outside despite text");
-Check(!state.Observe(1,"roomB","Latest text",true,out _) && state.Observe(1,"roomB","Latest text",true,out _),
+t += Gap;
+Check(!state.Observe(1,"roomB","Latest text",true,t,out _) && state.Observe(1,"roomB","Latest text",true,t,out _),
     "confirmed string outside rearms same room");
-Check(!state.Observe(2,"roomB","Latest text",true,out _) && state.Observe(2,"roomB","Latest text",true,out _),
+Check(!state.Observe(2,"roomB","Latest text",true,t,out _) && state.Observe(2,"roomB","Latest text",true,t,out _),
     "string room session reset");
 state.Reset();
-Check(!state.Observe(1,"room","",true,out _) && !state.Observe(1,"room","",true,out _) &&
+Check(!state.Observe(1,"room","",true,t,out _) && !state.Observe(1,"room","",true,t,out _) &&
     !state.HasPendingContent,"empty room description is not emitted");
 Check(square.SpeechGroup == square.Id,"legacy speech identity defaults to geometry id");
 object Grouped(string id, string group, double left) => new {
@@ -205,16 +209,41 @@ var grouped=Map(Grouped("pieceA","walkway",0),Grouped("pieceB","walkway",4),Grou
 var first=grouped.FindSection(2,5,2); var adjacent=grouped.FindSection(6,5,2);
 Check(first.Id != adjacent.Id && first.SpeechGroup == adjacent.SpeechGroup,"group retains distinct geometry identities");
 state.Reset();
-Check(!state.Observe(1,first,true,out _) && state.Observe(1,adjacent,true,out key),"adjacent pieces settle shared speech group");
-Check(!state.Observe(1,first,true,out _) && !state.Observe(1,adjacent,true,out _) && !state.HasPendingContent,
+Check(!state.Observe(1,first,true,t,out _) && state.Observe(1,adjacent,true,t,out key),"adjacent pieces settle shared speech group");
+Check(!state.Observe(1,first,true,t,out _) && !state.Observe(1,adjacent,true,t,out _) && !state.HasPendingContent,
     "crossing shared group pieces does not duplicate speech");
 var different=grouped.FindSection(12,5,2);
-Check(!state.Observe(1,different,true,out _) && state.Observe(1,different,true,out key),"different group with same text still announces");
+Check(!state.Observe(1,different,true,t,out _) && !state.Observe(1,different,true,t,out _),"different group with the same text stays silent");
 Check(grouped.FindSection(9,5,2)==null,"grouping does not fill gap between geometry pieces");
-state.Observe(1,(MapSection)null,true,out _); state.Observe(1,(MapSection)null,true,out _);
-Check(!state.Observe(1,adjacent,true,out _) && state.Observe(1,first,true,out key),"confirmed gap rearms shared group entry");
-state.Reset(); state.Observe(1,first,false,out _); state.Observe(1,adjacent,false,out _);
-Check(state.HasPendingContent && state.Observe(1,first,true,out key),"blocked shared group entry delivers once from current piece");
+state.Observe(1,(MapSection)null,true,t,out _); state.Observe(1,(MapSection)null,true,t,out _); t += Gap;
+Check(!state.Observe(1,adjacent,true,t,out _) && state.Observe(1,first,true,t,out key),"confirmed gap rearms shared group entry");
+state.Reset(); state.Observe(1,first,false,t,out _); state.Observe(1,adjacent,false,t,out _);
+Check(state.HasPendingContent && state.Observe(1,first,true,t,out key),"blocked shared group entry delivers once from current piece");
+// Repeat suppression.
+state.Reset(); t = 100;
+bool Settle(string id, string text, bool canSpeak = true)
+{
+    bool first = state.Observe(1,id,text,canSpeak,t,out _); t += .2;
+    return state.Observe(1,id,text,canSpeak,t,out _) | first;
+}
+void Leave() { state.Observe(1,null,null,true,t,out _); t += .2; state.Observe(1,null,null,true,t,out _); }
+Check(Settle("gate","Gate"),"repeat setup speaks first arrival");
+Leave(); t += Gap - 1;
+Check(!Settle("gate","Gate") && !state.HasPendingContent,"edge flicker inside the gap stays silent");
+Leave(); t += Gap;
+Check(Settle("gate","Gate"),"absence of at least the gap rearms the same text");
+Leave(); t += 1;
+Check(!Settle("stairs2","Gate"),"adjacent id with the same text after a short absence stays silent");
+Check(Settle("stairs3","Arch"),"different text announces");
+Check(Settle("gate","Gate"),"A to B to A with different texts announces A again");
+Check(!Settle("other","Gate") && !state.HasPendingContent,"directly adjacent same text stays silent");
+state.Reset(); t = 200;
+Settle("gate","Gate"); Leave(); t += 1;
+Check(!Settle("gate","Gate",canSpeak:false) && !state.HasPendingContent,"suppressed repeat is not deferred");
+Settle("gate","Gate"); Settle("room","Room",canSpeak:false);
+Check(state.HasPendingContent && Settle("room","Room"),"deferred arrival with new text still speaks later");
+state.Reset(); state.Observe(1,"gate","Gate",true,0,out _);
+Check(state.Observe(2,"gate","Gate",true,1,out _) == false && state.Observe(2,"gate","Gate",true,1.2,out _),"session change clears repeat memory");
 Invalid(Catalog(Grouped("bad"," ",0)),"blank speech group rejected");
 Invalid(Catalog(Grouped("bad",null,0)),"explicit null speech group rejected");
 double[] identityMatrix = {1,0,0,7, 0,1,0,8, 0,0,1,9, 0,0,0,1};
@@ -292,8 +321,8 @@ try { new MapSectionSource("Root",identityMatrix,.01,new MapSectionCollider[]{nu
 catch(FormatException) { ambiguousColliders=true; }
 Check(ambiguousColliders,"null contributing collider rejected");
 var scenery = new SceneryPresenceState();
-bool ObserveScenery(string id, bool canSpeak = true, bool valid = true, bool tent = true) =>
-    scenery.Observe(1, id, id == null ? null : "Tent", tent, canSpeak, "Left the tent", out _, valid);
+bool ObserveScenery(string id, bool canSpeak = true, bool valid = true, bool tent = true, string text = "Tent") =>
+    scenery.Observe(1, id, id == null ? null : text, tent, canSpeak, t, "Left the tent", out _, valid);
 Check(ObserveScenery("tent-a"), "exact tent entry speaks once");
 Check(!ObserveScenery("tent-a"), "unchanged tent stays silent");
 Check(!ObserveScenery(null), "single outside sample cannot claim departure");
@@ -304,10 +333,10 @@ Check(!ObserveScenery(null), "first proven outside observation settles");
 Check(ObserveScenery(null), "second proven outside observation announces tent departure");
 Check(!ObserveScenery(null), "unchanged outside does not repeat departure");
 Check(ObserveScenery("tent-b"), "a second actual tent has its own entry identity");
-Check(ObserveScenery("tent-c"), "adjacent distinct tent is not collapsed by category");
+Check(!ObserveScenery("tent-c"), "adjacent piece with the same text stays silent");
 Check(!ObserveScenery(null,canSpeak:false) && !ObserveScenery(null,canSpeak:false) && scenery.HasPendingContent,
     "proven departure yields to higher-priority speech");
-Check(ObserveScenery("tent-c") && !scenery.HasPendingContent, "return cancels deferred exit in favor of current presence");
+Check(!ObserveScenery("tent-c") && !scenery.HasPendingContent, "return cancels deferred exit in favor of current presence");
 Check(!ObserveScenery(null,canSpeak:false) && !ObserveScenery(null,canSpeak:false), "another exit can defer");
 Check(!ObserveScenery(null,valid:false) && !scenery.HasPendingContent, "loss of authoritative position cancels stale exit");
 Check(!ObserveScenery(null) && ObserveScenery(null), "recovered departure requires fresh confirmation");
@@ -315,8 +344,11 @@ scenery.Reset();
 Check(!ObserveScenery("tent-a",canSpeak:false) && scenery.HasPendingContent, "unsaid entry may defer");
 Check(!ObserveScenery(null) && !ObserveScenery(null) && !scenery.HasPendingContent, "unspoken brief pass never produces departure speech");
 Check(ObserveScenery("tent-a"), "arrival after unsaid pass speaks");
-Check(scenery.Observe(2,null,null,false,true,"Left the tent",out _)==false, "new session cannot inherit departure");
+Check(scenery.Observe(2,null,null,false,true,t,"Left the tent",out _)==false, "new session cannot inherit departure");
 Check(ObserveScenery("tent-a"), "session change rearms current tent");
-Check(ObserveScenery("wagon",tent:false), "another known place replaces exact tent");
+Check(ObserveScenery("wagon",tent:false,text:"Wagon"), "another known place replaces exact tent");
 Check(!ObserveScenery(null) && !ObserveScenery(null), "leaving unrelated scenery does not say left tent");
+scenery.Reset();
+ObserveScenery("tent-a"); ObserveScenery(null); ObserveScenery(null); ObserveScenery(null);
+Check(ObserveScenery("tent-a"), "tent re-entry within the gap speaks after the exit was announced");
 Console.WriteLine($"Passed {checks} map section checks.");

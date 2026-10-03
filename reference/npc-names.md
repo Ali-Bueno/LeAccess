@@ -100,3 +100,10 @@ The NPC probe suite passes 109 checks, including eight new scene-lifetime
 regressions; the existing lifecycle suite passes 109 checks. The main build
 with `SkipPluginDeployment=true` has zero warnings/errors. These checks use
 source-linked doubles; online approach and listening remain unverified.
+
+## Repeat gap
+
+When the NPC target is lost (range-edge flicker), `NpcNameAnnouncementState.Lost(now)`
+keeps the spoken memory. The same NPC re-entering within `RepeatGapSeconds` (5 s) stays
+silent; a different NPC, a session change or a longer absence announces normally.
+Menu or suspension resets still clear the memory.

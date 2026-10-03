@@ -106,7 +106,8 @@ try
         Tick(.41);
         Check(ScreenReader.Spoken.Count == 1,"hard gate return settles " + gate);
         Tick(.62);
-        Check(ScreenReader.Spoken.Count == 2,"hard gate reset allows current name " + gate);
+        Check(ScreenReader.Spoken.Count == (gate == "focus" ? 1 : 2),
+            gate == "focus" ? "alt-tab keeps the delivered name silent" : "hard gate reset allows current name " + gate);
     }
 
     Start(); Tick(0); Tick(.2,pending:true); Tick(.41,spoke:true);

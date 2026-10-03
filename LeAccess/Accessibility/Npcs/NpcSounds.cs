@@ -76,7 +76,7 @@ internal static class NpcSounds
             if (!World.TryCapture(multiplier, out var target))
             {
                 if (World.LastFailure != null) ReportFailure(World.LastFailure);
-                Suspend();
+                Suspend(keepNames: true, now);
                 return;
             }
 
@@ -97,7 +97,7 @@ internal static class NpcSounds
             if (_announceNames.Value && Names.Observe(target.Session, target.InstanceId, target.Name,
                 ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame && !otherSpeechPending &&
                 !InventoryAccessibility.HasActiveContent && !GroundLootAccessibility.HasPendingContent,
-                out string announcement))
+                now, out string announcement))
             {
                 ScreenReader.Speak(announcement, interrupt: false);
                 Plugin.Log.LogInfo($"[NPC name] target={target.InstanceId} source={target.NameSource}: {announcement}");
@@ -154,7 +154,7 @@ internal static class NpcSounds
         }
     }
 
-    private static void Suspend()
+    private static void Suspend(bool keepNames = false, double now = 0)
     {
         WorldAudioReservation.Cancel(WorldAudioSource.Npc);
         if (_active) _audio?.Silence();
@@ -162,7 +162,7 @@ internal static class NpcSounds
         _targetId = 0;
         _session = 0;
         Timing.Reset();
-        Names.Reset();
+        if (keepNames) Names.Lost(now); else Names.Reset();
         World.Reset();
     }
 
