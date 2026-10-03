@@ -34,3 +34,7 @@ On-demand report of nearby hostiles during gameplay: F7 or right stick up from n
 
 `tests/LeAccess.EnemyScan.Tests` (ordering, limit and true total, boss tag, sectors, rounding, none text,
 Spanish, non-finite positions). `LeAccess.Combat.Tests` covers the registry walk through the probes.
+
+## Right-stick note
+
+The game also reads the right stick for manual targeting (`ControllerTargeting.RightStickHitTarget`, `EpochInputManager.RightStickInput`), so the up flick that requests a scan may also nudge the game's target toward that direction, exactly like the existing down flick for orientation. Both need a deliberate push from neutral. Set `[Enemy scan] RightStickUp = false` (and `[Orientation] RightStickDown = false`) if this interferes; F7/F6 remain.
