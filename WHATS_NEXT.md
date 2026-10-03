@@ -32,6 +32,20 @@ Read `STATUS.md`, then `PRINCIPLES.md`, before changing code.
   snaps targets onto the NavMesh (off-mesh bosses still sound), brief absences keep
   cue cadence, boss life narrates on-screen bosses only.
 
+## Live report fixes (first user session, 20:43 log)
+
+Installed `13fc9c9` with the game closed; previous plugin/config backed up to
+`C:\Users\ali-b\Documents\LeAccess backups\pre-live-fixes-f13f726-20261003`.
+
+- "Partida sin conexión" silent: zero-height TMP label rejected by the size check
+  from `7710258`; rendered text bounds now count ([menu-visibility](reference/menu-visibility.md)).
+- NPC line cut off by the automatic response/continue focus; that focus now queues,
+  and the continue button says "Continuar" ([npc-subtitles](reference/npc-subtitles.md)).
+- Portal/waypoint sound stopped beyond 2 m and stuttered at the edge; landmarks now
+  sound from 12 m with fading and an edge margin ([world-object-sounds](reference/world-object-sounds.md)).
+
+Re-check these four first; then the list below.
+
 ## First live checks for the user
 
 1. Mana/life speech while casting repeatedly (should be quiet between casts).
