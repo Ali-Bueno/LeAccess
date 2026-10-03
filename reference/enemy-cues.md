@@ -33,18 +33,28 @@ monster sound, the three nearest emitters, faster when closer. Enabled by defaul
 nearest-enemy announcement and the [enemy scan](enemy-scan.md). Bosses use offline
 `Actor.isBossOrMiniboss()` and online `ActorVisuals.Data.isBossOrMiniBoss()`.
 
-Terrain line of sight is `RadarWorldProbe.HasLineOfSight`, from the radar's own
-probe (validated player, camera axes, sampled NavMesh origin). It calls
-`NavMesh.RaycastFilter` with the player's agent type and area mask. An enemy is
-in sight when the ray is not blocked, or stops within one player agent radius of
-the enemy: the player's NavMesh edge lies that far inside walls, so an enemy
-flush against a wall stands just outside it. Only the nearest candidates pay for
-a ray (at most the needed three plus any hidden nearer ones).
+Terrain sight is `RadarWorldProbe.Sight`, from a radar probe of its own captured
+without the four wall rays (`probeWalls: false`; player, camera axes and the
+sampled NavMesh origin are still validated). The enemy position is sampled onto
+the player's NavMesh (`SamplePositionFilter`, player agent type and area mask)
+within the baked build radius (`NavMesh.GetSettingsByID(type).agentRadius`, at
+least the runtime agent radius, which online is a narrow helper) plus the baked
+step height `agentClimb` for the surface's vertical offset. The baked edge lies
+one build radius inside walls, so an enemy flush against a wall still samples.
+`RaycastFilter` from the origin to that sampled point gives Clear or Blocked; a
+target that cannot be sampled is OffMesh. Only the nearest candidates pay for a
+query (at most the needed three plus any hidden nearer ones).
+
+Policy (`EnemyCueSelector.InSight`): Clear is audible and Blocked never is. An
+OffMesh boss stays audible, an OffMesh ordinary enemy does not: an arena boss in
+water or on a ledge is still within targeting range and the player can hit it,
+and there is a single boss stream, while ordinary off-mesh enemies are often in
+unreachable places. This holds even when `Bosses = false` makes the boss growl.
 
 Limits: this is walkable-surface sight, as in D2R. Walk-blocking but see-through
-obstacles (fences, chasms, water) hide an enemy, and an enemy whose centre is off
-the player's walkable NavMesh (in water, on an unreachable ledge, across a gap)
-is treated as hidden. Bearings are direct, not routes.
+obstacles (fences, chasms, water) hide an ordinary enemy standing on a walkable
+surface behind them, and ordinary enemies off the player's NavMesh are silent.
+Bearings are direct, not routes.
 
 ## Timing and shared audio
 
@@ -54,6 +64,9 @@ is treated as hidden. Bearings are direct, not routes.
   turn is not lost to polling. `EnemyCueTracker` plays first cues before repeats;
   among repeats the most overdue fraction wins, so a nearby boss cannot starve the
   others. Enemy starts are at least 100 ms apart (D2R `gapMs`).
+- A stream that leaves the selection keeps its cadence; only after an absence of
+  the far interval (450 ms) is it new again with first-cue priority. A one-poll
+  dropout (a ray flicker, a stepping enemy) therefore cannot jump the queue.
 - `WorldAudioReservation` source `Enemy` joins the FIFO shared by radar knocks and
   breaths, NPC taps, world-object sounds and automatic orientation. Each enemy cue
   reserves its 90 ms plus the 50 ms device buffer; it waits rather than overlap,
@@ -73,8 +86,11 @@ Disabled, volume 0, both classes off, `NavigationAudioState` suspension (focus,
 pause, loading, conversation), a non-gameplay input owner (menus), screen content
 or dialogue: the current cue is silenced, the pending turn cancelled, cadence
 reset and the probe cache dropped. A failed capture (player, camera, NavMesh,
-range or registry unavailable) does the same. A radar session change (scene or
-player) silences and resets cadence. There is no queue: each start comes from the
+range or registry unavailable) only silences and cancels the pending turn; the
+cadence survives so a brief failure in the same session does not make every
+stream fire back-to-back on recovery. A radar session change (scene or player)
+silences and resets cadence. Registry warnings are de-duplicated until a poll
+reports none; exception warnings until a cue plays again. There is no queue: each start comes from the
 latest snapshot, and dead or unloaded enemies vanish at the next one.
 
 ## Sound design
@@ -109,7 +125,7 @@ noise), NPC tap 1,893/s.
 - `Combat/EnemyCueTracker.cs`: per-stream cadence, gap, fairness, reset (pure).
 - `Combat/EnemyCueProbe.cs`: main-thread snapshot. `Combat/EnemyCueSounds.cs`: config, gating, playback.
 - `Audio/EnemyCueSynthesizer.cs`; shared `Audio/EntityCueCadence.cs` (also `NpcCueTiming`) and `Audio/CuePlacement.cs`.
-- `Navigation/RadarWorldProbe.HasLineOfSight`, `GuidanceGeometry.Bearing`.
+- `Navigation/RadarWorldProbe.Sight` and `TryCapture(probeWalls: false)`, `TerrainSight` (`RadarModel.cs`), `GuidanceGeometry.Bearing`.
 
 Log: `[Enemy cues] <status>; in_range=N selected=Boss#id@dist/slot0,... played=N audio=...`
 on each suspension change and every 5 s while active; warnings are deduplicated.
@@ -117,21 +133,25 @@ on each suspension change and every 5 s while active; warnings are deduplicated.
 ## Validation
 
 `dotnet run --project tests/LeAccess.EnemyCues.Tests/LeAccess.EnemyCues.Tests.csproj`
-passes 133 checks: cadence, bearing, stream selection and limits, lazy sight
-tests, range/invalid inputs, class toggles, tracker cadence, gap, fairness,
-per-rank continuity, resets, a 60 fps simulation through the shared reservation,
+passes 141 checks: cadence, bearing, stream selection and limits, lazy sight
+tests, the off-mesh boss policy, range/invalid inputs, class toggles, tracker
+cadence, gap, fairness, per-rank continuity across brief and long absences, resets, a 60 fps simulation through the shared reservation,
 FIFO arbitration with radar/NPC sources, and synthesis (length, peak 0.046-0.427,
 no NaN, silent edges, swell, falling pitch, flutter, rear pitch, distinctness,
-equal-power mirrored panning, gain and invalid inputs). The navigation suite adds
-9 line-of-sight checks (456). No game was launched and no audio device opened.
+equal-power mirrored panning, gain and invalid inputs). The navigation suite has
+16 sight checks (463): wall-free capture, sampling radius from baked settings
+over a narrow runtime agent, a grazing off-edge enemy, blocked, off-mesh and
+reset cases. No game was launched and no audio device opened. The service's
+capture-failure pause is not host-tested; the tracker behavior it relies on is.
 
 ## Live listening checks
 
 1. An outdoor pack: three growls, placed left/right/behind, faster on approach,
    each stopping when that enemy dies.
 2. A boss or miniboss: the swoop leads; compare it with the radar wall knock.
-3. Enemies in another room behind a wall stay silent; note enemies across water,
-   chasms, fences or on ledges.
+3. Enemies in another room behind a wall stay silent; an enemy walking along the
+   same wall ahead stays audible; a boss in water or on a ledge sounds. Note
+   ordinary enemies across water, chasms, fences or on ledges.
 4. Walk so the nearest enemy changes repeatedly: no bursts.
 5. Combat density alongside radar knocks/breaths, NPC taps and loot sounds: no
    overlap, no starved source, loudness against the game's combat audio.

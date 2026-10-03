@@ -150,6 +150,8 @@ internal static class LifecycleTests
         NavMesh.ThrowOnQuery = false;
         NavMesh.Queries = 0;
         NavMesh.Filters.Clear();
+        NavMesh.TargetSample = null;
+        NavMesh.Settings = new NavMeshBuildSettings { agentRadius = float.NaN, agentClimb = float.NaN };
         LE.UI.LoadingScreen.IsVisible = false;
         RadarAudioOutput.Played = 0;
         LeAccess.Plugin.Log.Warnings.Clear();
@@ -176,23 +178,43 @@ internal static class LifecycleTests
     {
         ResetHost();
         var probe = new RadarWorldProbe();
-        Program.Check(!probe.HasLineOfSight(new Vector3(1, 0, 0)), "No line of sight is claimed before a capture");
+        Program.Check(probe.Sight(new Vector3(1, 0, 0)) == TerrainSight.Unknown, "No line of sight is claimed before a capture");
         PlayerFinder.Player.Agent.agentTypeID = 7;
         PlayerFinder.Player.Agent.areaMask = 5;
+        PlayerFinder.Player.Agent.radius = 0.3f;
+        NavMesh.Settings = new NavMeshBuildSettings { agentRadius = 0.6f, agentClimb = 0.25f };
         NavMesh.Depth = 5;
-        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _), "Capture before line of sight");
-        Program.Check(probe.HasLineOfSight(new Vector3(4, 0, 0)), "An unobstructed target is in sight");
-        Program.Check(NavMesh.Filters[^1] == (7, 5), "Line of sight uses the player's agent type and area mask");
-        Program.Check(probe.HasLineOfSight(new Vector3(0, 0, 5.9f)),
-            "A target within one agent radius past the NavMesh edge stays in sight");
-        Program.Check(!probe.HasLineOfSight(new Vector3(0, 0, 6.5f)), "A target farther behind the edge is hidden");
+        NavMesh.Rays = 0;
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out var walls), "Capture with wall rays");
+        Program.Check(NavMesh.Rays == 4 && walls.Readings.All(reading => reading.Available), "The radar capture still probes its four walls");
+        NavMesh.Rays = 0;
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out var origin, probeWalls: false),
+            "Capture without wall rays");
+        Program.Check(NavMesh.Rays == 0 && origin.Readings.All(reading => !reading.Available) && origin.Session == walls.Session,
+            "A sight-only capture skips the wall rays but keeps the validated session");
+
+        // Off the mesh edge at a grazing angle: the ray goes to the sampled point, not through the edge.
+        var sampled = new Vector3(4.9f, 0, 0.1f);
+        NavMesh.TargetSample = (target, radius) => target.x > 20 ? null : target.x == 5.3f ? sampled : target;
+        Program.Check(probe.Sight(new Vector3(5.3f, 0, 0.7f)) == TerrainSight.Clear,
+            "An enemy just off the walkable edge is in sight through its nearest walkable point");
+        Program.Near(NavMesh.SampleRadius, 0.85f, "The target is sampled within the baked radius plus step height, not the helper agent radius");
+        Program.Check(NavMesh.Filters[^1] == (7, 5), "Sight uses the player's agent type and area mask");
+        Program.Check(probe.Sight(new Vector3(0, 0, 0.2f)) == TerrainSight.Clear, "An unobstructed enemy on the mesh is in sight");
+        Program.Check(probe.Sight(new Vector3(0, 0, 8)) == TerrainSight.Blocked, "A wall between the player and the enemy hides it");
+        Program.Check(probe.Sight(new Vector3(30, 0, 0)) == TerrainSight.OffMesh, "An enemy far from any walkable surface is off the mesh");
+        NavMesh.Settings = new NavMeshBuildSettings { agentRadius = float.NaN, agentClimb = float.NaN };
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _, probeWalls: false) &&
+            probe.Sight(new Vector3(1, 0, 0)) == TerrainSight.Clear, "Capture refreshes the sight radius");
+        Program.Near(NavMesh.SampleRadius, 0.3f, "Unreadable baked settings fall back to the runtime agent radius");
+        NavMesh.TargetSample = null;
         NavMesh.OriginAvailable = false;
         Program.Check(!probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _) &&
-            !probe.HasLineOfSight(new Vector3(1, 0, 0)), "A failed capture withdraws line of sight");
+            probe.Sight(new Vector3(1, 0, 0)) == TerrainSight.Unknown, "A failed capture withdraws line of sight");
         NavMesh.OriginAvailable = true;
         Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _), "Capture resumes");
         probe.Reset();
-        Program.Check(!probe.HasLineOfSight(new Vector3(1, 0, 0)), "Reset withdraws line of sight");
+        Program.Check(probe.Sight(new Vector3(1, 0, 0)) == TerrainSight.Unknown, "Reset withdraws line of sight");
         ResetHost();
     }
 

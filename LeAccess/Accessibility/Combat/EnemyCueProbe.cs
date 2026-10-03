@@ -13,10 +13,10 @@ internal sealed class EnemyCueProbe
     private readonly RadarWorldProbe _world = new();
     private readonly EnemyCueSelector _selector = new();
     private readonly List<EnemyContact> _contacts = new();
-    private readonly Func<EnemyContact, bool> _lineOfSight;
+    private readonly Func<EnemyContact, TerrainSight> _sight;
 
-    internal EnemyCueProbe() => _lineOfSight = contact =>
-        _world.HasLineOfSight(new UnityEngine.Vector3(contact.Position.X, contact.Position.Y, contact.Position.Z));
+    internal EnemyCueProbe() => _sight = contact =>
+        _world.Sight(new UnityEngine.Vector3(contact.Position.X, contact.Position.Y, contact.Position.Z));
 
     internal List<EnemyCue> Selected { get; } = new();
     internal long Session { get; private set; }
@@ -28,7 +28,7 @@ internal sealed class EnemyCueProbe
     {
         Selected.Clear();
         _contacts.Clear();
-        if (!_world.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out var snapshot))
+        if (!_world.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out var snapshot, probeWalls: false))
             return Unavailable(_world.UnavailableReason ?? "world unavailable");
         // The same range as the nearest-enemy announcement and the enemy scan.
         float range = ControllerTargetingParadigm._SkillTargetMaxDistance;
@@ -38,7 +38,7 @@ internal sealed class EnemyCueProbe
         var up = snapshot.Axes[(int)RadarDirection.Up];
         var right = snapshot.Axes[(int)RadarDirection.Right];
         _selector.Select(_contacts, origin, new NVector3(up.X, 0, up.Y), new NVector3(right.X, 0, right.Y),
-            range, bosses, ordinary, _lineOfSight, Selected);
+            range, bosses, ordinary, _sight, Selected);
         Session = snapshot.Session;
         UnavailableReason = null;
         return true;

@@ -68,11 +68,11 @@ internal static partial class Program
         new(id, null, boss, Player + new Vector3(dx, dy, dz));
 
     private static List<EnemyCue> Select(IReadOnlyList<EnemyContact> contacts, bool bosses = true, bool ordinary = true,
-        Func<EnemyContact, bool> sight = null, float range = Range, Vector3? player = null)
+        Func<EnemyContact, TerrainSight> sight = null, float range = Range, Vector3? player = null)
     {
         var selected = new List<EnemyCue>();
         new EnemyCueSelector().Select(contacts, player ?? Player, Up, Right, range, bosses, ordinary,
-            sight ?? (_ => true), selected);
+            sight ?? (_ => TerrainSight.Clear), selected);
         return selected;
     }
 
@@ -114,7 +114,8 @@ internal static partial class Program
     private static void SelectionSight()
     {
         var calls = new List<int>();
-        bool Visible(EnemyContact contact) { calls.Add(contact.Id); return contact.Id % 2 == 0; }
+        TerrainSight Visible(EnemyContact contact)
+        { calls.Add(contact.Id); return contact.Id % 2 == 0 ? TerrainSight.Clear : TerrainSight.Blocked; }
         var crowd = Enumerable.Range(1, 8).Select(id => At(id, 0, id)).ToArray();
         var selected = Select(crowd, sight: Visible);
         Check(selected.Select(cue => cue.Id).SequenceEqual(new[] { 2, 4, 6 }), "Enemies behind terrain are skipped.");
@@ -126,10 +127,23 @@ internal static partial class Program
         Check(calls.Count == 6, "A large crowd still stops ray tests once three streams are filled.");
 
         var hiddenBoss = Select(new[] { At(1, 0, 2, true), At(3, 0, 5, true), At(2, 0, 1) },
-            sight: contact => contact.Id != 1);
+            sight: contact => contact.Id != 1 ? TerrainSight.Clear : TerrainSight.Blocked);
         Check(hiddenBoss[0].Id == 3 && hiddenBoss[0].Kind == EnemyCueKind.Boss,
             "A hidden boss yields to the nearest boss in sight.");
-        Check(Select(new[] { At(1, 0, 2, true) }, sight: _ => false).Count == 0, "Nothing in sight is silent.");
+        Check(Select(new[] { At(1, 0, 2, true) }, sight: _ => TerrainSight.Blocked).Count == 0, "Nothing in sight is silent.");
+
+        var offMesh = Select(new[] { At(1, 0, 2, true), At(2, 0, 1), At(3, 0, 3) },
+            sight: contact => contact.Id == 3 ? TerrainSight.Clear : TerrainSight.OffMesh);
+        Check(offMesh.Select(cue => cue.Id).SequenceEqual(new[] { 1, 3 }),
+            "A boss off the walkable surface stays audible; an ordinary enemy there does not.");
+        var growlingBoss = Select(new[] { At(1, 0, 2, true) }, bosses: false, sight: _ => TerrainSight.OffMesh);
+        Check(growlingBoss.Count == 1 && growlingBoss[0].Kind == EnemyCueKind.Ordinary,
+            "A boss stays audible off the mesh even while it growls.");
+        Check(EnemyCueSelector.InSight(At(1, 0, 1), TerrainSight.Clear) &&
+            !EnemyCueSelector.InSight(At(1, 0, 1, true), TerrainSight.Blocked) &&
+            !EnemyCueSelector.InSight(At(1, 0, 1, true), TerrainSight.Unknown) &&
+            !EnemyCueSelector.InSight(At(1, 0, 1), TerrainSight.OffMesh),
+            "Walls hide bosses too, and an unknown origin hides everything.");
     }
 
     private static void SelectionFilters()
@@ -144,7 +158,7 @@ internal static partial class Program
         Check(Select(new[] { At(1, 0, 1) }, player: new Vector3(float.NaN, 0, 0)).Count == 0,
             "An invalid player position gives no streams.");
         var selected = new List<EnemyCue> { new(9, EnemyCueKind.Boss, 1, 0, 0, 0.2, 0) };
-        new EnemyCueSelector().Select(null, Player, Up, Right, Range, true, true, _ => true, selected);
+        new EnemyCueSelector().Select(null, Player, Up, Right, Range, true, true, _ => TerrainSight.Clear, selected);
         Check(selected.Count == 0, "A missing registry clears the previous selection.");
     }
 
@@ -208,7 +222,23 @@ internal static partial class Program
             "A new nearest enemy inherits the rank's cadence instead of bursting.");
         Check(Take(tracker, swapped, 0.3) == 2, "The next pulse uses the newly selected enemy.");
         Check(Take(tracker, Array.Empty<EnemyCue>(), 0.4) == null, "An empty selection leaves nothing pending.");
-        Check(Take(tracker, swapped, 0.5) == 2, "A rank that left and returns starts again at once.");
+        Check(Take(tracker, swapped, 0.5) == null && Take(tracker, swapped, 0.61) == 2,
+            "A rank back after a one-poll absence keeps its cadence instead of jumping the queue.");
+
+        var blink = new EnemyCueTracker();
+        var pair = new[] { Cue(1, 1, 0.45), Cue(2, 2, 0.25) };
+        Check(Take(blink, pair, 0) == 1 && Take(blink, pair, 0.1) == 2, "Both streams start.");
+        Check(Take(blink, new[] { pair[1] }, 0.2) == null, "Rank one drops out for one poll.");
+        Check(Take(blink, pair, 0.3) == null, "A briefly absent stream does not get first-cue priority on return.");
+        Check(Take(blink, pair, 0.36) == 2 && Take(blink, pair, 0.47) == 1,
+            "Both streams keep their own intervals across the absence.");
+
+        var gone = new EnemyCueTracker();
+        Take(gone, new[] { Cue(1, 1, 0.45) }, 0);
+        Take(gone, Array.Empty<EnemyCue>(), 0.1);
+        Take(gone, Array.Empty<EnemyCue>(), 0.1 + EntityCueCadence.FarIntervalSeconds);
+        var second = new[] { Cue(1, 1, 5), Cue(2, 2, 5) };
+        Check(Take(gone, second, 0.6) == 1, "A rank absent longer than the far interval is new again and plays first.");
     }
 
     private static void TrackerResets()
@@ -249,7 +279,7 @@ internal static partial class Program
             if (now >= nextPoll)
             {
                 nextPoll = now + EntityCueCadence.PollSeconds;
-                selector.Select(pack, Player, Up, Right, Range, true, true, _ => true, selected);
+                selector.Select(pack, Player, Up, Right, Range, true, true, _ => TerrainSight.Clear, selected);
             }
             if (!tracker.TryChoose(selected, now, out var cue) ||
                 !WorldAudioReservation.TryBegin(WorldAudioSource.Enemy, now, EnemyCueSynthesizer.DurationSeconds, BufferMilliseconds))

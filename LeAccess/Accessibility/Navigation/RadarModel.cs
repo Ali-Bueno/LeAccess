@@ -4,6 +4,8 @@ namespace LeAccess.Accessibility.Navigation;
 
 public enum RadarDirection { Up, Left, Right, Down }
 public enum RadarState { Unknown, Open, Blocked }
+// Clear or Blocked by the player's NavMesh; OffMesh when the target is not near any walkable surface.
+public enum TerrainSight { Unknown, Clear, Blocked, OffMesh }
 public enum RadarResetReason { None, Explicit, Initial, SessionChanged, PollGap, TimeReversed, Teleport, CameraTurn, InvalidInput }
 
 public readonly struct RadarReading

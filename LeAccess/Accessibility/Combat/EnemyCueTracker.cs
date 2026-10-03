@@ -10,8 +10,11 @@ internal sealed class EnemyCueTracker
     private readonly bool[] _played = new bool[EnemyCueSelector.SlotCount];
     private readonly double[] _last = new double[EnemyCueSelector.SlotCount];
     private readonly bool[] _present = new bool[EnemyCueSelector.SlotCount];
+    private readonly double[] _absentSince = new double[EnemyCueSelector.SlotCount];
     private bool _started;
     private double _lastStart;
+
+    internal EnemyCueTracker() => Reset();
 
     // First cues go before repeats; among repeats the most overdue wins, so a near boss cannot starve the rest.
     internal bool TryChoose(IReadOnlyList<EnemyCue> selected, double now, out EnemyCue next)
@@ -22,9 +25,13 @@ internal sealed class EnemyCueTracker
         Array.Clear(_present);
         foreach (var cue in selected)
             if (ValidSlot(cue.Slot)) _present[cue.Slot] = true;
-        // A stream keeps its cadence while it stays selected, even when its nearest enemy changes.
+        // A stream keeps its cadence through enemy changes and brief absences; a long absence makes it new again.
         for (int slot = 0; slot < _played.Length; slot++)
-            if (!_present[slot]) _played[slot] = false;
+        {
+            if (_present[slot]) _absentSince[slot] = double.NaN;
+            else if (double.IsNaN(_absentSince[slot])) _absentSince[slot] = now;
+            else if (now - _absentSince[slot] >= EntityCueCadence.FarIntervalSeconds) _played[slot] = false;
+        }
         if (_started && now - _lastStart < EntityCueCadence.GapSeconds) return false;
         bool found = false;
         double mostOverdue = 0;
@@ -56,6 +63,7 @@ internal sealed class EnemyCueTracker
     {
         Array.Clear(_played);
         Array.Clear(_last);
+        Array.Fill(_absentSince, double.NaN);
         _started = false;
         _lastStart = 0;
     }

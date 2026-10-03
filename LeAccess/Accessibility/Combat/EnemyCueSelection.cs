@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using LeAccess.Accessibility.Audio;
+using LeAccess.Accessibility.Navigation;
 using LeAccess.Accessibility.Navigation.Guidance;
 
 namespace LeAccess.Accessibility.Combat;
@@ -25,11 +26,11 @@ internal sealed class EnemyCueSelector
 
     // The nearest boss in sight first, then the nearest ordinary enemies in sight in the streams left.
     internal void Select(IReadOnlyList<EnemyContact> contacts, Vector3 player, Vector3 forward, Vector3 right,
-        float range, bool bosses, bool ordinary, Func<EnemyContact, bool> lineOfSight, List<EnemyCue> selected)
+        float range, bool bosses, bool ordinary, Func<EnemyContact, TerrainSight> sight, List<EnemyCue> selected)
     {
         selected.Clear();
         _ordinary.Clear();
-        if (contacts == null || lineOfSight == null || !GuidanceGeometry.Finite(player) ||
+        if (contacts == null || sight == null || !GuidanceGeometry.Finite(player) ||
             !float.IsFinite(range) || range <= 0) return;
         EnemyCue? boss = null;
         foreach (var contact in contacts)
@@ -45,7 +46,7 @@ internal sealed class EnemyCueSelector
                 EntityCueCadence.Interval(distance, range), BossSlot);
             // Ordinary enemies are ranked first so only the nearest few pay for a terrain ray.
             if (kind == EnemyCueKind.Ordinary) { _ordinary.Add((cue, contact)); continue; }
-            if (boss.HasValue && !Nearer(cue, boss.Value) || !lineOfSight(contact)) continue;
+            if (boss.HasValue && !Nearer(cue, boss.Value) || !InSight(contact, sight(contact))) continue;
             boss = cue;
         }
         if (boss.HasValue) selected.Add(boss.Value);
@@ -54,11 +55,15 @@ internal sealed class EnemyCueSelector
         foreach (var (cue, contact) in _ordinary)
         {
             if (selected.Count >= MaxStreams) break;
-            if (!lineOfSight(contact)) continue;
+            if (!InSight(contact, sight(contact))) continue;
             selected.Add(cue with { Slot = BossSlot + 1 + rank++ });
         }
         _ordinary.Clear();
     }
+
+    // A boss off the walkable surface (water, ledge) stays audible: it is still in targeting range.
+    internal static bool InSight(EnemyContact contact, TerrainSight sight) =>
+        sight == TerrainSight.Clear || sight == TerrainSight.OffMesh && contact.Boss;
 
     private static bool Nearer(EnemyCue a, EnemyCue b) =>
         a.Distance < b.Distance || a.Distance == b.Distance && a.Id < b.Id;

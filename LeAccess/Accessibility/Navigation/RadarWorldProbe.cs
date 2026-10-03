@@ -48,12 +48,13 @@ internal sealed class RadarWorldProbe
     private readonly NumericsVector2[] _axes = new NumericsVector2[4];
     private readonly RadarReading[] _readings = new RadarReading[4];
     private Vector3 _origin;
-    private float _originRadius;
+    private float _originRadius, _sightRadius;
     private int _originAgentType, _originAreaMask;
     private bool _hasOrigin;
     public string UnavailableReason { get; private set; }
 
-    public bool TryCapture(float openDepthInBodyWidths, out RadarWorldSnapshot snapshot)
+    // Without wall probes the readings are unavailable; the player, axes and origin are still validated.
+    public bool TryCapture(float openDepthInBodyWidths, out RadarWorldSnapshot snapshot, bool probeWalls = true)
     {
         snapshot = default;
         var scene = SceneManager.GetActiveScene();
@@ -117,6 +118,7 @@ internal sealed class RadarWorldProbe
 
         for (int i = 0; i < _axes.Length; i++)
         {
+            if (!probeWalls) { _readings[i] = default; continue; }
             var direction = new Vector3(_axes[i].X, 0f, _axes[i].Y);
             Vector3 target = origin.position + direction * _settings.ReachDepth;
             bool blocked = NavMesh.RaycastFilter(origin.position, target, out var hit, agentTypeId, areaMask);
@@ -131,17 +133,29 @@ internal sealed class RadarWorldProbe
         _originRadius = agentRadius;
         _originAgentType = agentTypeId;
         _originAreaMask = areaMask;
+        _sightRadius = float.NaN;
         _hasOrigin = true;
         UnavailableReason = null;
         return true;
     }
 
-    // Terrain line of sight from the last captured origin; the NavMesh edge lies one agent radius inside walls.
-    public bool HasLineOfSight(Vector3 target)
+    // Samples the target onto the player's NavMesh, then casts from the last captured origin to that point.
+    public TerrainSight Sight(Vector3 target)
     {
-        if (!_hasOrigin) return false;
-        if (!NavMesh.RaycastFilter(_origin, target, out var hit, _originAgentType, _originAreaMask)) return true;
-        return HorizontalDistance(hit.position, target) <= _originRadius;
+        if (!_hasOrigin) return TerrainSight.Unknown;
+        if (float.IsNaN(_sightRadius)) _sightRadius = SightRadius();
+        if (!NavMesh.SamplePositionFilter(target, out var near, _sightRadius, _originAgentType, _originAreaMask))
+            return TerrainSight.OffMesh;
+        return NavMesh.RaycastFilter(_origin, near.position, out _, _originAgentType, _originAreaMask)
+            ? TerrainSight.Blocked : TerrainSight.Clear;
+    }
+
+    // The baked edge lies one build radius inside walls; the build step height bounds the surface's vertical offset.
+    private float SightRadius()
+    {
+        var baked = NavMesh.GetSettingsByID(_originAgentType);
+        float radius = float.IsFinite(baked.agentRadius) && baked.agentRadius > _originRadius ? baked.agentRadius : _originRadius;
+        return radius + (float.IsFinite(baked.agentClimb) && baked.agentClimb > 0 ? baked.agentClimb : 0);
     }
 
     private bool Unavailable(string reason)

@@ -25,7 +25,8 @@ internal static class EnemyCueSounds
     private static RadarAudioOutput _audio;
     private static double _nextPoll, _nextAudioRetry, _nextDiagnostic;
     private static long _session, _played;
-    private static string _status, _lastFailure, _lastAudioFailure;
+    private static bool _ready;
+    private static string _status, _lastFailure, _lastError, _lastAudioFailure;
 
     internal static void Initialize(ConfigFile config)
     {
@@ -55,16 +56,18 @@ internal static class EnemyCueSounds
             if (now >= _nextPoll)
             {
                 _nextPoll = now + EntityCueCadence.PollSeconds;
-                if (!World.TryCapture(_bosses.Value, _ordinary.Value)) { Suspend(World.UnavailableReason, now); return; }
-                if (World.LastFailure != null) ReportFailure(World.LastFailure);
+                if (!World.TryCapture(_bosses.Value, _ordinary.Value)) { Pause(World.UnavailableReason, now); return; }
+                if (World.LastFailure != null) Report(ref _lastFailure, World.LastFailure);
+                else _lastFailure = null;
                 if (_session != World.Session)
                 {
                     Halt();
                     _session = World.Session;
                 }
+                _ready = true;
                 ReportStatus(ActiveStatus, now);
             }
-            if (_session == 0) return;
+            if (!_ready) return;
             // Starts are checked every frame against the latest snapshot so a shared-channel turn is not lost.
             if (!Tracker.TryChoose(World.Selected, now, out var cue))
             { WorldAudioReservation.Cancel(WorldAudioSource.Enemy); return; }
@@ -74,13 +77,14 @@ internal static class EnemyCueSounds
             Tracker.MarkPlayed(cue, now);
             _audio.Play(EnemyCueSynthesizer.Synthesize(cue.Kind, cue.Pan, cue.Forward, _volume.Value / 100f));
             _played++;
-            _lastFailure = null;
+            _lastError = null;
         }
         catch (Exception ex)
         {
             Halt();
             _session = 0;
-            ReportFailure(ex.Message);
+            _ready = false;
+            Report(ref _lastError, ex.Message);
         }
     }
 
@@ -123,14 +127,24 @@ internal static class EnemyCueSounds
     {
         Halt();
         _session = 0;
+        _ready = false;
         World.Reset();
         ReportStatus(reason, now);
     }
 
-    private static void ReportFailure(string message)
+    // A failed capture silences without resetting cadence, so a brief gap in the same session does not burst.
+    private static void Pause(string reason, double now)
     {
-        if (_lastFailure == message) return;
-        _lastFailure = message;
+        WorldAudioReservation.Cancel(WorldAudioSource.Enemy);
+        if (_ready) _audio?.Silence();
+        _ready = false;
+        ReportStatus(reason, now);
+    }
+
+    private static void Report(ref string last, string message)
+    {
+        if (last == message) return;
+        last = message;
         Plugin.Log.LogWarning($"Enemy cues unavailable: {message}");
     }
 
@@ -152,6 +166,7 @@ internal static class EnemyCueSounds
     {
         Halt();
         _session = 0;
+        _ready = false;
         World.Reset();
         _audio?.Dispose();
         _audio = null;
@@ -159,6 +174,6 @@ internal static class EnemyCueSounds
         _volume = null;
         _nextPoll = _nextAudioRetry = _nextDiagnostic = 0;
         _played = 0;
-        _status = _lastFailure = _lastAudioFailure = null;
+        _status = _lastFailure = _lastError = _lastAudioFailure = null;
     }
 }

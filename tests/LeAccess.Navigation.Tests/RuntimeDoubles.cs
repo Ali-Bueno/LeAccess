@@ -100,8 +100,13 @@ namespace UnityEngine.AI
         public int agentTypeID = 0;
     }
     internal struct NavMeshHit { public Vector3 position; }
+    internal struct NavMeshBuildSettings { public float agentRadius, agentClimb; }
     internal static class NavMesh
     {
+        public static NavMeshBuildSettings Settings = new() { agentRadius = float.NaN, agentClimb = float.NaN };
+        public static Func<Vector3, float, Vector3?> TargetSample;
+        public static int Rays;
+        public static NavMeshBuildSettings GetSettingsByID(int type) => Settings;
         public static float Depth = 20;
         public static bool OriginAvailable = true;
         public static bool ThrowOnQuery;
@@ -115,12 +120,15 @@ namespace UnityEngine.AI
             SampleRadius = radius;
             Filters.Add((type, mask));
             if (ThrowOnQuery) throw new InvalidOperationException("Simulated native query failure");
+            if (TargetSample != null && TargetSample(position, radius) is { } target)
+            { hit = new NavMeshHit { position = target }; return true; }
             hit = new NavMeshHit { position = position + SampleOffset };
-            return OriginAvailable;
+            return OriginAvailable && TargetSample == null;
         }
         public static bool RaycastFilter(Vector3 position, Vector3 target, out NavMeshHit hit, int type, int mask)
         {
             Filters.Add((type, mask));
+            Rays++;
             var direction = new Vector3(target.x - position.x, 0, target.z - position.z);
             float length = MathF.Sqrt(direction.sqrMagnitude);
             direction.Normalize();
