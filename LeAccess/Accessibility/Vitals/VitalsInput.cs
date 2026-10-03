@@ -1,4 +1,5 @@
 using System;
+using LeAccess.Accessibility.Announcements;
 using Rewired;
 using UnityEngine;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
@@ -14,10 +15,7 @@ internal static class VitalsInput
     {
         try
         {
-            if (key != KeyCode.None && !Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.RightControl) &&
-                !Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.RightAlt) &&
-                !Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift) && Input.GetKeyDown(key))
-                return true;
+            if (MenuDetailInput.KeyPressed(key)) return true;
         }
         catch (Exception ex) { ReportFailure("Keyboard", ex, ref _keyboardFailure); }
         if (!controllerEnabled) return false;

@@ -174,5 +174,13 @@
   "guidance.direction.down": "abajo",
   "guidance.direction.down_left": "abajo a la izquierda",
   "guidance.direction.left": "izquierda",
-  "guidance.direction.up_left": "arriba a la izquierda"
+  "guidance.direction.up_left": "arriba a la izquierda",
+  "enemy_scan.none": "Sin enemigos cerca",
+  "enemy_scan.count_one": "1 enemigo cerca",
+  "enemy_scan.count_many": "{0} enemigos cerca",
+  "enemy_scan.entry": "{0}, {1}, unas {2} unidades",
+  "enemy_scan.entry_boss": "{0}, jefe, {1}, unas {2} unidades",
+  "enemy_scan.unnamed": "Enemigo desconocido",
+  "enemy_scan.direction_here": "sobre ti",
+  "enemy_scan.unavailable": "El escaneo de enemigos no está disponible ahora"
 }

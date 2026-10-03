@@ -8,6 +8,7 @@
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/Combat/CombatAccessibility.cs" Link="CombatAccessibility.cs" />
     <Compile Include="../../LeAccess/Accessibility/Combat/NearestEnemyAnnouncementState.cs" Link="NearestEnemyAnnouncementState.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Combat/HostileRegistry.cs" Link="HostileRegistry.cs" />
     <Compile Include="../../LeAccess/Accessibility/Combat/NearestEnemyProbe.cs" Link="NearestEnemyProbe.cs" />
     <Compile Include="../../LeAccess/Accessibility/Combat/NearestEnemySelection.cs" Link="NearestEnemySelection.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />

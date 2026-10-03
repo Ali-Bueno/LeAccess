@@ -18,6 +18,11 @@ internal static class MenuDetailInput
     internal static bool IsDownPush(float x, float y, float previousX, float previousY) =>
         IsUpPush(x, -y, previousX, -previousY);
 
+    internal static bool KeyPressed(KeyCode key) => key != KeyCode.None &&
+        !Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.RightControl) &&
+        !Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.RightAlt) &&
+        !Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift) && Input.GetKeyDown(key);
+
     internal static bool ReadRequested() => ReadStickRequested(up: true);
     internal static bool ReadGuidanceRequested() => ReadStickRequested(up: false);
 

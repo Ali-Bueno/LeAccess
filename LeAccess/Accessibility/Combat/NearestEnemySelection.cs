@@ -17,10 +17,13 @@ internal struct NearestEnemySelection
         _hasCandidate = false;
     }
 
+    internal static bool Contains(float rangeSquared, float distanceSquared) =>
+        float.IsFinite(rangeSquared) && float.IsFinite(distanceSquared) &&
+        distanceSquared >= 0 && distanceSquared <= rangeSquared;
+
     internal bool Consider(int id, float distanceSquared)
     {
-        if (!float.IsFinite(_rangeSquared) || !float.IsFinite(distanceSquared) ||
-            distanceSquared < 0 || distanceSquared > _rangeSquared) return false;
+        if (!Contains(_rangeSquared, distanceSquared)) return false;
         if (_hasCandidate && (distanceSquared > _nearestDistanceSquared ||
             (distanceSquared == _nearestDistanceSquared && id >= _nearestId))) return false;
 

@@ -174,5 +174,13 @@
   "guidance.direction.down": "down",
   "guidance.direction.down_left": "down and left",
   "guidance.direction.left": "left",
-  "guidance.direction.up_left": "up and left"
+  "guidance.direction.up_left": "up and left",
+  "enemy_scan.none": "No enemies nearby",
+  "enemy_scan.count_one": "1 enemy nearby",
+  "enemy_scan.count_many": "{0} enemies nearby",
+  "enemy_scan.entry": "{0}, {1}, about {2} units",
+  "enemy_scan.entry_boss": "{0}, boss, {1}, about {2} units",
+  "enemy_scan.unnamed": "Unknown enemy",
+  "enemy_scan.direction_here": "right on you",
+  "enemy_scan.unavailable": "The enemy scan is currently unavailable"
 }

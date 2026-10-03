@@ -41,7 +41,7 @@ internal static class GuidanceAccessibility
             var keyboard = ScreenKeyboardManager.Instance;
             if (otherContentActive || NavigationAudioState.IsSuspended || !GameplayInputState.OwnsInput() ||
                 IsAlive(input) && input.isInputFieldActive || IsAlive(keyboard) && keyboard._enabled) return;
-            requested = KeyPressed() || _controller.Value && MenuDetailInput.ReadGuidanceRequested();
+            requested = MenuDetailInput.KeyPressed(_reportKey.Value) || _controller.Value && MenuDetailInput.ReadGuidanceRequested();
             if (!requested) return;
             if (!ScreenReader.IsAvailable()) return;
             if (!MapSectionWorld.TryCapturePlayer(out var world)) { Reset(); Speak("guidance.unavailable"); return; }
@@ -114,11 +114,6 @@ internal static class GuidanceAccessibility
         if (found) _selected = target.Id;
         return found;
     }
-
-    private static bool KeyPressed() => _reportKey.Value != KeyCode.None &&
-        !Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.RightControl) &&
-        !Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.RightAlt) &&
-        !Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift) && Input.GetKeyDown(_reportKey.Value);
 
     private static void Speak(string key) => ScreenReader.Speak(ModText.Get(key), interrupt: true);
 

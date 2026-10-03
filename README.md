@@ -93,6 +93,11 @@ During an active Morditas gauntlet, a validated native return arrow temporarily
 takes priority and names the way back to the encounter. It uses the same route
 checks and manual bearing fallback, and stops when the native arrow hides.
 
+During gameplay, push the **right stick up** from neutral, or press **F7**, for the
+[enemy scan](reference/enemy-scan.md). It speaks how many living hostile enemies are
+within the game's skill-targeting range, then the three nearest with their direction
+(relative to the camera) and distance in units. Bosses and minibosses are tagged.
+
 [Automatic orientation](reference/automatic-orientation.md) also works without a
 button. It names a stable visible destination with a verified walking route,
 then repeats a quiet directional sound toward the next path corner. The pulses

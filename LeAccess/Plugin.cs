@@ -60,6 +60,7 @@ public class Plugin : BasePlugin
         PassiveGuidanceAccessibility.Initialize(Config);
         QuestUpdateAccessibility.Initialize(Config);
         CombatAccessibility.Initialize(Config);
+        EnemyScanAccessibility.Initialize(Config);
         VitalsAccessibility.Initialize(Config);
         BossLifeAccessibility.Initialize(Config);
         LandmarkAccessibility.Initialize(Config);
@@ -102,6 +103,7 @@ public class Plugin : BasePlugin
         NotificationAnnouncer.Reset();
         ButtonPromptAnnouncer.Reset();
         CombatAccessibility.Cleanup();
+        EnemyScanAccessibility.Cleanup();
         VitalsAccessibility.Cleanup();
         BossLifeAccessibility.Cleanup();
         LandmarkAccessibility.Cleanup();

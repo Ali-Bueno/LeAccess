@@ -1,4 +1,3 @@
-using System;
 using LeAccess.Accessibility.Utils;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -9,51 +8,28 @@ namespace LeAccess.Accessibility.Combat;
 internal static class NearestEnemyProbe
 {
     internal static string LastStatus { get; private set; }
-    internal static string LastFailure { get; private set; }
+    internal static string LastFailure => HostileRegistry.LastFailure;
 
     internal static string FindName(ActorVisuals player, float range)
     {
         LastStatus = "online visuals unavailable";
-        LastFailure = null;
-        var manager = ActorManager.instance;
-        var scene = SceneManager.GetActiveScene();
-        if (!IsAlive(manager) || !IsAvailable(player, scene)) return null;
-        var groups = manager.visuals;
-        var alignment = player.getAlignment();
-        if (groups == null || groups.WasCollected || !IsAlive(alignment)) return null;
-
-        var position = player.transform.position;
         var selection = new NearestEnemySelection(range);
         ActorVisuals nearest = null;
         int examined = 0, living = 0, inRange = 0;
+        float rangeSquared = range * range;
+        var position = IsAlive(player) ? player.transform.position : default;
 
         // The game's maintained registry includes online enemies, without searching the Unity scene.
-        foreach (var group in groups)
+        bool walked = HostileRegistry.Visit(player, (enemy, own) =>
         {
-            if (group == null || group.WasCollected || !IsAlive(group.alignment) ||
-                !alignment.IsFoe(group.alignment)) continue;
-            var enemies = group.visuals;
-            if (enemies == null || enemies.WasCollected) continue;
-
-            for (int index = 0; index < enemies.Count; index++)
-            {
-                try
-                {
-                    examined++;
-                    var enemy = enemies[index];
-                    if (!IsAvailable(enemy, scene) || enemy.Pointer == player.Pointer ||
-                        enemy.dead || enemy.isInvalidTarget()) continue;
-                    var enemyAlignment = enemy.getAlignment();
-                    if (!IsAlive(enemyAlignment) || !alignment.IsFoe(enemyAlignment)) continue;
-                    living++;
-                    float distanceSquared = (enemy.transform.position - position).sqrMagnitude;
-                    if (float.IsFinite(distanceSquared) && distanceSquared <= range * range) inRange++;
-                    if (selection.Consider(enemy.GetInstanceID(), distanceSquared)) nearest = enemy;
-                }
-                catch (Exception ex) { LastFailure = ex.GetType().Name + ": " + ex.Message; }
-            }
-        }
-
+            examined++;
+            if (!HostileRegistry.IsLivingFoe(enemy, own)) return;
+            living++;
+            float distanceSquared = (enemy.transform.position - position).sqrMagnitude;
+            if (NearestEnemySelection.Contains(rangeSquared, distanceSquared)) inRange++;
+            if (selection.Consider(enemy.GetInstanceID(), distanceSquared)) nearest = enemy;
+        });
+        if (!walked) return null;
         LastStatus = $"registry=online visuals examined={examined} living={living} in_range={inRange}";
         if (!IsAlive(nearest)) return null;
         return ReadName(nearest.BaseDisplayInformation);
@@ -62,45 +38,23 @@ internal static class NearestEnemyProbe
     internal static string FindName(Actor player, float range)
     {
         LastStatus = "offline actors unavailable";
-        LastFailure = null;
-        var manager = ActorManager.instance;
-        var scene = SceneManager.GetActiveScene();
-        if (!IsAlive(manager) || !IsAvailable(player, scene)) return null;
-        var groups = manager.actors;
-        var alignment = player.GetAlignment();
-        if (groups is null || groups.WasCollected || !IsAlive(alignment)) return null;
-
-        var position = player.position();
         var selection = new NearestEnemySelection(range);
         Actor nearest = null;
         int examined = 0, living = 0, inRange = 0;
+        float rangeSquared = range * range;
+        var position = IsAlive(player) ? player.position() : default;
 
         // ActorManager.GetTargetableActors uses actors offline and visuals on an online client.
-        foreach (var group in groups)
+        bool walked = HostileRegistry.Visit(player, (enemy, own) =>
         {
-            if (group is null || group.WasCollected || !IsAlive(group.alignment) ||
-                !alignment.IsFoe(group.alignment)) continue;
-            var enemies = group.actors;
-            if (enemies is null || enemies.WasCollected) continue;
-            for (int index = 0; index < enemies.Count; index++)
-            {
-                try
-                {
-                    examined++;
-                    var enemy = enemies[index];
-                    if (!IsAvailable(enemy, scene) || enemy.Pointer == player.Pointer ||
-                        enemy.isInvalidTarget()) continue;
-                    var enemyAlignment = enemy.GetAlignment();
-                    if (!IsAlive(enemyAlignment) || !alignment.IsFoe(enemyAlignment)) continue;
-                    living++;
-                    float distanceSquared = (enemy.position() - position).sqrMagnitude;
-                    if (float.IsFinite(distanceSquared) && distanceSquared <= range * range) inRange++;
-                    if (selection.Consider(enemy.GetInstanceID(), distanceSquared)) nearest = enemy;
-                }
-                catch (Exception ex) { LastFailure = ex.GetType().Name + ": " + ex.Message; }
-            }
-        }
-
+            examined++;
+            if (!HostileRegistry.IsLivingFoe(enemy, own)) return;
+            living++;
+            float distanceSquared = (enemy.position() - position).sqrMagnitude;
+            if (NearestEnemySelection.Contains(rangeSquared, distanceSquared)) inRange++;
+            if (selection.Consider(enemy.GetInstanceID(), distanceSquared)) nearest = enemy;
+        });
+        if (!walked) return null;
         LastStatus = $"registry=offline actors examined={examined} living={living} in_range={inRange}";
         return IsAlive(nearest) ? ReadOfflineName(nearest) : null;
     }
