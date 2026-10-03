@@ -5,6 +5,7 @@ int checks = 0;
 void Check(bool condition, string name) { checks++; if (!condition) throw new Exception(name); }
 var item = new ItemDataUnpacked { LoreText = "Una espada forjada en otra era.", FactionRequirement = "Requiere rango 3 del Círculo de la Fortuna" };
 var container = new ItemContainerUI { currentlySelectedItem = new ItemContainerEntry { data = item } };
+container.Container.Entry = container.currentlySelectedItem;
 NavigationManager.currentlySelected = container;
 var info = new ItemTooltipInfo
 {

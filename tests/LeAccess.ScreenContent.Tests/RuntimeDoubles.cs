@@ -228,6 +228,7 @@ namespace LeAccess.Accessibility
 {
     internal static class ScreenReader
     {
+        public static bool SpokeThisFrame;
         public static readonly List<(string Text, bool Interrupt)> Messages = new();
         public static bool IsAvailable() => true;
         public static void Speak(string text, bool interrupt) => Messages.Add((text, interrupt));

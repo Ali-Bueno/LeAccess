@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/Announcements/NotificationAnnouncer.cs" Link="NotificationAnnouncer.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Announcements/EncounterCountdownReader.cs" Link="EncounterCountdownReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/UiVisibility.cs" Link="UiVisibility.cs" />
     <Compile Include="../UiScreenGeometryStub.cs" Link="UiScreenGeometryStub.cs" />
     <Compile Include="../UiReadingOrderStub.cs" Link="UiReadingOrderStub.cs" />

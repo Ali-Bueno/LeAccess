@@ -70,3 +70,49 @@ manual properties, unidentified items, packed/unpacked identity, hidden or forei
 owners, missing/collected data, exceptions, and selection/panel changes during
 lookup. The production no-deploy build passes without warnings/errors. The game
 was not launched; live merchant navigation and listening remain user tests.
+
+## Stash and merchant ownership audit — build 25690669
+
+The follow-up reproduced two source-level gaps. Tab labels only matched buttons
+on `ShopPanel._shop`, although `_buyback` owns a separate `BaseShopContainerUI`
+with its own shop/buyback buttons. Both exact typed owners are now considered
+independently; an absent, collected or differently typed shop grid no longer hides
+the live buyback header. Visible button/panel and native localization guards remain.
+
+Stash and shop focus formerly trusted `currentlySelectedItem` even after its
+backing tab or stock changed. `InventorySelectionReader.TryGetEntry` now requires
+a live backing `Container`, and validates stash/shop hovered items against
+`Container.GetEntryAt(hovered.Position)`. The stored entry must retain the selected
+native pointer or nonempty serialized item bytes. Missing, collected or different stored data is unavailable;
+it cannot supply names, actions, prices or properties from the previous tab/stock.
+Matching packed/unpacked identities retain ownership. The existing final
+selection checks also catch stock/tab changes during model construction.
+
+Fresh build 25690669 interop confirms `ItemContainerEntry.Position`
+(`last epoch code/ItemContainerEntry.cs:155`) and the read-only `GetEntryAt` API.
+Native inspection using the matching staged address map found
+`StashItemContainerUI.get_Container` (`0x1464690`) returning the holder's
+`CurrentContainer`; `TabbedItemContainer.GetEntryAt` (`0x147D970`) reads its active
+tab index and delegates to the current `ItemContainer.GetEntryAt`. The holder
+also forwards to its active category (`0x145B010`). These are provenance addresses
+only; production code uses named APIs and item positions without offsets or scans.
+
+An independent native review confirmed shop and buyback inherit
+`ItemContainer.GetEntryAt` (`0x13EEDC0`) through `TradingContainerBase`; this method
+matches entry position plus item bounds, so the entry's top-left `Position` is a
+valid lookup coordinate even when controller focus lies in another covered cell.
+`ItemData.IdEquals` (`0x1201210`) delegates the `id` arrays to
+`ByteBufferExtensions.ByteArrayEquals` (`0x1B27360`), which accepts null/null and
+empty/empty. Distinct wrappers now need live nonempty IDs; exact native pointers
+remain valid when IDs are unavailable. These IDs are serialized item content,
+not globally unique instance identifiers: identical content can match, but the
+reader always uses the currently stored entry for its actual data and context.
+
+The source-linked suites pass **207 inventory checks** and **111 item model
+checks**, adding 38 checks for retained stock/tab items, backing-container
+lifetimes, packed identity, native item coordinates, construction-time changes
+and separately owned buyback headers, including missing-ID rejection and exact
+pointer acceptance. Production builds with
+`SkipPluginDeployment=true`, zero warnings/errors. No game/audio launch or
+transaction/navigation mutation was performed. Live stash folders, tabs, search,
+transfer actions and merchant controller/listening still require user validation.

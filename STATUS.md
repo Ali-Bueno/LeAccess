@@ -1,10 +1,9 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-03. Steam build **25690669** now has freshly generated interop
-and refreshed map resources. Menu, passive, skill, combat, NPC, radar and
-speech-connection fixes, plus native dungeon windows and dynamic objectives,
-pass all 51 host test suites. The rebuilt plugin is installed; current-build
-startup, online play and listening still need in-game validation.
+**Updated:** 2026-10-03. Further fixes cover stash/shop selection, forge and filter
+labels, repeated dialogue turns, tutorial priority and encounter countdowns.
+All 51 host suites pass; the rebuilt plugin is installed for Steam **25690669**.
+Startup, online play and listening on this build still need in-game validation.
 
 ## Current installation
 
@@ -16,13 +15,15 @@ startup, online play and listening still need in-game validation.
 - **Speech:** centralized Tolk/NVDA, now with bounded reconnection; see [connection lifecycle](reference/screen-reader-lifecycle.md).
 - **Maps:** 750 fixed sections across 58 layouts and three tent canopies independently re-extracted for the new build. [Provenance](reference/map-section-build-25690669.json).
 - **Backup:** previous interop and plugin in `C:\Users\ali-b\Documents\LeAccess backups\steam-build-25690669-20261003`. Previous installation and personal configuration retained.
+- **Previous plugin:** commit `322f3c5` installation preserved in `C:\Users\ali-b\Documents\LeAccess backups\pre-menu-audit-322f3c5-20261003`.
 - **Launch:** normally through Steam; online/offline remains the game's choice. No game or audio device was opened by this audit.
 
 ## Next checks and remaining scope
 
 **The user tests independently; do not launch the game without a new request.**
-First check startup/NVDA reconnect, equipped-item changes, menu/popup return,
-passives, dungeon instructions and dynamic objectives. Then check online speech,
+First check startup/NVDA reconnect, stash/shop tab changes, forge affix/shard
+controls, filter bounds, dialogue/tutorial handoffs and the Morditas abandonment
+notice. Then check equipped items, passives, dungeon objectives, online speech,
 route cadence/turns, world sounds and tent entry/departure.
 
 The [menu audit](reference/menu-visibility.md) still leaves complete vendor/stash,
@@ -33,8 +34,12 @@ kitchens, taverns, palace rooms and street names are not mapped; map overview an
 ground-material speech remain disabled by default per the user's preference.
 Compilation and host tests are evidence for their tested logic, not proof that
 every screen or gameplay encounter has been heard successfully.
-The next source investigation is the remaining specialized crafting/stash/vendor
-controls and hazard sources; the new native references now match the installed build.
+Next source investigations: rune/glyph selectors, forge preview and unavailable
+reasons, advanced filter conditions and editing feedback; see [verified control
+scope](reference/crafting-reading.md). [Hazard sources](reference/hazard-sources.md)
+distinguish the verified abandonment countdown from the still-unread return arrow
+and visual attack telegraphs. Recovery of still-visible content after rejected
+speech output also remains to be reviewed across readers.
 
 The older friend's ZIP remains local and unchanged; it does not include the new
 fixes. Source updates are to be pushed to GitHub after each verified batch, as
@@ -48,14 +53,14 @@ requested. No release or new ZIP has been requested.
 | Native hook safety | 46 checks; fresh build 25690669, 59 declarations / 58 distinct native targets validated against installed game. |
 | Reader recovery | Late/restarted NVDA is detected with bounded retries; failed output does not claim a speech frame. 34 checks. [Evidence/limits](reference/screen-reader-lifecycle.md); listening pending. |
 | Early online/offline selection | Empty native nullable no longer throws during readiness polling or erases the first click; observation failures retain intent, dispatch remains once-only. 56 checks; fresh startup listening pending. |
-| Menus/focus | Native mediator callbacks follow FocusedPanel; background/faded controls rejected. 178 menu + 63 settings-source checks. [Audit and limits](reference/menu-visibility.md); listening pending. |
-| Mod localization | Automatic game language, en/es catalogs, override and per-key fallback; 366 checks. |
+| Menus/focus | Native mediator callbacks follow FocusedPanel; background/faded controls rejected. 231 menu + 63 settings-source checks. [Audit and limits](reference/menu-visibility.md); listening pending. |
+| Mod localization | Automatic game language, en/es catalogs, override and per-key fallback; 372 checks. |
 | Return from Start | Character creation owner/control restored after pause closes; 134 checks. User confirms it works. |
 | Internal panel chatter | Removed; background Forge/Skill Tree opening or closing no longer speaks object names. |
-| Tutorials/popups/terms | Fully faded/culled modal content releases focus; mixed text follows screen positions and known draw order. Native nested modals remain independent. 187 checks. |
-| Dungeon/encounter instructions | Focused native dungeon/modal windows and visible echo/Morditas objectives now read. 187 screen-content + 78 dynamic checks. [Windows](reference/dungeon-warning-reading.md), [dynamic sources/limits](reference/dynamic-objectives.md); listening pending. |
-| Visible subtitles | Creation/movie captions have their own lifecycle. Ambient bark UI requires actual on-screen text, NPC interaction range or the player's own source; rejected distant lines cannot escape through the submitted-message fallback. 63 dialogue + 143 subtitle checks. Inspected Rogue opening narrative is audio-only. |
-| Hints/notifications | Button-first hints; item actions accompany selection instead of separate delayed hints. Native equip rejection notices allowed after brief focus speech. 79 binding/prompt + 50 notification checks. |
+| Tutorials/popups/terms | Hidden/faded modal content releases focus; passive tutorials now wait for dialogue and prior speech. Actual-service interaction tests preserve blocking modal priority. 200 checks. [Evidence](reference/announcement-lifecycle.md). |
+| Dungeon/encounter instructions | Focused native dungeon/modal windows and visible echo/Morditas objectives read. 200 screen-content + 78 dynamic checks. [Windows](reference/dungeon-warning-reading.md), [dynamic sources/limits](reference/dynamic-objectives.md); listening pending. |
+| Visible subtitles | Distinct identical dialogue turns now read; duplicate callbacks remain silent. Ambient barks retain visible text/range/source guards. 68 dialogue + 143 subtitle checks. Inspected Rogue opening narrative remains audio-only. |
+| Hints/notifications | Button-first action hints and equip rejection notices retained. Active abandonment countdown reads once per restart ahead of ambient narration; menus/typing retain priority. 79 binding/prompt + 103 notification checks. [Evidence](reference/announcement-lifecycle.md). |
 | Controller menu/zones | Announces opening with neutral stick, then selected localized option; fully faded wheels/sectors cannot speak retained models. 40 checks. Listening pending. |
 | Classes/masteries/realm | Season/legacy labels; descriptions manual. Disabled retained carousel and background mastery rejected. 102 checks; listening pending. |
 | Skills/assigned buttons | Pending references in other slots no longer hide verified assignments; readiness can recover within the first opening. Learned/unlock state retained. 177 checks; listening pending. |
@@ -63,7 +68,8 @@ requested. No release or new ZIP has been requested.
 | Quest journal | State follows title; active objectives named explicitly. Prior completed/failed objectives are labeled as this quest's history and read only manually, including UI fallback. 124 checks; listening pending. |
 | Automatic quest updates | Shared pacing/fair turns with dynamic objectives; deferred or unavailable quests release menu-notice priority. 100 checks. [Evidence](reference/quest-updates.md). Listening pending. |
 | Character name editing | User confirms the latest typing/return fix works. Circle keeps the name; physical entry and owned device transitions retain focus. Eight hooks, 160 checks. |
-| Inventory/merchants | [Equipped slots](reference/equipped-items.md) read worn items/actions; manual inspection rechecks foreground and selection immediately before speech. 178 service + 102 model checks; listening pending. |
+| Inventory/merchants | Active stash/shop contents replace stale hover data; separate buyback headers recognized. [Equipped slots](reference/equipped-items.md) and final selection guards retained. 207 service + 111 model checks. [Evidence](reference/merchant-reading.md); listening pending. |
+| Forge/filter controls | Typed add/upgrade affix and shard reading; six potential/affix-count ranges now include their property heading. 53 new regressions within the 231 menu checks. [Scope and limits](reference/crafting-reading.md); listening pending. |
 | Ground loot | New targeting API, brief current-item names; 67 checks. Listening pending. |
 | Radar | Initial/resumed wall memory prevents false openings on retreat; owned online visuals supply body radius. 447 navigation checks; sound/control vocabulary unchanged. Listening pending. |
 | Objective orientation | Right-stick-down/F6: visible tracked objective or named exit, verified path corner or explicit bearing-only fallback, distance/progress. 147 service/route + 91 target checks. [Controls and limits](reference/objective-orientation.md). Listening pending. |
@@ -84,8 +90,8 @@ requested. No release or new ZIP has been requested.
 ## Validation and references
 
 - `dotnet build LeAccess/LeAccess.csproj --no-restore`: zero warnings/errors; deployed with the game stopped.
-- All **51 C# suites / 57,522 checks** passed, plus **24** missing-audio-resource checks and **20** Python map-extractor tests. Native safety includes the current loader fingerprint and **59 declarations / 58 targets**.
-- Built and installed plugin SHA-256 match: `6658D1484251849E78A435B84AA045609CD0CFCD8492D0F3F3D963A7A1028C30`.
+- All **51 C# suites / 57,690 checks** passed, plus **24** missing-audio-resource checks and **20** Python map-extractor tests. This batch adds 168 checks. Native safety includes the current loader fingerprint and **59 declarations / 58 targets**.
+- Built and installed plugin SHA-256 match: `CB65BE07FFA29C96730353FBC7DA71029E791D5D159F3B634D3D64986BEA8415`.
 - Both installed configuration files and both personal translation catalogs retain their original hashes. No game or audio device launched; host tests do not establish live UI visibility or audible output.
 
 Current-build regeneration and native audit: [Steam port notes](reference/steam-port.md).

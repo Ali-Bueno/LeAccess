@@ -24,6 +24,31 @@ internal static class MerchantMenuTests
         owner.isActiveAndEnabled = false;
         check(MerchantMenuReader.TryReadTab(buybackButton.gameObject, out _), "Inactive shop grid does not hide the separately visible buyback tab");
         owner.isActiveAndEnabled = true;
+        var activeShopButton = new Selectable { Text = new TMP_Text { text = "SHOP" } };
+        var activeBuybackButton = new Selectable { Text = new TMP_Text { text = "Recompra activa" } };
+        var buybackOwner = new BaseShopContainerUI { shopBtn = activeShopButton, buyBackBtn = activeBuybackButton };
+        panel._buyback = buybackOwner;
+        check(MerchantMenuReader.TryReadTab(activeShopButton.gameObject, out text) && text == "Tienda",
+            "Buyback container's separately owned shop button uses the native tab label");
+        check(MerchantMenuReader.TryReadTab(activeBuybackButton.gameObject, out text) && text == "Recompra activa",
+            "Buyback container's visible buyback button does not depend on the inactive shop grid's button identities");
+        foreach (string missingShop in new[] { "missing", "collected", "different type" })
+        {
+            panel._shop = missingShop == "missing" ? null : missingShop == "different type" ? new ItemContainerUI() : owner;
+            owner.WasCollected = missingShop == "collected";
+            check(MerchantMenuReader.TryReadTab(activeBuybackButton.gameObject, out _),
+                "Live buyback headers remain readable when shop reference is " + missingShop);
+        }
+        owner.WasCollected = false;
+        panel._shop = owner;
+        buybackOwner.WasCollected = true;
+        check(!MerchantMenuReader.TryReadTab(activeBuybackButton.gameObject, out _),
+            "Collected buyback owner cannot supply retained buttons");
+        buybackOwner.WasCollected = false;
+        activeBuybackButton.gameObject.activeInHierarchy = false;
+        check(!MerchantMenuReader.TryReadTab(activeBuybackButton.gameObject, out _),
+            "Hidden buyback header cannot inherit another container's visible label");
+        activeBuybackButton.gameObject.activeInHierarchy = true;
         ModText.SetLanguage("es");
         buybackButton.Text.alpha = 0;
         check(MerchantMenuReader.TryReadTab(buybackButton.gameObject, out text) && text == ModText.Get("merchant.buyback"),

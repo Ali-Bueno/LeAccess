@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using LeAccess.Accessibility.Announcements;
 using LeAccess.Accessibility.Utils;
@@ -10,17 +11,18 @@ namespace LeAccess.Accessibility.ScreenContent;
 
 internal static class ScreenContentReader
 {
-    internal static string Read(GameObject root, TMP_Text header, TMP_Text body)
+    internal static string Read(GameObject root, TMP_Text header, TMP_Text body,
+        Func<TMP_Text, string> readLabel = null)
     {
         if (!UiVisibility.IsVisible(root)) return null;
         var fragments = new List<UiReadingOrder.Fragment>();
         var seen = new HashSet<int>();
-        Add(root, header, fragments, seen);
-        Add(root, body, fragments, seen);
+        Add(root, header, fragments, seen, readLabel);
+        Add(root, body, fragments, seen, readLabel);
         // Limit discovery to the popup that the game's display lifecycle identified.
         var labels = root.GetComponentsInChildren<TMP_Text>(false);
         if (labels != null && !labels.WasCollected)
-            foreach (var label in labels) Add(root, label, fragments, seen);
+            foreach (var label in labels) Add(root, label, fragments, seen, readLabel);
         var legacyLabels = root.GetComponentsInChildren<Text>(false);
         if (legacyLabels != null && !legacyLabels.WasCollected)
             foreach (var label in legacyLabels)
@@ -29,11 +31,12 @@ internal static class ScreenContentReader
         return ScreenContentTracker.Combine(UiReadingOrder.Read(fragments));
     }
 
-    private static void Add(GameObject root, TMP_Text label, List<UiReadingOrder.Fragment> fragments, HashSet<int> seen)
+    private static void Add(GameObject root, TMP_Text label, List<UiReadingOrder.Fragment> fragments,
+        HashSet<int> seen, Func<TMP_Text, string> readLabel)
     {
         if (!TextUtils.IsVisibleLabel(label) || !label.transform.IsChildOf(root.transform) ||
             IsInputValue(label) || !seen.Add(label.GetInstanceID())) return;
-        fragments.Add(new(label, TextUtils.CleanText(label.text)));
+        fragments.Add(new(label, TextUtils.CleanText(readLabel != null ? readLabel(label) : label.text)));
     }
 
     private static bool IsInputValue(Component label) =>

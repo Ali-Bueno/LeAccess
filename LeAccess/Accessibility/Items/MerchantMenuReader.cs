@@ -19,17 +19,23 @@ internal static class MerchantMenuReader
         {
             if (!IsAlive(element) || !UiVisibility.IsVisible(element) || !IsAlive(UIBase.instance)) return false;
             var panel = UIBase.GetPanelIfOpen<ShopPanel>();
-            if (!IsAlive(panel) || !panel.isActiveAndEnabled || !UiVisibility.IsVisible(panel.gameObject) ||
-                !IsAlive(panel._shop)) return false;
-            var owner = panel._shop.TryCast<BaseShopContainerUI>();
-            if (!IsAlive(owner)) return false;
-            if (Matches(element, owner.shopBtn))
-                text = ReadLabel(owner.shopBtn, "Shop_Panel_Title", "merchant.shop");
-            else if (Matches(element, owner.buyBackBtn))
-                text = ReadLabel(owner.buyBackBtn, "Shop_Panel_BuyBack_Button", "merchant.buyback");
-            return !string.IsNullOrWhiteSpace(text);
+            if (!IsAlive(panel) || !panel.isActiveAndEnabled || !UiVisibility.IsVisible(panel.gameObject)) return false;
+            return TryReadOwnedTab(panel._shop, element, out text) ||
+                TryReadOwnedTab(panel._buyback, element, out text);
         }
         catch (Exception) { text = null; return false; }
+    }
+
+    private static bool TryReadOwnedTab(ItemContainerUI container, GameObject element, out string text)
+    {
+        text = null;
+        var owner = IsAlive(container) ? container.TryCast<BaseShopContainerUI>() : null;
+        if (!IsAlive(owner)) return false;
+        if (Matches(element, owner.shopBtn))
+            text = ReadLabel(owner.shopBtn, "Shop_Panel_Title", "merchant.shop");
+        else if (Matches(element, owner.buyBackBtn))
+            text = ReadLabel(owner.buyBackBtn, "Shop_Panel_BuyBack_Button", "merchant.buyback");
+        return !string.IsNullOrWhiteSpace(text);
     }
 
     private static bool Matches(GameObject element, Selectable button) => IsAlive(button) &&

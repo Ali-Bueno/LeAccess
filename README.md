@@ -14,6 +14,7 @@ the latest installed build. Technical findings and reproduction notes live in
 - Visible dungeon entry/exit, boss confirmation and native modal instructions.
 - Skill and passive details, equipped-skill buttons, inventory actions and quest
   journal reading.
+- Forge affix actions and shard names, types, available quantities and manual details.
 - Visible dialogue, examination descriptions, NPC subtitles and cinematic text.
 - Nearby NPC, enemy, loot, destination and other-player names.
 - Health/mana feedback and directional navigation and world-object audio cues.
@@ -45,12 +46,20 @@ updates wait while menus or conversations own input.
 [Dynamic echo and encounter instructions](reference/dynamic-objectives.md)
 read their visible objective/modifier text and share pacing and turns with quest
 updates. Queued gameplay text yields to native notices while menus own input.
+The visible [Morditas abandonment countdown](reference/announcement-lifecycle.md)
+speaks its current instruction once per countdown or restart. It takes priority
+over ambient narration during gameplay and waits while menus or typing own input.
 Items announce their available actions with the button first; merchant items
 include purchase, sale or repurchase prices. Skills announce learned state and
 their declared level or passive-point requirement.
 [Equipped slots](reference/equipped-items.md) announce the localized slot and
 actual worn item, including changes made while focus stays on the same slot.
 An empty slot is distinguished from temporarily unavailable item data.
+Stash and shop reading verifies the item against the current tab or stock before
+announcing it. [Forge and filter controls](reference/crafting-reading.md) read the
+selected affix action, rendered tier and available shards; right-stick-up includes
+visible shard improvement details. Supported potential and affix-count filter
+bounds include their property name alongside the minimum or maximum value.
 Item inspection can use the game's tooltip formatter when the visual tooltip is
 unavailable, including modifiers, lore and requirements.
 Character-name screen keyboards require an explicit click or submit on the name

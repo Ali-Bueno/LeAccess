@@ -16,6 +16,7 @@ internal static class Program
         try
         {
             ReadingAndLifecycle();
+            ConsecutiveIdenticalNativeSubtitles();
             VisibilityAndPriority();
             ResponseOwnership();
             NativeUiDiscovery();
@@ -100,6 +101,39 @@ internal static class Program
         ui.WasCollected = true;
         Tick();
         Check(!DialogueAnnouncer.HasActiveContent, "Collected UI wrappers are rejected before native null operators.");
+    }
+
+    private static void ConsecutiveIdenticalNativeSubtitles()
+    {
+        var ui = Create();
+        ui.dialogue.npcSubtitle = ui.currentSubtitleControls;
+        var first = new Subtitle { formattedText = new FormattedText { text = "Sí." } };
+        var manager = new GameObject().Add(new DialogueSystemController { currentDialogueUI = ui,
+            conversationController = new ConversationController { state = new ConversationState { subtitle = first } } });
+        PixelCrushers.DialogueSystem.DialogueManager.instance = manager;
+        ui.currentSubtitleControls.line.text = "Sí.";
+        DialogueAnnouncer.ShowSubtitle(ui, first); Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 1, "The first native occurrence speaks once.");
+        var next = new Subtitle { formattedText = new FormattedText { text = "Sí." } };
+        manager.conversationController.state.subtitle = next;
+        DialogueAnnouncer.ShowSubtitle(ui, next); Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text == "Erza: Sí.",
+            "A new native subtitle identity can repeat identical speaker/text without an intervening hide.");
+        DialogueAnnouncer.ShowSubtitle(ui, next); Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 2, "Duplicate hooks for the same native occurrence remain quiet.");
+        ScreenContentAnnouncer.HasActiveContent = true;
+        var deferred = new Subtitle { formattedText = new FormattedText { text = "Sí." } };
+        manager.conversationController.state.subtitle = deferred;
+        DialogueAnnouncer.ShowSubtitle(ui, deferred); Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 2 && DialogueAnnouncer.HasPendingContent,
+            "An identical new occurrence stays pending behind a visible modal.");
+        manager.conversationController.state.subtitle = new Subtitle { formattedText = new FormattedText { text = "Ahora." } };
+        ui.currentSubtitleControls.line.text = "Ahora.";
+        DialogueAnnouncer.ShowSubtitle(ui, manager.conversationController.state.subtitle);
+        Tick(); Tick(); ScreenContentAnnouncer.HasActiveContent = false; Tick();
+        Check(ScreenReader.Messages.Count == 3 && ScreenReader.Messages.Last().Text == "Erza: Ahora.",
+            "Only the latest native subtitle survives a deferred repeated occurrence.");
+        PixelCrushers.DialogueSystem.DialogueManager.instance = null; DialogueAnnouncer.Reset();
     }
 
     private static void ResponseOwnership()

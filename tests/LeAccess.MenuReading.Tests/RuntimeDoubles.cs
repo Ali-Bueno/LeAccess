@@ -132,7 +132,7 @@ namespace UnityEngine.UI
         public Canvas canvas => GetComponentInParent<Canvas>();
     }
     public class MaskableGraphic : Graphic { public bool maskable = true; }
-    public class Selectable : Component { }
+    public class Selectable : Component { public bool Interactable = true; public bool IsInteractable() => Interactable; }
     public class Toggle : Selectable { public bool isOn; public Component group; }
     public class Slider : Selectable { public float value; }
     public class Button : Selectable { }
@@ -165,7 +165,8 @@ namespace UnityEngine.UI.Extensions.ColorPicker { public class ColorPickerContro
 public class InfoForTooltip : UnityEngine.Component
 {
     public TooltipInfo tooltipInfo;
-    public void SetText() { }
+    public int SetTextCalls;
+    public void SetText() { SetTextCalls++; }
 }
 public class NumberFloatInput : UnityEngine.Component { public TMPro.TMP_InputField _input; }
 public class SliderInput : UnityEngine.Component

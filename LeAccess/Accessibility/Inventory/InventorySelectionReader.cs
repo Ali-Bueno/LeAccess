@@ -49,7 +49,24 @@ internal static class InventorySelectionReader
                 source.GetContainerID() != container.identifier) return false;
             entry = source.GetEntryAt(container.currentFocusSlot);
         }
-        else entry = container.currentlySelectedItem;
+        else
+        {
+            var source = container.Container;
+            if (source is null || source.WasCollected) return false;
+            var hovered = container.currentlySelectedItem;
+            if (hovered is not null && hovered.WasCollected) return false;
+            if (hovered is not null && source.Type is ContainerType.STASH or ContainerType.SHOP)
+            {
+                // Stash tabs and shop stock can change before the retained hover entry is refreshed.
+                var item = hovered.data;
+                var stored = source.GetEntryAt(hovered.Position);
+                var actual = stored is not null && !stored.WasCollected ? stored.data : null;
+                if (item is null || item.WasCollected || actual is null || actual.WasCollected ||
+                    !MatchesItem(actual, item)) return false;
+                entry = stored;
+            }
+            else entry = hovered;
+        }
         return entry is null || !entry.WasCollected;
     }
 
@@ -61,7 +78,18 @@ internal static class InventorySelectionReader
             !TryGetEntry(container, out var entry) || entry is null) return false;
         var actual = entry.data;
         return actual is not null && !actual.WasCollected &&
-            (actual.Pointer == item.Pointer || actual.IdEquals(item));
+            MatchesItem(actual, item);
+    }
+
+    private static bool MatchesItem(ItemData actual, ItemData item)
+    {
+        if (actual.Pointer == item.Pointer) return true;
+        // IdEquals compares serialized bytes and accepts null/null or empty/empty.
+        // Those cannot identify distinct packed/unpacked wrappers.
+        var actualId = actual.id;
+        var itemId = item.id;
+        return actualId is not null && !actualId.WasCollected && actualId.Length > 0 &&
+            itemId is not null && !itemId.WasCollected && itemId.Length > 0 && actual.IdEquals(item);
     }
 
     internal static bool IsEquipmentSlot(ContainerID id) => id is

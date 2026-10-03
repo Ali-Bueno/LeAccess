@@ -75,10 +75,17 @@ are dump-specific evidence, never implementation offsets.
   recur or child navigables change. Panel closing no longer interrupts speech.
 - Dialogue reads the visible speaker and current localized subtitle, once per
   change. `Subtitle.formattedText.text` supplies the complete line when a visible
-  typewriter prefix is still animating. Tutorials/modals take priority. Responses
+  typewriter prefix is still animating. Blocking modals take priority; passive
+  tutorials defer to active dialogue. Responses
   use scoped focus speech, with the initial selection queued after the body and
   deliberate navigation allowed to interrupt. Conversation end/loading clears
   stale dialogue. No choices are selected or advanced automatically.
+- The [announcement lifecycle audit](announcement-lifecycle.md) covers identical
+  consecutive dialogue turns, passive tutorial deferral, and typed encounter
+  abandonment countdowns. The countdown's full visible instruction is delivered
+  once per native coroutine/delivery lifecycle; timer ticks do not queue the
+  phrase each second. An early typed pass preserves foreground speech while
+  avoiding indefinite deferral behind lower-priority world narration.
 - Radar suspension/failure clears its cached world references. Collected
   wrappers are checked before Unity null comparisons. Navigation audio also
   waits while the game's loading screen is visible.

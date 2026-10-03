@@ -62,8 +62,3 @@ namespace PixelCrushers.DialogueSystem.TextMeshPro
         public TextMeshProSubtitleControls subtitleReminder;
     }
 }
-
-namespace LeAccess.Accessibility.ScreenContent
-{
-    internal static class ScreenContentAnnouncer { internal static bool HasActiveContent { get; set; } }
-}

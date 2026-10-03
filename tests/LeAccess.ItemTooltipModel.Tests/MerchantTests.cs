@@ -14,6 +14,7 @@ internal static class MerchantTests
             currentlySelectedItem = new ItemContainerEntry { data = item }
         };
         var panel = new ShopPanel { _shop = container, _buyback = new ItemContainerUI() };
+        container.Container.Entry = container.currentlySelectedItem;
         var price = new ItemTooltipPriceInfo { Text = "250 oro" };
         var vendor = new ItemTooltipVendorInfo();
         vendor.Prices.Add(price);
@@ -99,6 +100,17 @@ internal static class MerchantTests
         ItemTooltipContentBuilder.VendorAction = () => throw new InvalidOperationException("Native vendor unavailable");
         check(MerchantItemReader.ReadContext(item, container) is null, "Native price failure returns no partial announcement");
         ItemTooltipContentBuilder.VendorAction = null;
+        var storedEntry = container.Container.Entry;
+        ItemTooltipContentBuilder.VendorAction = () => container.Container.Entry = new() { data = new ItemDataUnpacked() };
+        check(MerchantItemReader.ReadContext(item, container) is null,
+            "Native stock refresh during price construction cannot keep a retained item's price");
+        container.Container.Entry = storedEntry;
+        ItemTooltipContentBuilder.VendorAction = null;
+        ItemTooltipContentBuilder.BuildAction = () => container.Container.Entry = new() { data = new ItemDataUnpacked() };
+        check(!ItemTooltipModelReader.TryRead(item, container, out details) && details is null,
+            "Native stock refresh during full property construction discards retained merchant details");
+        container.Container.Entry = storedEntry;
+        ItemTooltipContentBuilder.BuildAction = null;
         ModText.SetLanguage("es");
         check(MerchantItemReader.ReadContext(item, container) == Price("merchant.buyback_price"), "Merchant labels follow selected catalog language");
         ModText.SetLanguage("en");

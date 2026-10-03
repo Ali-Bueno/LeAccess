@@ -6,6 +6,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/*.cs" Link="%(Filename)%(Extension)" />
+    <Compile Include="../../LeAccess/Accessibility/Dialogue/DialogueAnnouncer.cs" Link="DialogueAnnouncer.cs" />
+    <Compile Include="../LeAccess.Dialogue.Tests/RuntimeDoubles.cs" Link="DialogueRuntimeDoubles.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/UiReadingOrder.cs" Link="UiReadingOrder.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/UiWindowOrder.cs" Link="UiWindowOrder.cs" />

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using LeAccess.Accessibility.Navigation;
 using LeAccess.Accessibility.ScreenContent;
 using UnityEngine;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
@@ -16,6 +17,7 @@ internal static class NotificationAnnouncer
     private static readonly List<string> Announcements = new();
     private static readonly List<GameObject> Roots = new();
     private static readonly Dictionary<int, int> Deliveries = new();
+    private static readonly EncounterCountdownReader Countdowns = new();
     private static string _lastFailure;
 
     internal static void TrackController(ControllerNotification notification) =>
@@ -52,11 +54,29 @@ internal static class NotificationAnnouncer
         catch (Exception ex) { ReportFailure(ex); }
     }
 
-    internal static void Update(bool otherContentActive = false)
+    internal static void Update(bool otherContentActive = false) => UpdateCore(otherContentActive, false);
+
+    internal static void UpdateUrgent(bool foregroundContentActive = false) =>
+        UpdateCore(foregroundContentActive || ScreenReader.SpokeThisFrame || !UrgentOwnsInput(), true);
+
+    private static bool UrgentOwnsInput()
+    {
+        try
+        {
+            if (NavigationAudioState.IsSuspended || !GameplayInputState.OwnsInput()) return false;
+            var input = EpochInputManager.instance;
+            var keyboard = ScreenKeyboardManager.Instance;
+            return !(IsAlive(input) && input.isInputFieldActive || IsAlive(keyboard) && keyboard._enabled);
+        }
+        catch (Exception ex) { ReportFailure(ex); return false; }
+    }
+
+    private static void UpdateCore(bool otherContentActive, bool countdownOnly)
     {
         if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible)
         {
             Tracker.Reset();
+            Countdowns.Reset();
             PreviousVisible.Clear();
             return;
         }
@@ -90,11 +110,11 @@ internal static class NotificationAnnouncer
         foreach (int id in Expired) Sources.Remove(id);
         foreach (var root in Roots)
         {
-            try { Observe(root, canSpeak); }
+            try { Observe(root, canSpeak, countdownOnly); }
             catch (Exception ex) { ReportFailure(ex); }
         }
         foreach (int id in PreviousVisible)
-            if (!Visible.Contains(id)) Tracker.Hide(id);
+            if (!Visible.Contains(id)) { Tracker.Hide(id); Countdowns.Hide(id); }
         PreviousVisible.Clear();
         foreach (int id in Visible) PreviousVisible.Add(id);
         Expired.Clear();
@@ -104,7 +124,7 @@ internal static class NotificationAnnouncer
         string announcement = ScreenContentTracker.Combine(Announcements);
         if (string.IsNullOrWhiteSpace(announcement)) return;
         Plugin.Log.LogInfo($"[VisibleNotification] {announcement}");
-        ScreenReader.Speak(announcement, interrupt: false);
+        ScreenReader.Speak(announcement, interrupt: countdownOnly);
     }
 
     private static void Rearm(GameObject root)
@@ -121,6 +141,7 @@ internal static class NotificationAnnouncer
         if (Deliveries.TryGetValue(id, out int frame) && frame == Time.frameCount) return;
         Deliveries[id] = Time.frameCount;
         Tracker.Hide(id);
+        Countdowns.Hide(id);
     }
 
     private static void Collect(GameObject root)
@@ -134,12 +155,13 @@ internal static class NotificationAnnouncer
         Roots.Add(root);
     }
 
-    private static void Observe(GameObject root, bool canSpeak)
+    private static void Observe(GameObject root, bool canSpeak, bool countdownOnly)
     {
         if (!UiVisibility.IsVisible(root)) return;
         int id = root.GetInstanceID();
         if (!Visible.Add(id)) return;
-        string text = ScreenContentReader.Read(root, null, null);
+        string text = Countdowns.Read(root, canSpeak, Announcements);
+        if (countdownOnly) return;
         Tracker.Observe(id, text, canSpeak, out string announcement);
         if (announcement != null) Announcements.Add(announcement);
     }
@@ -154,6 +176,7 @@ internal static class NotificationAnnouncer
         Announcements.Clear();
         Roots.Clear();
         Deliveries.Clear();
+        Countdowns.Reset();
         _lastFailure = null;
     }
 

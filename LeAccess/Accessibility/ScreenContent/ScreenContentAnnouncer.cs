@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using LeAccess.Accessibility.Announcements;
+using LeAccess.Accessibility.Dialogue;
 using LE.Factions;
 using LE.UI.Generic.UnityUI;
 using TMPro;
@@ -211,8 +212,10 @@ internal static class ScreenContentAnnouncer
         {
             string text = foreground.ReadText != null ? foreground.ReadText() :
                 ScreenContentReader.Read(foreground.Root, foreground.Header, foreground.Body);
+            bool canSpeak = ScreenReader.IsAvailable() && (foreground.BlocksInput ||
+                !DialogueAnnouncer.HasActiveContent && !ScreenReader.SpokeThisFrame);
             HasPendingContent = Tracker.Observe(foreground.Id, text,
-                ScreenReader.IsAvailable(), out string announcement);
+                canSpeak, out string announcement);
             if (announcement == null) return;
             HasPendingContent = false;
             ScreenReader.Speak(announcement, interrupt: true);

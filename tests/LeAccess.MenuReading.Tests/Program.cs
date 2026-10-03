@@ -335,4 +335,6 @@ foreach (string gate in new[] { "collected", "disabled", "hidden", "mediator dis
     Check(!UiFocusOwnership.Allows(nextButton), "Mediator focus rejects " + gate);
 }
 Reset();
+checks += CraftingTests.Run(Reset);
+checks += FilterRangeTests.Run(Reset);
 Console.WriteLine($"Menu reading tests passed: {checks} checks.");

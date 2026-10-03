@@ -225,6 +225,11 @@ public static class ElementAnnouncer
         // Check if this option is disabled by the game developers
         bool isDisabledOption = IsDisabledOption(go);
 
+        if (CraftingControlReader.TryRead(go, includeDetails, out string craftingText, out bool craftingUnavailable))
+            return FormatSpecializedAnnouncement(go, craftingText, includeDetails, isDisabledOption || craftingUnavailable);
+        if (FilterRangeControlReader.TryRead(go, out string filterRangeText, out bool filterRangeUnavailable))
+            return FormatSpecializedAnnouncement(go, filterRangeText, includeDetails, isDisabledOption || filterRangeUnavailable);
+
         // Layer 1: Try to get label from InfoForTooltip
         TextDetector.TryGetFromTooltipInfo(go, ref label, ref description);
 
@@ -380,6 +385,14 @@ public static class ElementAnnouncer
         }
 
         return FormatAnnouncement(label, value, includeDetails ? description : null, go, isDisabledOption);
+    }
+
+    private static string FormatSpecializedAnnouncement(GameObject go, string text, bool includeDetails, bool unavailable)
+    {
+        string label = null;
+        string description = null;
+        if (includeDetails) TextDetector.TryGetFromTooltipInfo(go, ref label, ref description);
+        return FormatAnnouncement(text, null, description, go, unavailable);
     }
 
     private static bool IsDisabledOption(GameObject go)

@@ -23,6 +23,12 @@ internal static class Program
             DialoguePriorityDoesNotReplayExpiredNotices();
             ScreenReaderAvailabilityDefersVisibleContent();
             MenuFeedbackFollowsBriefSelection();
+            EncounterCountdownDoesNotQueueEachSecond();
+            DeferredCountdownReadsCurrentVisibleTime();
+            CountdownOwnershipAndOrdinaryChanges();
+            CountdownCoroutineRestarts();
+            UrgentCountdownPrecedesAmbientContent();
+            UrgentCountdownRespectsMenuAndTyping();
             Console.WriteLine($"Notification tests passed: {_checks} checks.");
             return 0;
         }
@@ -275,6 +281,230 @@ internal static class Program
         _checks++;
         if (!condition) throw new InvalidOperationException(message);
     }
+    private static LE.UI.NotificationSystem.RageOfMorditasOutOfGauntletNotification Countdown(GameObject root = null)
+    {
+        root ??= new GameObject();
+        var source = root.Add(new LE.UI.NotificationSystem.RageOfMorditasOutOfGauntletNotification());
+        source._countdownText = root.Child().Add(new TextMeshProUGUI { text = "Abandonando evento en 10s" });
+        return source;
+    }
+
+    private static void EncounterCountdownDoesNotQueueEachSecond()
+    {
+        Reset();
+        var source = Countdown();
+        NotificationAnnouncer.GameplayDelivered(source);
+        Tick(); Tick();
+        Check(ScreenReader.Messages.Single().Text == "Abandonando evento en 10s", "Opening countdown reads the full localized rendered instruction");
+        foreach (int second in new[] { 9, 8, 7 })
+        {
+            source._countdownText.text = $"Abandonando evento en {second}s";
+            Tick(); Tick();
+        }
+        Check(ScreenReader.Messages.Count == 1, "Native one-second countdown changes do not queue the full instruction each second");
+        NotificationAnnouncer.GameplayDelivered(source);
+        source._countdownText.text = "Abandonando evento en 20s";
+        Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text.EndsWith("20s"), "Explicit delivery restarts a still-visible countdown");
+        source.gameObject.Active = false;
+        Tick();
+        source.gameObject.Active = true;
+        Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 3, "A hide/show lifecycle rearms identical countdown instructions");
+        Application.isFocused = false;
+        Tick();
+        Application.isFocused = true;
+        source._countdownText.text = "Abandonando evento en 15s";
+        Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 4 && ScreenReader.Messages.Last().Text.EndsWith("15s"), "Focus recovery reads the current countdown once");
+    }
+
+    private static void DeferredCountdownReadsCurrentVisibleTime()
+    {
+        Reset();
+        var source = Countdown();
+        NotificationAnnouncer.GameplayDelivered(source);
+        Tick(true); Tick(true);
+        source._countdownText.text = "Abandonando evento en 7s";
+        Tick(true); Tick(true);
+        Check(ScreenReader.Messages.Count == 0, "A deferred countdown never marks an unspoken initial timer as delivered");
+        Tick();
+        Check(ScreenReader.Messages.Single().Text.EndsWith("7s"), "A deferred countdown reads the latest visible time when priority clears");
+        source._countdownText.text = "Abandonando evento en 6s";
+        Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 1, "The delivered current countdown then stays quiet");
+        Reset();
+        source = Countdown();
+        NotificationAnnouncer.GameplayDelivered(source);
+        Tick(true); Tick(true);
+        source.gameObject.Active = false;
+        Tick(true); Tick();
+        Check(ScreenReader.Messages.Count == 0, "An expired deferred countdown is discarded");
+    }
+
+    private static void CountdownOwnershipAndOrdinaryChanges()
+    {
+        Reset();
+        var holder = new GameObject();
+        var source = Countdown(holder.Child());
+        var other = source.gameObject.Child().Add(new TextMeshProUGUI { text = "Regresa a la arena" });
+        var gameplay = new GameObject().Add(new Notifications { holder = holder });
+        NotificationAnnouncer.TrackGameplay(gameplay);
+        NotificationAnnouncer.GameplayDelivered(source);
+        Tick(); Tick();
+        source._countdownText.text = "Abandonando evento en 9s";
+        Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 1, "Holder discovery and direct delivery share countdown ownership without repeating");
+        other.text = "Evento cancelado";
+        Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text.Contains("Evento cancelado"), "Other changed labels on a countdown widget remain readable");
+        NotificationAnnouncer.GameplayDelivered(source);
+        Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 3 && ScreenReader.Messages.Last().Text.Contains("9s"), "Rearming through an overlapping holder clears the frozen timer");
+        Reset();
+        var ordinary = Quick("Abandonando evento en 10s");
+        NotificationAnnouncer.TrackQuick(ordinary);
+        Tick(); Tick();
+        ordinary._label.text = "Abandonando evento en 9s";
+        Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 2, "Matching prose without the native countdown type remains an ordinary changing notice");
+        Reset();
+        var owner = Countdown();
+        var foreign = new GameObject().Add(new TextMeshProUGUI { text = "Aviso externo 10" });
+        owner._countdownText = foreign;
+        var quick = foreign.gameObject.Add(new UIQuickNotificationText { _label = foreign });
+        NotificationAnnouncer.GameplayDelivered(owner);
+        NotificationAnnouncer.TrackQuick(quick);
+        Tick(); Tick();
+        foreign.text = "Aviso externo 9";
+        Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text.Contains("Aviso externo 9"), "A foreign label assigned to a countdown owner never acquires countdown suppression");
+    }
+
+    private static void CountdownCoroutineRestarts()
+    {
+        Reset();
+        var source = Countdown();
+        NotificationAnnouncer.GameplayDelivered(source);
+        Tick(); Tick();
+        source._currentCountdownCoroutine = new();
+        Tick();
+        Check(ScreenReader.Messages.Count == 1, "A new native countdown coroutine must settle before delivery");
+        Tick();
+        Check(ScreenReader.Messages.Count == 2, "A StartCountdown-only restart reads even identical text without a new notification hook");
+        source._countdownText.gameObject.Active = false;
+        Tick();
+        source._countdownText.gameObject.Active = true;
+        Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 3, "Hiding just the countdown label invalidates its delivered identity");
+        Reset();
+        source = Countdown();
+        source._currentCountdownCoroutine.WasCollected = true;
+        NotificationAnnouncer.GameplayDelivered(source);
+        Tick(); Tick();
+        source._countdownText.text = "Aviso actualizado";
+        Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 2, "An unauthenticated collected coroutine falls back to normal visible feedback");
+    }
+
+    private static void UrgentCountdownPrecedesAmbientContent()
+    {
+        Reset();
+        var source = Countdown();
+        NotificationAnnouncer.GameplayDelivered(source);
+        NotificationAnnouncer.TrackQuick(Quick("Notificación normal"));
+        for (int frame = 0; frame < 2; frame++)
+        {
+            Time.frameCount++;
+            NotificationAnnouncer.UpdateUrgent();
+            NotificationAnnouncer.Update(true);
+            if (frame == 0) Check(ScreenReader.Messages.Count == 0, "Urgent and normal passes cannot settle a timer twice in one frame");
+        }
+        Check(ScreenReader.Messages.Count == 1 && ScreenReader.Messages.Single().Text.EndsWith("10s") &&
+            ScreenReader.Messages.Single().Interrupt, "Urgent pass interrupts prior passive speech for the typed countdown while ambient priority continues blocking normal notices");
+        Tick();
+        Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last() == ("Notificación normal", false), "Urgent discovery leaves ordinary notice settlement, passive delivery and priority intact");
+        foreach (string gate in new[] { "foreground", "same-frame", "modal", "loading", "focus" })
+        {
+            Reset();
+            source = Countdown();
+            NotificationAnnouncer.GameplayDelivered(source);
+            for (int frame = 0; frame < 3; frame++)
+            {
+                Time.frameCount++;
+                ScreenReader.SpokeThisFrame = gate == "same-frame";
+                ScreenContentAnnouncer.HasActiveContent = gate == "modal";
+                LE.UI.LoadingScreen.IsVisible = gate == "loading";
+                Application.isFocused = gate != "focus";
+                NotificationAnnouncer.UpdateUrgent(gate == "foreground");
+                NotificationAnnouncer.Update(true);
+            }
+            Check(ScreenReader.Messages.Count == 0, $"Urgent countdown honors {gate} priority");
+            ScreenReader.SpokeThisFrame = false;
+            ScreenContentAnnouncer.HasActiveContent = false;
+            LE.UI.LoadingScreen.IsVisible = false;
+            Application.isFocused = true;
+            Time.frameCount++;
+            NotificationAnnouncer.UpdateUrgent();
+            Time.frameCount++;
+            NotificationAnnouncer.UpdateUrgent();
+            Check(ScreenReader.Messages.Count == 1, $"A still-visible urgent countdown delivers once after {gate} clears");
+        }
+        Reset();
+        source = Countdown();
+        NotificationAnnouncer.GameplayDelivered(source);
+        Time.frameCount++;
+        NotificationAnnouncer.UpdateUrgent(true);
+        Time.frameCount++;
+        NotificationAnnouncer.UpdateUrgent(true);
+        source.gameObject.Active = false;
+        Time.frameCount++;
+        NotificationAnnouncer.UpdateUrgent();
+        Time.frameCount++;
+        NotificationAnnouncer.UpdateUrgent();
+        Check(ScreenReader.Messages.Count == 0, "An urgent countdown hidden behind foreground speech never replays after expiring");
+    }
+
+    private static void UrgentCountdownRespectsMenuAndTyping()
+    {
+        foreach (string gate in new[] { "paused", "menu", "chat", "keyboard", "ownership-query", "input-query", "keyboard-query" })
+        {
+            Reset();
+            var source = Countdown();
+            NotificationAnnouncer.GameplayDelivered(source);
+            var input = new GameObject().Add(new EpochInputManager());
+            var keyboard = new GameObject().Add(new ScreenKeyboardManager());
+            EpochInputManager.instance = input;
+            ScreenKeyboardManager.Instance = keyboard;
+            LeAccess.Accessibility.Navigation.NavigationAudioState.IsSuspended = gate == "paused";
+            LeAccess.Accessibility.Navigation.GameplayInputState.Owns = gate != "menu";
+            LeAccess.Accessibility.Navigation.GameplayInputState.ThrowOnQuery = gate == "ownership-query";
+            input.Typing = gate == "chat"; input.ThrowOnQuery = gate == "input-query";
+            keyboard.Enabled = gate == "keyboard"; keyboard.ThrowOnQuery = gate == "keyboard-query";
+            void Frame()
+            {
+                Time.frameCount++;
+                NotificationAnnouncer.UpdateUrgent();
+                NotificationAnnouncer.Update();
+            }
+            Frame(); Frame();
+            Check(ScreenReader.Messages.Count == 0, $"Urgent countdown fails closed for {gate}, including the later normal pass");
+            NotificationAnnouncer.TrackQuick(Quick("No puedes equipar este objeto"));
+            Frame(); Frame();
+            Check(ScreenReader.Messages.Single() == ("No puedes equipar este objeto", false),
+                $"Ordinary menu-action notices retain passive delivery while {gate} blocks the urgent countdown");
+            LeAccess.Accessibility.Navigation.NavigationAudioState.IsSuspended = false;
+            LeAccess.Accessibility.Navigation.GameplayInputState.Owns = true;
+            LeAccess.Accessibility.Navigation.GameplayInputState.ThrowOnQuery = false;
+            input.Typing = input.ThrowOnQuery = false;
+            keyboard.Enabled = keyboard.ThrowOnQuery = false;
+            source._countdownText.text = "Abandonando evento en 6s";
+            Frame(); Frame();
+            Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last() == ("Abandonando evento en 6s", true),
+                $"The current visible urgent countdown delivers after {gate} releases ownership");
+        }
+    }
+
     private static void Reset()
     {
         NotificationAnnouncer.Reset();
@@ -283,8 +513,14 @@ internal static class Program
         LE.UI.LoadingScreen.IsVisible = false;
         ScreenContentAnnouncer.HasActiveContent = false;
         ScreenReader.Available = true;
+        ScreenReader.SpokeThisFrame = false;
         ScreenReader.Messages.Clear();
         Notifications.instance = null;
+        EpochInputManager.instance = null;
+        ScreenKeyboardManager.Instance = null;
+        LeAccess.Accessibility.Navigation.NavigationAudioState.IsSuspended = false;
+        LeAccess.Accessibility.Navigation.GameplayInputState.Owns = true;
+        LeAccess.Accessibility.Navigation.GameplayInputState.ThrowOnQuery = false;
         LeAccess.Plugin.Log.Warnings.Clear();
     }
 }

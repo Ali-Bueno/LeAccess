@@ -68,12 +68,14 @@ internal static class Localization
 internal class ItemData : Il2CppSystem.Object
 {
     internal string Id = Guid.NewGuid().ToString();
+    internal NativeItemBytes id => Id is null ? null : new() { Length = Id.Length };
     internal ItemDataUnpacked Unpacked;
     internal bool IdEquals(ItemData other) => Id == other.Id;
     internal ItemDataUnpacked getAsUnpacked() => this as ItemDataUnpacked ?? Unpacked;
 }
+internal sealed class NativeItemBytes : Il2CppSystem.Object { internal int Length; }
 internal class ItemDataUnpacked : ItemData { internal string LoreText, FactionRequirement; }
-internal class ItemContainerEntry : Il2CppSystem.Object { internal ItemData data; }
+internal class ItemContainerEntry : Il2CppSystem.Object { internal ItemData data; internal UnityEngine.Vector2Int Position; }
 internal enum ContainerType { INVENTORY, EQUIPPED, STASH, SHOP, CRAFTING }
 internal enum ContainerID { UNDEFINED, INVENTORY, EQ_HELMET, EQ_ARMOR, EQ_WEAPON, EQ_OFFHAND, EQ_GLOVES,
     EQ_BELT, EQ_BOOTS, EQ_RIGHTRING, EQ_LEFTRING, EQ_AMULET, EQ_RELIC }
@@ -82,8 +84,9 @@ internal class IItemContainer : Il2CppSystem.Object
     internal ContainerType Type;
     internal ContainerID Id;
     internal ItemContainerEntry Entry;
+    internal UnityEngine.Vector2Int LastReadPosition;
     internal ContainerID GetContainerID() => Id;
-    internal ItemContainerEntry GetEntryAt(UnityEngine.Vector2Int slot) => Entry;
+    internal ItemContainerEntry GetEntryAt(UnityEngine.Vector2Int slot) { LastReadPosition = slot; return Entry; }
 }
 internal class ItemContainerUI : UnityEngine.Behaviour
 {

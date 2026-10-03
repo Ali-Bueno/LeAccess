@@ -131,33 +131,37 @@ namespace UnityEngine.UI { internal sealed class ScrollRect : UnityEngine.Compon
 internal class ItemData : NativeObject
 {
     public string Id;
+    public NativeItemBytes id => Id is null ? null : new() { Length = Id.Length };
     public ItemDataUnpacked Unpacked { get; set; }
     public bool IdEquals(ItemData other) => Id == other.Id;
     public ItemDataUnpacked getAsUnpacked() => Unpacked ?? this as ItemDataUnpacked;
 }
+internal sealed class NativeItemBytes : NativeObject { public int Length; }
 internal sealed class ItemDataUnpacked : ItemData
 {
     public string FullName;
     public string LocalisedBaseTypeName;
 }
-internal sealed class ItemContainerEntry : NativeObject { public ItemData data; }
+internal sealed class ItemContainerEntry : NativeObject { public ItemData data; public UnityEngine.Vector2Int Position; }
 internal sealed class ItemContainerUI : UnityEngine.Component
 {
-    public IItemContainer container;
+    public IItemContainer container = new();
+    public IItemContainer Container => container;
     public ContainerID identifier;
     public ItemContainerEntry currentlySelectedItem;
     public UnityEngine.Vector2Int currentFocusSlot { get; set; }
 }
 internal enum ContainerID { UNDEFINED, INVENTORY, EQ_HELMET, EQ_ARMOR, EQ_WEAPON, EQ_OFFHAND, EQ_GLOVES, EQ_BELT,
     EQ_BOOTS, EQ_RIGHTRING, EQ_LEFTRING, EQ_AMULET, EQ_RELIC }
-internal enum ContainerType { INVENTORY, EQUIPPED }
+internal enum ContainerType { INVENTORY, EQUIPPED, STASH, SHOP }
 internal sealed class IItemContainer : NativeObject
 {
     internal ContainerType Type;
     internal ContainerID Id;
     internal ItemContainerEntry Entry;
+    internal UnityEngine.Vector2Int LastReadPosition;
     internal ContainerID GetContainerID() => Id;
-    internal ItemContainerEntry GetEntryAt(UnityEngine.Vector2Int slot) => Entry;
+    internal ItemContainerEntry GetEntryAt(UnityEngine.Vector2Int slot) { LastReadPosition = slot; return Entry; }
 }
 internal sealed class EquippedItemsNavigable : UnityEngine.Component
 {

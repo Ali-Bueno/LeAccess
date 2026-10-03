@@ -13,6 +13,7 @@ void Check(bool condition, string message)
 void UpdateTwice() { InventoryAccessibility.Update(); InventoryAccessibility.Update(); }
 
 var state = new InventoryAnnouncementState();
+StoredSelectionTests.Run(Check);
 Check(!state.Observe("a", "Old item", true, out _) && state.HasPendingContent, "First item snapshot settles");
 Check(!state.Observe("b", "New item", true, out _), "Rapid navigation discards unspoken previous item");
 Check(state.Observe("b", "New item", true, out var speech) && speech == "New item", "Latest item speaks once stable");

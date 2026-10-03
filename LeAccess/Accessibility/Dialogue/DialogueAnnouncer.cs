@@ -59,7 +59,11 @@ internal static class DialogueAnnouncer
             if (!Attach(ui)) return;
             _subtitle = ui.currentSubtitleControls;
             _usingReminder = false;
-            _subtitleId = subtitle is not null && !subtitle.WasCollected ? subtitle.Pointer.ToInt64() : 0;
+            long subtitleId = subtitle is not null && !subtitle.WasCollected ? subtitle.Pointer.ToInt64() : 0;
+            // Equal text can be a different dialogue turn. Repeated hooks for the
+            // same native turn, including a late first hook, still remain quiet.
+            if (_subtitleId != 0 && subtitleId != 0 && _subtitleId != subtitleId) Tracker.Reset();
+            _subtitleId = subtitleId;
             var formatted = _subtitleId != 0 ? subtitle.formattedText : null;
             _fullLine = formatted is not null && !formatted.WasCollected ? TextUtils.CleanText(formatted.text) : null;
             _shownFrame = Time.frameCount;

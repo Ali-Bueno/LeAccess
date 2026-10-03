@@ -72,6 +72,7 @@ public class MenuAccessibility : MonoBehaviour
         VisibleSubtitleAnnouncer.Update(ScreenReader.SpokeThisFrame || ZoneAnnouncer.HasPendingContent ||
             InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
             SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent);
+        NotificationAnnouncer.UpdateUrgent(worldContentActive || VisibleSubtitleAnnouncer.HasPendingContent);
         QuestUpdateAccessibility.Update(worldContentActive,
             ZoneAnnouncer.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent);
         DynamicObjectiveAccessibility.Update(worldContentActive,

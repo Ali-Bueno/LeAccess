@@ -197,10 +197,14 @@ unrelated response state cannot replace or reset that retained statement.
 The bounded diagnostic now identifies reminder selection and the label's failed
 visibility gate, without logging hidden text. No hook was added.
 
-The source-linked dialogue suite now passes **63 checks**, including this exact
+The source-linked dialogue suite now passes **68 checks**, including this exact
 null-panel layout, reminder-only body, visibility and lifecycle gates, opening
 without a subtitle hook, pending cancellation, and ordinary/reminder transitions
 with typewriter prefixes and subsequent unrelated model states.
+Changed native subtitle identities also rearm identical speaker/body text,
+while duplicate callbacks remain silent. See the
+[announcement lifecycle audit](announcement-lifecycle.md) for reproduction and
+deferred-turn replacement coverage.
 Main build passes without warnings/errors. Reading during an actual examination
 remains to be verified by the user; no game was launched.
 

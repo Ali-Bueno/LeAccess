@@ -70,6 +70,12 @@ hidden prompts. Native input decoding and prompt ownership now pass 76 separate
 source-linked checks; the 44 menu checks also pass.
 Audible results of these follow-up changes still need user verification.
 
+The 2026-10-03 [announcement lifecycle audit](announcement-lifecycle.md) adds
+passive tutorial deferral behind active dialogue and earlier same-frame speech.
+It preserves blocking modal priority and rereads the latest visible tutorial
+before delivery. Screen-content coverage now passes **200 checks**, including
+both actual announcers in the game's update order and blocking-modal release.
+
 Read-only API/code audit, 2026-10-02. Game build 25663618; no game launch.
 Implementation follow-up: [passive nodes](passive-reading.md),
 [quest journal](quest-reading.md) and [name errors](character-name-reading.md)

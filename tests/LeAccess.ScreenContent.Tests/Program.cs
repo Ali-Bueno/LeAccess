@@ -242,6 +242,28 @@ Frame(); Frame();
 Check(!ScreenContentAnnouncer.HasPendingContent && ScreenReader.Messages.Count == 3,
     "Closing a tutorial clears its pending state without duplicating speech");
 ScreenContentAnnouncer.Reset(); ScreenReader.Messages.Clear();
+DialoguePriorityTests.Open();
+ScreenContentAnnouncer.TrackTutorial(tutorial); Frame(); Frame();
+Check(ScreenReader.Messages.Count == 0 && ScreenContentAnnouncer.HasPendingContent && !ScreenContentAnnouncer.HasActiveContent,
+    "A passive tutorial settles behind active dialogue without interrupting the conversation or owning input");
+tutorial.bodyTMP.text = "Instrucción más reciente."; Frame(); Frame();
+Check(ScreenReader.Messages.Count == 0, "Replacing deferred tutorial text cannot interrupt dialogue");
+LeAccess.Accessibility.Dialogue.DialogueAnnouncer.Reset(); Frame();
+Check(ScreenReader.Messages.Single().Text == "Moverse. Instrucción más reciente.",
+    "Only the current visible tutorial reads after dialogue releases its surface");
+ScreenContentAnnouncer.Reset(); ScreenReader.Messages.Clear(); ScreenReader.SpokeThisFrame = true;
+ScreenContentAnnouncer.TrackTutorial(tutorial); Frame(); Frame();
+Check(ScreenReader.Messages.Count == 0 && ScreenContentAnnouncer.HasPendingContent,
+    "A passive tutorial yields to other speech in its frame");
+ScreenReader.SpokeThisFrame = false; Frame();
+Check(ScreenReader.Messages.Count == 1, "A still-visible deferred tutorial reads after the prior speech frame");
+ScreenContentAnnouncer.Reset(); ScreenReader.Messages.Clear();
+DialoguePriorityTests.Open(); ScreenReader.SpokeThisFrame = true;
+ScreenContentAnnouncer.Track(blocking, blockingTitle); blocking.Active = true; Frame(); Frame();
+Check(ScreenReader.Messages.Single().Text == "Confirmar salida" && ScreenContentAnnouncer.HasActiveContent,
+    "An input-owning confirmation retains priority over dialogue and previous speech");
+LeAccess.Accessibility.Dialogue.DialogueAnnouncer.Reset(); ScreenReader.SpokeThisFrame = false;
+ScreenContentAnnouncer.Reset(); ScreenReader.Messages.Clear();
 LeAccess.I18n.ModText.SetLanguage("es");
 tutorial.titleTMP.text = "Pociones de vida";
 tutorial.bodyTMP.text = "Usa pociones para recuperar vida.";
@@ -288,4 +310,5 @@ Check(ScreenReader.Messages.Count == prior && TutorialTextReader.Read(tutorial) 
 ReadingOrderTests.Run(Check);
 PopupVisibilityTests.Run(Check);
 NativeWindowTests.Run(Check);
+DialoguePriorityTests.Run(Check);
 Console.WriteLine($"Screen content tests passed: {checks} checks.");

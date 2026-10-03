@@ -144,9 +144,41 @@ internal sealed class Notifications : UnityEngine.Component
 }
 namespace LE.UI.NotificationSystem
 {
-    internal sealed class NotificationBase : UnityEngine.Component { }
+    internal class NotificationBase : UnityEngine.Component { }
+    internal sealed class RageOfMorditasOutOfGauntletNotification : NotificationBase
+    {
+        internal TMPro.TextMeshProUGUI _countdownText;
+        internal CountdownCoroutine _currentCountdownCoroutine = new();
+    }
+    internal sealed class CountdownCoroutine
+    {
+        private static long _nextId;
+        internal IntPtr Pointer = new(++_nextId);
+        internal bool WasCollected;
+    }
 }
-internal static class EpochInputManager { public static void SetActiveVirtualMouse(bool active) { } }
+internal sealed class EpochInputManager : UnityEngine.Component
+{
+    internal static EpochInputManager instance;
+    internal bool Typing, ThrowOnQuery;
+    internal bool isInputFieldActive => ThrowOnQuery ? throw new InvalidOperationException("Input query failed") : Typing;
+    public static void SetActiveVirtualMouse(bool active) { }
+}
+internal sealed class ScreenKeyboardManager : UnityEngine.Component
+{
+    internal static ScreenKeyboardManager Instance;
+    internal bool Enabled, ThrowOnQuery;
+    internal bool _enabled => ThrowOnQuery ? throw new InvalidOperationException("Keyboard query failed") : Enabled;
+}
+namespace LeAccess.Accessibility.Navigation
+{
+    internal static class NavigationAudioState { internal static bool IsSuspended; }
+    internal static class GameplayInputState
+    {
+        internal static bool Owns = true, ThrowOnQuery;
+        internal static bool OwnsInput() => ThrowOnQuery ? throw new InvalidOperationException("Ownership query failed") : Owns;
+    }
+}
 namespace LE.UI { internal static class LoadingScreen { public static bool IsVisible; } }
 namespace LeAccess.Accessibility.ScreenContent
 {
@@ -157,6 +189,7 @@ namespace LeAccess.Accessibility
     internal static class ScreenReader
     {
         public static bool Available = true;
+        public static bool SpokeThisFrame;
         public static readonly List<(string Text, bool Interrupt)> Messages = new();
         public static bool IsAvailable() => Available;
         public static void Speak(string text, bool interrupt) => Messages.Add((text, interrupt));
