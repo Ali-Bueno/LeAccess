@@ -50,6 +50,8 @@ Installed `13fc9c9` with the game closed; previous plugin/config backed up to
   portal/waypoint hum, gold/equipment loops fading with distance, no clicks on pickup,
   loudness against the game (`[World object sounds] Volume`, `LoopRange`, `Loops`).
   The old `LandmarkRange` key in the cfg is now unused.
+- Potions were silent (own native registry, never read). Potions and experience/favor
+  tomes now loop too (`a290b8a`, installed; backup `pre-potions-6e2790e-20261003`).
 
 Re-check these four first; then the list below.
 
