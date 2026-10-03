@@ -311,4 +311,5 @@ ReadingOrderTests.Run(Check);
 PopupVisibilityTests.Run(Check);
 NativeWindowTests.Run(Check);
 DialoguePriorityTests.Run(Check);
+RejectedOutputTests.Run(Check);
 Console.WriteLine($"Screen content tests passed: {checks} checks.");

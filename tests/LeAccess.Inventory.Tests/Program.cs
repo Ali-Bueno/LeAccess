@@ -306,4 +306,5 @@ Check(!ScreenReader.Messages.Last().Contains("Equipped"), "Returning item to inv
 InventoryPromptTests.Run(Check);
 InventoryActionTests.Run(Check);
 EquippedItemTests.Run(Check);
+SpeechAcceptanceTests.Run(Check);
 Console.WriteLine($"Inventory tests passed: {checks} checks.");

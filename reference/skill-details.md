@@ -110,3 +110,11 @@ current selected skill and foreground immediately before output. Six regression
 cases cover popup, dialogue, radial menu, loading, application focus and a new
 selected ability; the skill suite passes 177 checks. The main project builds with
 `SkipPluginDeployment=true`, zero warnings/errors. Listening remains pending.
+
+The output-acceptance follow-up prepares brief candidates without marking them
+spoken until `ScreenReader.TrySpeak` succeeds. A rejected manual read retains
+selection-bound intent and rebuilds current details when the reader recovers;
+hidden, collected, unready or changed selections discard it. Automatic retries
+yield to another accepted output in the same frame. The skill suite now passes
+189 checks, including 12 acceptance/retry regressions. See
+[the centralized contract](screen-reader-lifecycle.md) for transport evidence.

@@ -135,10 +135,11 @@ internal static class DialogueAnnouncer
             string text = string.IsNullOrEmpty(line) ? null :
                 string.IsNullOrEmpty(speaker) || speaker == line ? line : $"{speaker}: {line}";
             HasPendingContent = Tracker.Observe(_ui.GetInstanceID(), text,
-                !ScreenContentAnnouncer.HasActiveContent && ScreenReader.IsAvailable(), out string announcement);
+                !ScreenContentAnnouncer.HasActiveContent && ScreenReader.IsAvailable(), out string announcement, acknowledge: false);
             if (announcement == null) return;
+            if (!ScreenReader.TrySpeak(announcement, interrupt: true)) return;
+            Tracker.Acknowledge(_ui.GetInstanceID(), announcement);
             HasPendingContent = false;
-            ScreenReader.Speak(announcement, interrupt: true);
             Plugin.Log.LogInfo($"[Dialogue] {announcement}");
         }
         catch (Exception ex)

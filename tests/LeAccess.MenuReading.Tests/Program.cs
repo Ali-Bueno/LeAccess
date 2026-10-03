@@ -337,4 +337,5 @@ foreach (string gate in new[] { "collected", "disabled", "hidden", "mediator dis
 Reset();
 checks += CraftingTests.Run(Reset);
 checks += FilterRangeTests.Run(Reset);
+checks += CraftingSelectionTests.Run(Reset);
 Console.WriteLine($"Menu reading tests passed: {checks} checks.");

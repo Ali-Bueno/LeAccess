@@ -13,6 +13,7 @@ internal static class PassiveAccessibility
     private static string _lastStatus;
     private static double _nextStatusLog;
     private const double StatusLogIntervalSeconds = 2;
+    private static bool _detailsRequested;
     internal static bool HasActiveContent { get; private set; }
     internal static bool HasPendingContent { get; private set; }
 
@@ -40,16 +41,27 @@ internal static class PassiveAccessibility
             if (_key != selection.Key)
             {
                 Tracker.Reset();
+                _detailsRequested = false;
                 _key = selection.Key;
             }
             HasPendingContent = Tracker.Observe(1, selection.Summary,
-                ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame, out string announcement);
+                ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame, out string announcement, acknowledge: false);
+            HasPendingContent |= _detailsRequested;
+            bool requestDetails = _detailsRequested && ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame;
+            if (requestDetails)
+            {
+                Tracker.Observe(1, selection.Summary, false, out _, acknowledge: false);
+                announcement = selection.Text;
+            }
             if (announcement is null) return;
             if (!PassiveSelectionReader.TryRead(out var current) || current.Key != selection.Key)
             { ResetSelection(PassiveSelectionReader.HasPendingModel); return; }
+            if (!ScreenReader.TrySpeak(announcement, interrupt: true))
+            { HasPendingContent = true; return; }
+            Tracker.Acknowledge(1, selection.Summary);
             HasPendingContent = false;
-            ScreenReader.Speak(announcement, interrupt: true);
-            Plugin.Log.LogInfo($"[Passive] {announcement}");
+            _detailsRequested = false;
+            Plugin.Log.LogInfo($"[{(requestDetails ? "Passive details" : "Passive")}] {announcement}");
         }
         catch (Exception ex) { ResetSelection(); ReportFailure(ex); }
     }
@@ -64,13 +76,15 @@ internal static class PassiveAccessibility
             if (!PassiveSelectionReader.TryRead(out var current) || current.Key != selection.Key)
             { ResetSelection(PassiveSelectionReader.HasPendingModel); return false; }
             HasActiveContent = true;
-            if (!ScreenReader.IsAvailable()) return true;
             if (_key != selection.Key) { Tracker.Reset(); _key = selection.Key; }
-            // Acknowledge the brief so the next polling frame cannot interrupt the details.
-            Tracker.Observe(1, selection.Summary, false, out _);
-            Tracker.Observe(1, selection.Summary, true, out _);
+            _detailsRequested = true;
+            Tracker.Observe(1, selection.Summary, false, out _, acknowledge: false);
+            Tracker.Observe(1, selection.Summary, false, out _, acknowledge: false);
+            HasPendingContent = true;
+            if (!ScreenReader.TrySpeak(selection.Text, interrupt: true)) return true;
+            Tracker.Acknowledge(1, selection.Summary);
+            _detailsRequested = false;
             HasPendingContent = false;
-            ScreenReader.Speak(selection.Text, interrupt: true);
             Plugin.Log.LogInfo($"[Passive details] {selection.Text}");
             return true;
         }
@@ -84,6 +98,7 @@ internal static class PassiveAccessibility
         _key = null;
         HasActiveContent = false;
         HasPendingContent = false;
+        _detailsRequested = false;
     }
 
     internal static void Reset()

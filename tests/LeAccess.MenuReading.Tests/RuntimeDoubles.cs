@@ -249,6 +249,8 @@ namespace Il2CppSystem.Collections.Generic
     {
         public readonly System.Collections.Generic.List<T> Values;
         public List(params T[] values) => Values = values.ToList();
+        public int Count => Values.Count;
+        public T this[int index] => Values[index];
         public IEnumerator<T> GetEnumerator() => Values.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

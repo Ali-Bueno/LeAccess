@@ -48,6 +48,27 @@ but require live ownership/lifecycle checks and distinct wording from an
 ordinary quest marker. The current mod does not infer a safe route from this
 arrow or claim that the region outside it deals damage.
 
+Further current-build checks resolve `UnityExtensions.CleanNulls` (`955990`)
+and `Component.get_transform` (`40192B0`) after `getLocalActorSync`: the stored
+player transform belongs to that exact sync component. It is not an inferred
+actor visual or gameplay transform. `FixedUpdate` (`151CA60`) rotates toward
+`_lookAtTransform` and follows `_playerTransform`.
+
+The asynchronous `CreateGauntletWarningVisual.MoveNext` (`1535F00`) supplies the
+gauntlet visual controller's own transform as the target. Its native body
+**inlines** pointer initialization, including both stored transforms and the
+`SetActive` call. An `Init` postfix alone therefore cannot reliably discover
+these pointers. Future tracking needs a verified non-inlined lifecycle source,
+local-sync identity and loaded-scene checks, and cleanup on world changes.
+
+The installed catalog resolves `GauntletWarningPointerVisualControllerSoftRef`
+to `assets_b8a1e08455f403cb.bundle`. Its two-object prefab contains
+`RageOfMorditas_WarningPointerVFX` and an initially inactive `Pointer` child;
+the latter owns an enabled `MeshRenderer`. The controller's `pointerObject`
+reference names that child. This is a world indicator, not a screen-space label.
+These asset/native observations are evidence for a later adapter, not implemented
+orientation or live confirmation of visibility.
+
 Live checks remain: countdown appearance and return/restart while objectives
 and loot are updating, online ownership of the return arrow, and actual
 attack/ground telegraphs in each dungeon. Automated notification tests establish

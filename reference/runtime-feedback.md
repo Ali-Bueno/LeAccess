@@ -86,6 +86,9 @@ are dump-specific evidence, never implementation offsets.
   once per native coroutine/delivery lifecycle; timer ticks do not queue the
   phrase each second. An early typed pass preserves foreground speech while
   avoiding indefinite deferral behind lower-priority world narration.
+  These owned readers acknowledge only accepted `TrySpeak` transport output;
+  rejected attempts retry current visible content after recovery, while hidden
+  or superseded content expires locally. Acceptance does not prove audibility.
 - Radar suspension/failure clears its cached world references. Collected
   wrappers are checked before Unity null comparisons. Navigation audio also
   waits while the game's loading screen is visible.

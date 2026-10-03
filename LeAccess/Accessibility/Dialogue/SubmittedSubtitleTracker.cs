@@ -11,12 +11,13 @@ internal sealed class SubmittedSubtitleTracker
     private readonly List<Line> _pending = new();
     private readonly List<Line> _delivered = new();
     private readonly Dictionary<int, string> _rendered = new();
+    private long _nextIdentity;
 
     internal void Submit(string content, string sender, double now)
     {
         Expire(now);
         if (string.IsNullOrWhiteSpace(content)) return;
-        var line = new Line(content.Trim(), sender?.Trim(), now);
+        var line = new Line(++_nextIdentity, content.Trim(), sender?.Trim(), now);
         foreach (string rendered in _rendered.Values)
             if (line.Matches(rendered)) return;
         foreach (var pending in _pending)
@@ -38,18 +39,38 @@ internal sealed class SubmittedSubtitleTracker
         return true;
     }
 
-    internal bool TryTake(bool canSpeak, double now, out string text)
+    internal bool TryTake(bool canSpeak, double now, out string text, bool acknowledge = true)
+        => TryTake(canSpeak, now, out text, out _, acknowledge);
+
+    internal bool TryTake(bool canSpeak, double now, out string text, out long identity, bool acknowledge = true)
     {
         Expire(now);
         text = null;
+        identity = 0;
         if (_pending.Count == 0) return false;
         if (!canSpeak) return true;
         var line = _pending[0];
-        _pending.RemoveAt(0);
+        identity = line.Identity;
+        text = string.IsNullOrEmpty(line.Sender) ? line.Content : $"{line.Sender}: {line.Content}";
+        if (acknowledge) Acknowledge(identity, text, now);
+        return _pending.Count != 0;
+    }
+
+    internal bool Acknowledge(string text, double now)
+        => Acknowledge(0, text, now);
+
+    internal bool Acknowledge(long identity, string text, double now)
+    {
+        Expire(now);
+        int index = _pending.FindIndex(line =>
+            (identity == 0 || identity == line.Identity) &&
+            text == (string.IsNullOrEmpty(line.Sender) ? line.Content : $"{line.Sender}: {line.Content}"));
+        if (index < 0) return false;
+        var line = _pending[index];
+        _pending.RemoveAt(index);
         if (_delivered.Count == MaximumPendingLines) _delivered.RemoveAt(0);
         _delivered.Add(line);
-        text = string.IsNullOrEmpty(line.Sender) ? line.Content : $"{line.Sender}: {line.Content}";
-        return _pending.Count != 0;
+        return true;
     }
 
     internal void ForgetRendered(int id) => _rendered.Remove(id);
@@ -65,9 +86,10 @@ internal sealed class SubmittedSubtitleTracker
     private sealed class Line
     {
         internal readonly string Content, Sender;
+        internal readonly long Identity;
         internal readonly double SubmittedAt;
-        internal Line(string content, string sender, double submittedAt)
-        { Content = content; Sender = sender; SubmittedAt = submittedAt; }
+        internal Line(long identity, string content, string sender, double submittedAt)
+        { Identity = identity; Content = content; Sender = sender; SubmittedAt = submittedAt; }
 
         internal bool Matches(string text) => text == Content ||
             !string.IsNullOrEmpty(Sender) && (text == $"{Sender}: {Content}" || text == $"{Sender} {Content}");

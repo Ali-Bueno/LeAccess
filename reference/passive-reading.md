@@ -120,3 +120,12 @@ content interrupts the node reader. The reader does not implement new controller
 navigation or synthesize point spending. Dynamic requirements changed by outside
 systems without the observed node/tree state changing need runtime confirmation;
 the displayed owned model remains preferred when available.
+
+The output-acceptance follow-up acknowledges passive summaries only after
+`ScreenReader.TrySpeak` succeeds. Rejected or unavailable manual output retains
+only the current node's request intent, then rebuilds details after recovery.
+Hidden, collected, unready or changed ownership and resets discard it; automatic
+retries yield to accepted output in the current frame. The passive suite passes
+107 checks, including 12 acceptance/retry regressions. The
+[centralized contract](screen-reader-lifecycle.md) records the managed-only test
+boundary and native acceptance semantics.

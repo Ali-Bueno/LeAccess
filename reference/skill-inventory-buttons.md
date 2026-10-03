@@ -127,3 +127,11 @@ empty slots, current versus inactive transformation bars, remaps, rejected
 ownership and current inventory status. See [STATUS.md](../STATUS.md) for the
 final integrated counts/build. Real controller and listening validation remains
 pending; no game was launched.
+
+Inventory automatic and manual feedback now acknowledge content only when
+`ScreenReader.TrySpeak` accepts output. A failed manual gesture retains only its
+selection-bound intent and rebuilds current properties after recovery; changed,
+hidden, collected or unready ownership and resets discard it. Automatic retries
+yield to accepted output in the current frame. The inventory suite passes 219
+checks, including 12 acceptance/retry regressions; see
+[the centralized contract](screen-reader-lifecycle.md).

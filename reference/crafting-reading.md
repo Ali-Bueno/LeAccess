@@ -2,7 +2,7 @@
 
 Inspected the installed Steam build **25690669** on 2026-10-03 without launching
 the game or opening audio. The current native metadata, wrappers and installed
-assets support two bounded fixes. Host checks exercise the production readers;
+assets support bounded control-reading fixes. Host checks exercise the production readers;
 successful live focus and listening remain unverified.
 
 ## Verified fixes
@@ -14,6 +14,12 @@ successful live focus and listening remain unverified.
 - Crafting-material shard buttons now include their row's rendered name, affix
   type and quantity. Manual inspection also includes the visible improvement.
   Reused pooled rows are read afresh; there is no retained content cache.
+- Rune/glyph flyouts and the rune/glyph materials panel now expose the native
+  selected rectangle for polling and manual inspection. Icon-only material
+  controls read their exact container's localized subtype name and visible
+  quantity, including empty stacks. No item or tooltip model is constructed
+  for brief speech. Invalid, foreign or collected selected entries declare an
+  unavailable selection, preventing whole-panel fallback and stale focus.
 - Filter bounds now include their own visible range heading: four potential
   ranges and the prefix/suffix count ranges. For example, the old generic speech
   was `Min: 2`; the new speech is `Legendary Potential. Min: 2`. Native localized
@@ -28,7 +34,8 @@ successful live focus and listening remain unverified.
 
 Production entry points:
 `Accessibility/Announcements/CraftingControlReader.cs`,
-`FilterRangeControlReader.cs`, and the early specialized branch in
+`CraftingSelectionReader.cs`, `CraftingMaterialReader.cs`,
+`FilterRangeControlReader.cs`, and the early specialized branches in
 `ElementAnnouncer.BuildAnnouncementText`. These readers perform no input,
 selection, item, filter, player or network writes and add no hooks/dependencies.
 
@@ -77,6 +84,43 @@ control yields to ordinary control reading. A populated input can hide its
 own placeholder; its authored role is still valid when the placeholder remains
 an exact descendant of that input.
 
+### Rune/glyph selection
+
+The installed forge contains `CraftingRuneSelectorFlyout` and
+`CraftingGlyphSelectorFlyout`. Current
+`CraftingMaterialSelectorPanel.HandleNavigateInput` (RVA `0x13CB6F0`) and
+`OnSelected(Vector2Int)` (`0x13CC060`) use the same `_selectedButtonId` for
+`_selectableRectTs` and `_selectables`; the latter supplies the native material
+focus calls. The reader validates both list bounds and the selected control's
+ownership of its rectangle. Wrapper fields are at
+`CraftingMaterialSelectorPanel.cs:66`, `:109` and `:124`.
+
+`CraftingRunesAndGlyphsPanel.FocusSelectable` (`0x287C470`) uses the rank-two
+`_selectables` matrix with `_selectedRowIndex`, then `_selectedColumnIndex`,
+and passes the resulting `MaterialContainerUI.rectTransform` to the focus
+cursor. Fields are at `CraftingRunesAndGlyphsPanel.cs:247`, `:262` and `:275`.
+`CraftingSlotManager.FocusSelectable` (`0x116BC20`) likewise uses its actual
+rank-two rectangle matrix with `currentlySelectedIdx.x`, then `.y`
+(`CraftingSlotManager.cs:3661`, `:3676`). The reader bounds-checks the native
+arrays; it never guesses an index from authored row arrays or invokes native
+focus, navigation, hover, popup or selection methods.
+
+Material speech requires the exact selected rectangle GameObject, an active
+owning `MaterialContainerUI`, and its raw `container` field cast to
+`SingleSubTypeContainer`. The container identifier must equal the material's
+identifier. Exactly one `allowedBaseType` and a nonnegative `allowedSubID`
+supply `Localization.Items.GetSubTypeName`; no rune/glyph ID or name table is
+hardcoded. This remains valid without a populated item stack. The rendered
+`externalItemNumber` must be visible and belong to that material. Installed
+flyout quantity labels are under their owning container's quantity child;
+foreign or hidden labels contribute nothing. Native `material.interactable`
+uses the existing disabled suffix once. The mod-owned quantity label is
+localized in English and Spanish; material names come from the game.
+
+The existing `UiFocusOwnership` path supplies immediate foreground/loading,
+visibility and same-frame ownership checks. Manual details preserve the
+existing owned `InfoForTooltip` path; no new tooltip builder or hook was added.
+
 Current file SHA-256:
 
 | Installed file | SHA-256 |
@@ -95,20 +139,27 @@ current method map in `%TEMP%/LeAccess-hazards-25690669-20261003/`.
 
 ## Validation and limits
 
-`dotnet run --project tests/LeAccess.MenuReading.Tests` passes **231 checks**,
-including **53 added checks** in `CraftingTests.cs` and `FilterRangeTests.cs`.
-Both source-linked integration reproductions failed before their reader fixes.
+`dotnet run --project tests/LeAccess.MenuReading.Tests` passes **266 checks**,
+including **53 prior checks** in `CraftingTests.cs` and `FilterRangeTests.cs`,
+and **35 new checks** in `CraftingSelectionTests.cs`. Source-linked scratch
+baselines independently reproduce missing native selector focus and missing
+localized material speech with each integration branch removed. Repository
+source remained intact during those baseline runs.
 Checks include action distinction, disabled wrapping, native descriptions,
 updated/reused rows, markup-only/hidden/foreign labels, exact button/range/input
 ownership, native lifetimes, localized text, empty fields and popup ownership.
 `dotnet build LeAccess/LeAccess.csproj -p:SkipPluginDeployment=true` passes with
 zero warnings/errors against the refreshed installed interop.
 
-Rune/glyph item selector speech remains unverified. Their specialized native
-`CraftingMaterialSelectorPanel` and `CraftingRunesAndGlyphsPanel` navigation is
-not proof of a normal selected `Selectable` or a valid retained item-tooltip
-model. No guessed matrix indexing, item matching, selection or model creation
-was added. The general forge summary/preview, unavailable-reason explanation,
+The new selector checks additionally cover native matrix rank/bounds, missing
+cells, mismatched rectangles, immediate focus changes, quantity updates,
+empty stacks, exact container identifiers, ambiguous types, disabled native
+behaviours, localization, hidden/foreign labels, foreground popup ownership,
+and brief versus manual tooltip population.
+
+Rune/glyph live focus, native interface casting and spoken output remain
+unverified in gameplay. No guessed matrix indexing, item matching, selection
+or model creation was added. The general forge summary/preview, unavailable-reason explanation,
 advanced affix comparison/combined-tier fields, sealed-affix dropdown, and other
 filter condition types also remain outside these fixes. Full forging/filter
 workflows, gamepad focus updates and listening still require gameplay checks.

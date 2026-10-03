@@ -14,7 +14,7 @@ the latest installed build. Technical findings and reproduction notes live in
 - Visible dungeon entry/exit, boss confirmation and native modal instructions.
 - Skill and passive details, equipped-skill buttons, inventory actions and quest
   journal reading.
-- Forge affix actions and shard names, types, available quantities and manual details.
+- Forge affix actions, shard details, and localized rune/glyph names and quantities.
 - Visible dialogue, examination descriptions, NPC subtitles and cinematic text.
 - Nearby NPC, enemy, loot, destination and other-player names.
 - Health/mana feedback and directional navigation and world-object audio cues.
@@ -26,6 +26,12 @@ the latest installed build. Technical findings and reproduction notes live in
 The startup guard retains an early online/offline button press until the game's
 loading transition has finished. Menu reading preserves native control mappings;
 HUD button hints remain silent during exploration.
+
+If screen-reader output is rejected, inventory, skill and passive readers retry
+the current selection after recovery. Dialogues, visible subtitles, popups and
+notices similarly retain current content until output is accepted. Hidden or
+replaced content is discarded; a failed manual inspection rebuilds details only
+while the same selection remains owned. See [recovery scope and limits](reference/screen-reader-lifecycle.md).
 
 Menu navigation reads brief names and states. Push the **right stick up** to read
 the selected tooltip: inventory, skills, passive nodes, class/mastery/realm
@@ -58,7 +64,9 @@ An empty slot is distinguished from temporarily unavailable item data.
 Stash and shop reading verifies the item against the current tab or stock before
 announcing it. [Forge and filter controls](reference/crafting-reading.md) read the
 selected affix action, rendered tier and available shards; right-stick-up includes
-visible shard improvement details. Supported potential and affix-count filter
+visible shard improvement details. Rune/glyph grids and selector flyouts read
+the native selected material's localized name and visible quantity, including
+empty stacks. Supported potential and affix-count filter
 bounds include their property name alongside the minimum or maximum value.
 Item inspection can use the game's tooltip formatter when the visual tooltip is
 unavailable, including modifiers, lore and requirements.

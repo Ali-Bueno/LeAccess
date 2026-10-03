@@ -17,8 +17,9 @@ internal static class InventoryAccessibility
     private static string _lastFailure;
     private static string _contextKey, _context;
     private static float _nextContextRead;
+    private static string _detailsKey;
 
-    internal static bool HasPendingContent => HasActiveContent && Announcements.HasPendingContent;
+    internal static bool HasPendingContent => HasActiveContent && (Announcements.HasPendingContent || _detailsKey != null);
 
     internal static bool HasActiveContent
     {
@@ -82,9 +83,13 @@ internal static class InventoryAccessibility
                 if (string.IsNullOrWhiteSpace(text)) text = ModText.Get("inventory.selection_unavailable");
             }
             text = ScreenContentTracker.Combine(new[] { slotName, text });
+            if (_detailsKey != key) _detailsKey = null;
+            if (readDetails) _detailsKey = key;
+            bool requestDetails = _detailsKey == key && ScreenReader.IsAvailable() &&
+                (readDetails || !ScreenReader.SpokeThisFrame);
             if (selectedData is not null && !selectedData.WasCollected)
             {
-                if (_contextKey != key || readDetails || Time.unscaledTime >= _nextContextRead)
+                if (_contextKey != key || requestDetails || Time.unscaledTime >= _nextContextRead)
                 {
                     _contextKey = key;
                     _nextContextRead = Time.unscaledTime + 0.2f;
@@ -98,9 +103,9 @@ internal static class InventoryAccessibility
             }
             else { _contextKey = _context = null; }
             string requestedText = text;
-            if (readDetails && selectedData is not null && !selectedData.WasCollected)
+            if (requestDetails && selectedData is not null && !selectedData.WasCollected)
                 hasTooltip = ItemTooltipReader.TryReadForItem(selectedData, container.gameObject, out requestedText);
-            if (readDetails && !hasTooltip && selectedData is not null && !selectedData.WasCollected)
+            if (requestDetails && !hasTooltip && selectedData is not null && !selectedData.WasCollected)
             {
                 hasTooltip = ItemTooltipModelReader.TryRead(selectedData, container, out requestedText);
                 if (!hasTooltip)
@@ -118,20 +123,22 @@ internal static class InventoryAccessibility
             if (!IsAlive(currentContainer) || currentContainer.Pointer != container.Pointer ||
                 selectedData is not null && !InventorySelectionReader.OwnsSelection(selectedData, container))
             { Reset(); return; }
-            if (readDetails && hasTooltip && slotName != null)
+            if (requestDetails && hasTooltip && slotName != null)
                 requestedText = ScreenContentTracker.Combine(new[] { slotName, requestedText });
             bool announced = Announcements.Observe(key, text,
-                ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame, out string announcement);
-            if (readDetails && ScreenReader.IsAvailable() && !string.IsNullOrWhiteSpace(requestedText))
+                ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame, out string announcement, acknowledge: false);
+            if (requestDetails && !string.IsNullOrWhiteSpace(requestedText))
             {
-                Announcements.Observe(key, text, true, out _);
+                Announcements.Observe(key, text, false, out _, acknowledge: false);
                 announcement = requestedText;
             }
             else if (!announced) return;
-            ScreenReader.Speak(announcement, interrupt: true);
-            Plugin.Log.LogInfo($"[{(readDetails ? "Inventory details" : "Inventory")}] {announcement}");
+            if (!ScreenReader.TrySpeak(announcement, interrupt: true)) return;
+            Announcements.Acknowledge(key, text);
+            _detailsKey = null;
+            Plugin.Log.LogInfo($"[{(requestDetails ? "Inventory details" : "Inventory")}] {announcement}");
         }
-        catch (Exception ex) { Announcements.Reset(); ReportFailure(ex); }
+        catch (Exception ex) { Announcements.Reset(); _detailsKey = null; ReportFailure(ex); }
     }
 
     private static ItemContainerUI GetFocusedContainer()
@@ -146,6 +153,7 @@ internal static class InventoryAccessibility
     {
         Announcements.Reset(); _lastFailure = null;
         _contextKey = _context = null; _nextContextRead = 0;
+        _detailsKey = null;
     }
 
     private static void ReportFailure(Exception ex)

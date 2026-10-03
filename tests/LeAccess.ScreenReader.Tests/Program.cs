@@ -50,6 +50,15 @@ Check(LeAccess.Plugin.Log.Warnings.Count == warnings, "persistent missing reader
 
 Reset();
 Check(ScreenReader.Initialize(), "existing reader initializes");
+Check(!ScreenReader.TrySpeak(null) && !ScreenReader.TrySpeak("") && Tolk.Outputs == 0,
+    "empty TrySpeak requests return false without reaching native output");
+Check(ScreenReader.TrySpeak("accepted result", interrupt: false) && ScreenReader.SpokeThisFrame &&
+    Tolk.Messages.Last() == ("accepted result", false), "TrySpeak reports native acceptance and preserves interrupt flag");
+Tolk.OutputAccepted = false;
+Check(!ScreenReader.TrySpeak("same-frame rejection") && ScreenReader.SpokeThisFrame,
+    "rejection after accepted output preserves earlier frame ownership while returning false");
+Tolk.OutputAccepted = true; Advance();
+Tolk.Messages.Clear();
 ScreenReader.Speak("normal", interrupt: true);
 Check(ScreenReader.SpokeThisFrame && Tolk.Messages.Single() == ("normal", true), "accepted output claims this frame");
 Time.frameCount++; Tolk.OutputAccepted = false;
@@ -74,10 +83,19 @@ ScreenReader.Speak("exception");
 Check(!ScreenReader.SpokeThisFrame && !ScreenReader.IsAvailable(), "output exception releases availability without claiming speech");
 Tolk.OutputFailure = null; Advance(); ScreenReader.Speak("after exception");
 Check(ScreenReader.SpokeThisFrame, "transport recovers after an output exception");
+Time.frameCount++; Tolk.OutputFailure = new InvalidOperationException("TrySpeak failure");
+Check(!ScreenReader.TrySpeak("throw result") && !ScreenReader.SpokeThisFrame,
+    "TrySpeak catches output exceptions and returns false without claiming the frame");
+outputs = Tolk.Outputs;
+Check(!ScreenReader.TrySpeak("unavailable result") && Tolk.Outputs == outputs,
+    "TrySpeak returns false while the unavailable transport waits for a probe");
+Tolk.OutputFailure = null; Advance();
+Check(ScreenReader.TrySpeak("recovered result"), "TrySpeak resumes acceptance after a successful reconnect probe");
 ScreenReader.Shutdown();
 Check(!ScreenReader.IsAvailable() && ScreenReader.DetectedScreenReader == "None" && !ScreenReader.SpokeThisFrame,
     "shutdown clears detection and frame ownership");
 probes = Tolk.Detections; Advance(); ScreenReader.IsAvailable(); ScreenReader.Speak("after shutdown");
+Check(!ScreenReader.TrySpeak("after shutdown result"), "TrySpeak does not acknowledge output after shutdown");
 Check(Tolk.Detections == probes && Tolk.Unloads == 1, "shutdown prevents implicit reconnection");
 ScreenReader.Shutdown(); Check(Tolk.Unloads == 1, "repeated shutdown does not unload twice");
 Check(ScreenReader.Initialize() && Tolk.Loads == 2, "explicit initialization after shutdown reconnects");

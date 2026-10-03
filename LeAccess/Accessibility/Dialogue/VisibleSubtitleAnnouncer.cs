@@ -98,10 +98,13 @@ internal static class VisibleSubtitleAnnouncer
                     if (text != null && !eligible)
                         lock (SubmissionLock) Submitted.ObserveRendered(pair.Key, text, Now);
                     bool pending = BarkTracker.Observe(pair.Key, text,
-                        eligible && canSpeak && !cinematicVisible, out string announcement);
+                        eligible && canSpeak && !cinematicVisible, out string announcement, acknowledge: false);
                     HasPendingContent |= eligible && pending && announcement == null;
                     if (announcement == null) continue;
-                    if (SpeakRendered(pair.Key, announcement)) canSpeak = false;
+                    bool spoke = SpeakRendered(pair.Key, announcement, out bool accepted);
+                    if (accepted) BarkTracker.Acknowledge(pair.Key, announcement);
+                    else HasPendingContent = true;
+                    if (spoke) canSpeak = false;
                 }
                 catch (Exception ex) { Expired.Add(pair.Key); ReportFailure(ex); }
             }
@@ -113,13 +116,22 @@ internal static class VisibleSubtitleAnnouncer
                 lock (SubmissionLock) Submitted.ForgetRendered(id);
             }
             string submitted;
+            long submittedIdentity;
+            bool submittedPending;
             lock (SubmissionLock)
             {
                 if (DialogueAnnouncer.HasActiveContent || ScreenContentAnnouncer.HasActiveContent)
                     Submitted.DiscardPending();
-                HasPendingContent |= Submitted.TryTake(canSpeak && !cinematicVisible, Now, out submitted);
+                submittedPending = Submitted.TryTake(canSpeak && !cinematicVisible, Now, out submitted,
+                    out submittedIdentity, acknowledge: false);
             }
-            if (submitted != null) Speak(submitted, "DialogueNpcMessage");
+            if (submitted != null && Speak(submitted, "DialogueNpcMessage"))
+                lock (SubmissionLock)
+                {
+                    Submitted.Acknowledge(submittedIdentity, submitted, Now);
+                    submittedPending = Submitted.TryTake(false, Now, out _);
+                }
+            HasPendingContent |= submittedPending;
         }
         catch (Exception ex) { Reset(); ReportFailure(ex); }
     }
@@ -144,12 +156,13 @@ internal static class VisibleSubtitleAnnouncer
         }
         VideoStatus.Report(playing ? $"playing=True visible={visible} line={text != null} allowed={canSpeak}" : null);
         if (id == 0) return false;
-        bool pending = VideoTracker.Observe(id, text, canSpeak, out string announcement);
+        bool pending = VideoTracker.Observe(id, text, canSpeak, out string announcement, acknowledge: false);
         HasPendingContent |= pending && announcement == null;
         if (announcement != null)
         {
             lock (SubmissionLock) Submitted.ObserveRendered(id, announcement, Now);
-            Speak(announcement, "VideoSubtitle");
+            if (Speak(announcement, "VideoSubtitle")) VideoTracker.Acknowledge(id, announcement);
+            else HasPendingContent = true;
         }
         return true;
     }
@@ -169,9 +182,14 @@ internal static class VisibleSubtitleAnnouncer
             CinematicTracker.Reset(); _cinematicId = id;
         }
         if (id == 0) return false;
-        bool pending = CinematicTracker.Observe(id, text, canSpeak, out string announcement);
+        bool pending = CinematicTracker.Observe(id, text, canSpeak, out string announcement, acknowledge: false);
         HasPendingContent |= pending && announcement == null;
-        if (announcement != null) SpeakRendered(id, announcement);
+        if (announcement != null)
+        {
+            SpeakRendered(id, announcement, out bool accepted);
+            if (accepted) CinematicTracker.Acknowledge(id, announcement);
+            else HasPendingContent = true;
+        }
         return true;
     }
 
@@ -182,18 +200,20 @@ internal static class VisibleSubtitleAnnouncer
         return string.IsNullOrWhiteSpace(text) ? null : text;
     }
 
-    private static void Speak(string text, string source = "Dialogue")
+    private static bool Speak(string text, string source = "Dialogue")
     {
-        ScreenReader.Speak(text, interrupt: false);
+        if (!ScreenReader.TrySpeak(text, interrupt: false)) return false;
         Plugin.Log.LogInfo($"[{source}] {text}");
+        return true;
     }
 
-    private static bool SpeakRendered(int id, string text)
+    private static bool SpeakRendered(int id, string text, out bool accepted)
     {
+        accepted = true;
         lock (SubmissionLock)
             if (Submitted.ObserveRendered(id, text, Now)) return false;
-        Speak(text);
-        return true;
+        accepted = Speak(text);
+        return accepted;
     }
 
     private static double Now => (double)System.Diagnostics.Stopwatch.GetTimestamp() /

@@ -215,10 +215,11 @@ internal static class ScreenContentAnnouncer
             bool canSpeak = ScreenReader.IsAvailable() && (foreground.BlocksInput ||
                 !DialogueAnnouncer.HasActiveContent && !ScreenReader.SpokeThisFrame);
             HasPendingContent = Tracker.Observe(foreground.Id, text,
-                canSpeak, out string announcement);
+                canSpeak, out string announcement, acknowledge: false);
             if (announcement == null) return;
+            if (!ScreenReader.TrySpeak(announcement, interrupt: true)) return;
+            Tracker.Acknowledge(foreground.Id, announcement);
             HasPendingContent = false;
-            ScreenReader.Speak(announcement, interrupt: true);
             Plugin.Log.LogInfo($"[ScreenContent] {announcement}");
         }
         catch (Exception ex) { ReportFailure(ex); }

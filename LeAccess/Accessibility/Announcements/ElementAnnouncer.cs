@@ -225,6 +225,8 @@ public static class ElementAnnouncer
         // Check if this option is disabled by the game developers
         bool isDisabledOption = IsDisabledOption(go);
 
+        if (CraftingMaterialReader.TryRead(go, out string materialText, out bool materialUnavailable))
+            return FormatSpecializedAnnouncement(go, materialText, includeDetails, isDisabledOption || materialUnavailable);
         if (CraftingControlReader.TryRead(go, includeDetails, out string craftingText, out bool craftingUnavailable))
             return FormatSpecializedAnnouncement(go, craftingText, includeDetails, isDisabledOption || craftingUnavailable);
         if (FilterRangeControlReader.TryRead(go, out string filterRangeText, out bool filterRangeUnavailable))

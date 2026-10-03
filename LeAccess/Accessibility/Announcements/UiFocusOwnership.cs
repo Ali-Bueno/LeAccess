@@ -65,6 +65,9 @@ internal static class UiFocusOwnership
         var owner = navigation.TryCast<Behaviour>();
         if (!IsAlive(owner) || !owner.isActiveAndEnabled || !UiVisibility.IsVisible(owner.gameObject))
         { declared = true; return false; }
+        if (CraftingSelectionReader.TryReadSelected(navigation, out selected, out bool craftingDeclared))
+        { declared = true; return true; }
+        if (craftingDeclared) { declared = true; return false; }
         UnityEngine.UI.Selectable control = null;
         var vertical = navigation.TryCast<VerticalNavigable>();
         var search = navigation.TryCast<CraftingMaterialsPanelSearchInputFieldNavigable>();

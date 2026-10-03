@@ -73,8 +73,10 @@ Audible results of these follow-up changes still need user verification.
 The 2026-10-03 [announcement lifecycle audit](announcement-lifecycle.md) adds
 passive tutorial deferral behind active dialogue and earlier same-frame speech.
 It preserves blocking modal priority and rereads the latest visible tutorial
-before delivery. Screen-content coverage now passes **200 checks**, including
+before delivery. Screen-content coverage now passes **211 checks**, including
 both actual announcers in the game's update order and blocking-modal release.
+Rejected output keeps only current owned visible content pending; recovery
+rereads the source and acknowledges accepted transport output.
 
 Read-only API/code audit, 2026-10-02. Game build 25663618; no game launch.
 Implementation follow-up: [passive nodes](passive-reading.md),

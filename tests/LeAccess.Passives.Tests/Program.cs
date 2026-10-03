@@ -252,4 +252,50 @@ foreach (string gate in new[] { "popup", "dialogue", "radial menu", "loading", "
     Application.isFocused = true;
     cells.Cells[2, 1] = first;
 }
+PassiveAccessibility.Reset(); ScreenReader.Messages.Clear();
+ScreenReader.OutputAccepted = false;
+Tick(); Tick();
+Check(ScreenReader.Messages.Count == 0 && PassiveAccessibility.HasPendingContent,
+    "Rejected passive summary remains pending until output is accepted");
+ScreenReader.OutputAccepted = true;
+Tick(); Tick();
+Check(ScreenReader.Messages.Count == 1 && !PassiveAccessibility.HasPendingContent,
+    "Recovered passive summary is acknowledged exactly once");
+PassiveAccessibility.Reset(); ScreenReader.Messages.Clear();
+ScreenReader.OutputAccepted = false;
+PassiveAccessibility.ReadCurrentDetails();
+Check(PassiveAccessibility.HasPendingContent, "Rejected passive manual request retains current intent");
+first.Description = "Fresh passive details after recovery.";
+first.pointsAllocated++;
+ScreenReader.OutputAccepted = true;
+ScreenReader.SpokeThisFrame = true; PassiveAccessibility.Update();
+Check(ScreenReader.Messages.Count == 0 && PassiveAccessibility.HasPendingContent,
+    "Automatic passive detail retry yields to output already accepted this frame");
+Tick(); Tick();
+Check(ScreenReader.Messages.Single().Text.Contains("Fresh passive details after recovery"),
+    "Recovered passive details are rebuilt from the current native model");
+ScreenReader.Available = false;
+PassiveAccessibility.ReadCurrentDetails();
+Check(PassiveAccessibility.HasPendingContent, "Unavailable passive manual intent stays pending after an accepted summary");
+ScreenReader.Available = true; Tick(); Tick();
+Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text.Contains("Fresh passive details after recovery"),
+    "Late passive reader accepts current manual intent exactly once");
+foreach (var gate in new[] { "changed", "hidden", "collected", "unready", "unavailable" })
+{
+    PassiveAccessibility.Reset(); ScreenReader.Messages.Clear();
+    ScreenReader.OutputAccepted = false; ScreenReader.Available = gate != "unavailable";
+    PassiveAccessibility.ReadCurrentDetails();
+    if (gate == "changed") cells.Cells[2, 1] = second;
+    else if (gate == "collected") owner.WasCollected = true;
+    else if (gate == "unready") owner._navigationElements = null;
+    else owner.gameObject.Active = false;
+    ScreenReader.OutputAccepted = ScreenReader.Available = true;
+    Tick(); Tick();
+    Check(ScreenReader.Messages.All(message => !message.Text.Contains("Fresh passive details after recovery")) &&
+        (gate == "changed" ? ScreenReader.Messages.Single().Text.Contains(second.Name) : ScreenReader.Messages.Count == 0),
+        "Failed passive details cannot replay after ownership loss: " + gate);
+    cells.Cells[2, 1] = first; owner.gameObject.Active = true;
+    owner.WasCollected = false; owner._navigationElements = cells;
+}
+PassiveAccessibility.Reset();
 Console.WriteLine($"Passed {checks} passive checks.");

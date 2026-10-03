@@ -15,6 +15,7 @@ internal static class SkillAccessibility
     private static string _bindingStatus;
     private static double _nextBindingRefresh;
     private const double BindingRefreshSeconds = 0.2;
+    private static bool _detailsRequested;
 
     internal static bool HasActiveContent { get; private set; }
     internal static bool HasPendingContent { get; private set; }
@@ -40,6 +41,7 @@ internal static class SkillAccessibility
                 _selectionKey = selection.Key;
             }
             HasActiveContent = true;
+            _detailsRequested |= readDetails;
 
             double now = Time.unscaledTimeAsDouble;
             if (readDetails || now >= _nextBindingRefresh)
@@ -65,22 +67,28 @@ internal static class SkillAccessibility
 
             string brief = string.IsNullOrWhiteSpace(selection.Name) ? null :
                 ScreenContentTracker.Combine(new[] { selection.Name, _binding, selection.Status });
+            if (brief == null) _detailsRequested = false;
             HasPendingContent = Tracker.Observe(1, brief,
-                ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame, out string announcement);
-            if (readDetails && ScreenReader.IsAvailable() && !string.IsNullOrWhiteSpace(brief))
+                ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame, out string announcement, acknowledge: false);
+            HasPendingContent |= _detailsRequested && !string.IsNullOrWhiteSpace(brief);
+            bool requestDetails = _detailsRequested && ScreenReader.IsAvailable() &&
+                (readDetails || !ScreenReader.SpokeThisFrame) && !string.IsNullOrWhiteSpace(brief);
+            if (requestDetails)
             {
                 if (!SkillSelectionReader.TryRead(out var details) || details.Key != selection.Key)
                 { ClearSelection(); return; }
-                // Acknowledge navigation even when manual inspection arrives before settling.
-                Tracker.Observe(1, brief, true, out _);
+                Tracker.Observe(1, brief, false, out _, acknowledge: false);
                 announcement = ScreenContentTracker.Combine(new[] { brief, details.Details, details.LiveDetails });
             }
             if (announcement == null) return;
             if (!SkillSelectionReader.TryRead(out var current, includeDetails: false) || current.Key != selection.Key)
             { ClearSelection(); return; }
+            if (!ScreenReader.TrySpeak(announcement, interrupt: true))
+            { HasPendingContent = true; return; }
+            Tracker.Acknowledge(1, brief);
+            _detailsRequested = false;
             HasPendingContent = false;
-            ScreenReader.Speak(announcement, interrupt: true);
-            Plugin.Log.LogInfo($"[{(readDetails ? "Skill details" : "Skill")}] {announcement}");
+            Plugin.Log.LogInfo($"[{(requestDetails ? "Skill details" : "Skill")}] {announcement}");
         }
         catch (Exception ex) { ClearSelection(); ReportFailure(ex); }
     }
@@ -93,6 +101,7 @@ internal static class SkillAccessibility
         _nextBindingRefresh = 0;
         HasActiveContent = false;
         HasPendingContent = false;
+        _detailsRequested = false;
     }
 
     internal static void Reset() { ClearSelection(); _lastFailure = null; _bindingStatus = null; }

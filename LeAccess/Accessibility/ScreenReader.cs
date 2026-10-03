@@ -77,8 +77,15 @@ public static class ScreenReader
     /// <param name="text">Text to speak</param>
     /// <param name="interrupt">If true, interrupts current speech</param>
     public static void Speak(string text, bool interrupt = true)
+        => TrySpeak(text, interrupt);
+
+    /// <summary>
+    /// Return whether Tolk accepted speech or braille output, not whether playback completed.
+    /// Failed output is not queued; callers retain responsibility for current content ownership.
+    /// </summary>
+    public static bool TrySpeak(string text, bool interrupt = true)
     {
-        if (string.IsNullOrEmpty(text) || !IsAvailable()) return;
+        if (string.IsNullOrEmpty(text) || !IsAvailable()) return false;
 
         try
         {
@@ -86,6 +93,7 @@ public static class ScreenReader
             {
                 _lastSpeechFrame = UnityEngine.Time.frameCount;
                 _lastFailure = null;
+                return true;
             }
             else FailConnection("Tolk.Output returned false");
         }
@@ -93,6 +101,7 @@ public static class ScreenReader
         {
             FailConnection($"Tolk.Output failed: {ex.GetType().Name}: {ex.Message}");
         }
+        return false;
     }
 
     /// <summary>

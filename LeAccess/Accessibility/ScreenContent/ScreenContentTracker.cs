@@ -7,7 +7,7 @@ internal sealed class ScreenContentTracker
 {
     private readonly Dictionary<int, Entry> _entries = new();
 
-    internal bool Observe(int id, string text, bool canSpeak, out string announcement)
+    internal bool Observe(int id, string text, bool canSpeak, out string announcement, bool acknowledge = true)
     {
         announcement = null;
         if (string.IsNullOrWhiteSpace(text))
@@ -23,9 +23,17 @@ internal sealed class ScreenContentTracker
         // Two matching observations allow text and localization to settle after the opening hook.
         if (stable && canSpeak)
         {
-            entry.Spoken = text;
+            if (acknowledge) entry.Spoken = text;
             announcement = text;
         }
+        return true;
+    }
+
+    internal bool Acknowledge(int id, string text)
+    {
+        if (!_entries.TryGetValue(id, out var entry) || !entry.Stable || entry.Candidate != text ||
+            string.IsNullOrWhiteSpace(text)) return false;
+        entry.Spoken = text;
         return true;
     }
 

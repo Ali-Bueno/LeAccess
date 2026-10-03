@@ -27,6 +27,7 @@ internal static class SelectionTests
         BindingTests.Reset();
         ScreenReader.Messages.Clear();
         ScreenReader.Available = true;
+        ScreenReader.OutputAccepted = true;
         ScreenReader.SpokeThisFrame = false;
         ScreenContentAnnouncer.HasActiveContent = DialogueAnnouncer.HasActiveContent = false;
         ControllerMenuAccessibility.HasActiveContent = LE.UI.LoadingScreen.IsVisible = false;
@@ -382,6 +383,55 @@ internal static class SelectionTests
         Tick(0.21); Tick();
         check(ScreenReader.Messages.Count == 1, "Resolution after the menu closes does not announce a stale selection");
         check(!SkillAccessibility.HasActiveContent, "Closed first-open ownership stays released during initialization");
+        fixture = Reset();
+        ScreenReader.OutputAccepted = false;
+        Tick(); Tick();
+        check(ScreenReader.Messages.Count == 0 && SkillAccessibility.HasPendingContent,
+            "Rejected skill brief remains pending until transport accepts output");
+        ScreenReader.OutputAccepted = true;
+        Tick(); Tick();
+        check(ScreenReader.Messages.Count == 1 && !SkillAccessibility.HasPendingContent,
+            "Recovered skill selection is acknowledged exactly once");
+
+        fixture = Reset();
+        ScreenReader.OutputAccepted = false;
+        SkillAccessibility.Update(readDetails: true);
+        check(SkillAccessibility.HasPendingContent, "Rejected manual skill details preserve current request intent");
+        Localization.Abilities.Descriptions[fixture.Ability] = "Fresh skill details after recovery.";
+        ScreenReader.OutputAccepted = true;
+        Tick(otherSpeech: true);
+        check(ScreenReader.Messages.Count == 0 && SkillAccessibility.HasPendingContent,
+            "Automatic skill detail retry yields to accepted output in the same frame");
+        Tick(); Tick();
+        check(ScreenReader.Messages.Single().Text.Contains("Fresh skill details after recovery"),
+            "Recovered skill details are freshly read instead of replaying cached text");
+        ScreenReader.Available = false;
+        SkillAccessibility.Update(readDetails: true);
+        check(SkillAccessibility.HasPendingContent, "Unavailable manual skill intent stays pending after an accepted brief");
+        ScreenReader.Available = true; Tick(); Tick();
+        check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text.Contains("Fresh skill details after recovery"),
+            "Late skill reader accepts current manual intent exactly once");
+
+        foreach (var gate in new[] { "changed", "hidden", "collected", "unready", "unavailable" })
+        {
+            fixture = Reset(); ScreenReader.OutputAccepted = false;
+            ScreenReader.Available = gate != "unavailable";
+            SkillAccessibility.Update(readDetails: true);
+            if (gate == "changed")
+            {
+                fixture.Ability = new Ability { abilityName = "Next ability" };
+                fixture.Icon.ability = fixture.Ability;
+                Localization.Abilities.Names[fixture.Ability] = "Next selected skill";
+            }
+            else if (gate == "collected") fixture.Panel.WasCollected = true;
+            else if (gate == "unready") fixture.Panel.selectables = null;
+            else fixture.Panel.gameObject.Active = false;
+            ScreenReader.OutputAccepted = ScreenReader.Available = true;
+            Tick(); Tick();
+            check(ScreenReader.Messages.All(message => !message.Text.Contains("Lanza una bola ardiente")) &&
+                (gate == "changed" ? ScreenReader.Messages.Count == 1 && ScreenReader.Messages[0].Text.Contains("Next selected skill") : ScreenReader.Messages.Count == 0),
+                "Failed manual skill details cannot replay after ownership loss: " + gate);
+        }
         SkillAccessibility.Reset();
     }
 }

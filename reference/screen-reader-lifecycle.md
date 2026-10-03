@@ -7,7 +7,10 @@ that cadence. A loaded Tolk driver is retained across reader restarts, rather
 than repeatedly loading/unloading the native library. Repeated missing-reader
 and transport-failure diagnostics are suppressed.
 
-`Speak` marks `SpokeThisFrame` only when native `Tolk.Output` accepts the output.
+`TrySpeak(text, interrupt = true)` returns true only when native `Tolk.Output`
+accepts speech or braille output. Existing public void `Speak` delegates to it.
+`SpokeThisFrame` is marked only for accepted output; a later failure in the same
+frame does not erase an earlier accepted output.
 Rejection or exceptions suspend availability until the next probe. Shutdown
 clears detection/frame state and disables automatic probes until an explicit
 `Initialize`. Existing `Speak`, `SpeakQueued`, `Silence`, `Braille`, availability
@@ -35,11 +38,32 @@ not establish disconnection by themselves.
 The source-linked `LeAccess.ScreenReader.Tests` suite substitutes a managed
 Tolk stub and refuses to run if an NVDA client DLL is present beside its test
 executable. No native reader, speech, device or game is opened. Twelve failure
-cases reproduced before the fix; all 34 lifecycle checks now pass, including
+cases reproduced before the lifecycle fix; all 41 lifecycle/acceptance checks now pass, including
 late startup, restart, exact probe deadlines, rejected output, exception recovery,
 bounded/deduplicated retries and shutdown/reinitialization. Production builds
 with `SkipPluginDeployment=true`, zero warnings/errors.
 
-Live NVDA restart/listening remains pending. A failed announcement is not replayed
-after reconnecting: foreground ownership belongs to its feature reader, and
-replaying saved text could announce a selection or world state that has changed.
+Live NVDA restart/listening remains pending. The transport has no replay queue.
+Inventory, skill and passive services now prepare their current candidate without
+marking it spoken; acknowledgement and successful-output logging follow only a
+true `TrySpeak` result. Rejected/unavailable output remains pending while the
+selection is still owned. A failed manual request retains only focus-bound intent,
+and rebuilds current details after recovery. Automatic retries yield to accepted
+output in the current frame. Selection/owner changes, hidden or collected controls,
+unready native state and lifecycle reset discard that intent; there is no invented
+time-to-live for an otherwise live selected control.
+
+Source-linked service tests first reproduced lost output after rejection. The
+current suites pass **219 inventory**, **189 skill** and **107 passive** checks,
+adding 12 acceptance/retry checks to each suite. Coverage includes fresh manual
+details, unavailable output after an accepted brief, same-frame priority and lost
+ownership without stale replay. Tests use managed sinks and do not open native
+speech, audio, devices or the game.
+
+The same explicit acknowledgement now applies to visible modal/tutorial text,
+dialogue turns, cinematic/video subtitles, nearby NPC barks and notifications,
+including the current Morditas countdown occurrence. Their source ownership,
+settling and submission expiry remain in the individual readers; see
+[announcement lifecycle](announcement-lifecycle.md) and [NPC subtitles](npc-subtitles.md).
+Other stateful gameplay/menu readers still need acceptance-path review. This
+batch does not establish universal replay or recovery across the whole mod.

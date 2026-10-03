@@ -29,6 +29,7 @@ internal static class Program
             CountdownCoroutineRestarts();
             UrgentCountdownPrecedesAmbientContent();
             UrgentCountdownRespectsMenuAndTyping();
+            RejectedOutputRetriesOnlyCurrentVisibleSources();
             Console.WriteLine($"Notification tests passed: {_checks} checks.");
             return 0;
         }
@@ -505,6 +506,58 @@ internal static class Program
         }
     }
 
+    private static void RejectedOutputRetriesOnlyCurrentVisibleSources()
+    {
+        Reset();
+        var quick = Quick("Aviso actual");
+        NotificationAnnouncer.TrackQuick(quick);
+        ScreenReader.OutputAccepted = false; Tick(); Tick();
+        ScreenReader.OutputAccepted = true; Tick();
+        Check(ScreenReader.Messages.Single() == ("Aviso actual", false), "Rejected unchanged ordinary notification retries after recovery");
+        Tick(); Check(ScreenReader.Messages.Count == 1, "Accepted ordinary notification is acknowledged once");
+        Reset(); quick = Quick("Anterior"); NotificationAnnouncer.TrackQuick(quick);
+        ScreenReader.OutputAccepted = false; Tick(); Tick();
+        quick._label.text = "Actual"; ScreenReader.OutputAccepted = true; Tick(); Tick();
+        Check(ScreenReader.Messages.Single().Text == "Actual", "Changed rejected notification rereads current visible text");
+        Reset(); quick = Quick("Expired"); NotificationAnnouncer.TrackQuick(quick);
+        ScreenReader.OutputAccepted = false; Tick(); Tick();
+        quick._label.gameObject.Active = false; ScreenReader.OutputAccepted = true; Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 0, "Expired rejected notification never replays");
+        Reset(); var countdown = Countdown(); NotificationAnnouncer.GameplayDelivered(countdown);
+        void UrgentFrame() { Time.frameCount++; NotificationAnnouncer.UpdateUrgent(); NotificationAnnouncer.Update(true); }
+        ScreenReader.OutputAccepted = false; UrgentFrame(); UrgentFrame();
+        countdown._countdownText.text = "Abandonando evento en 6s";
+        ScreenReader.OutputAccepted = true; UrgentFrame(); UrgentFrame();
+        Check(ScreenReader.Messages.Single() == ("Abandonando evento en 6s", true), "Rejected urgent countdown retries the latest live caption after recovery");
+        UrgentFrame(); Check(ScreenReader.Messages.Count == 1, "Accepted recovered countdown is acknowledged once");
+        Reset(); countdown = Countdown(); NotificationAnnouncer.GameplayDelivered(countdown);
+        ScreenReader.OutputAccepted = false; UrgentFrame(); UrgentFrame();
+        countdown.gameObject.Active = false; ScreenReader.OutputAccepted = true; UrgentFrame(); UrgentFrame();
+        Check(ScreenReader.Messages.Count == 0, "Rejected countdown hidden before recovery is discarded");
+        Reset();
+        quick = Quick("Primer aviso");
+        var second = Quick("Segundo aviso");
+        NotificationAnnouncer.TrackQuick(quick); NotificationAnnouncer.TrackQuick(second);
+        ScreenReader.OutputAccepted = false; Tick(); Tick();
+        second._label.gameObject.Active = false;
+        ScreenReader.OutputAccepted = true; Tick();
+        Check(ScreenReader.Messages.Single().Text == "Primer aviso", "Recovery rebuilds a rejected batch from only current visible sources");
+        Tick(); Check(ScreenReader.Messages.Count == 1, "Acceptance acknowledges each surviving batch source");
+        Reset(); countdown = Countdown(); NotificationAnnouncer.GameplayDelivered(countdown);
+        ScreenReader.OutputAccepted = false; UrgentFrame(); UrgentFrame();
+        countdown._currentCountdownCoroutine = new();
+        countdown._countdownText.text = "Abandonando evento en 20s";
+        ScreenReader.OutputAccepted = true; UrgentFrame(); UrgentFrame();
+        Check(ScreenReader.Messages.Single().Text.EndsWith("20s"), "Rejected countdown recovery belongs to the current restarted coroutine");
+        Reset(); quick = Quick("Modal diferido"); NotificationAnnouncer.TrackQuick(quick);
+        ScreenReader.OutputAccepted = false; Tick(); Tick();
+        ScreenReader.OutputAccepted = true; ScreenContentAnnouncer.HasActiveContent = true; Tick();
+        Check(ScreenReader.Messages.Count == 0, "Recovered output does not bypass current modal priority");
+        ScreenContentAnnouncer.HasActiveContent = false; Tick();
+        Check(ScreenReader.Messages.Single().Text == "Modal diferido", "A current rejected notice resumes after foreground ownership releases");
+        Reset();
+    }
+
     private static void Reset()
     {
         NotificationAnnouncer.Reset();
@@ -513,6 +566,7 @@ internal static class Program
         LE.UI.LoadingScreen.IsVisible = false;
         ScreenContentAnnouncer.HasActiveContent = false;
         ScreenReader.Available = true;
+        ScreenReader.OutputAccepted = true;
         ScreenReader.SpokeThisFrame = false;
         ScreenReader.Messages.Clear();
         Notifications.instance = null;

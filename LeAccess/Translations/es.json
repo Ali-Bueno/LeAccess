@@ -11,6 +11,7 @@
   "crafting.add_affix": "Añadir afijo",
   "crafting.upgrade_affix": "Mejorar afijo",
   "crafting.shards": "Fragmentos: {0}",
+  "crafting.quantity": "Cantidad: {0}",
   "keyboard.open": "Teclado en pantalla",
   "keyboard.open_named": "Teclado en pantalla: {0}",
   "controller.menu": "Menú del mando",

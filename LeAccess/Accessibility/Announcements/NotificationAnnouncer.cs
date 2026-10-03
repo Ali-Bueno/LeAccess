@@ -15,6 +15,7 @@ internal static class NotificationAnnouncer
     private static readonly HashSet<int> PreviousVisible = new();
     private static readonly List<int> Expired = new();
     private static readonly List<string> Announcements = new();
+    private static readonly Dictionary<int, string> Attempts = new();
     private static readonly List<GameObject> Roots = new();
     private static readonly Dictionary<int, int> Deliveries = new();
     private static readonly EncounterCountdownReader Countdowns = new();
@@ -83,6 +84,8 @@ internal static class NotificationAnnouncer
         Visible.Clear();
         Expired.Clear();
         Announcements.Clear();
+        Attempts.Clear();
+        Countdowns.BeginPass();
         Roots.Clear();
         bool canSpeak = ScreenReader.IsAvailable() && !ScreenContentAnnouncer.HasActiveContent && !otherContentActive;
         foreach (var entry in Sources)
@@ -123,8 +126,10 @@ internal static class NotificationAnnouncer
         foreach (int id in Expired) Deliveries.Remove(id);
         string announcement = ScreenContentTracker.Combine(Announcements);
         if (string.IsNullOrWhiteSpace(announcement)) return;
+        if (!ScreenReader.TrySpeak(announcement, interrupt: countdownOnly)) return;
+        foreach (var attempt in Attempts) Tracker.Acknowledge(attempt.Key, attempt.Value);
+        Countdowns.Acknowledge();
         Plugin.Log.LogInfo($"[VisibleNotification] {announcement}");
-        ScreenReader.Speak(announcement, interrupt: countdownOnly);
     }
 
     private static void Rearm(GameObject root)
@@ -162,8 +167,8 @@ internal static class NotificationAnnouncer
         if (!Visible.Add(id)) return;
         string text = Countdowns.Read(root, canSpeak, Announcements);
         if (countdownOnly) return;
-        Tracker.Observe(id, text, canSpeak, out string announcement);
-        if (announcement != null) Announcements.Add(announcement);
+        Tracker.Observe(id, text, canSpeak, out string announcement, acknowledge: false);
+        if (announcement != null) { Announcements.Add(announcement); Attempts[id] = announcement; }
     }
 
     internal static void Reset()
@@ -174,6 +179,7 @@ internal static class NotificationAnnouncer
         PreviousVisible.Clear();
         Expired.Clear();
         Announcements.Clear();
+        Attempts.Clear();
         Roots.Clear();
         Deliveries.Clear();
         Countdowns.Reset();

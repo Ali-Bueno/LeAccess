@@ -13,6 +13,9 @@ internal sealed class EncounterCountdownReader
 {
     private readonly Dictionary<int, Dictionary<int, Entry>> _roots = new();
     private readonly ScreenContentTracker _tracker = new();
+    private readonly List<(int RootId, int LabelId, long CoroutineId, string Text)> _attempts = new();
+
+    internal void BeginPass() => _attempts.Clear();
 
     internal string Read(GameObject root, bool canSpeak, List<string> announcements)
     {
@@ -39,10 +42,10 @@ internal sealed class EncounterCountdownReader
             if (!entry.Spoken && entry.ObservedFrame != Time.frameCount)
             {
                 entry.ObservedFrame = Time.frameCount;
-                _tracker.Observe(id, TextUtils.CleanText(label.text), canSpeak, out string announcement);
+                _tracker.Observe(id, TextUtils.CleanText(label.text), canSpeak, out string announcement, acknowledge: false);
                 if (announcement != null)
                 {
-                    entry.Spoken = true;
+                    _attempts.Add((rootId, id, identity, announcement));
                     announcements.Add(announcement);
                 }
             }
@@ -63,7 +66,16 @@ internal sealed class EncounterCountdownReader
         _roots.Remove(rootId);
     }
 
-    internal void Reset() { _roots.Clear(); _tracker.Reset(); }
+    internal void Acknowledge()
+    {
+        foreach (var attempt in _attempts)
+            if (_roots.TryGetValue(attempt.RootId, out var entries) &&
+                entries.TryGetValue(attempt.LabelId, out var entry) && entry.CoroutineId == attempt.CoroutineId &&
+                _tracker.Acknowledge(attempt.LabelId, attempt.Text)) entry.Spoken = true;
+        _attempts.Clear();
+    }
+
+    internal void Reset() { _roots.Clear(); _tracker.Reset(); _attempts.Clear(); }
 
     private sealed class Entry
     {

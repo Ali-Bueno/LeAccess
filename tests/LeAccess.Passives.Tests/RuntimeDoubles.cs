@@ -141,12 +141,18 @@ namespace LeAccess.Accessibility
     internal static class ScreenReader
     {
         internal static bool Available = true;
+        internal static bool OutputAccepted = true;
         internal static bool SpokeThisFrame;
         internal static readonly List<(string Text, bool Interrupt)> Messages = new();
         internal static bool IsAvailable() => Available;
         internal static bool IsSpeaking() => throw new InvalidOperationException("Unreliable backend status must not gate skills");
         internal static void Speak(string text, bool interrupt)
-        { Messages.Add((text, interrupt)); SpokeThisFrame = true; }
+            => TrySpeak(text, interrupt);
+        internal static bool TrySpeak(string text, bool interrupt)
+        {
+            if (!Available || !OutputAccepted) return false;
+            Messages.Add((text, interrupt)); SpokeThisFrame = true; return true;
+        }
     }
 }
 namespace LeAccess

@@ -60,7 +60,33 @@ two-observation settle when both passes run. Integration belongs between visible
 subtitle updates and quest/world narration; later critical vitals retain their
 existing priority.
 
-Validation: dialogue **68**, screen content **200**, notifications **103**, and
-visible subtitles **143** checks pass. The main no-deployment build has zero
+## Accepted output and recovery
+
+Previously these readers acknowledged text when it settled, before checking
+whether the output transport accepted it. Rejected unchanged content therefore
+stayed silent after recovery. Owned screen-content, dialogue, rendered subtitle
+and notification readers now use `ScreenReader.TrySpeak` and acknowledge only
+accepted output. Acceptance covers speech or braille transport; it does not
+prove playback or audibility.
+
+`ScreenContentTracker.Observe(..., acknowledge: false)` offers the settled
+candidate without marking it delivered. `Acknowledge(id, text)` verifies that
+the same source still has that settled current candidate. Existing consumers
+retain the default automatic acknowledgement until migrated explicitly.
+Notifications acknowledge their collected source IDs only after acceptance of
+the combined current batch. Countdowns additionally validate the collected
+native coroutine identity.
+
+A rejected attempt leaves current owned content pending. Each later update
+rereads visibility, text, identity and priority before retrying; hidden, changed,
+expired and superseded sources discard the old attempt. There is no global
+replay queue. Submitted NPC lines retain their existing bounded pending tracker
+and original ten-second expiry deadline; rejection does not renew that lifetime.
+Submitted occurrence identities are not reused on tracker reset, so accepting
+an old attempt cannot acknowledge a newer identical line.
+Previously accepted submitted/rendered duplicates keep their deduplication.
+
+Validation: dialogue **73**, screen content **211**, notifications **115**, and
+visible subtitles **166** checks pass. The main no-deployment build has zero
 warnings/errors. Audible timing, actual countdown restart delivery online, and
 interaction with sustained live world narration still require listening.

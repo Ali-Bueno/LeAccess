@@ -24,6 +24,7 @@ internal static class Program
             InspectionReminder();
             SubtitleReminderTransitions();
             ReminderTypewriter();
+            RejectedOutputRetriesCurrentTurn();
             Console.WriteLine($"Dialogue tests passed: {_checks} checks.");
             return 0;
         }
@@ -377,6 +378,23 @@ internal static class Program
         reminder.line.text = full; Tick(); Tick();
         Check(ScreenReader.Messages.Count == 1, "Finishing retained text remains deduplicated after model state changes");
         PixelCrushers.DialogueSystem.DialogueManager.instance = null;
+        DialogueAnnouncer.Reset();
+    }
+
+    private static void RejectedOutputRetriesCurrentTurn()
+    {
+        var ui = Create(); Show(ui, "Actual."); ScreenReader.OutputAccepted = false;
+        Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 0 && DialogueAnnouncer.HasPendingContent, "Rejected dialogue output remains pending");
+        ScreenReader.OutputAccepted = true; Tick();
+        Check(ScreenReader.Messages.Single().Text == "Erza: Actual.", "Unchanged owned dialogue retries after acceptance recovers");
+        Tick(); Check(ScreenReader.Messages.Count == 1, "Accepted dialogue is acknowledged once");
+        ui = Create(); Show(ui, "Anterior."); ScreenReader.OutputAccepted = false; Tick(); Tick();
+        Show(ui, "Actual."); ScreenReader.OutputAccepted = true; Tick(); Tick();
+        Check(ScreenReader.Messages.Single().Text == "Erza: Actual.", "Rejected dialogue replaced before recovery does not replay");
+        ui = Create(); Show(ui, "Oculto."); ScreenReader.OutputAccepted = false; Tick(); Tick();
+        ui.gameObject.Active = false; ScreenReader.OutputAccepted = true; Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 0 && !DialogueAnnouncer.HasPendingContent, "Hidden rejected dialogue expires before recovery");
         DialogueAnnouncer.Reset();
     }
 

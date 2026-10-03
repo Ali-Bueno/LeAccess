@@ -46,7 +46,7 @@ their existing behavior. `[BarkSubtitleStatus]` reports bounded changed counts
 for current, onscreen, in-range, player-owned and eligible barks plus speech
 priority; it never logs suppressed text.
 
-The source-linked visible-subtitle suite passes **143 checks**, including 49 new
+The source-linked visible-subtitle suite passes **166 checks**, including 49 new
 spatial/ownership/dedup regressions. Main `SkipPluginDeployment=true` build passes
 with zero warnings/errors. No game was launched. The next listening test should
 compare distant offscreen camp speech, approaching the same speaker, a partially
@@ -197,14 +197,16 @@ unrelated response state cannot replace or reset that retained statement.
 The bounded diagnostic now identifies reminder selection and the label's failed
 visibility gate, without logging hidden text. No hook was added.
 
-The source-linked dialogue suite now passes **68 checks**, including this exact
+The source-linked dialogue suite now passes **73 checks**, including this exact
 null-panel layout, reminder-only body, visibility and lifecycle gates, opening
 without a subtitle hook, pending cancellation, and ordinary/reminder transitions
 with typewriter prefixes and subsequent unrelated model states.
 Changed native subtitle identities also rearm identical speaker/body text,
 while duplicate callbacks remain silent. See the
 [announcement lifecycle audit](announcement-lifecycle.md) for reproduction and
-deferred-turn replacement coverage.
+deferred-turn replacement and rejected-output recovery coverage. Only accepted
+transport output is acknowledged; recovery rereads currently owned text and
+discards hidden or superseded sources.
 Main build passes without warnings/errors. Reading during an actual examination
 remains to be verified by the user; no game was launched.
 
