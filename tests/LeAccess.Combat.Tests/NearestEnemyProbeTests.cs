@@ -23,6 +23,9 @@ internal static class NearestEnemyProbeTests
         Registry(farther, nearest);
         check(Find() == "Lobo", "Nearest enemy wins independently of aim and damage source");
         check(farther.BaseDisplayInformation.Reads == 0, "Probe only reads the selected nearest enemy name");
+        string status = NearestEnemyProbe.LastStatus;
+        for (int i = 0; i < 3; i++) NearestEnemyProbe.ReadName(farther.BaseDisplayInformation);
+        check(NearestEnemyProbe.LastStatus == status, "Polling other actors' names never grows the nearest-enemy status");
 
         var closer = Enemy(4, "Excluded", hostile, 1);
         closer.dead = true;

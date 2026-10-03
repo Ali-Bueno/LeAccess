@@ -32,7 +32,9 @@ internal static class NearestEnemyProbe
         if (!walked) return null;
         LastStatus = $"registry=online visuals examined={examined} living={living} in_range={inRange}";
         if (!IsAlive(nearest)) return null;
-        return ReadName(nearest.BaseDisplayInformation);
+        string name = ReadName(nearest.BaseDisplayInformation);
+        if (string.IsNullOrWhiteSpace(name)) LastStatus += " nearest_name=unavailable";
+        return name;
     }
 
     internal static string FindName(Actor player, float range)
@@ -56,13 +58,19 @@ internal static class NearestEnemyProbe
         });
         if (!walked) return null;
         LastStatus = $"registry=offline actors examined={examined} living={living} in_range={inRange}";
-        return IsAlive(nearest) ? ReadOfflineName(nearest) : null;
+        if (!IsAlive(nearest)) return null;
+        string name = ReadOfflineName(nearest, out string source);
+        LastStatus += " " + source;
+        return name;
     }
 
-    internal static string ReadOfflineName(Actor actor)
+    internal static string ReadOfflineName(Actor actor) => ReadOfflineName(actor, out _);
+
+    // The source is diagnostics only; callers that poll many actors discard it.
+    private static string ReadOfflineName(Actor actor, out string source)
     {
         string name = CleanDisplay(actor.GetComponent<BaseDisplayInformation>());
-        if (!string.IsNullOrWhiteSpace(name)) { LastStatus += " name_source=actor_display"; return name; }
+        if (!string.IsNullOrWhiteSpace(name)) { source = "name_source=actor_display"; return name; }
         // Modern offline simulation actors and their visual display live on separate objects.
         var sync = actor.actorSync;
         var linkedActor = IsAlive(sync) ? sync.gameplayActor : null;
@@ -70,16 +78,16 @@ internal static class NearestEnemyProbe
         if (IsAvailable(visuals, actor.gameObject.scene) && !visuals.dead)
         {
             name = CleanDisplay(visuals.BaseDisplayInformation);
-            if (!string.IsNullOrWhiteSpace(name)) { LastStatus += " name_source=owned_visuals"; return name; }
+            if (!string.IsNullOrWhiteSpace(name)) { source = "name_source=owned_visuals"; return name; }
         }
         var data = actor.data;
         // The native method falls back to Unity object names when actorName is empty.
         if (IsAlive(data) && !string.IsNullOrWhiteSpace(data.actorName))
         {
             name = TextUtils.CleanText(data.GetLocalizedActorName());
-            if (!string.IsNullOrWhiteSpace(name)) { LastStatus += " name_source=actor_data"; return name; }
+            if (!string.IsNullOrWhiteSpace(name)) { source = "name_source=actor_data"; return name; }
         }
-        LastStatus += $" nearest_name=unavailable visuals={(IsAlive(visuals) ? "present" : "missing")} actor_data={(IsAlive(data) ? "present" : "missing")}";
+        source = $"nearest_name=unavailable visuals={(IsAlive(visuals) ? "present" : "missing")} actor_data={(IsAlive(data) ? "present" : "missing")}";
         return null;
     }
 
@@ -91,10 +99,5 @@ internal static class NearestEnemyProbe
         IsAlive(component.gameObject) && component.gameObject.activeInHierarchy &&
         component.gameObject.scene.IsValid() && component.gameObject.scene.isLoaded;
 
-    internal static string ReadName(BaseDisplayInformation display)
-    {
-        string name = CleanDisplay(display);
-        if (string.IsNullOrWhiteSpace(name)) LastStatus += " nearest_name=unavailable";
-        return name;
-    }
+    internal static string ReadName(BaseDisplayInformation display) => CleanDisplay(display);
 }
