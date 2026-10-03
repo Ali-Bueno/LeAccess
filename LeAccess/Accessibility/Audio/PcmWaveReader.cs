@@ -13,7 +13,7 @@ internal static class PcmWaveReader
     private const int BitsPerSample = 16;
     private const int BytesPerSample = BitsPerSample / 8;
 
-    internal static float[] ReadMono48(Stream stream)
+    internal static float[] ReadMono48(Stream stream, int maximumFrames = MaximumFrames)
     {
         if (stream == null || !stream.CanRead || !stream.CanSeek)
             throw new InvalidDataException("Cue resource must be a readable, seekable WAV.");
@@ -46,7 +46,7 @@ internal static class PcmWaveReader
             else if (tag == "data")
             {
                 if (dataOffset != 0 || bytes == 0 || bytes % BytesPerSample != 0 ||
-                    bytes / BytesPerSample > MaximumFrames)
+                    bytes / BytesPerSample > maximumFrames)
                     throw new InvalidDataException("Cue data is empty, duplicated, incomplete or too long.");
                 dataOffset = stream.Position;
                 dataBytes = bytes;

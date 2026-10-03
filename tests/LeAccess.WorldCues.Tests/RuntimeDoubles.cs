@@ -189,4 +189,23 @@ namespace LeAccess.Accessibility.Audio
         internal void Silence() { Silences++; }
         public void Dispose() { Disposed = true; }
     }
+    internal static class WorldLoopBank
+    {
+        internal static bool Available;
+        internal static string LastFailure;
+        internal static bool Has(NaturalCueKind kind) => Available && kind != NaturalCueKind.Discovery;
+    }
+    internal sealed class LoopAudioOutput : IDisposable
+    {
+        internal static readonly List<LoopAudioOutput> Instances = new();
+        internal bool IsRunning = true, Disposed;
+        internal int Silences;
+        internal List<LoopVoice> Voices = new();
+        internal string Diagnostics => $"voices={Voices.Count}";
+        internal LoopAudioOutput(string name, int latency) => Instances.Add(this);
+        internal bool TryRecover(out string status) { status = null; IsRunning = true; return true; }
+        internal void SetVoices(IReadOnlyList<LoopVoice> voices) => Voices = voices.ToList();
+        internal void Silence() { Silences++; Voices.Clear(); }
+        public void Dispose() { Disposed = true; }
+    }
 }

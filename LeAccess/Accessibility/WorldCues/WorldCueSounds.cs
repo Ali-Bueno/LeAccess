@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using BepInEx.Configuration;
 using LeAccess.Accessibility.Audio;
 using LeAccess.Accessibility.Dialogue;
@@ -15,14 +16,20 @@ internal static class WorldCueSounds
     private const double AudioRetrySeconds = 5;
     private const int AudioBufferMilliseconds = 100; // Match the existing terrain output buffer.
     private const double DiagnosticIntervalSeconds = 5;
-    // Roughly the visible play area; D2RAccess landmarks loop within a comparable radius.
-    private const int DefaultLandmarkRangeMetres = 12;
-    private const int MaxLandmarkRangeMetres = 30;
+    // Roughly the visible play area; D2RAccess loops fade out within a comparable radius.
+    private const int DefaultLoopRangeMetres = 12;
+    private const int MaxLoopRangeMetres = 30;
     private static readonly WorldCueProbe World = new();
     private static readonly WorldCueState State = new();
     private static ConfigEntry<bool> _enabled;
     private static ConfigEntry<int> _volume;
-    private static ConfigEntry<int> _landmarkRange;
+    private static ConfigEntry<int> _loopRange;
+    private static ConfigEntry<bool> _loops;
+    private static LoopAudioOutput _loopAudio;
+    private static double _nextLoopRetry;
+    private static readonly List<LoopVoice> LoopVoices = new();
+    private static readonly HashSet<int> LoggedLoops = new();
+    private static readonly HashSet<int> CurrentLoops = new();
     private static RadarAudioOutput _audio;
     private static double _nextPoll, _nextAudioRetry;
     private static long _session;
@@ -39,9 +46,12 @@ internal static class WorldCueSounds
             "Repeat distinct directional sounds while coins, equipment and usable world objects remain nearby.");
         _volume = config.Bind(ConfigSection, "Volume", 100,
             new ConfigDescription("World object cue volume in percent.", new AcceptableValueRange<int>(0, 100)));
-        _landmarkRange = config.Bind(ConfigSection, "LandmarkRange", DefaultLandmarkRangeMetres,
-            new ConfigDescription("Metres from which portals, waypoints, zone exits and the stash keep sounding, quieter when far. " +
-                "0 limits them to the game's click range.", new AcceptableValueRange<int>(0, MaxLandmarkRangeMetres)));
+        _loops = config.Bind(ConfigSection, "Loops", true,
+            "Play gold, equipment, chests, the stash, portals, waypoints and zone exits as continuous D2R loops, " +
+            "several at once; false restores one short repeated cue per kind.");
+        _loopRange = config.Bind(ConfigSection, "LoopRange", DefaultLoopRangeMetres,
+            new ConfigDescription("Metres from which looping objects (and, with loops off, portals, waypoints, exits and the stash) " +
+                "sound, quieter when far. 0 limits them to the game's own range.", new AcceptableValueRange<int>(0, MaxLoopRangeMetres)));
         Plugin.Log.LogInfo("World sounds configured (coins, equipment, interactables; current or nearest per category)");
     }
 
@@ -57,7 +67,10 @@ internal static class WorldCueSounds
             if (suspension != null) { ReportStatus(suspension, now); Suspend(); return; }
             if (now < _nextPoll) return;
             _nextPoll = now + PollSeconds;
-            World.LandmarkRange = Math.Clamp(_landmarkRange.Value, 0, MaxLandmarkRangeMetres);
+            float loopRange = Math.Clamp(_loopRange.Value, 0, MaxLoopRangeMetres);
+            World.LandmarkRange = loopRange;
+            World.LoopRange = loopRange;
+            World.Loopable = _loops.Value && loopRange > 0 ? WorldLoopBank.Has : null;
             bool found = World.TryCapture(out var target);
             if (World.LastFailure != null) ReportFailure(World.LastFailure);
             if (!World.HasWorld)
@@ -69,11 +82,13 @@ internal static class WorldCueSounds
             if (_session != World.Session)
             {
                 _audio?.Silence();
+                _loopAudio?.Silence();
                 State.Reset();
                 WorldAudioReservation.Cancel(WorldAudioSource.Object);
                 _session = World.Session;
             }
-            ReportStatus(found ? "targets available" : "no eligible targets", now);
+            UpdateLoops(now, loopRange);
+            ReportStatus(found || LoopVoices.Count > 0 ? "targets available" : "no eligible targets", now);
             if (_playingTarget.HasValue && World.Targets[(int)_playingTarget.Value.Category]?.Key != _playingTarget.Value)
             {
                 if (_audio?.IsPlaying == true) _audio.Silence();
@@ -105,6 +120,43 @@ internal static class WorldCueSounds
         catch (Exception ex) { Suspend(); ReportFailure(ex.Message); }
     }
 
+    private static void UpdateLoops(double now, float range)
+    {
+        WorldLoopSelection.Select(World.Loops, range, _volume.Value / 100f, LoopVoices);
+        CurrentLoops.Clear();
+        foreach (var voice in LoopVoices) CurrentLoops.Add(voice.Id);
+        LoggedLoops.IntersectWith(CurrentLoops);
+        if (LoopVoices.Count == 0 && _loopAudio == null) return;
+        if (!EnsureLoopAudio(now)) return;
+        _loopAudio.SetVoices(LoopVoices);
+        foreach (var voice in LoopVoices)
+        {
+            if (!LoggedLoops.Add(voice.Id)) continue;
+            var candidate = World.Loops.Find(c => c.Id == voice.Id && c.Kind == voice.Kind);
+            Plugin.Log.LogInfo($"[World loop] sound={voice.Kind} target={voice.Id} distance={candidate.Distance:F2} range={range:F2}");
+        }
+        if (WorldLoopBank.LastFailure != null && _lastSampleFailure != WorldLoopBank.LastFailure)
+        {
+            _lastSampleFailure = WorldLoopBank.LastFailure;
+            Plugin.Log.LogWarning($"World loop unavailable; that kind keeps its repeated cue: {_lastSampleFailure}");
+        }
+    }
+
+    private static bool EnsureLoopAudio(double now)
+    {
+        if (_loopAudio?.IsRunning == true) return true;
+        if (now < _nextLoopRetry) return false;
+        _nextLoopRetry = now + AudioRetrySeconds;
+        try
+        {
+            if (_loopAudio == null) { _loopAudio = new LoopAudioOutput("World object loops", AudioBufferMilliseconds); return true; }
+            bool recovered = _loopAudio.TryRecover(out string status);
+            if (status != null) ReportFailure(status);
+            return recovered;
+        }
+        catch (Exception ex) { ReportFailure($"World object loops unavailable: {ex.Message}"); return false; }
+    }
+
     private static bool EnsureAudio(double now)
     {
         if (_audio?.IsRunning == true) return true;
@@ -123,6 +175,9 @@ internal static class WorldCueSounds
         if (_session != 0) _audio?.Silence();
         _session = 0;
         Array.Clear(LoggedTargets, 0, LoggedTargets.Length);
+        _loopAudio?.Silence();
+        LoopVoices.Clear();
+        LoggedLoops.Clear();
         _playingTarget = null;
         State.Reset();
         World.Reset();
@@ -141,7 +196,9 @@ internal static class WorldCueSounds
         DiagnosticStatus = status;
         if (now < _nextDiagnostic) return;
         _nextDiagnostic = now + DiagnosticIntervalSeconds;
-        Plugin.Log.LogInfo($"[World sounds] {status}; {World.Diagnostics}; audio={(_audio == null ? "not initialized" : _audio.Diagnostics.ToString())}");
+        Plugin.Log.LogInfo($"[World sounds] {status}; {World.Diagnostics} loops={LoopVoices.Count}/{World.Loops.Count}; " +
+            $"audio={(_audio == null ? "not initialized" : _audio.Diagnostics.ToString())}; " +
+            $"loopAudio={(_loopAudio == null ? "not initialized" : _loopAudio.Diagnostics)}");
     }
 
     internal static void Cleanup()
@@ -149,8 +206,12 @@ internal static class WorldCueSounds
         Suspend();
         _audio?.Dispose();
         _audio = null;
+        _loopAudio?.Dispose();
+        _loopAudio = null;
+        _nextLoopRetry = 0;
         _enabled = null;
-        _landmarkRange = null;
+        _loopRange = null;
+        _loops = null;
         _nextPoll = _nextAudioRetry = 0;
         _lastFailure = null;
         _lastSampleFailure = null;

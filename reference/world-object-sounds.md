@@ -66,8 +66,8 @@ alternated in and out, silencing the cue in progress.
 waypoints and the stash are loop-only landmarks audible well beyond reach:
 
 - Portals, waypoints, zone transitions and the stash sound up to
-  `[World object sounds] LandmarkRange` metres (default 12, 0-30; 0 restores the
-  native radius). Volume is full inside the native radius and fades linearly to
+  `[World object sounds] LoopRange` metres (default 12, 0-30; 0 restores the
+  native radius; first released as `LandmarkRange`). Volume is full inside the native radius and fades linearly to
   `FarGain` (35 percent) at the edge. Native `CanInteract()` reads no position,
   so a distant exit still passes it.
 - Other interactables keep the native radius; a nearer one inside its radius
@@ -77,6 +77,41 @@ waypoints and the stash are loop-only landmarks audible well beyond reach:
 
 Identity is read only for interactables between the native and landmark radii.
 The world-cue suite passes 169 checks; listening is pending.
+
+## Continuous loops (D2R mixer port, 2026-10-03)
+
+Second live report: the loop sounds still "sputter, as if the audio were not
+processed well". The log showed no device fault (`callback_stalls=0`, 70 ms
+maximum gap); the sounds themselves were the cause. `tools/import_d2r_audio.py`
+had cut the first 0.24-0.3 s of D2R loop recordings that run 10-15 s and the
+scheduler repeated that fragment with edge fades and gaps, interleaved with radar
+and NPC cues through `WorldAudioReservation`.
+
+The mixer is now ported from D2RAccess `item_audio.cpp` / `ground_items.cpp`:
+
+- `Sounds/Loops/*.wav` hold the whole recordings (gold, normal equipment, chest,
+  stash, portal, zone transition; 48 kHz mono PCM16, ~5 MB). `WorldLoopBank`
+  peak-normalizes them to 0.9 with D2R's trims (chest +4 dB, stash -4 dB, stash
+  padded to repeat once a second).
+- `WorldLoopMixer` is one continuous `ISampleProvider` (`LoopAudioOutput`,
+  100 ms `WaveOutEvent`). Each voice keeps its loop position across updates,
+  interpolates for pitch, and glides gains/pitch with a 30 ms time constant
+  (D2R: 0.25 smoothing per 20 ms, about 80 ms); absent voices fade out before
+  release, so pickup or range exit never clicks. It does not use the
+  reservation queue: loops are ambient, as in D2R.
+- `WorldLoopSelection`: up to 8 voices, exits/waypoints/stash first, then at most
+  3 chests, then the nearest loot. Gain `0.4 * (1 - d/range)^2`, summed scalar
+  gain limited to 0.5, equal-power pan, pitch 0.94 blended across the first
+  metre behind the player. `Volume` scales the result.
+- `WorldCueProbe` sends every eligible object whose kind has a loaded loop to
+  the mixer within `LoopRange`, and never also to the repeated cue. Unclassified
+  interactables keep the native-range repeated cue; a kind whose loop failed to
+  load falls back to its cue. `Loops=false` restores the old behaviour.
+
+Not ported yet: D2R's magic/rare/legendary equipment loops (LE rarity is not
+mapped), door and quest-item loops. Tests: `LeAccess.WorldLoops.Tests` 41 checks
+(decoding, levels, seamless position, fades, release, clamping, pitch) and
+world cues 190 checks. Listening is pending.
 
 ## Continuous sonar lifecycle follow-up
 

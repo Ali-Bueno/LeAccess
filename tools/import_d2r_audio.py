@@ -1,4 +1,4 @@
-"""Recreate the bounded embedded cues from the user's D2R recordings using FFmpeg."""
+"""Recreate the embedded cues and full loops from the user's D2R recordings using FFmpeg."""
 import argparse
 import hashlib
 import json
@@ -21,6 +21,25 @@ CLIPS = (
     ("inside_unexplored_room", "item loop sounds/exploration/inside unexplored room.ogg", 0.35),
 )
 
+# Whole recordings for the continuous world loop mixer (D2RAccess item_audio.cpp loops each file).
+LOOPS = (
+    ("gold", "item loop sounds/loot/gold.ogg"),
+    ("equipment", "item loop sounds/loot/normal equipment.ogg"),
+    ("chest", "item loop sounds/loot/chest.ogg"),
+    ("stash", "item loop sounds/loot/stash.ogg"),
+    ("portal", "item loop sounds/exploration/portal.ogg"),
+    ("zone_transition", "item loop sounds/exploration/zone transition.ogg"),
+)
+
+
+def convert(source, destination, duration=None):
+    limit = ["-t", str(duration)] if duration else []
+    subprocess.run([
+        "ffmpeg", "-nostdin", "-v", "error", "-y", "-i", str(source), *limit,
+        "-map_metadata", "-1", "-vn", "-ac", "1", "-ar", "48000",
+        "-c:a", "pcm_s16le", "-fflags", "+bitexact", "-flags:a", "+bitexact", str(destination),
+    ], check=True)
+
 
 def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest().upper()
@@ -36,17 +55,22 @@ def main():
     for name, relative, duration in CLIPS:
         source = args.d2r_repository / "sounds" / relative
         destination = output / (name + ".wav")
-        subprocess.run([
-            "ffmpeg", "-nostdin", "-v", "error", "-y", "-i", str(source),
-            "-t", str(duration), "-map_metadata", "-1", "-vn", "-ac", "1", "-ar", "48000",
-            "-c:a", "pcm_s16le", "-fflags", "+bitexact", "-flags:a", "+bitexact", str(destination),
-        ], check=True)
+        convert(source, destination, duration)
         provenance.append({"asset": destination.name, "source": "sounds/" + relative,
                            "source_sha256": sha256(source), "asset_sha256": sha256(destination),
                            "start_seconds": 0, "duration_seconds": duration})
+    loops = output / "Loops"
+    loops.mkdir(exist_ok=True)
+    for name, relative in LOOPS:
+        source = args.d2r_repository / "sounds" / relative
+        destination = loops / (name + ".wav")
+        convert(source, destination)
+        provenance.append({"asset": "Loops/" + destination.name, "source": "sounds/" + relative,
+                           "source_sha256": sha256(source), "asset_sha256": sha256(destination),
+                           "start_seconds": 0, "duration_seconds": "whole"})
     shutil.copyfile(args.d2r_repository / "LICENSE", output / "D2R-LICENSE.txt")
     (output / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf-8")
-    print(f"Imported {len(provenance)} bounded cues into {output}")
+    print(f"Imported {len(provenance)} cues and loops into {output}")
 
 
 if __name__ == "__main__":

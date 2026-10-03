@@ -351,5 +351,78 @@ Reset(); WorldCueSounds.Initialize(new ConfigFile()); waypoint = Interactable(-8
 waypoint.ServiceKey = "service.waypoint"; Tick(0);
 Check(RadarAudioOutput.Instances.Single().Plays == 1, "The default configuration lets a waypoint sound from eight metres");
 WorldCueSounds.Cleanup();
+// Continuous loops (D2RAccess item_audio): loopable objects leave the repeated cue for the loop mixer.
+Reset(); probe = new(); WorldLoopBank.Available = true;
+probe.Loopable = WorldLoopBank.Has; probe.LoopRange = 12; probe.LandmarkRange = 12;
+coin = Coin(2); var behind = Equipment(0, -3);
+waypoint = Interactable(-8); waypoint.interactionRange = 2; waypoint.ServiceKey = "service.waypoint";
+var plain = Interactable(1.5f); plain.interactionRange = 2;
+Check(probe.TryCapture(out target) && target.Key.InstanceId == plain.GetInstanceID() &&
+    probe.Targets[(int)WorldCueCategory.Coins] == null && probe.Targets[(int)WorldCueCategory.Equipment] == null,
+    "Loot and landmarks loop; an unclassified object keeps the repeated cue");
+Check(probe.Loops.Count == 3 && probe.Loops.Any(l => l.Kind == NaturalCueKind.Gold && l.Right == 1) &&
+    probe.Loops.Any(l => l.Kind == NaturalCueKind.Equipment && Math.Abs(l.Front + 3) < 1e-4) &&
+    probe.Loops.Any(l => l.Kind == NaturalCueKind.Portal && l.Right == -1 && Math.Abs(l.Distance - 8) < 1e-4),
+    "Loop candidates carry kind, distance, pan and metres ahead");
+waypoint.transform.position = new(-13, 0, 0);
+Check(probe.TryCapture(out _) && probe.Loops.All(l => l.Kind != NaturalCueKind.Portal), "Beyond the loop range a landmark is silent");
+waypoint.transform.position = new(-8, 0, 0); waypoint.Available = false;
+Check(probe.TryCapture(out _) && probe.Loops.All(l => l.Kind != NaturalCueKind.Portal), "An unusable landmark does not loop");
+waypoint.Available = true;
+probe.Loopable = kind => kind != NaturalCueKind.Portal;
+WorldObjectClickListener.allListener.Remove(plain);
+Check(probe.TryCapture(out target) && target.Sound == NaturalCueKind.Portal && probe.Loops.Count == 2,
+    "A kind the mixer cannot play falls back to its repeated cue");
+probe.Loopable = null;
+Check(probe.TryCapture(out _) && probe.Loops.Count == 0 && probe.Targets[(int)WorldCueCategory.Coins].HasValue,
+    "With loops off every object uses the repeated cue");
+
+// Selection: exits first, at most three chests, eight voices, D2R gain law and pile limit.
+var candidates = new List<LoopCandidate>();
+for (int i = 1; i <= 10; i++) candidates.Add(new(100 + i, NaturalCueKind.Gold, i * 0.5f, 0, 1));
+for (int i = 0; i < 4; i++) candidates.Add(new(200 + i, NaturalCueKind.Chest, 2 + i, 0, 1));
+candidates.Add(new(300, NaturalCueKind.Portal, 11, -1, -2));
+var voices = new List<LoopVoice>();
+WorldLoopSelection.Select(candidates, 12, 1, voices);
+Check(voices.Count == WorldLoopSelection.MaxVoices && voices[0].Kind == NaturalCueKind.Portal &&
+    voices.Count(v => v.Kind == NaturalCueKind.Chest) == WorldLoopSelection.MaxChestVoices,
+    "The way out claims a voice first and chests are capped before loot fills the rest");
+Check(voices.Where(v => v.Kind == NaturalCueKind.Gold).Select(v => v.Id).SequenceEqual(new[] { 101, 102, 103, 104 }),
+    "Loot voices go to the nearest piles");
+float Scalar(LoopVoice v) => MathF.Sqrt(v.Left * v.Left + v.Right * v.Right);
+Check(voices.Sum(Scalar) <= WorldLoopSelection.MixGainLimit + 1e-4, "A loud pile is limited together");
+Check(voices[0].Right < 1e-6 && voices[0].Left > 0 && Math.Abs(voices[0].Pitch - WorldLoopSelection.RearPitch) < 1e-6,
+    "A landmark to the left and behind pans left and drops its pitch");
+Check(Math.Abs(WorldLoopSelection.Gain(0, 12) - 0.4f) < 1e-6 && Math.Abs(WorldLoopSelection.Gain(6, 12) - 0.1f) < 1e-6 &&
+    WorldLoopSelection.Gain(12, 12) == 0 && WorldLoopSelection.Gain(float.NaN, 12) == 0 && WorldLoopSelection.Gain(1, 0) == 0,
+    "Gain falls with the square of the remaining proximity");
+Check(WorldLoopSelection.Pitch(1) == 1 && Math.Abs(WorldLoopSelection.Pitch(-0.5f) - 0.97f) < 1e-6 && WorldLoopSelection.Pitch(float.NaN) == 1,
+    "Rear pitch blends across one metre behind the player");
+var single = new List<LoopCandidate> { new(1, NaturalCueKind.Stash, 6, 0, 1) };
+WorldLoopSelection.Select(single, 12, 0.5f, voices);
+Check(Math.Abs(Scalar(voices.Single()) - 0.05f) < 1e-5, "Volume scales a single voice below the pile limit");
+WorldLoopSelection.Select(single, 0, 1, voices);
+Check(voices.Count == 0, "A zero range plays nothing");
+
+// Playback wiring.
+Reset(); WorldLoopBank.Available = true; LoopAudioOutput.Instances.Clear();
+var loopConfig = new ConfigFile(); WorldCueSounds.Initialize(loopConfig); coin = Coin(2); Tick(0);
+var loopOutput = LoopAudioOutput.Instances.Single();
+Check(loopOutput.Voices.Single().Kind == NaturalCueKind.Gold && RadarAudioOutput.Instances.Count == 0,
+    "Gold loops through the mixer without a repeated cue");
+Tick(0.11); Tick(0.22);
+Check(loopOutput.Voices.Count == 1 && LeAccess.Plugin.Log.Info.Count(x => x.StartsWith("[World loop]")) == 1,
+    "A continuing loop is updated, not restarted or re-logged");
+NavigationAudioState.IsSuspended = true; Tick(0.33);
+Check(loopOutput.Silences > 0 && loopOutput.Voices.Count == 0, "Suspension fades loops out");
+NavigationAudioState.IsSuspended = false; Tick(0.44);
+Check(loopOutput.Voices.Count == 1, "Loops resume after suspension");
+GroundGoldVisuals.all.Clear(); Tick(0.55);
+Check(loopOutput.Voices.Count == 0, "Pickup removes the loop");
+loopConfig.Set("Loops", false); coin = Coin(2); Tick(0.66);
+Check(RadarAudioOutput.Instances.Single().Plays == 1 && loopOutput.Voices.Count == 0, "Loops off restores the repeated cue");
+WorldCueSounds.Cleanup();
+Check(loopOutput.Disposed, "Cleanup releases the loop device");
+WorldLoopBank.Available = false; LoopAudioOutput.Instances.Clear();
 checks += NaturalIdentityTests.Run();
 Console.WriteLine($"World cue tests passed: {checks} checks.");

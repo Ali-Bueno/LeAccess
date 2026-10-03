@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/WorldLoopMixer.cs" Link="WorldLoopMixer.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/WorldLoopBank.cs" Link="WorldLoopBank.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/LoopVoice.cs" Link="LoopVoice.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/NaturalCueBank.cs" Link="NaturalCueBank.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/CuePlacement.cs" Link="CuePlacement.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/PcmWaveReader.cs" Link="PcmWaveReader.cs" />
+    <EmbeddedResource Include="../../LeAccess/Sounds/Loops/*.wav" LogicalName="LeAccess.Sounds.Loops.%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

@@ -1,6 +1,10 @@
 # Natural world sounds
 
-The mod now embeds short excerpts from the user's D2R sound collection. Gold,
+The mod now embeds short excerpts from the user's D2R sound collection, and the
+whole loop recordings for the continuous world loop mixer
+([continuous loops](world-object-sounds.md#continuous-loops-d2r-mixer-port-2026-10-03)).
+With loops on, gold, equipment, chests, the stash, portals and transitions use
+the loops; the excerpts below remain the fallback and the route sound. Gold,
 equipment and verified world services use these recordings with the existing
 camera-relative stereo placement. Rearward sounds have a lower pitch. The
 existing radar wall/opening sounds and NPC wooden taps remain unchanged.
