@@ -12,6 +12,7 @@
     <Compile Include="../../LeAccess/Accessibility/MapSections/MapSectionCatalog.cs" Link="MapSectionCatalog.cs" />
     <Compile Include="../../LeAccess/Accessibility/MapSections/MapSection.cs" Link="MapSection.cs" />
     <Compile Include="../../LeAccess/Accessibility/MapSections/MapSectionState.cs" Link="MapSectionState.cs" />
+    <Compile Include="../../LeAccess/Accessibility/MapSections/SceneryPresenceState.cs" Link="SceneryPresenceState.cs" />
     <EmbeddedResource Include="controlledcampaign.json" LogicalName="LeAccess.MapSections.campaign.json" />
     <EmbeddedResource Include="controlledgenerated.json" LogicalName="LeAccess.MapSections.generated.json" />
   </ItemGroup>

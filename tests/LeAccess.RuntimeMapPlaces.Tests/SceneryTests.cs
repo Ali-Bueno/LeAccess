@@ -28,14 +28,14 @@ internal static class SceneryTests
         player.Agent = agent; NavMesh.Climb = .2f; NavMesh.SampleAvailable = true; NavMesh.Blocked = false; NavMesh.Offset = default;
         NavMesh.BakedRadius = .5f; NavMesh.Sample = null;
         var foreground = Obj("Foreground", Obj("SceneObjects"));
-        var tent = Obj("Tent_01 (4)", foreground);
+        var tent = Obj("Bridge_Gate_001", foreground);
         var renderer = tent.Add(new MeshRenderer { localBounds = new(new(0, 2, 0), new(4, 4, 4)) });
         var world = new MapSectionWorldSnapshot(77, 77, "Z32", "Assets/Z32.unity", 2.5, 0, 0, .5, null);
         Physics.Hits = new(); Physics.FootHits.Clear(); Physics.Throw = false;
         bool Read(out RuntimeMapPlace place) => RuntimeSceneryPlaces.TryRead(world, out place);
         void Move(double x, double y = 0, double z = 0) => world = world with { X = x, Y = y, Z = z };
-        check(Read(out var place) && place.TextKey == "map.place.tents", "no floor name or prop collider needed beside authored footprint");
-        check(place.Identity == "77:scenery:" + tent.transform.GetInstanceID() && place.SpeechGroup == "map.place.tents", "actual owner identity with category deduplication");
+        check(Read(out var place) && place.TextKey == "map.place.gate", "no floor name or prop collider needed beside authored footprint");
+        check(place.Identity == "77:scenery:" + tent.transform.GetInstanceID() && place.SpeechGroup == "map.place.gate", "actual owner identity with category deduplication");
         check(NavMesh.Radius == NavMesh.BakedRadius && NavMesh.Type == 3 && NavMesh.Mask == 11 && NavMesh.RayCalls > 0,
             "uses current player's native NavMesh filter and actual baked clearance for scenery approach");
         check(Physics.Mask == Physics.DefaultRaycastLayers && Physics.Query == QueryTriggerInteraction.Ignore && Physics.Origin.y == 1,
@@ -66,7 +66,7 @@ internal static class SceneryTests
         tent.Active = false; check(!Read(out _), "inactive phase geometry not announced"); tent.Active = true;
         renderer.Destroyed = true; check(!Read(out _), "destroyed cached renderer rejected"); renderer.Destroyed = false;
         foreground.name = "Background"; check(!Read(out _), "background branch rejected even after caching"); foreground.name = "Foreground";
-        tent.name = "Tentacle"; check(!Read(out _), "renamed/reused component cannot retain cached category"); tent.name = "Tent_01 (4)";
+        tent.name = "Tentacle"; check(!Read(out _), "renamed/reused component cannot retain cached category"); tent.name = "Bridge_Gate_001";
         NavMesh.Blocked = true; check(!Read(out _), "no announcement across unwalkable border"); NavMesh.Blocked = false;
         NavMesh.SampleAvailable = false; check(!Read(out _), "missing walkable origin or approach rejected"); NavMesh.SampleAvailable = true;
         NavMesh.Offset = new(0, 3, 0); check(!Read(out _), "NavMesh cannot snap onto another floor"); NavMesh.Offset = default;

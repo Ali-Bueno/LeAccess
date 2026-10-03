@@ -8,6 +8,8 @@ using LeAccess.Accessibility.Announcements;
 using LeAccess.Accessibility.Combat;
 using LeAccess.Accessibility.Audio;
 using LeAccess.Accessibility.Navigation;
+using LeAccess.Accessibility.Navigation.Guidance;
+using LeAccess.Accessibility.Quests;
 using LeAccess.Accessibility.Npcs;
 using LeAccess.Accessibility.WorldCues;
 using LeAccess.Accessibility.Vitals;
@@ -54,6 +56,9 @@ public class Plugin : BasePlugin
         _continuousSonar = Config.Bind("Navigation audio", "ContinuousWallSonar", false,
             "Play the previous continuous wall tones alongside the reactive radar.");
         ReactiveRadar.Initialize(Config);
+        GuidanceAccessibility.Initialize(Config);
+        PassiveGuidanceAccessibility.Initialize(Config);
+        QuestUpdateAccessibility.Initialize(Config);
         CombatAccessibility.Initialize(Config);
         VitalsAccessibility.Initialize(Config);
         LandmarkAccessibility.Initialize(Config);
@@ -87,6 +92,9 @@ public class Plugin : BasePlugin
         LeAccess.Accessibility.Skills.SkillAccessibility.Reset();
         LeAccess.Accessibility.Passives.PassiveAccessibility.Reset();
         LeAccess.Accessibility.Quests.QuestAccessibility.Reset();
+        QuestUpdateAccessibility.Cleanup();
+        GuidanceAccessibility.Cleanup();
+        PassiveGuidanceAccessibility.Cleanup();
         LeAccess.Accessibility.Zones.ZoneAnnouncer.Reset();
         NotificationAnnouncer.Reset();
         ButtonPromptAnnouncer.Reset();

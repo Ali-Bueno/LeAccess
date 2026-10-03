@@ -67,9 +67,11 @@ namespace LeAccess.Accessibility.MapSections
     }
     internal static class RuntimeSceneryPlaces
     {
+        internal static void Initialize(string buildHash) { }
+        internal static bool HasValidObservation = true;
         internal static bool Available;
         internal static int Captures, Resets;
-        internal static RuntimeMapPlace Place = new("tent-owner", "map.place.tents", "map.place.tents");
+        internal static RuntimeMapPlace Place = new("gate-owner", "map.place.gate", "map.place.gate");
         internal static bool TryRead(MapSectionWorldSnapshot world, out RuntimeMapPlace place)
         { Captures++; place = Place; return Available; }
         internal static void Reset() { Resets++; }

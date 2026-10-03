@@ -59,16 +59,16 @@ internal static class ScreenContentAnnouncer
             var confirmation = popup.GetComponentInParent<ConfirmationPanel>();
             if (IsAlive(confirmation))
             {
-                Track(confirmation.gameObject, confirmation.HeaderText, confirmation.BodyText);
+                Track(confirmation.gameObject, confirmation.HeaderText, confirmation.BodyText, separateWindow: true);
                 return;
             }
             var choice = popup.GetComponentInParent<BinaryChoiceModalWindow>();
             if (IsAlive(choice))
             {
-                Track(choice.gameObject, choice.headerText, choice.contentText);
+                Track(choice.gameObject, choice.headerText, choice.contentText, separateWindow: true);
                 return;
             }
-            Track(popup.gameObject);
+            Track(popup.gameObject, separateWindow: true);
         }
         catch (Exception ex) { ReportFailure(ex); }
     }
@@ -94,7 +94,7 @@ internal static class ScreenContentAnnouncer
     }
 
     internal static void Track(GameObject root, TMP_Text header = null, TMP_Text body = null,
-        bool retainWhenHidden = false, Func<string> readText = null, bool blocksInput = true)
+        bool retainWhenHidden = false, Func<string> readText = null, bool blocksInput = true, bool separateWindow = false)
     {
         try
         {
@@ -106,12 +106,14 @@ internal static class ScreenContentAnnouncer
                 if (IsAlive(body)) existing.Body = body;
                 existing.RetainWhenHidden |= retainWhenHidden;
                 existing.BlocksInput |= blocksInput;
+                existing.SeparateWindow |= separateWindow;
                 if (readText != null) existing.ReadText = readText;
                 return;
             }
             var descendants = new List<int>();
             foreach (var other in Sources.Values)
             {
+                if (separateWindow || other.SeparateWindow) continue;
                 if (!IsAlive(other.Root) || !IsAlive(other.Root.transform) || !IsAlive(root.transform)) continue;
                 IsSourceVisible(other);
                 if (root.transform.IsChildOf(other.Root.transform)) return;
@@ -123,7 +125,7 @@ internal static class ScreenContentAnnouncer
                 Id = id, Root = root, Header = header, Body = body,
                 ReadText = readText,
                 OpenedFrame = Time.frameCount, Order = ++_sequence, RetainWhenHidden = retainWhenHidden,
-                BlocksInput = blocksInput
+                BlocksInput = blocksInput, SeparateWindow = separateWindow
             };
             HasPendingContent = true;
         }
@@ -185,8 +187,7 @@ internal static class ScreenContentAnnouncer
                     Tracker.Hide(pair.Key);
                     continue;
                 }
-                if (foreground == null || source.BlocksInput && !foreground.BlocksInput ||
-                    source.BlocksInput == foreground.BlocksInput && source.Order > foreground.Order) foreground = source;
+                if (IsInFront(source, foreground)) foreground = source;
             }
             catch (Exception ex)
             {
@@ -224,7 +225,7 @@ internal static class ScreenContentAnnouncer
             try
             {
                 if (!source.BlocksInput || !IsSourceVisible(source)) continue;
-                if (foreground == null || source.Order > foreground.Order) foreground = source;
+                if (IsInFront(source, foreground)) foreground = source;
             }
             catch (Exception) { }
         }
@@ -247,6 +248,14 @@ internal static class ScreenContentAnnouncer
             source.WasVisible = visible;
         }
         return visible;
+    }
+
+    private static bool IsInFront(Source source, Source current)
+    {
+        if (current == null) return true;
+        if (source.BlocksInput != current.BlocksInput) return source.BlocksInput;
+        return UiWindowOrder.TryCompare(source.Root, current.Root, out int order)
+            ? order > 0 : source.Order > current.Order;
     }
 
     internal static void Reset()
@@ -278,5 +287,6 @@ internal static class ScreenContentAnnouncer
         internal bool RetainWhenHidden;
         internal bool WasVisible;
         internal bool BlocksInput;
+        internal bool SeparateWindow;
     }
 }

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net6.0</TargetFramework><LangVersion>latest</LangVersion><ImplicitUsings>enable</ImplicitUsings><CheckEolTargetFramework>false</CheckEolTargetFramework><NoWarn>$(NoWarn);CS0649</NoWarn></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../LeAccess/Accessibility/Navigation/Guidance/PassiveGuidanceState.cs" Link="PassiveGuidanceState.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/Guidance/PassiveGuidanceAccessibility.cs" Link="PassiveGuidanceAccessibility.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/Guidance/PassiveGuidanceAudio.cs" Link="PassiveGuidanceAudio.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/Guidance/GuidanceGeometry.cs" Link="GuidanceGeometry.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/Guidance/GuidanceRouteProbe.cs" Link="GuidanceRouteProbe.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/WorldAudioReservation.cs" Link="WorldAudioReservation.cs" />
+    <Compile Include="../LeAccess.Guidance.Tests/RuntimeDoubles.cs" Link="RuntimeDoubles.cs" />
+  </ItemGroup>
+</Project>

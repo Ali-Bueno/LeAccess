@@ -10,7 +10,7 @@ internal static class SettingsChallengeReader
 {
     internal static string Read(SettingsPanelTabNavigable owner, bool includeDetails = false)
     {
-        var parts = new List<string>();
+        var parts = new List<UiReadingOrder.Fragment>();
         foreach (var challenge in owner.GetComponentsInChildren<CharacterChallengeSetting>(false))
         {
             if (!IsAlive(challenge) || !challenge.isActiveAndEnabled || !IsAlive(challenge.navigable) ||
@@ -22,9 +22,9 @@ internal static class SettingsChallengeReader
             string state = enabled
                 ? SettingsFocusReader.ReadLabel(challenge.challengeEnabledDescription, challenge.challengeEnabledObj, !includeDetails)
                 : SettingsFocusReader.ReadUniqueLabel(challenge.challengeDisabledObj, !includeDetails);
-            if (name != null && state != null) parts.Add($"{name}: {state}");
+            if (name != null && state != null) parts.Add(new(challenge.challengeNameText, $"{name}: {state}"));
         }
-        return ScreenContentTracker.Combine(parts);
+        return ScreenContentTracker.Combine(UiReadingOrder.Read(parts));
     }
 
     private static bool OwnedVisible(GameObject value, GameObject owner) => IsAlive(value) &&

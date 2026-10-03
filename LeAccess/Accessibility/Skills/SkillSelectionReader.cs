@@ -217,6 +217,5 @@ internal static class SkillSelectionReader
         IsAlive(left) && IsAlive(right) && left.Pointer == right.Pointer;
 
     private static string ReadLabel(TMP_Text text) =>
-        IsAlive(text) && text.isActiveAndEnabled && text.alpha > 0 && UiVisibility.IsVisible(text.gameObject) &&
-        (!IsAlive(text.canvasRenderer) || !text.canvasRenderer.cull) ? TextUtils.CleanText(text.text) : null;
+        TextUtils.IsVisibleLabel(text) ? TextUtils.CleanText(text.text) : null;
 }

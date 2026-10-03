@@ -61,6 +61,7 @@ namespace UnityEngine
         internal int Discoveries;
         internal List<Component> Components = new();
         internal AI.NavMeshAgent Agent;
+        internal T GetComponent<T>() where T : class => Components.OfType<T>().FirstOrDefault();
         internal T GetComponentInChildren<T>() where T : class => Agent as T;
         internal Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<FootstepRaycastTrigger> Triggers;
         internal bool activeInHierarchy => Active && (Parent is null || Parent.activeInHierarchy);
@@ -73,6 +74,8 @@ namespace UnityEngine
     }
     internal class Collider : Component { internal bool enabled = true, isTrigger; }
     internal class MeshRenderer : Component { internal bool enabled = true; internal Bounds localBounds; }
+    internal class MeshFilter : Component { internal Mesh sharedMesh; }
+    internal class Mesh : Object { internal string name; internal int vertexCount, subMeshCount; }
     internal struct Bounds
     {
         internal Vector3 min, max;

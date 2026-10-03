@@ -30,8 +30,7 @@ internal static class InventoryAccessibility
         try
         {
             var container = GetFocusedContainer();
-            return IsAlive(container) && IsAlive(element) && IsAlive(element.transform) &&
-                IsAlive(container.transform) && element.transform.IsChildOf(container.transform);
+            return IsAlive(container) && InventorySelectionReader.OwnsElement(container, element);
         }
         catch (Exception ex) { ReportFailure(ex); return false; }
     }
@@ -42,11 +41,17 @@ internal static class InventoryAccessibility
         {
             var container = GetFocusedContainer();
             if (!IsAlive(container)) { Reset(); return; }
-            var entry = container.currentlySelectedItem;
+            bool known = InventorySelectionReader.TryGetEntry(container, out var entry);
+            string slotName = EquipmentSlotText.Read(container.identifier);
             string key, text;
             ItemData selectedData = null;
             bool hasTooltip = false;
-            if (entry is null || entry.WasCollected)
+            if (!known || entry is not null && (entry.data is null || entry.data.WasCollected))
+            {
+                key = $"{container.GetInstanceID()}:unavailable";
+                text = ModText.Get("inventory.selection_unavailable");
+            }
+            else if (entry is null)
             {
                 var slot = container.currentFocusSlot;
                 key = $"{container.GetInstanceID()}:empty:{slot.x}:{slot.y}";
@@ -62,14 +67,21 @@ internal static class InventoryAccessibility
                 if (data is not null && !data.WasCollected)
                 {
                     var unpacked = data.getAsUnpacked();
-                    if (unpacked is not null && !unpacked.WasCollected)
-                        text = ScreenContentTracker.Combine(new[]
+                    if (unpacked is not null && !unpacked.WasCollected &&
+                        (unpacked.Pointer == data.Pointer || unpacked.IdEquals(data)))
+                    {
+                        string identity = ScreenContentTracker.Combine(new[]
                         {
-                            TextUtils.CleanText(unpacked.FullName), TextUtils.CleanText(unpacked.LocalisedBaseTypeName),
-                            IsEquipmentSlot(container.identifier) ? ModText.Get("inventory.equipped") : null
+                            TextUtils.CleanText(unpacked.FullName), TextUtils.CleanText(unpacked.LocalisedBaseTypeName)
                         });
+                        if (!string.IsNullOrWhiteSpace(identity))
+                            text = ScreenContentTracker.Combine(new[] { identity,
+                                InventorySelectionReader.IsEquipmentSlot(container.identifier) ? ModText.Get("inventory.equipped") : null });
+                    }
                 }
+                if (string.IsNullOrWhiteSpace(text)) text = ModText.Get("inventory.selection_unavailable");
             }
+            text = ScreenContentTracker.Combine(new[] { slotName, text });
             if (selectedData is not null && !selectedData.WasCollected)
             {
                 if (_contextKey != key || readDetails || Time.unscaledTime >= _nextContextRead)
@@ -90,7 +102,8 @@ internal static class InventoryAccessibility
                 hasTooltip = ItemTooltipReader.TryReadForItem(selectedData, container.gameObject, out requestedText);
             if (readDetails && !hasTooltip && selectedData is not null && !selectedData.WasCollected)
             {
-                if (!ItemTooltipModelReader.TryRead(selectedData, container, out requestedText))
+                hasTooltip = ItemTooltipModelReader.TryRead(selectedData, container, out requestedText);
+                if (!hasTooltip)
                 {
                     requestedText = ScreenContentTracker.Combine(new[] { text, ModText.Get("inventory.details_unavailable") });
                     string failure = ItemTooltipModelReader.LastFailure;
@@ -101,6 +114,10 @@ internal static class InventoryAccessibility
                     }
                 }
             }
+            if (selectedData is not null && !InventorySelectionReader.OwnsSelection(selectedData, container))
+            { Reset(); return; }
+            if (readDetails && hasTooltip && slotName != null)
+                requestedText = ScreenContentTracker.Combine(new[] { slotName, requestedText });
             bool announced = Announcements.Observe(key, text,
                 ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame, out string announcement);
             if (readDetails && ScreenReader.IsAvailable() && !string.IsNullOrWhiteSpace(requestedText))
@@ -115,21 +132,12 @@ internal static class InventoryAccessibility
         catch (Exception ex) { Announcements.Reset(); ReportFailure(ex); }
     }
 
-    private static bool IsEquipmentSlot(ContainerID id) => id is
-        ContainerID.EQ_HELMET or ContainerID.EQ_ARMOR or ContainerID.EQ_WEAPON or ContainerID.EQ_OFFHAND or
-        ContainerID.EQ_GLOVES or ContainerID.EQ_BELT or ContainerID.EQ_BOOTS or ContainerID.EQ_RIGHTRING or
-        ContainerID.EQ_LEFTRING or ContainerID.EQ_AMULET or ContainerID.EQ_RELIC;
-
     private static ItemContainerUI GetFocusedContainer()
     {
         if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible ||
             ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
             ControllerMenuAccessibility.HasActiveContent) return null;
-        var selected = NavigationManager.currentlySelected;
-        if (selected is null || selected.WasCollected) return null;
-        var container = selected.TryCast<ItemContainerUI>();
-        return IsAlive(container) && container.isActiveAndEnabled && UiVisibility.IsVisible(container.gameObject)
-            ? container : null;
+        return InventorySelectionReader.GetFocusedContainer();
     }
 
     internal static void Reset()

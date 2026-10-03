@@ -16,6 +16,7 @@ the latest installed build. Technical findings and reproduction notes live in
 - Visible dialogue, examination descriptions, NPC subtitles and cinematic text.
 - Nearby NPC, enemy, loot, destination and other-player names.
 - Health/mana feedback and directional navigation and world-object audio cues.
+- Automatic quest progress updates and spoken/audio orientation toward visible quest markers or named exits.
 - Local map sections, supported physical places and generated-room information.
 - English and Spanish mod speech, following the game language, with editable
   translation catalogs and per-key fallback.
@@ -31,9 +32,19 @@ to neutral before repeating. Skill inspection refreshes current displayed stats.
 Quests also announce their current objective and state during navigation.
 Earlier completed or failed objectives appear only in manual details, clearly
 labeled as that quest's history.
+Shared [menu visibility and focus checks](reference/menu-visibility.md) exclude
+hidden, faded and clipped labels, and reject retained background selection.
+Collected visual text follows screen rows, top to bottom and left to right;
+native controller navigation remains unchanged.
+During gameplay, new quests, current-objective changes (including counters) and
+completion are announced automatically. Saved quest history is initially silent;
+updates wait while menus or conversations own input.
 Items announce their available actions with the button first; merchant items
 include purchase, sale or repurchase prices. Skills announce learned state and
 their declared level or passive-point requirement.
+[Equipped slots](reference/equipped-items.md) announce the localized slot and
+actual worn item, including changes made while focus stays on the same slot.
+An empty slot is distinguished from temporarily unavailable item data.
 Item inspection can use the game's tooltip formatter when the visual tooltip is
 unavailable, including modifiers, lore and requirements.
 Character-name screen keyboards require an explicit click or submit on the name
@@ -42,10 +53,39 @@ Settings announce the tab and each control's name/value, including sound sliders
 and visible challenge states when no button is available. Descriptions remain
 available with right-stick-up.
 
+During gameplay, push the **right stick down** from neutral, or press **F6**, for
+[orientation](reference/objective-orientation.md). It names a visible tracked
+quest marker, prioritizing pinned quests, then reports the next path direction
+and remaining distance when a complete navigation path is available. Otherwise
+it reports the marker's straight-line direction and explicitly says the route
+is unverified. Directions follow the screen/camera. Repeat after walking to hear
+whether the same destination is closer or farther. Named visible exits are a
+fallback and are not asserted to lead to the quest. No movement is automated.
+
+[Automatic orientation](reference/automatic-orientation.md) also works without a
+button. It names a stable visible destination with a verified walking route,
+then repeats a quiet directional sound toward the next path corner. The pulses
+speed up as the remaining route becomes shorter. Speech reports major turns and
+proximity to the marker. Nearby named exits provide orientation when no reachable
+tracked quest marker is available. The cue stops when the route cannot be verified
+or gameplay loses focus. Sound and speech can be disabled independently under
+`[Automatic orientation]` in the mod configuration.
+
+[Natural world sounds](reference/natural-world-sounds.md) reuse recordings from
+the D2R mod for loot and identified world interactions. Short repeating samples
+share playback time with the existing radar knocks and breaths so each cue stays
+distinct. The sounds are embedded in the plugin; no separate audio installation
+is required.
+The previous bright coin and equipment cues are preserved as playable WAVs in
+the [sound design reference](reference/sound-design.md). D2R recordings remain
+the active sound set while those originals guide future, more realistic sounds.
+
 Ambient NPC subtitles are read when their text is visible on screen or the NPC
-is within interaction range. Nearby world services and supported scenery models
-can be announced separately from the ground beneath the player, including camp
-tents, wagons, gateways and the statue of Eterra.
+is within interaction range. Nearby world services, wagons, gateways and the
+statue of Eterra can be announced separately from the ground beneath the player.
+Supported camp tents are named only when the player is inside their verified
+canopy contour on the same walkable floor; leaving a tent receives a brief spoken
+confirmation. Being near a merchant does not establish a shop interior.
 
 ## Requirements and build
 

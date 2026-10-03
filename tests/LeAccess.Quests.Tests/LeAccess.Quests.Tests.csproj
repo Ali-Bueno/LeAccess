@@ -11,5 +11,7 @@
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentTracker.cs" Link="ScreenContentTracker.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/UiVisibility.cs" Link="UiVisibility.cs" />
+    <Compile Include="../UiScreenGeometryStub.cs" Link="UiScreenGeometryStub.cs" />
+    <Compile Include="../UiReadingOrderStub.cs" Link="UiReadingOrderStub.cs" />
   </ItemGroup>
 </Project>

@@ -51,8 +51,7 @@ internal static class ControllerMenuAccessibility
 
             string text = null;
             var label = sector._optionText;
-            if (IsAlive(label) && label.isActiveAndEnabled && label.alpha > 0 &&
-                UiVisibility.IsVisible(label.gameObject) && (!IsAlive(label.canvasRenderer) || !label.canvasRenderer.cull))
+            if (TextUtils.IsVisibleLabel(label))
                 text = TextUtils.CleanText(label.text);
             if (string.IsNullOrWhiteSpace(text))
             {

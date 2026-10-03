@@ -115,6 +115,7 @@ public sealed class RadarEngine
         {
             sensor.Baseline = true;
             sensor.State = observed;
+            if (observed == RadarState.Blocked) RememberWall(ref sensor, depth, position, axis);
         }
         else if (observed == sensor.State) sensor.Candidate = RadarState.Unknown;
         else if (sensor.Candidate != observed)
@@ -130,12 +131,15 @@ public sealed class RadarEngine
             sensor.State = sensor.Deferred = observed;
             sensor.Candidate = RadarState.Unknown;
             if (observed == RadarState.Blocked)
-            {
-                sensor.WallKnown = true;
-                sensor.WallOrigin = position;
-                sensor.WallProjection = Vector2.Dot(position, axis) + depth;
-            }
+                RememberWall(ref sensor, depth, position, axis);
         }
+    }
+
+    private static void RememberWall(ref Sensor sensor, float depth, Vector2 position, Vector2 axis)
+    {
+        sensor.WallKnown = true;
+        sensor.WallOrigin = position;
+        sensor.WallProjection = Vector2.Dot(position, axis) + depth;
     }
 
     private RadarState Deliver(ref Sensor sensor, float depth, Vector2 position,

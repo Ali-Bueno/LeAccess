@@ -46,6 +46,8 @@ internal static class SettingsFocusAnnouncer
 
     internal static bool ReadCurrentDetails()
     {
+        if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible ||
+            ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent) return false;
         if (!SettingsFocusReader.TryRead(out var current)) return false;
         if (SettingsFocusReader.TryReadTabDetails(out string details) ||
             UiVisibility.IsVisible(current.Selected) && ElementAnnouncer.TryReadDetails(current.Selected, out details))

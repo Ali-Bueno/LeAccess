@@ -18,6 +18,9 @@ internal static class LifecycleTests
         DiagnosticHeartbeatIsBounded();
         SampledOriginAnchorsReadings();
         GameplayOwnershipAndDeathSuspendRadar();
+        PlayerReplacementRejectsForeignNavigationData();
+        OnlineVisualRadiusSetsWarningReach();
+        StaleSceneAndInactiveCameraSuspendRadar();
     }
 
     private static void ProbeReacquiresCollectedObjects()
@@ -207,6 +210,95 @@ internal static class LifecycleTests
         PlayerFinder.Actor = new Actor { Radius = float.NaN };
         Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out snapshot), "Invalid actor size falls back safely");
         Program.Near(snapshot.BodyRadius, 0.1f, "Invalid actor size cannot disable or corrupt radar distances");
+    }
+
+    private static void PlayerReplacementRejectsForeignNavigationData()
+    {
+        ResetHost();
+        var formerPlayer = PlayerFinder.Player;
+        formerPlayer.Agent.radius = 4;
+        formerPlayer.Agent.agentTypeID = 42;
+        formerPlayer.Agent.areaMask = 8;
+        LocalPlayer.instance = new LocalPlayer { navMeshAgent = formerPlayer.Agent };
+        PlayerFinder.Player = new GameObject();
+        PlayerFinder.Player.Agent.radius = 0.1f;
+        PlayerFinder.Actor = new Actor { gameObject = formerPlayer, Radius = 5 };
+        var probe = new RadarWorldProbe();
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out var snapshot),
+            "An old live LocalPlayer reference does not prevent the new player's capture.");
+        Program.Near(snapshot.AgentRadius, 0.1f, "A foreign agent cannot change the new player's sample radius.");
+        Program.Near(snapshot.BodyRadius, 0.1f, "An old player's Actor cannot enlarge the new player's warning distances.");
+        Program.Check(NavMesh.Filters.All(filter => filter.Type == 0 && filter.Mask == -1),
+            "Only the new player's own agent filters reach NavMesh queries.");
+
+        var detachedAgent = PlayerFinder.Player.Agent;
+        detachedAgent.gameObject = formerPlayer;
+        PlayerFinder.Player.Agent = new NavMeshAgent { radius = 0.2f, agentTypeID = 99 };
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out snapshot),
+            "A still-live cached agent that left the player is reacquired.");
+        Program.Near(snapshot.AgentRadius, 0.2f, "Reacquisition uses the newly owned agent's radius.");
+        Program.Check(snapshot.AgentTypeId == 99, "Reacquisition uses the newly owned agent's navigation type.");
+
+        var child = new GameObject();
+        child.transform.parent = PlayerFinder.Player.transform;
+        child.Agent.radius = 0.3f;
+        child.Agent.isActiveAndEnabled = false;
+        PlayerFinder.Player.Agent = child.Agent;
+        LocalPlayer.instance.navMeshAgent = child.Agent;
+        probe.Reset();
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out snapshot),
+            "An owned child agent still provides queries while native controller movement disables it.");
+        Program.Near(snapshot.AgentRadius, 0.3f, "The child's actual native radius is retained.");
+        child.activeInHierarchy = false;
+        Program.Check(!probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _),
+            "An inactive agent owner cannot supply navigation data.");
+        ResetHost();
+    }
+
+    private static void OnlineVisualRadiusSetsWarningReach()
+    {
+        ResetHost();
+        PlayerFinder.Player.Agent.radius = 0.1f;
+        PlayerFinder.playerActorVisuals = new ActorVisuals { Radius = 0.5f };
+        var probe = new RadarWorldProbe();
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out var snapshot),
+            "An online player with visuals and no Actor still provides actual body size.");
+        Program.Near(snapshot.BodyRadius, 0.5f, "The helper agent cannot shrink the online player's known body.");
+        Program.Near(snapshot.Settings.OpenDepth, RadarSettings.FromBodyWidth(1).OpenDepth,
+            "Online visual radius gives the same warning reach as an offline Actor with that radius.");
+        Program.Near(NavMesh.SampleRadius, 0.1f, "Visual radius does not enlarge origin sampling into another floor.");
+
+        PlayerFinder.Actor = new Actor { Radius = float.NaN };
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out snapshot),
+            "Unready Actor radius still permits the owned live visual radius.");
+        Program.Near(snapshot.BodyRadius, 0.5f, "Unready Actor does not override the ready visual size.");
+        PlayerFinder.playerActorVisuals.Radius = float.NaN;
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out snapshot),
+            "Both body sources being unavailable safely leaves the native agent radius.");
+        Program.Near(snapshot.BodyRadius, 0.1f, "No invalid body radius escapes into radar thresholds.");
+
+        PlayerFinder.playerActorVisuals = new ActorVisuals { gameObject = new GameObject(), Radius = 5 };
+        Program.Check(!probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _),
+            "A foreign player's live visual object does not establish a playable local snapshot.");
+        ResetHost();
+    }
+
+    private static void StaleSceneAndInactiveCameraSuspendRadar()
+    {
+        ResetHost();
+        var probe = new RadarWorldProbe();
+        PlayerFinder.Player.scene = new UnityEngine.SceneManagement.Scene { handle = 2 };
+        Program.Check(!probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _),
+            "A local player retained in an old scene cannot anchor current terrain cues.");
+        Program.Check(NavMesh.Queries == 0, "Stale scene ownership is rejected before NavMesh sampling.");
+        PlayerFinder.Player.scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+        Camera.main.isActiveAndEnabled = false;
+        Program.Check(!probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _),
+            "An inactive Camera.main returned during a transition cannot orient cues.");
+        Camera.main.isActiveAndEnabled = true;
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _),
+            "Valid scene and live camera restore probing.");
+        ResetHost();
     }
 
     private static void DiagnosticHeartbeatIsBounded()

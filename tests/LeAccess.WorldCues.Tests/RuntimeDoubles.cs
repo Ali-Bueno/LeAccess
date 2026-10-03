@@ -16,7 +16,8 @@ namespace UnityEngine
     }
     internal class GameObject : Object
     {
-        internal readonly List<MonoBehaviour> Components = new();
+        internal readonly List<Behaviour> Components = new();
+        internal GameObject Parent;
         internal bool activeInHierarchy = true;
         internal UnityEngine.SceneManagement.Scene scene = new(1);
         internal Transform transform = new();
@@ -26,14 +27,21 @@ namespace UnityEngine
         internal Vector3 position;
         internal Vector3 right = new(1, 0, 0), forward = new(0, 0, 1);
     }
-    internal class MonoBehaviour : Object
+    internal class Behaviour : Object
     {
         internal GameObject gameObject = new();
-        internal MonoBehaviour() { gameObject.Components.Add(this); }
-        internal T GetComponent<T>() where T : MonoBehaviour => gameObject.Components.OfType<T>().FirstOrDefault();
+        internal Behaviour() { gameObject.Components.Add(this); }
+        internal T GetComponent<T>() where T : Behaviour => gameObject.Components.OfType<T>().FirstOrDefault();
+        internal T GetComponentInParent<T>() where T : Behaviour
+        {
+            for (var current = gameObject; current is not null; current = current.Parent)
+            { var value = current.Components.OfType<T>().FirstOrDefault(); if (value is not null) return value; }
+            return null;
+        }
         internal Transform transform => gameObject.transform;
         internal bool isActiveAndEnabled = true;
     }
+    internal class MonoBehaviour : Behaviour { }
     internal class Camera : MonoBehaviour { internal static Camera main = new(); }
     internal class CanvasGroup : Object { internal float alpha = 1; }
     internal class CanvasRenderer : Object { internal bool cull; }
@@ -91,6 +99,8 @@ internal sealed class WorldObjectClickListener : UnityEngine.MonoBehaviour
     internal static Registry<WorldObjectClickListener> allListener = new();
     internal bool requiresClick = true, Available = true, Npc, Throw, controllerTargetingUsePlayerY;
     internal float interactionRange = 5;
+    internal string ServiceKey;
+    internal HoverTagOnMouseOver hoverTagOnMouseOver;
     internal bool CanInteract() { if (Throw) throw new InvalidOperationException("Native availability failed"); return Available; }
 }
 internal sealed class Targetable
@@ -105,7 +115,31 @@ internal sealed class EpochInputManager : UnityEngine.MonoBehaviour
 }
 internal sealed class TargetingConfiguration { internal bool WasCollected; internal float itemsRange = 5; }
 namespace LeAccess.Accessibility.Npcs
-{ internal static class NpcWorldProbe { internal static bool IsNpc(WorldObjectClickListener listener) => listener.Npc; } }
+{
+    internal static class NpcWorldProbe { internal static bool IsNpc(WorldObjectClickListener listener) => listener.Npc; }
+    internal static class WorldServiceReader { internal static string ReadServiceKey(WorldObjectClickListener listener) => listener.ServiceKey; }
+}
+internal sealed class HoverTagOnMouseOver : UnityEngine.MonoBehaviour
+{
+    internal enum HoverTargetType { OTHER, ZONE_TRANSITION, DUNGEON_TRANSITION, SIGNPOST }
+    internal HoverTargetType hoverTargetType;
+    internal TransitionOrGateInteraction sceneInteraction, dungeonTransitionInteraction;
+}
+internal sealed class TransitionOrGateInteraction : UnityEngine.MonoBehaviour { internal string sceneName; }
+internal sealed class ChestSync : UnityEngine.MonoBehaviour { }
+internal sealed class VaultsOfUncertainFateChest : UnityEngine.MonoBehaviour { internal bool hasBeenOpened; }
+namespace LE.Gameplay.Monolith { internal sealed class MonolithChestInteraction : UnityEngine.MonoBehaviour { } }
+namespace LE.Gameplay.PrimalHunt { internal sealed class CaveTreasureChest : UnityEngine.MonoBehaviour { } }
+namespace LE.Gameplay.Tombs { internal sealed class TombRewardChestInteraction : UnityEngine.MonoBehaviour { } }
+namespace Networking.Multiplayer.Interactables.Portals
+{
+    internal sealed class PortalVisualController : UnityEngine.MonoBehaviour
+    {
+        internal UnityEngine.GameObject mouseListenerObj;
+        internal bool Blocked;
+        internal bool isNonInteractableByPlayer() => Blocked;
+    }
+}
 namespace LeAccess.Accessibility.Navigation
 {
     internal static class NavigationAudioState { internal static bool IsSuspended; }

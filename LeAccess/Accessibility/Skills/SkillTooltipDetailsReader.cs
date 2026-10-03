@@ -62,10 +62,14 @@ internal static class SkillTooltipDetailsReader
     private static string ReadStats(Il2CppSystem.Collections.Generic.List<NodeTooltipStatDisplay> stats)
     {
         if (stats is null || stats.WasCollected) return null;
-        var fragments = new List<string>();
+        var fragments = new List<UiReadingOrder.Fragment>();
         foreach (var stat in stats)
-            if (IsAlive(stat)) fragments.Add(Read(stat.text));
-        return ScreenContentTracker.Combine(fragments);
+            if (IsAlive(stat) && IsAlive(stat.text))
+            {
+                string text = Read(stat.text);
+                if (!string.IsNullOrWhiteSpace(text)) fragments.Add(new(stat.text, text));
+            }
+        return ScreenContentTracker.Combine(UiReadingOrder.Read(fragments));
     }
 
     internal static string ReadAbility(UITooltipAbility tooltip)

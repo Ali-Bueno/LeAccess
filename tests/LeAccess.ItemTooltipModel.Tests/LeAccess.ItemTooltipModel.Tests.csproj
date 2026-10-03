@@ -8,6 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/Items/ItemTooltipModelReader.cs" Link="ItemTooltipModelReader.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Inventory/InventorySelectionReader.cs" Link="InventorySelectionReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Items/MerchantItemReader.cs" Link="MerchantItemReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Items/MerchantMenuReader.cs" Link="MerchantMenuReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentTracker.cs" Link="ScreenContentTracker.cs" />

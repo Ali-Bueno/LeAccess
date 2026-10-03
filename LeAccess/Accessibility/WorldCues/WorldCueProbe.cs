@@ -158,7 +158,8 @@ internal sealed class WorldCueProbe
             pan = Math.Clamp(Vector3.Dot(offset, _right), -1, 1);
             forward = Math.Clamp(Vector3.Dot(offset, _forward), -1, 1);
         }
-        Targets[categoryIndex] = new(_session, new(category, id), distance, range, pan, forward);
+        var sound = interactable ? WorldCueIdentityReader.ReadKind(listener) : null;
+        Targets[categoryIndex] = new(_session, new(category, id), distance, range, pan, forward, sound);
         _categoryPreferred[categoryIndex] = preferred;
     }
 

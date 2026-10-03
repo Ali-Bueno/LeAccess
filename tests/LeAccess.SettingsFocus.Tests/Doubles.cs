@@ -105,6 +105,10 @@ namespace LeAccess.Accessibility.Utils
 {
     internal static class TextUtils
     {
+        internal static bool IsVisibleLabel(TMPro.TMP_Text label) => label is not null && !label.WasCollected &&
+            !label.Destroyed && label.isActiveAndEnabled && float.IsFinite(label.alpha) && label.alpha > 0 &&
+            LeAccess.Accessibility.Announcements.UiVisibility.IsVisible(label.gameObject) &&
+            (label.canvasRenderer is null || !label.canvasRenderer.cull);
         internal static string CleanText(string value)=>value is null?null:
             System.Text.RegularExpressions.Regex.Replace(System.Text.RegularExpressions.Regex.Replace(value,"<[^>]+>",""),@"\s+"," ").Trim();
     }

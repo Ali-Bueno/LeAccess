@@ -124,7 +124,18 @@ namespace LeAccess.Accessibility.Navigation
         public static bool OwnsInput() => Gameplay;
     }
 }
-namespace LeAccess.Accessibility.Utils { internal static class TextUtils { public static string CleanText(string text) => text?.Trim(); } }
+namespace LeAccess.Accessibility.Utils
+{
+    internal static class TextUtils
+    {
+        public static string CleanText(string text) => text?.Trim();
+        public static bool IsVisibleLabel(TMPro.TMP_Text label) =>
+            label is not null && !label.WasCollected && label.isActiveAndEnabled &&
+            float.IsFinite(label.alpha) && label.alpha > 0 &&
+            LeAccess.Accessibility.Announcements.UiVisibility.IsVisible(label.gameObject) &&
+            (label.canvasRenderer is null || !label.canvasRenderer.cull);
+    }
+}
 namespace LeAccess.Accessibility
 {
     internal static class ScreenReader

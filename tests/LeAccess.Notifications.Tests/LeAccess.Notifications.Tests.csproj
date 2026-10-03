@@ -7,6 +7,8 @@
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/Announcements/NotificationAnnouncer.cs" Link="NotificationAnnouncer.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/UiVisibility.cs" Link="UiVisibility.cs" />
+    <Compile Include="../UiScreenGeometryStub.cs" Link="UiScreenGeometryStub.cs" />
+    <Compile Include="../UiReadingOrderStub.cs" Link="UiReadingOrderStub.cs" />
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentTracker.cs" Link="ScreenContentTracker.cs" />
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentReader.cs" Link="ScreenContentReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />

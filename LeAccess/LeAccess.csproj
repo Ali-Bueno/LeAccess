@@ -142,6 +142,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Translations\*.json" LogicalName="LeAccess.Translations.%(Filename)%(Extension)" />
     <EmbeddedResource Include="MapSections\*.json" LogicalName="LeAccess.MapSections.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Sounds\*.wav" LogicalName="LeAccess.Sounds.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Sounds\D2R-LICENSE.txt" LogicalName="LeAccess.Sounds.D2R-LICENSE.txt" />
+    <EmbeddedResource Include="Accessibility\MapSections\tent-canopies.json" LogicalName="LeAccess.TentCanopies.json" />
     <None Update="Translations\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

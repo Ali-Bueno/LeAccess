@@ -33,12 +33,17 @@ directory when LeAccess loads. The entries are:
 Reloading the configuration applies these settings. Restarting the game also
 applies them. The open-depth setting accepts 2–20 body widths as a bounded local
 navigation tuning range; its best value still needs listening tests in Last Epoch.
-The quest beacon has been removed at the user's request.
+The earlier quest beacon remains removed. [Automatic orientation](automatic-orientation.md)
+now provides optional sound and speech for verified walking routes, with its own
+configuration and shared audio scheduling.
 
 ## Data and behavior
 
 `RadarWorldProbe` uses `PlayerFinder.player`, the local player's
 `NavMeshAgent.radius`, `agentTypeID` and `areaMask`, `Actor.getRadius()`, and the active gameplay camera.
+When the local Actor is absent or its radius is not ready, the owned live
+`ActorVisuals.getRadius()` supplies body size, including online clients. An online
+player with known body size must not inherit the narrower helper agent's warning reach.
 Warning reach uses the actor's body diameter (at least the agent diameter), while
 origin sampling retains the NavMesh agent radius. A small helper agent must not
 shrink every warning distance. It caches actor/agent/camera references, refreshing them
@@ -54,12 +59,19 @@ within the player's radius. The NavMesh is already built for the selected agent'
 footprint. A dead/inactive player or unavailable camera, agent or sampled origin suspends the
 radar; missing data is never reported as a wall. A path that goes around a wall
 does not make the direct probe open.
+Player and component ownership must match the active scene and local hierarchy;
+a still-live old `LocalPlayer.instance.navMeshAgent` cannot supply another
+player's radius or query filter. Disabled agent components remain usable when
+their owner is active, as required by native controller movement. Inactive cameras
+are rejected; persistent gameplay cameras need not belong to the player's scene.
 
 `RadarEngine` is independent of Unity. It confirms changes by traveled distance,
 or by two observations after the player stops. Different closing/opening depths
 provide hysteresis. After a wall is announced, its position is remembered:
 backing away does not count as an opening unless the new probe reaches beyond
 that wall. Suppressed retreat cues are discarded, rather than replayed later.
+The silent baseline also remembers existing walls, so backing away after loading
+or closing a menu cannot turn the same wall into a false opening.
 
 The queue keeps the latest event in each direction, drops cues that no longer
 match the observed state, prioritizes obstacles, and rotates among equal-priority
@@ -141,6 +153,16 @@ This confirms the repaired processing path; actual listening remains necessary f
 3. Bridges, ramps, narrow passages and movement skills that teleport.
 4. Pausing menus, non-pausing menus, NPC conversations and zone transitions.
 5. Cue volume and open depth with headphones and the screen reader active.
+
+The 2026-10-02 precision follow-up passes **436 navigation checks** and a production
+build without warnings/errors. A regression reproduced a false opening when
+retreating from a wall present at the silent baseline; startup/resume retreat
+and a genuine doorway are now distinguished. Source-linked tests also cover an
+old live agent after player replacement, detached/inactive owners, owned disabled
+child agents, stale scenes/cameras, and online visual body size with no Actor.
+`last epoch code/ActorVisuals.cs:getRadius` declares current-build method token
+`100682642`; no new native hook is needed. The four screen directions, sounds and
+configured reach remain unchanged. In-game listening is still required.
 
 Doors and exits currently sound according to traversability. Map icons expose
 semantic door/stairs/transition types, but no universal closed-door state was

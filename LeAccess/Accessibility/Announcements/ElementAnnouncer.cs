@@ -41,11 +41,21 @@ public static class ElementAnnouncer
 
     internal static void ResetFocus()
     {
+        ClearLastFocus();
+        _pendingFocus = null;
+    }
+
+    private static void ClearLastFocus()
+    {
         _lastAnnouncedInstanceId = 0;
         _lastAnnouncementText = null;
-        _pendingFocus = null;
         _cachedFocusedGo = null;
         _cachedFocusedId = 0;
+    }
+
+    internal static void ResetFocusIfUnowned()
+    {
+        if (_cachedFocusedGo is not null && !UiFocusOwnership.Allows(_cachedFocusedGo)) ClearLastFocus();
     }
 
     /// <summary>
@@ -53,7 +63,8 @@ public static class ElementAnnouncer
     /// </summary>
     public static void AnnounceElement(GameObject go, bool interrupt = true, string context = null)
     {
-        if (!Application.isFocused || !UiVisibility.IsVisible(go) || LE.UI.LoadingScreen.IsVisible) return;
+        ResetFocusIfUnowned();
+        if (!UiFocusOwnership.HasForegroundAccess(go)) return;
         bool popupActive = ScreenContentAnnouncer.HasActiveContent;
         bool dialogueActive = !popupActive && DialogueAnnouncer.HasActiveContent;
         if (popupActive || dialogueActive)
@@ -69,6 +80,8 @@ public static class ElementAnnouncer
         if (ControllerMenuAccessibility.TryHandleFocus(go) || InventoryAccessibility.TryHandleFocus(go) ||
             PassiveAccessibility.TryHandleFocus(go) || QuestAccessibility.TryHandleFocus(go) ||
             SkillAccessibility.TryHandleFocus(go) || ClassCarouselHandler.TryHandleFocus(go)) return;
+
+        if (!UiFocusOwnership.Allows(go)) return;
 
         var instanceId = go.GetInstanceID();
         var now = Time.unscaledTime;
@@ -156,13 +169,13 @@ public static class ElementAnnouncer
     /// </summary>
     public static bool IsRelatedToFocusedElement(GameObject go)
     {
-        if (!UiVisibility.IsVisible(go) || _lastAnnouncedInstanceId == 0) return false;
+        if (!UiFocusOwnership.HasForegroundAccess(go) || _lastAnnouncedInstanceId == 0) return false;
         if (ScreenContentAnnouncer.HasActiveContent && !ScreenContentAnnouncer.OwnsFocus(go)) return false;
         if (!ScreenContentAnnouncer.HasActiveContent && DialogueAnnouncer.HasActiveContent &&
             !DialogueAnnouncer.OwnsFocus(go)) return false;
 
         var focused = _cachedFocusedGo;
-        if (!UiVisibility.IsVisible(focused) || _cachedFocusedId != _lastAnnouncedInstanceId) return false;
+        if (!UiFocusOwnership.Allows(focused) || _cachedFocusedId != _lastAnnouncedInstanceId) return false;
         if (go.transform.IsChildOf(focused.transform) || focused.transform.IsChildOf(go.transform)) return true;
         var container = TextDetector.FindSingleOptionContainer(focused);
         return container != null && go.transform.IsChildOf(container);
@@ -178,7 +191,7 @@ public static class ElementAnnouncer
     internal static bool TryReadDetails(GameObject go, out string text)
     {
         text = null;
-        if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible || !UiVisibility.IsVisible(go)) return false;
+        if (!UiFocusOwnership.Allows(go)) return false;
         if (ScreenContentAnnouncer.HasActiveContent && !ScreenContentAnnouncer.OwnsFocus(go) ||
             DialogueAnnouncer.HasActiveContent && !DialogueAnnouncer.OwnsFocus(go)) return false;
         if (go.GetComponent<TMP_InputField>() != null || go.GetComponentInParent<TMP_InputField>() != null) return false;
@@ -294,7 +307,7 @@ public static class ElementAnnouncer
         }
         else if (dropdown != null)
         {
-            if (dropdown.captionText != null)
+            if (TextUtils.IsVisibleLabel(dropdown.captionText))
                 value = TextUtils.CleanText(dropdown.captionText.text);
         }
         else if (toggle != null)

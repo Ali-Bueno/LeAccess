@@ -103,9 +103,8 @@ internal static class SettingsFocusReader
 
     internal static string ReadLabel(TMP_Text label, GameObject owner, bool firstLineOnly = false)
     {
-        if (!IsAlive(owner) || !IsAlive(label) || !label.isActiveAndEnabled || label.alpha <= 0 ||
-            !label.transform.IsChildOf(owner.transform) || !UiVisibility.IsVisible(label.gameObject) ||
-            IsAlive(label.canvasRenderer) && label.canvasRenderer.cull) return null;
+        if (!IsAlive(owner) || !TextUtils.IsVisibleLabel(label) ||
+            !label.transform.IsChildOf(owner.transform)) return null;
         string text = label.text;
         if (firstLineOnly && !string.IsNullOrEmpty(text))
         {

@@ -2,12 +2,12 @@ using System;
 
 namespace LeAccess.Accessibility.Audio;
 
-internal enum WorldAudioSource { Terrain, Npc, Object }
+internal enum WorldAudioSource { Terrain, Npc, Object, Guidance }
 
 // Main-thread arbitration includes queued device audio, not just provider consumption.
 internal static class WorldAudioReservation
 {
-    private static readonly long[] Waiting = new long[3];
+    private static readonly long[] Waiting = new long[Enum.GetValues<WorldAudioSource>().Length];
     private static long _sequence;
     private static double _until;
     private static double _lastTime;

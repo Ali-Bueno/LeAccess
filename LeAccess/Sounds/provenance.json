@@ -1,0 +1,74 @@
+[
+  {
+    "asset": "gold.wav",
+    "source": "sounds/item loop sounds/loot/gold.ogg",
+    "source_sha256": "95356D3B94187AF2BB22EFDE05F35551DD59F3D32AE1ACEF6BFA560B5BA83504",
+    "asset_sha256": "9A214D32D3381362DD8105E04FA22791CC5D3B5B0DA98E3641700E7E17905A30",
+    "start_seconds": 0,
+    "duration_seconds": 0.3
+  },
+  {
+    "asset": "equipment.wav",
+    "source": "sounds/item loop sounds/loot/normal equipment.ogg",
+    "source_sha256": "505ED2D37EA24269699424862D08E21460CBC4C1E2E582BD15393633A72F4B30",
+    "asset_sha256": "EEF03D78BCB1772731F91602CEA503A3D6F0775A3F6A9059F3102926CDBB3593",
+    "start_seconds": 0,
+    "duration_seconds": 0.3
+  },
+  {
+    "asset": "chest.wav",
+    "source": "sounds/item loop sounds/loot/chest.ogg",
+    "source_sha256": "038ACBF8BA303C8AFD16A667E46BF2D98E8E58BBC2BB715014A2EB97DEDF3917",
+    "asset_sha256": "8AE808F4580534CAB006944F6FC4F928A3476DD86828410A487C347C7715889C",
+    "start_seconds": 0,
+    "duration_seconds": 0.24
+  },
+  {
+    "asset": "stash.wav",
+    "source": "sounds/item loop sounds/loot/stash.ogg",
+    "source_sha256": "1354490AB4EED3019B203D080A6C68FCDBBAF5A81B3C38A29993583A35664FC5",
+    "asset_sha256": "DE36E6A153E92EA4F672038A608B6E17110F0D905D99A5105BBFA7574541F842",
+    "start_seconds": 0,
+    "duration_seconds": 0.24
+  },
+  {
+    "asset": "portal.wav",
+    "source": "sounds/item loop sounds/exploration/portal.ogg",
+    "source_sha256": "B502A5B5934FBA1BEC88E08BC1BFFFF9C83CECD0AB8C8C88769E5B1BEF882CCB",
+    "asset_sha256": "D65DA472F31EF5EA16FB4517CD1CCCA855F3A6D10ABFDE7CE45D2429CB1530C3",
+    "start_seconds": 0,
+    "duration_seconds": 0.3
+  },
+  {
+    "asset": "zone_transition.wav",
+    "source": "sounds/item loop sounds/exploration/zone transition.ogg",
+    "source_sha256": "1BE6FC05E2F8131F16FF393B5FC6951916B0A464AAE8C7FC01CDC7BF5D0FDD97",
+    "asset_sha256": "8F9D0A3627B9F3AEB8DD2F0BB070EB4CDDA3222E0B32D69A1142059C44BD8F0D",
+    "start_seconds": 0,
+    "duration_seconds": 0.3
+  },
+  {
+    "asset": "discovery.wav",
+    "source": "sounds/one shot sounds/exploration/discovered.ogg",
+    "source_sha256": "B717EE284EDB229830448C22A8797515DF21B1ABDF7200A1BE244D0650C7D100",
+    "asset_sha256": "565AF339D73B659031C809A85ECE5B389D6C5977B3F4D9CEB8650051010C22E1",
+    "start_seconds": 0,
+    "duration_seconds": 0.45
+  },
+  {
+    "asset": "unexplored_room.wav",
+    "source": "sounds/item loop sounds/exploration/unexplored room.ogg",
+    "source_sha256": "C7259BBD4BBB25B931D6E1450169F3F6D11DE18617A9571C1AE07070AD8E19A8",
+    "asset_sha256": "717C9940127153B401F3CBFDE2B41336F83D3BA94C2E38400D44B643AB6880C0",
+    "start_seconds": 0,
+    "duration_seconds": 0.35
+  },
+  {
+    "asset": "inside_unexplored_room.wav",
+    "source": "sounds/item loop sounds/exploration/inside unexplored room.ogg",
+    "source_sha256": "7C3AEB12D7AD08728AE048A7084507C8E04CABA99B3637D3CDE204F9D44C77FD",
+    "asset_sha256": "596C0856E4A75632F3102215D148D39D198DCE92EBAFEC9CF19DB00D6431D40E",
+    "start_seconds": 0,
+    "duration_seconds": 0.35
+  }
+]

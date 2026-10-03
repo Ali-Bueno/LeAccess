@@ -36,7 +36,9 @@ internal static class QuestSelectionReader
             ReadText(button.chapterText, button.transform), ModText.Get(button.pinned ? "quest.pinned" : "quest.unpinned") };
         var fragments = new List<string> { modelDetails };
         var objectives = new List<string> { currentObjectives };
-        var history = new List<string>();
+        var history = new List<UiReadingOrder.Fragment>();
+        var objectiveRows = new List<UiReadingOrder.Fragment>();
+        var rewardRows = new List<UiReadingOrder.Fragment>();
         string fallbackState = null;
         if (IsAlive(info) && info.isActiveAndEnabled && UiVisibility.IsVisible(info.gameObject) &&
             IsAlive(info.allContent) && UiVisibility.IsVisible(info.allContent) &&
@@ -57,15 +59,20 @@ internal static class QuestSelectionReader
                     string objectiveText = ReadText(objective.text, objective.transform);
                     if (string.IsNullOrWhiteSpace(objectiveText)) continue;
                     if (IsAlive(objective.check) && UiVisibility.IsVisible(objective.check))
-                        history.Add(ModText.Format("quest.objective_completed", objectiveText));
-                    else if (!button.completed) objectives.Add(objectiveText);
+                        history.Add(new(objective.text, ModText.Format("quest.objective_completed", objectiveText)));
+                    else if (!button.completed) objectiveRows.Add(new(objective.text, objectiveText));
                 }
+            objectives.AddRange(UiReadingOrder.Read(objectiveRows));
             if (history.Count != 0)
-                fragments.Add(ModText.Format("quest.objective_history", ScreenContentTracker.Combine(history)));
+                fragments.Add(ModText.Format("quest.objective_history", ScreenContentTracker.Combine(UiReadingOrder.Read(history))));
             if (IsAlive(info.rewardsHolder) && info.rewards is not null && !info.rewards.WasCollected)
                 foreach (var reward in info.rewards)
                     if (IsAlive(reward) && reward.isActiveAndEnabled && IsOwned(reward.gameObject, info.rewardsHolder.transform))
-                        fragments.Add(ReadText(reward.text, reward.transform));
+                    {
+                        string rewardText = ReadText(reward.text, reward.transform);
+                        if (!string.IsNullOrWhiteSpace(rewardText)) rewardRows.Add(new(reward.text, rewardText));
+                    }
+            fragments.AddRange(UiReadingOrder.Read(rewardRows));
         }
         string current = ScreenContentTracker.Combine(objectives);
         string currentLabel = string.IsNullOrWhiteSpace(current) ? null : ModText.Format("quest.current_objectives", current);
@@ -79,7 +86,6 @@ internal static class QuestSelectionReader
         element.transform.IsChildOf(owner) && UiVisibility.IsVisible(element);
 
     private static string ReadText(TextMeshProUGUI label, Transform owner) =>
-        IsAlive(label) && label.isActiveAndEnabled && label.alpha > 0 &&
-        (!IsAlive(label.canvasRenderer) || !label.canvasRenderer.cull) && IsOwned(label.gameObject, owner)
+        TextUtils.IsVisibleLabel(label) && IsOwned(label.gameObject, owner)
             ? TextUtils.CleanText(label.text) : null;
 }

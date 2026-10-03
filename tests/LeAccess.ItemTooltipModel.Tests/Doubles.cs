@@ -1,11 +1,22 @@
-namespace Il2CppSystem
+namespace Il2CppInterop.Runtime.InteropTypes
 {
-    internal class Object
+    internal class Il2CppObjectBase
     {
         private static int next;
         internal IntPtr Pointer = (IntPtr)(++next);
         internal bool WasCollected;
         internal T TryCast<T>() where T : class => this as T;
+    }
+}
+namespace Il2CppSystem
+{
+    internal class Object : Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase { }
+    internal sealed class Array : Object
+    {
+        internal Object[,] Cells;
+        internal int Rank = 2;
+        internal int GetLength(int dimension) => Cells.GetLength(dimension);
+        internal Object GetValue(int x, int y) => Cells[x, y];
     }
 }
 namespace Il2CppSystem.Collections.Generic
@@ -15,7 +26,21 @@ namespace Il2CppSystem.Collections.Generic
 namespace UnityEngine
 {
     internal class Object : Il2CppSystem.Object { }
-    internal class GameObject : Object { internal bool activeInHierarchy = true; }
+    internal class GameObject : Object
+    {
+        internal bool activeInHierarchy = true;
+        internal Transform transform;
+        internal GameObject() => transform = new(this);
+    }
+    internal class Transform : Object
+    {
+        internal GameObject gameObject;
+        internal Transform parent;
+        internal Transform(GameObject root) => gameObject = root;
+        internal bool IsChildOf(Transform root) => this == root || parent is not null && parent.IsChildOf(root);
+    }
+    internal class RectTransform : Transform { internal RectTransform(GameObject root) : base(root) { } }
+    internal struct Vector2Int { internal int x, y; }
     internal class Behaviour : Object
     {
         internal bool isActiveAndEnabled = true;
@@ -50,11 +75,28 @@ internal class ItemData : Il2CppSystem.Object
 internal class ItemDataUnpacked : ItemData { internal string LoreText, FactionRequirement; }
 internal class ItemContainerEntry : Il2CppSystem.Object { internal ItemData data; }
 internal enum ContainerType { INVENTORY, EQUIPPED, STASH, SHOP, CRAFTING }
-internal class IItemContainer : Il2CppSystem.Object { internal ContainerType Type; }
+internal enum ContainerID { UNDEFINED, INVENTORY, EQ_HELMET, EQ_ARMOR, EQ_WEAPON, EQ_OFFHAND, EQ_GLOVES,
+    EQ_BELT, EQ_BOOTS, EQ_RIGHTRING, EQ_LEFTRING, EQ_AMULET, EQ_RELIC }
+internal class IItemContainer : Il2CppSystem.Object
+{
+    internal ContainerType Type;
+    internal ContainerID Id;
+    internal ItemContainerEntry Entry;
+    internal ContainerID GetContainerID() => Id;
+    internal ItemContainerEntry GetEntryAt(UnityEngine.Vector2Int slot) => Entry;
+}
 internal class ItemContainerUI : UnityEngine.Behaviour
 {
+    internal ContainerID identifier;
+    internal UnityEngine.Vector2Int currentFocusSlot;
     internal ItemContainerEntry currentlySelectedItem;
     internal IItemContainer Container = new();
+    internal IItemContainer container => Container;
+}
+internal class EquippedItemsNavigable : UnityEngine.Behaviour
+{
+    internal Il2CppSystem.Object navigables, rects;
+    internal UnityEngine.Vector2Int currentlySelectedIdx;
 }
 internal class BaseShopContainerUI : ItemContainerUI
 { internal UnityEngine.UI.Selectable shopBtn, buyBackBtn; }

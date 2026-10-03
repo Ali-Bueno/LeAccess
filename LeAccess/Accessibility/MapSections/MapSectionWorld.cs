@@ -46,6 +46,8 @@ internal static class MapSectionWorld
             {
                 var visuals = PlayerFinder.playerActorVisuals;
                 if (!Available(visuals, scene) || visuals.dead || !OwnsPlayer(visuals.gameObject, player)) return false;
+                float bodyRadius = visuals.getRadius();
+                if (float.IsFinite(bodyRadius) && bodyRadius > 0) radius = bodyRadius;
             }
             else
             {

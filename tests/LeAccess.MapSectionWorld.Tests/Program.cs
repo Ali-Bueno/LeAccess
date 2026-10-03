@@ -71,8 +71,22 @@ foreach (string online in new[] { "alive", "dead", "foreign", "collected", "othe
     if (online == "collected") PlayerFinder.playerActorVisuals.WasCollected = true;
     if (online == "other scene") { PlayerFinder.playerActorVisuals = PlayerFinder.player.Child("Visuals").Add(new ActorVisuals()); PlayerFinder.playerActorVisuals.gameObject.scene.handle++; }
     bool captured = MapSectionWorld.TryCapture(out snapshot);
-    Check(online == "alive" ? captured && snapshot.BodyRadius == 0 : !captured, $"Online {online} visual ownership and death gate");
+    Check(online == "alive" ? captured && snapshot.BodyRadius == 0.5 : !captured, $"Online {online} visual ownership and death gate");
 }
+foreach (float radius in new[] { 0f, -1f, float.NaN, float.PositiveInfinity })
+{
+    Reset(); GameplayEnvironment.IsOnlineClient = true;
+    PlayerFinder.playerActorVisuals.Radius = radius;
+    Check(MapSectionWorld.TryCapture(out snapshot) && snapshot.BodyRadius == 0,
+        "Unavailable online body size stays unknown instead of borrowing the offline actor");
+}
+Reset(); GameplayEnvironment.IsOnlineClient = true;
+PlayerFinder.playerActorVisuals.Radius = 1.25f;
+Check(MapSectionWorld.TryCapture(out snapshot) && snapshot.BodyRadius == 1.25,
+    "Online tent containment and route cadence use the owned visual body size");
+PlayerFinder.playerActorVisuals.Radius = 0.75f;
+Check(MapSectionWorld.TryCapture(out snapshot) && snapshot.BodyRadius == 0.75,
+    "Online form change updates body size without waiting for a new scene");
 Reset(); ServiceProvider.SceneVariantService.HasVariant = true; ServiceProvider.SceneVariantService.Index = 2;
 Check(MapSectionWorld.TryCapture(out snapshot) && snapshot.Variant == 2, "Actual scene variant is captured");
 ServiceProvider.SceneVariantService.WasCollected = true;

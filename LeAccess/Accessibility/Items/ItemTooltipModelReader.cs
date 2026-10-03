@@ -4,6 +4,7 @@ using LeAccess.Accessibility.Announcements;
 using LeAccess.Accessibility.ScreenContent;
 using LeAccess.Accessibility.Utils;
 using LE.UI.Tooltips;
+using LeAccess.Accessibility.Inventory;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Items;
@@ -38,12 +39,7 @@ internal static class ItemTooltipModelReader
 
     internal static bool OwnsSelection(ItemData item, ItemContainerUI container)
     {
-        if (item is null || item.WasCollected || !IsAlive(container) || !container.isActiveAndEnabled ||
-            !UiVisibility.IsVisible(container.gameObject)) return false;
-        var navigation = NavigationManager.currentlySelected;
-        if (navigation is null || navigation.WasCollected || navigation.Pointer != container.Pointer) return false;
-        var entry = container.currentlySelectedItem;
-        return entry is not null && !entry.WasCollected && Matches(entry.data, item);
+        return InventorySelectionReader.OwnsSelection(item, container);
     }
 
     internal static bool TryGetParameters(ItemData item, ItemContainerUI container,

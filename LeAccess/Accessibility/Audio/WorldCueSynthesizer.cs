@@ -16,7 +16,22 @@ internal static class WorldCueSynthesizer
     private const double AttackSeconds = 0.004;
     private const double ReleaseSeconds = 0.015;
 
-    internal static double Duration(WorldCueCategory category) => category switch
+    internal static double Duration(WorldCueCategory category, NaturalCueKind? kind = null)
+    {
+        var selected = NaturalKind(category, kind);
+        double natural = selected.HasValue ? NaturalCueBank.Duration(selected.Value) : 0;
+        return natural > 0 ? natural : SynthesizedDuration(category);
+    }
+
+    private static NaturalCueKind? NaturalKind(WorldCueCategory category, NaturalCueKind? kind) => category switch
+    {
+        WorldCueCategory.Coins => NaturalCueKind.Gold,
+        WorldCueCategory.Equipment => NaturalCueKind.Equipment,
+        WorldCueCategory.Interactable => kind,
+        _ => throw new ArgumentOutOfRangeException(nameof(category))
+    };
+
+    private static double SynthesizedDuration(WorldCueCategory category) => category switch
     {
         WorldCueCategory.Coins => 0.16,
         WorldCueCategory.Equipment => 0.14,
@@ -24,9 +39,12 @@ internal static class WorldCueSynthesizer
         _ => throw new ArgumentOutOfRangeException(nameof(category))
     };
 
-    internal static float[] Synthesize(WorldCueCategory category, float pan, float forward, float gain)
+    internal static float[] Synthesize(WorldCueCategory category, float pan, float forward, float gain,
+        NaturalCueKind? kind = null)
     {
-        double duration = Duration(category);
+        var selected = NaturalKind(category, kind);
+        if (selected.HasValue && NaturalCueBank.TryBuild(selected.Value, pan, forward, gain, out var natural)) return natural;
+        double duration = SynthesizedDuration(category);
         double safeGain = float.IsFinite(gain) ? Math.Clamp(gain, 0, 1) : 0;
         double rightAxis = float.IsFinite(pan) ? Math.Clamp(pan, -1, 1) : 0;
         double frontAxis = float.IsFinite(forward) ? Math.Clamp(forward, -1, 1) : 1;

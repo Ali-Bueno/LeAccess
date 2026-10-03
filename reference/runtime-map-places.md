@@ -9,6 +9,12 @@ service confirms movement between places and controls speech priority.
 
 ## Evidence and contact
 
+The player snapshot now reads the validated online visual owner's `getRadius()`
+as well as the offline actor's radius. Tent body clearance and automatic-route
+distance scaling therefore follow the current online class/form instead of
+falling back to a potentially smaller helper agent. Invalid visual radii remain
+unknown. The map-world suite covers ownership, invalid sizes and form changes.
+
 - The installed 1.5.0.1 `FootstepRaycastTrigger` exposes the current visual owner,
   foot transforms, ray distance and layer mask. Native `HandleStepRaycast`
   (`0x15B5340`) adds 0.5 to the foot's vertical ray origin. This adapter uses the
@@ -114,8 +120,10 @@ The native foot source must be available; a missing trigger or unowned/dead
 visual hierarchy produces no guessed fallback. The installed visual-prefab audit
 verified one enabled trigger and two owned foot references for all five base
 classes (native range 3) and Werebear, Spriggan and Swarmblade forms (range 5).
-An agent bound to a NavMesh alone does not prove physical ground contact; nearby
-scenery therefore says "Nearby", never "inside" or a floor-contact label.
+An agent bound to a NavMesh alone does not prove physical ground contact;
+nearby props retain an explicit "Nearby" qualifier. Tent presence additionally
+requires verified canopy coverage and same-floor current support, as described
+below; it does not turn decorative props into structural floor contacts.
 Materials and entry summaries remain disabled
 by default.
 
@@ -203,8 +211,9 @@ are excluded. No movement, interaction, NavMesh mutation or new hook is used.
 Scenery has its own state in `MapSectionAccessibility`. A fully validated
 arrival can speak immediately; departure still requires two observations to
 avoid repeating the same prop after a single missing sample. It yields
-to zone/menu/dialogue and floor speech, then says **"Nearby: Tents"** / **"Cerca:
-Tiendas de campaña"**. Thus a bridge does not hide its gateway. Adjacent pieces
+to zone/menu/dialogue and floor speech. Wagons, gateways and the statue retain
+the explicit **"Nearby"** qualifier; tents now require actual canopy presence
+(see below). Thus a bridge does not hide its gateway. Adjacent gateway pieces
 share category identity; obsolete deferred text is canceled on leaving range,
 and loading/session reset clears the cache and pending speech. Bounded existing
 map diagnostics include indexed count, owned navigation settings and first
@@ -263,3 +272,52 @@ The related suites also pass: PCG 66, map-state 323 and installed map data 51203
 the production build succeeds with deployment disabled. No game was launched
 for this correction; the next listening run must confirm which camp references
 the user's actual route reaches.
+
+## Exact tent presence and departure, 2026-10-02
+
+Tent proximity no longer produces speech. `TentCanopy` uses the actual projected
+mesh faces strictly above the mesh's center-height plane. Their union retains
+concave boundaries, separate components and holes; an axis-aligned model box or
+its empty corners cannot establish presence. A full disk of the player's actual
+body radius must fit beneath that canopy at both the current position and the
+native NavMesh support position. Its conservative lower roof plane must remain
+above the player's body radius. Existing base-height, active ownership, scene,
+reachability and intervening-wall checks still apply. Tilted models fail closed;
+rotation around the vertical axis and nonuniform horizontal scale are supported.
+
+The installed meshes are not CPU-readable, so the geometry is bundled as a
+37,367-byte contour resource, `LeAccess.TentCanopies.json`, separate from fixed
+map-section catalogs. Current build hash, exact mesh name, vertex/submesh counts
+and renderer local bounds must agree before those contours can be used. The
+resource records the source bundle SHA256. Reproduce it with the existing
+analysis-only UnityPy/Shapely environment:
+
+```powershell
+python tools/extract_tent_canopies.py GAME_DIRECTORY LeAccess/Accessibility/MapSections/tent-canopies.json
+```
+
+All three verified tent models are covered wherever those same meshes occur in
+the current loaded scene. Each actual owner has an independent entry identity;
+speech says **"Tent" / "Tienda de campaña"**. Two consecutive verified outside
+observations say **"Left the tent" / "Has salido de la tienda de campaña"**,
+only if its entry was actually spoken. A single missing sample, unavailable
+agent/resource, changed previous mesh, inactive previous renderer or missing
+world ownership cannot establish departure. Deferred exit text is canceled on
+returning or reaching another known place. Menu pauses retain current speech;
+loading/session changes reset it. D2R's authored interior volumes informed this
+distinction, but its acoustic volumes are not imported into Last Epoch.
+
+Only nearby tent candidates perform contour math. Four native transform calls
+capture an affine frame; contour edge/distance calculations then run in managed
+code. Tests cover actual installed mesh points, model guards, holes/nonconvex
+boundaries, rotation/scale, stacked floors, entry/exit confirmation, loss/recovery,
+speech priority and Spanish service output. Current results: **251** runtime
+place checks, **346** map-state checks and **161** map-section service checks.
+Production compiles with no warnings/errors and deployment disabled during
+parallel work; no game was launched. Listening must still confirm which tent
+interiors the camp's baked walkable geometry actually lets the player enter.
+
+These tent contours do not prove a merchant shop interior, kitchen or tavern.
+Merchant identity and the open shop interface remain their native interaction/UI
+readers' responsibility. Existing 750 fixed sections, physical floor labels and
+generated-room transitions remain available without guessing new room names.

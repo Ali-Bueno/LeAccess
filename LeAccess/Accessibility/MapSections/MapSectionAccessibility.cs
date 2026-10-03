@@ -16,7 +16,7 @@ internal static class MapSectionAccessibility
     private static readonly MapSectionState OverviewState = new();
     private static readonly MapSectionState SurfaceState = new();
     // An owned, reachable model is already validated; waiting another tick loses short passes.
-    private static readonly MapSectionState SceneryState = new(confirmArrival: false);
+    private static readonly SceneryPresenceState SceneryState = new();
     private static ConfigEntry<bool> _enabled, _describeMaps, _surfaces;
     private static MapSectionCatalog _catalog;
     private static string _buildHash;
@@ -38,6 +38,7 @@ internal static class MapSectionAccessibility
         try
         {
             _buildHash = File.ReadAllText(Path.Combine(Application.dataPath, "build_hash.txt")).Trim();
+            RuntimeSceneryPlaces.Initialize(_buildHash);
             var assembly = typeof(MapSectionAccessibility).Assembly;
             var resources = assembly.GetManifestResourceNames();
             Array.Sort(resources, StringComparer.Ordinal);
@@ -91,9 +92,12 @@ internal static class MapSectionAccessibility
                 Plugin.Log.LogInfo($"[Map section] scene={world.SceneName} section={_sectionIdentity ?? id}: {announcement}");
             }
             bool sceneryKnown = RuntimeSceneryPlaces.TryRead(world, out var scenery);
-            string sceneryText = sceneryKnown ? ModText.Format("landmark.nearby", ModText.Get(scenery.TextKey)) : null;
+            string sceneryText = sceneryKnown ? scenery.TextKey == "map.place.tent" ? ModText.Get(scenery.TextKey) :
+                ModText.Format("landmark.nearby", ModText.Get(scenery.TextKey)) : null;
             bool scenerySpoken = SceneryState.Observe(world.Session, sceneryKnown ? scenery.SpeechGroup : null, sceneryText,
-                canSpeak && !HasPendingContent && !summarySpoken && !announce, out string nearbyText);
+                sceneryKnown && scenery.TextKey == "map.place.tent",
+                canSpeak && !HasPendingContent && !summarySpoken && !announce,
+                ModText.Get("map.place.left_tent"), out string nearbyText, RuntimeSceneryPlaces.HasValidObservation);
             HasPendingContent |= SceneryState.HasPendingContent;
             if (scenerySpoken)
             {

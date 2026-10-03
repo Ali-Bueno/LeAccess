@@ -291,4 +291,32 @@ ambiguousColliders=false;
 try { new MapSectionSource("Root",identityMatrix,.01,new MapSectionCollider[]{null}); }
 catch(FormatException) { ambiguousColliders=true; }
 Check(ambiguousColliders,"null contributing collider rejected");
+var scenery = new SceneryPresenceState();
+bool ObserveScenery(string id, bool canSpeak = true, bool valid = true, bool tent = true) =>
+    scenery.Observe(1, id, id == null ? null : "Tent", tent, canSpeak, "Left the tent", out _, valid);
+Check(ObserveScenery("tent-a"), "exact tent entry speaks once");
+Check(!ObserveScenery("tent-a"), "unchanged tent stays silent");
+Check(!ObserveScenery(null), "single outside sample cannot claim departure");
+Check(!ObserveScenery("tent-a"), "boundary jitter does not repeat tent");
+Check(!ObserveScenery(null, valid:false) && !ObserveScenery(null, valid:false), "unavailable geometry cannot claim departure");
+Check(!ObserveScenery("tent-a"), "recovery in same tent remains silent");
+Check(!ObserveScenery(null), "first proven outside observation settles");
+Check(ObserveScenery(null), "second proven outside observation announces tent departure");
+Check(!ObserveScenery(null), "unchanged outside does not repeat departure");
+Check(ObserveScenery("tent-b"), "a second actual tent has its own entry identity");
+Check(ObserveScenery("tent-c"), "adjacent distinct tent is not collapsed by category");
+Check(!ObserveScenery(null,canSpeak:false) && !ObserveScenery(null,canSpeak:false) && scenery.HasPendingContent,
+    "proven departure yields to higher-priority speech");
+Check(ObserveScenery("tent-c") && !scenery.HasPendingContent, "return cancels deferred exit in favor of current presence");
+Check(!ObserveScenery(null,canSpeak:false) && !ObserveScenery(null,canSpeak:false), "another exit can defer");
+Check(!ObserveScenery(null,valid:false) && !scenery.HasPendingContent, "loss of authoritative position cancels stale exit");
+Check(!ObserveScenery(null) && ObserveScenery(null), "recovered departure requires fresh confirmation");
+scenery.Reset();
+Check(!ObserveScenery("tent-a",canSpeak:false) && scenery.HasPendingContent, "unsaid entry may defer");
+Check(!ObserveScenery(null) && !ObserveScenery(null) && !scenery.HasPendingContent, "unspoken brief pass never produces departure speech");
+Check(ObserveScenery("tent-a"), "arrival after unsaid pass speaks");
+Check(scenery.Observe(2,null,null,false,true,"Left the tent",out _)==false, "new session cannot inherit departure");
+Check(ObserveScenery("tent-a"), "session change rearms current tent");
+Check(ObserveScenery("wagon",tent:false), "another known place replaces exact tent");
+Check(!ObserveScenery(null) && !ObserveScenery(null), "leaving unrelated scenery does not say left tent");
 Console.WriteLine($"Passed {checks} map section checks.");

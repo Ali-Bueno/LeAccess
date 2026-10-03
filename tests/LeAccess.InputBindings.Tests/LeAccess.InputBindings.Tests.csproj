@@ -2,10 +2,12 @@
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net6.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><CheckEolTargetFramework>false</CheckEolTargetFramework></PropertyGroup>
   <ItemGroup>
     <Compile Include="../LeAccess.MenuReading.Tests/RuntimeDoubles.cs" Link="RuntimeDoubles.cs" />
+    <Compile Include="../LeAccess.MenuReading.Tests/GeometryDoubles.cs" Link="GeometryDoubles.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/InputBindingText.cs" Link="InputBindingText.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/ButtonPromptAnnouncer.cs" Link="ButtonPromptAnnouncer.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/PromptAnnouncementTracker.cs" Link="PromptAnnouncementTracker.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/UiVisibility.cs" Link="UiVisibility.cs" />
+    <Compile Include="../UiScreenGeometryStub.cs" Link="UiScreenGeometryStub.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
     <Compile Include="../../LeAccess/Accessibility/Utils/TextUtils.cs" Link="TextUtils.cs" />
   </ItemGroup>

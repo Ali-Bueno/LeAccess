@@ -14,9 +14,8 @@ namespace LeAccess.Accessibility.Items
         internal static int Reads;
         internal static ItemData LastItem;
         internal static ItemContainerUI LastContainer;
-        internal static bool OwnsSelection(ItemData item, ItemContainerUI container) => item is not null && !item.WasCollected &&
-            container is not null && !container.WasCollected && container.isActiveAndEnabled && container.gameObject.Visible &&
-            NavigationManager.currentlySelected == container && container.currentlySelectedItem?.data == item;
+        internal static bool OwnsSelection(ItemData item, ItemContainerUI container) =>
+            LeAccess.Accessibility.Inventory.InventorySelectionReader.OwnsSelection(item, container);
         internal static bool ParametersAvailable = true;
         internal static bool TryGetParameters(ItemData item, ItemContainerUI container, out TooltipItemManager.SlotType slot, out int mode)
         { slot = TooltipItemManager.SlotType.INVENTORY; mode = 0; return ParametersAvailable; }
@@ -25,12 +24,22 @@ namespace LeAccess.Accessibility.Items
     }
 }
 
-internal class NativeObject
+namespace Il2CppInterop.Runtime.InteropTypes
+{
+internal class Il2CppObjectBase
 {
     private static int _nextPointer;
     public IntPtr Pointer { get; } = new(++_nextPointer);
     public bool WasCollected;
     public T TryCast<T>() where T : class => this as T;
+}
+
+}
+internal class NativeObject : Il2CppSystem.Object { }
+internal static class Localization
+{
+    internal static readonly Dictionary<string, string> Texts = new();
+    internal static string GetText(string key, string fallback) => Texts.GetValueOrDefault(key, fallback);
 }
 
 namespace UnityEngine
@@ -83,7 +92,7 @@ namespace UnityEngine
             return result;
         }
     }
-    internal sealed class Transform : Object
+    internal class Transform : Object
     {
         public readonly GameObject gameObject;
         private Transform _parent;
@@ -100,6 +109,7 @@ namespace UnityEngine
             return false;
         }
     }
+    internal sealed class RectTransform : Transform { internal RectTransform(GameObject owner) : base(owner) { } }
     internal struct Vector2Int { public int x { get; set; } public int y { get; set; } }
     internal sealed class CanvasRenderer : Object { public bool cull; }
     internal static class Application { public static bool isFocused = true; }
@@ -132,12 +142,27 @@ internal sealed class ItemDataUnpacked : ItemData
 internal sealed class ItemContainerEntry : NativeObject { public ItemData data; }
 internal sealed class ItemContainerUI : UnityEngine.Component
 {
+    public IItemContainer container;
     public ContainerID identifier;
     public ItemContainerEntry currentlySelectedItem;
     public UnityEngine.Vector2Int currentFocusSlot { get; set; }
 }
 internal enum ContainerID { UNDEFINED, INVENTORY, EQ_HELMET, EQ_ARMOR, EQ_WEAPON, EQ_OFFHAND, EQ_GLOVES, EQ_BELT,
     EQ_BOOTS, EQ_RIGHTRING, EQ_LEFTRING, EQ_AMULET, EQ_RELIC }
+internal enum ContainerType { INVENTORY, EQUIPPED }
+internal sealed class IItemContainer : NativeObject
+{
+    internal ContainerType Type;
+    internal ContainerID Id;
+    internal ItemContainerEntry Entry;
+    internal ContainerID GetContainerID() => Id;
+    internal ItemContainerEntry GetEntryAt(UnityEngine.Vector2Int slot) => Entry;
+}
+internal sealed class EquippedItemsNavigable : UnityEngine.Component
+{
+    internal Il2CppSystem.Object navigables, rects;
+    internal UnityEngine.Vector2Int currentlySelectedIdx;
+}
 internal static class NavigationManager { public static NativeObject currentlySelected; }
 internal sealed class TooltipItemManager : UnityEngine.Component
 {
@@ -212,6 +237,14 @@ internal sealed class NativeActions : NativeObject
 }
 namespace Il2CppSystem
 {
+    internal class Object : Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase { }
+    internal sealed class Array : Object
+    {
+        internal Object[,] Cells;
+        internal int Rank = 2;
+        internal int GetLength(int dimension) => Cells.GetLength(dimension);
+        internal Object GetValue(int x, int y) => Cells[x, y];
+    }
     internal class IDisposable : NativeObject { internal void Dispose() { } }
 }
 namespace Il2CppSystem.Collections

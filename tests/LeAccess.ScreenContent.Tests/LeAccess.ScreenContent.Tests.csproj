@@ -7,6 +7,8 @@
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/*.cs" Link="%(Filename)%(Extension)" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Announcements/UiReadingOrder.cs" Link="UiReadingOrder.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Announcements/UiWindowOrder.cs" Link="UiWindowOrder.cs" />
   </ItemGroup>
   <Import Project="../LocalizationSources.props" />
 </Project>

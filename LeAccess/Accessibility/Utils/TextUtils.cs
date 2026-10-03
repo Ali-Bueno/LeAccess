@@ -68,14 +68,14 @@ public static class TextUtils
             if (IsVisibleLabel(tmp) && !string.IsNullOrWhiteSpace(tmp.text)) return CleanText(tmp.text);
         foreach (var text in go.GetComponentsInChildren<Text>(false))
             if (text is not null && !text.WasCollected && text != null && text.isActiveAndEnabled &&
-                text.color.a > 0 && UiVisibility.IsVisible(text.gameObject) && !string.IsNullOrWhiteSpace(text.text))
+                text.color.a > 0 && UiVisibility.IsVisibleGraphic(text) && !string.IsNullOrWhiteSpace(text.text))
                 return CleanText(text.text);
         return null;
     }
 
     internal static bool IsVisibleLabel(TMP_Text label) =>
         label is not null && !label.WasCollected && label != null && label.isActiveAndEnabled &&
-        label.alpha > 0 && UiVisibility.IsVisible(label.gameObject) &&
+        float.IsFinite(label.alpha) && label.alpha > 0 && UiVisibility.IsVisibleGraphic(label) &&
         (label.canvasRenderer is null || !label.canvasRenderer.WasCollected &&
             (label.canvasRenderer == null || !label.canvasRenderer.cull));
 

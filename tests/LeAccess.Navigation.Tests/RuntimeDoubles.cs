@@ -22,13 +22,33 @@ namespace UnityEngine
     internal class GameObject : Object
     {
         public bool activeInHierarchy = true;
+        public SceneManagement.Scene scene = SceneManagement.SceneManager.GetActiveScene();
         public Transform transform = new();
-        public AI.NavMeshAgent Agent = new();
+        private AI.NavMeshAgent _agent;
+        public AI.NavMeshAgent Agent
+        {
+            get => _agent;
+            set
+            {
+                _agent = value;
+                if (value is not null && value.gameObject is null) value.gameObject = this;
+            }
+        }
+        public GameObject() { Agent = new(); }
         public T GetComponent<T>() where T : Object => Agent as T;
+        public T GetComponentInChildren<T>() where T : Object => Agent as T;
+    }
+
+    internal class Component : Object
+    {
+        public GameObject gameObject;
+        public Transform transform => gameObject.transform;
     }
 
     internal class Transform
     {
+        public Transform parent;
+        public bool IsChildOf(Transform ancestor) => ReferenceEquals(this, ancestor) || (parent?.IsChildOf(ancestor) ?? false);
         public Vector3 position = default;
         public Quaternion rotation = default;
         public Vector3 forward = new(0, 0, 1);
@@ -70,7 +90,7 @@ namespace UnityEngine
 
 namespace UnityEngine.AI
 {
-    internal class NavMeshAgent : Object
+    internal class NavMeshAgent : Component
     {
         public bool isActiveAndEnabled = true;
         public bool isOnNavMesh = true;
@@ -111,7 +131,7 @@ namespace UnityEngine.AI
 
 namespace UnityEngine.SceneManagement
 {
-    internal struct Scene { public int handle; }
+    internal struct Scene { public int handle; public bool isLoaded => handle > 0; public bool IsValid() => handle > 0; }
     internal static class SceneManager
     {
         public static int Handle = 1;
@@ -122,22 +142,35 @@ namespace UnityEngine.SceneManagement
 internal static class PlayerFinder
 {
     public static UnityEngine.GameObject Player = new();
-    public static Actor Actor;
-    public static ActorVisuals playerActorVisuals;
+    private static Actor _actor;
+    public static Actor Actor
+    {
+        get => _actor;
+        set { _actor = value; if (value is not null && value.gameObject is null) value.gameObject = Player; }
+    }
+    private static ActorVisuals _visuals;
+    public static ActorVisuals playerActorVisuals
+    {
+        get => _visuals;
+        set { _visuals = value; if (value is not null && value.gameObject is null) value.gameObject = Player; }
+    }
     public static UnityEngine.GameObject player => Player;
     public static Actor playerActorComponent => Actor;
     public static UnityEngine.GameObject getPlayer() => Player;
     public static Actor getPlayerActor() => Actor;
 }
-internal class Actor : UnityEngine.Object
+internal class Actor : UnityEngine.Component
 {
+    public bool isActiveAndEnabled = true;
     public float Radius;
     public float getRadius() => Radius;
 }
-internal class ActorVisuals : UnityEngine.Object
+internal class ActorVisuals : UnityEngine.Component
 {
     public bool isActiveAndEnabled = true;
     public bool dead;
+    public float Radius;
+    public float getRadius() => Radius;
 }
 internal class LocalPlayer : UnityEngine.Object
 {

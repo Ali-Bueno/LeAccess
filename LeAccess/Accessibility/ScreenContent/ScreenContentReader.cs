@@ -12,29 +12,28 @@ internal static class ScreenContentReader
 {
     internal static string Read(GameObject root, TMP_Text header, TMP_Text body)
     {
-        var fragments = new List<string>();
-        Add(header, fragments);
-        Add(body, fragments);
+        if (!UiVisibility.IsVisible(root)) return null;
+        var fragments = new List<UiReadingOrder.Fragment>();
+        var seen = new HashSet<int>();
+        Add(root, header, fragments, seen);
+        Add(root, body, fragments, seen);
         // Limit discovery to the popup that the game's display lifecycle identified.
         var labels = root.GetComponentsInChildren<TMP_Text>(false);
         if (labels != null && !labels.WasCollected)
-            foreach (var label in labels) Add(label, fragments);
+            foreach (var label in labels) Add(root, label, fragments, seen);
         var legacyLabels = root.GetComponentsInChildren<Text>(false);
         if (legacyLabels != null && !legacyLabels.WasCollected)
             foreach (var label in legacyLabels)
-                if (IsAlive(label) && label.isActiveAndEnabled && label.color.a > 0 &&
-                    UiVisibility.IsVisible(label.gameObject) && !IsInputValue(label))
-                    fragments.Add(TextUtils.CleanText(label.text));
-        return ScreenContentTracker.Combine(fragments);
+                if (UiVisibility.IsVisibleGraphic(label) && !IsInputValue(label) && seen.Add(label.GetInstanceID()))
+                    fragments.Add(new(label, TextUtils.CleanText(label.text)));
+        return ScreenContentTracker.Combine(UiReadingOrder.Read(fragments));
     }
 
-    private static void Add(TMP_Text label, List<string> fragments)
+    private static void Add(GameObject root, TMP_Text label, List<UiReadingOrder.Fragment> fragments, HashSet<int> seen)
     {
-        if (!IsAlive(label) || !label.isActiveAndEnabled || label.alpha <= 0 ||
-            !UiVisibility.IsVisible(label.gameObject) || IsInputValue(label)) return;
-        var renderer = label.canvasRenderer;
-        if (IsAlive(renderer) && renderer.cull) return;
-        fragments.Add(TextUtils.CleanText(label.text));
+        if (!TextUtils.IsVisibleLabel(label) || !label.transform.IsChildOf(root.transform) ||
+            IsInputValue(label) || !seen.Add(label.GetInstanceID())) return;
+        fragments.Add(new(label, TextUtils.CleanText(label.text)));
     }
 
     private static bool IsInputValue(Component label) =>

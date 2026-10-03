@@ -29,6 +29,7 @@ internal static class ClassSelectionReader
         var list = nav.TryCast<ListNavigable>();
         if (IsAlive(list))
         {
+            if (!list.isActiveAndEnabled) return false;
             var children = list._selectableChildren;
             int index = list._lastSelectedIndex;
             if (children is null || children.WasCollected || index < 0 || index >= children.Count) return false;

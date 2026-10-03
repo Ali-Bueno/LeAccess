@@ -1,11 +1,12 @@
 using System;
+using LeAccess.Accessibility.Audio;
 
 namespace LeAccess.Accessibility.WorldCues;
 
 internal enum WorldCueCategory { Coins, Equipment, Interactable }
 internal readonly record struct WorldCueKey(WorldCueCategory Category, int InstanceId);
 internal readonly record struct WorldCueTarget(long Session, WorldCueKey Key, float Distance, float Range,
-    float Pan, float Forward);
+    float Pan, float Forward, NaturalCueKind? Sound = null);
 
 internal sealed class WorldCueState
 {

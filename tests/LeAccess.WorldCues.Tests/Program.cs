@@ -161,6 +161,17 @@ Check(WorldAudioReservation.TryBegin(WorldAudioSource.Terrain, 0.7, 0.12, 100), 
 Check(WorldAudioReservation.TryBegin(WorldAudioSource.Npc, 0, 0.084, 50), "Time reversal clears stale device reservations");
 Check(!WorldAudioReservation.TryBegin(WorldAudioSource.Npc, double.NaN, 0.1, 50), "Invalid reservation times are rejected");
 
+WorldAudioReservation.Reset();
+Check(WorldAudioReservation.TryBegin(WorldAudioSource.Guidance, 0, 0.3, 100), "Guidance reserves its natural sample and device tail");
+Check(!WorldAudioReservation.TryBegin(WorldAudioSource.Terrain, 0.1, 0.12, 100), "Terrain waits for the bounded guidance pulse");
+Check(!WorldAudioReservation.TryBegin(WorldAudioSource.Guidance, 0.4, 0.3, 100), "Repeating guidance cannot starve pending terrain");
+Check(WorldAudioReservation.TryBegin(WorldAudioSource.Terrain, 0.4, 0.12, 100), "Terrain receives the next turn after guidance");
+Check(!WorldAudioReservation.TryBegin(WorldAudioSource.Object, 0.7, 0.16, 100), "Later object cue respects waiting guidance");
+WorldAudioReservation.Cancel(WorldAudioSource.Guidance);
+Check(WorldAudioReservation.TryBegin(WorldAudioSource.Object, 0.7, 0.16, 100), "Losing a route removes its waiting guidance claim");
+WorldAudioReservation.Reset();
+Check(WorldAudioReservation.TryBegin(WorldAudioSource.Guidance, 0, 0.3, 100), "Scene reset clears all four audio sources");
+
 var categoryCues = new List<float[]>();
 foreach (WorldCueCategory category in Enum.GetValues<WorldCueCategory>())
 {
@@ -178,7 +189,8 @@ foreach (WorldCueCategory category in Enum.GetValues<WorldCueCategory>())
     Check(WorldCueSynthesizer.Synthesize(category, float.NaN, float.NaN, float.NaN).All(x => x == 0),
         $"{category} safely bounds invalid input");
 }
-Check(categoryCues.Select(x => x.Length).Distinct().Count() == 3, "Each category has a distinct rhythm and duration");
+Check(!categoryCues[0].SequenceEqual(categoryCues[1]) && !categoryCues[0].SequenceEqual(categoryCues[2]) &&
+    !categoryCues[1].SequenceEqual(categoryCues[2]), "Each category retains a distinct sound");
 
 Reset(); var config = new ConfigFile(); WorldCueSounds.Initialize(config); Tick(0);
 Check(RadarAudioOutput.Creates == 0, "No targets create no device");
@@ -283,4 +295,5 @@ Check(output.Plays == 3, "The remaining interactable continues repeating after l
 Check(LeAccess.Plugin.Log.Info.Count(x => x.StartsWith("[World cue]")) == 2,
     "Looping playback does not produce a per-beep information log");
 WorldCueSounds.Cleanup();
+checks += NaturalIdentityTests.Run();
 Console.WriteLine($"World cue tests passed: {checks} checks.");

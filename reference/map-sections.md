@@ -18,6 +18,10 @@ The existing central speech sink serves these readers:
   This path runs in any loaded gameplay scene, including echoes and generated
   layouts, without requiring a fixed coordinate profile. See
   [live place detection](runtime-map-places.md).
+- **Tent interiors:** verified canopy contours require actual same-floor body
+  coverage. Each tent has separate entry speech and confirmed departure feedback;
+  approaching its bounding box does not speak a tent label. See
+  [canopy evidence and limits](runtime-map-places.md#exact-tent-presence-and-departure-2026-10-02).
 - **Generated caves/tombs:** native hallway tags, current room number, entrance/exit metadata and
   connected-door counts from the actual generated level, with native floor/elevation checks. See
   [PCG evidence and limits](pcg-map-sections.md).

@@ -124,7 +124,14 @@ namespace LE.UI.PanelSystem { public class WorldMapPanel : UnityEngine.Behaviour
 namespace LE.UI { public static class LoadingScreen { public static bool IsVisible; } }
 namespace LeAccess.Accessibility.Utils
 {
-    internal static class TextUtils { internal static string CleanText(string text) => text?.Trim(); }
+    internal static class TextUtils
+    {
+        internal static string CleanText(string text) => text?.Trim();
+        internal static bool IsVisibleLabel(TMPro.TextMeshProUGUI label) => label is not null && !label.WasCollected &&
+            label.isActiveAndEnabled && float.IsFinite(label.alpha) && label.alpha > 0 &&
+            LeAccess.Accessibility.Announcements.UiVisibility.IsVisible(label.gameObject) &&
+            (label.canvasRenderer is null || !label.canvasRenderer.cull);
+    }
 }
 namespace LeAccess.Accessibility
 {

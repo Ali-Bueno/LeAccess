@@ -29,7 +29,7 @@ void Start(string hash = "verified-build", bool overview = false, bool surfaces 
     RuntimeMapPlaces.Place = new("bridge-owner", "map.section.bridge", "map.section.bridge");
     RuntimeSceneryPlaces.Available = false;
     RuntimeSceneryPlaces.Captures = RuntimeSceneryPlaces.Resets = 0;
-    RuntimeSceneryPlaces.Place = new("tent-owner", "map.place.tents", "map.place.tents");
+    RuntimeSceneryPlaces.Place = new("gate-owner", "map.place.gate", "map.place.gate");
     MapSectionSources.Available = true;
     MapSurfaceProbe.Available = false;
     MapSurfaceProbe.Key = "map.surface.wood";
@@ -336,10 +336,10 @@ try
     Start(); ModText.SetLanguage("es"); RuntimeSceneryPlaces.Available = true;
     Tick(0); Tick(.2); Last("Puente de madera 1", "actual floor announcement precedes nearby scenery");
     Check(MapSectionAccessibility.HasPendingContent, "nearby scenery waits while physical section speaks");
-    Tick(.41); Last("Cerca: Tiendas de campaña", "scenery complements existing map and physical floor coverage");
+    Tick(.41); Last("Cerca: Pórtico", "scenery complements existing map and physical floor coverage");
     Check(ScreenReader.Spoken.Count == 2 && !MapSectionAccessibility.HasPendingContent, "nearby scenery delivered once without interrupting section");
-    RuntimeSceneryPlaces.Place = RuntimeSceneryPlaces.Place with { Identity = "next-tent" };
-    Tick(.62); Tick(.83); Check(ScreenReader.Spoken.Count == 2, "adjacent tents do not repeat category");
+    RuntimeSceneryPlaces.Place = RuntimeSceneryPlaces.Place with { Identity = "next-gate" };
+    Tick(.62); Tick(.83); Check(ScreenReader.Spoken.Count == 2, "adjacent gateway pieces do not repeat category");
     RuntimeSceneryPlaces.Place = new("wagon", "map.place.wagon", "map.place.wagon");
     Tick(1.04, pending:true); Tick(1.25, pending:true);
     Check(MapSectionAccessibility.HasPendingContent && ScreenReader.Spoken.Count == 2, "nearby changes yield to pending gameplay speech");
@@ -353,7 +353,7 @@ try
     LE.UI.LoadingScreen.IsVisible = true; Tick(3.15);
     Check(RuntimeSceneryPlaces.Resets > 0 && !MapSectionAccessibility.HasPendingContent, "loading clears scenery cache and pending speech");
     Start(); MapSectionWorld.Snapshot = MapSectionWorld.Snapshot with { SceneName="Unmapped" };
-    RuntimeSceneryPlaces.Available = true; Tick(0); Last("Nearby: Tents", "a fully validated footprint speaks on a brief pass without waiting a second geometry sample");
+    RuntimeSceneryPlaces.Available = true; Tick(0); Last("Nearby: Gateway", "a fully validated footprint speaks on a brief pass without waiting a second geometry sample");
     Tick(.2); Check(ScreenReader.Spoken.Count == 1, "unchanged confirmed scenery does not repeat");
     RuntimeSceneryPlaces.Available = false; Tick(.41);
     RuntimeSceneryPlaces.Available = true; Tick(.62);
@@ -366,6 +366,27 @@ try
     Check(ScreenReader.Spoken.Count == 0 && MapSectionAccessibility.HasPendingContent, "immediate scenery still yields to higher priority speech");
     RuntimeSceneryPlaces.Available = false; Tick(.2);
     Check(ScreenReader.Spoken.Count == 0 && !MapSectionAccessibility.HasPendingContent, "a deferred brief pass is canceled when its physical evidence is gone");
+    Start(); ModText.SetLanguage("es");
+    MapSectionWorld.Snapshot = MapSectionWorld.Snapshot with { SceneName="Unmapped" };
+    RuntimeSceneryPlaces.Place = new("tent-a", "map.place.tent", "tent-a");
+    RuntimeSceneryPlaces.Available = true; Tick(0); Last("Tienda de campaña", "actual tent presence omits nearby qualifier");
+    Tick(.2); Check(ScreenReader.Spoken.Count==1, "unchanged exact presence is quiet");
+    RuntimeSceneryPlaces.HasValidObservation=false;RuntimeSceneryPlaces.Available=false;
+    Tick(.41);Tick(.62);Check(ScreenReader.Spoken.Count==1, "missing support observation never claims exit");
+    RuntimeSceneryPlaces.HasValidObservation=true;RuntimeSceneryPlaces.Available=true;
+    Tick(.83);Check(ScreenReader.Spoken.Count==1, "same tent recovery does not repeat entry");
+    RuntimeSceneryPlaces.Available=false;Tick(1.04);Tick(1.25);
+    Last("Has salido de la tienda de campaña", "verified tent departure speaks once");
+    Tick(1.46);Check(ScreenReader.Spoken.Count==2, "remaining outside is quiet");
+    RuntimeSceneryPlaces.Available=true;RuntimeSceneryPlaces.Place=new("tent-b","map.place.tent","tent-b");
+    Tick(1.67);Last("Tienda de campaña", "new tent has independent arrival identity");
+    RuntimeSceneryPlaces.Place=new("tent-c","map.place.tent","tent-c");
+    Tick(1.88);Check(ScreenReader.Spoken.Count==4, "distinct neighboring tents do not collapse by category");
+    Tick(2.09,menu:true);Tick(2.10);Check(ScreenReader.Spoken.Count==4, "menu return preserves actual tent entry");
+    RuntimeSceneryPlaces.Available=false;Tick(2.31,pending:true);Tick(2.52,pending:true);
+    Check(MapSectionAccessibility.HasPendingContent, "tent exit defers to other reader content");
+    RuntimeSceneryPlaces.Available=true;Tick(2.73);
+    Last("Tienda de campaña", "return cancels stale deferred exit");
     Console.WriteLine($"Passed {checks} map section service checks.");
 }
 finally

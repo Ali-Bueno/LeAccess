@@ -1,6 +1,6 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-02. User confirms substantial improvement, online character creation/play and adding their email through the website. Latest settings, first-opening skill assignment and camp scenery fixes are installed and packaged; listening checks remain pending. Future test ZIPs default to the repository root. Character-name editing remains user-confirmed.
+**Updated:** 2026-10-03. Equipped-item names, menu visibility/foreground checks and spatial text order are installed alongside the natural D2R sounds, automatic route feedback and tent presence fixes. Original bright loot cues are archived. All 49 C# suites plus the missing-audio variant pass (57,171 checks), as do 20 Python tests. Listening remains pending; no game launch. The older friend ZIP stays local.
 
 **Repository snapshot:** Steam port, accessibility readers, en/es catalogs,
 runtime map data, extraction tools, tests and investigation references are
@@ -13,6 +13,7 @@ User-confirmed behavior and unverified follow-up fixes remain distinguished belo
 - **Target:** `D:\games\steam\steamapps\common\Last Epoch`.
 - **Loader:** **BepInEx 6.0.0-be.788**, Il2CppInterop **1.5.3**; `LeAccess.InteropRepair` now repairs Unity 6.4 orphan types automatically before loading interop.
 - **Build/deploy:** `dotnet build LeAccess/LeAccess.csproj`; targets Steam by default. Add `-p:SkipPluginDeployment=true` while the game is running.
+- **Installed DLL SHA256:** `832BFAACD0BF40A9680276B15CC9E968E8B145AC6FD7E9B57D9F023F1B5D1C2C`; build and deployed file match, zero compiler warnings/errors, personal config unchanged.
 - **Speech:** existing centralized Tolk/NVDA; bundled NVDA client now loaded explicitly from the plugin directory.
 - **Reference:** `last epoch code/` replaced from **1.5.1 / build 25672295** interop: LE 8046 C# files, Controls 11, Dialogue 537 and isolated DataStoreList IL. See `SOURCE.txt` and [migration notes](reference/steam-port.md).
 - **Launch:** start the game normally through Steam; a BAT is unnecessary. Choose online or offline inside the game menu.
@@ -20,7 +21,7 @@ User-confirmed behavior and unverified follow-up fixes remain distinguished belo
 
 ## Next step / blocker
 
-**Next task:** test settings names/values and all tabs (including buttonless Challenges), assigned buttons on the first skill-menu opening, and camp scenery while walking. Share the completed test package with the user's friend. Earlier cinematic/manual-tooltip checks remain pending. Native equip failures remain unconfirmed; visible rejection notices can speak. **Do not open the game: the user tests independently.**
+**Next task:** listen to equipped slots (including swapping/removing an item), menu order, scrolling and popup return. Then check automatic route cadence/turns, natural loot/service sounds and entering/leaving a supported camp tent. The [menu audit](reference/menu-visibility.md) lists screen-specific gaps. **Do not open the game: the user tests independently.**
 
 English/Spanish mod speech now follows the game's language, with editable catalogs
 and English fallback. [Language testing](reference/localization.md) is pending.
@@ -65,23 +66,26 @@ establish local junction coverage. Connection counts do not prove open passages.
 | Steam port | Loader/NVDA verified. Latest native log confirms online character creation, matchmaking connection and InGame; broader online feature validation remains incomplete. |
 | Native hook safety | 31 checks; 59 declarations / 58 distinct native targets validated against installed game. |
 | Early online/offline selection | Empty native nullable no longer throws during readiness polling or erases the first click; observation failures retain intent, dispatch remains once-only. 56 checks; fresh startup listening pending. |
-| Menus/focus | Settings row labels, exact tab/RectTransform selection, sound formatting and buttonless Challenges. 73 menu + 63 settings-source checks; latest listening pending. [Evidence](reference/settings-reading.md). |
-| Mod localization | Automatic game language, en/es catalogs, override and per-key fallback; 280 checks. |
+| Menus/focus | Visible rendered labels, exact native selection, vertical-list polling and foreground ownership; spatial text order. 165 menu + 63 settings-source checks. [Audit and limits](reference/menu-visibility.md); listening pending. |
+| Mod localization | Automatic game language, en/es catalogs, override and per-key fallback; 366 checks. |
 | Return from Start | Character creation owner/control restored after pause closes; 134 checks. User confirms it works. |
 | Internal panel chatter | Removed; background Forge/Skill Tree opening or closing no longer speaks object names. |
-| Tutorials/popups/terms | Current bindings added to identified tutorial notices; passive tutorials do not own gameplay input. 71 checks. |
+| Tutorials/popups/terms | Mixed text follows screen positions; foreground follows known draw order; native nested modals remain independent. Passive tutorials do not own gameplay input. 87 checks. |
 | Visible subtitles | Creation/movie captions have their own lifecycle. Ambient bark UI requires actual on-screen text, NPC interaction range or the player's own source; rejected distant lines cannot escape through the submitted-message fallback. 63 dialogue + 143 subtitle checks. Inspected Rogue opening narrative is audio-only. |
 | Hints/notifications | Button-first hints; item actions accompany selection instead of separate delayed hints. Native equip rejection notices allowed after brief focus speech. 79 binding/prompt + 50 notification checks. |
 | Controller menu/zones | Announces opening with neutral stick, then selected localized option with interruption; 38 checks. Listening pending. |
-| Classes/masteries/realm | Season/legacy labels; descriptions manual. Passive-node focus cannot announce background mastery. 101 checks; listening pending. |
+| Classes/masteries/realm | Season/legacy labels; descriptions manual. Disabled retained carousel and background mastery rejected. 102 checks; listening pending. |
 | Skills/assigned buttons | Pending references in other slots no longer hide verified assignments; readiness can recover within the first opening. Learned/unlock state retained. 171 checks; listening pending. |
 | Passive nodes | Silent fallback fixed: native builder populates name/description; bare constructor did not. Same-object node lookup, brief name/points/state, manual details and bounded diagnostics. 82 checks; listening pending. |
 | Quest journal | State follows title; active objectives named explicitly. Prior completed/failed objectives are labeled as this quest's history and read only manually, including UI fallback. 124 checks; listening pending. |
+| Automatic quest updates | Local quest/objective counters and completion; saved history silent, changes coalesced through menus/dialogue, configurable 2-second pacing. 78 checks. [Evidence](reference/quest-updates.md). Listening pending. |
 | Character name editing | User confirms the latest typing/return fix works. Circle keeps the name; physical entry and owned device transitions retain focus. Eight hooks, 160 checks. |
-| Inventory/merchants | Per-item button-first native actions; owned purchase/sale/repurchase prices and affordability; localized tabs. SHOP fallback supports manual properties. 111 service + 92 model checks; listening pending. |
+| Inventory/merchants | [Equipped slots](reference/equipped-items.md) read actual worn items, localized slot and native actions; swaps/removal tracked. Merchant prices/manual properties retained. 173 service + 102 model checks; listening pending. |
 | Ground loot | New targeting API, brief current-item names; 67 checks. Listening pending. |
-| Radar | Consistent sampled NavMesh origin, gameplay/death gates, 100 ms buffering retained; 357 navigation checks. Listening pending. |
-| NPC/world sounds | Repeating gold/equipment/interactable cues; removed invalid loot click-listener requirement; 112 checks. Equipment filter rejection now distinguished in logs. |
+| Radar | Initial/resumed wall memory prevents false openings on retreat; owned online visuals supply body radius. 436 navigation checks; sound/control vocabulary unchanged. Listening pending. |
+| Objective orientation | Right-stick-down/F6: visible tracked objective or named exit, verified path corner or explicit bearing-only fallback, distance/progress. 147 service/route + 91 target checks. [Controls and limits](reference/objective-orientation.md). Listening pending. |
+| Automatic orientation | Default-on natural directional pulses, faster near the destination; stable target/turn/proximity speech. Verified paths only, nearby named-exit fallback. 351 checks. [Details](reference/automatic-orientation.md). Listening pending. |
+| NPC/world sounds | Natural D2R recordings for loot and typed chest/stash/portal/transition identities; generic/NPC/radar cues retained. 149 world + 167 sample/fallback checks. [Details](reference/natural-world-sounds.md). Listening pending. |
 | Nearby NPC names | Cadáveres ardientes name confirmed by user and latest log. Now includes native tooltip subtitles and verified merchant role. 101 probe, 109 lifecycle and 59 audio checks; new service coverage needs listening. |
 | Nearby player names | Nearest other player's public displayed name inside the native player interaction radius; 29 checks. Online listening pending. |
 | Quest ping | Removed as requested. Continuous sonar remains opt-in. |
@@ -89,14 +93,43 @@ establish local junction coverage. Connection counts do not prove open passages.
 | Life/mana | D2R percentage bands, critical priority, R/Back/View manual report, offline/online sources and typed-input gates; 379 checks. Online hierarchy, controller mapping and listening pending. |
 | Nearby landmarks | Inactive destination metadata can name active forest/camp entrances; listener/range/destination guards remain. Verified non-NPC services no longer require a hover tag. 86 probe + 54 lifecycle checks; listening pending. |
 | Spatial map sections | 750 guarded sections across 58 layouts, regenerated against installed 1.5.1 assets; 16 Monolith layouts included. Entry overview defaults off. Listening pending. |
-| Live map places | Camp fix: owned query settings survive agent disable; native baked radius governs approach sampling; brief valid passes can speak immediately. 207 runtime + 150 service checks; listening pending. |
+| Live map places | Exact canopy containment for three tent models, distinct entries and confirmed departures; online visual body size retained. 251 runtime + 346 state + 161 service + 152 world checks. [Details](reference/runtime-map-places.md). Listening pending. |
 | Generated rooms | Native rooms and tagged passages, entrance/exit and design connections; 66 adapter checks. Edges/ambiguous floors omitted; listening pending. |
 | Ground descriptions | Optional, disabled by default per user request. Verified material research retained; 61 adapter checks. |
 | Other gaps | Full stash/vendor/crafting coverage needs controller checks; transitions without WorldObjectClickListener; audio-only player lines lack authored text. |
 
 ## References
 
-**Latest listening follow-up:** 73 menu, 63 settings-source, 79 shared binding,
+**Latest validation:** all 49 standalone C# suites passed, totaling 57,147 checks
+(including 51,203 catalog checks), plus 24 missing-audio fallback checks and 20
+Python navigation-decoder tests. The installed native audit still validates
+59 declarations / 58 targets. Main build/deploy has zero warnings/errors;
+installed and built hashes match above, and personal configuration is unchanged.
+The [menu audit](reference/menu-visibility.md) records coverage and runtime gaps;
+[equipped-item evidence](reference/equipped-items.md) explains the Head/Hands fix.
+The [sound design reference](reference/sound-design.md) preserves the original
+coin/equipment WAVs and the preference for bright but more realistic future cues.
+D2R remains the active set. No game or audio device was opened for validation.
+
+**Natural sounds and hands-free orientation:** nine short D2R recordings are
+embedded in the DLL, with typed world-object identities and shared playback
+scheduling. [Automatic orientation](reference/automatic-orientation.md) follows
+only verified routes and never moves the character. [Tent presence](reference/runtime-map-places.md#exact-tent-presence-and-departure-2026-10-02)
+uses extracted canopy contours; merchant proximity does not establish a shop
+interior. The user's configuration and the older friend ZIP remain unchanged.
+No new native hooks or runtime dependencies; no game was opened.
+
+**Navigation/quest follow-up:** 436 radar, 147 orientation geometry/route/service,
+90 native target-reader, 78 automatic quest-update, 124 journal, 330 localization,
+79 input-binding, 73 menu, 44 radar-audio and 31 native-safety checks pass.
+The hook audit still covers 59 declarations / 58 targets; no hooks or runtime
+dependencies were added. Main build/deploy is clean and hashes match above.
+See [orientation](reference/objective-orientation.md), [quest updates](reference/quest-updates.md)
+and [radar corrections](reference/navigation-radar.md). The old quest ping remains
+removed. A displayed marker is not proof of an exact completion point or that an
+unlinked exit leads to the current quest. No game was opened.
+
+**Previous listening follow-up:** 73 menu, 63 settings-source, 79 shared binding,
 171 skill, 207 runtime-place, 150 map-service, 66 generated-room and 323 section-state
 checks pass. Map-data validation remains 51,203 checks; native safety passes
 31 checks / 59 declarations / 58 targets. No new native hooks.
@@ -106,11 +139,11 @@ The 19:40 log confirms native `isOnline: True`, server matchmaking/connection an
 InGame. The user subsequently confirmed adding their email through the website;
 there is no remaining reported account-registration concern.
 
-**Friend's test ZIP:** `LeAccess-Steam-1.5.1-prueba-20261002.zip`, kept locally
+**Friend's test ZIP (previous build; excludes the latest sound, orientation and menu changes):** `LeAccess-Steam-1.5.1-prueba-20261002.zip`, kept locally
 in the repository root (36,449,013 bytes; 264 files; no BAT). SHA256:
 `B238F1B8422734C60D4D8B28993A837273E700DD4EB9BD2FA8D14815F3C26ECC`.
 242 packaging checks pass. All 228 official loader files are unchanged, and the
-packaged main DLL matches the installed hash below. ZIP CRC and exclusion checks
+packaged main DLL matches the previous packaged hash below. ZIP CRC and exclusion checks
 pass; no game launch/clean-machine boot was performed. Extract beside the game EXE;
 first launch can require Internet to generate local interop.
 The replacement ZIP is generated directly in the repository root without a BAT.
@@ -170,7 +203,7 @@ and [manual item properties](reference/item-tooltip-model.md) still need user ch
 Broader live map coverage and multiplayer proximity remain unverified.
 Final main build/deploy: zero warnings/errors. Built and installed DLL hashes
 match; the user's config is unchanged. The game was not launched.
-Installed main DLL SHA256: `9D9B3C0687C2592A326CFE062732F3074A7AA778B9342795A37CA85FC4518025`.
+Previous packaged DLL SHA256: `9D9B3C0687C2592A326CFE062732F3074A7AA778B9342795A37CA85FC4518025`.
 
 Follow-up listening: the remaining menu/manual-detail checks above, then
 skill repetition, NVDA keyboard commands while using the controller, nearby

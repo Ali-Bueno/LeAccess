@@ -304,8 +304,7 @@ internal static class DialogueAnnouncer
         return IsAlive(panel) && UiVisibility.IsVisible(panel.gameObject) ? panel.gameObject : null;
     }
 
-    private static bool Visible(TMP_Text label) => IsAlive(label) && label.isActiveAndEnabled && label.alpha > 0 &&
-        UiVisibility.IsVisible(label.gameObject) && (!IsAlive(label.canvasRenderer) || !label.canvasRenderer.cull);
+    private static bool Visible(TMP_Text label) => TextUtils.IsVisibleLabel(label);
 
     private static string Read(TMP_Text label) => Visible(label) ? TextUtils.CleanText(label.text) : null;
 

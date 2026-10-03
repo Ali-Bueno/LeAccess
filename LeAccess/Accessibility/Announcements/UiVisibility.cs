@@ -8,12 +8,29 @@ internal static class UiVisibility
     {
         try
         {
-            return element is not null && !element.WasCollected && element != null && HasVisibleHierarchy(element);
+            return element is not null && !element.WasCollected && element != null &&
+                HasVisibleHierarchy(element) && UiScreenGeometry.IsVisible(element);
         }
         catch (System.Exception)
         {
             return false;
         }
+    }
+
+    internal static bool IsVisibleGraphic(Component element)
+    {
+        try
+        {
+            return element is not null && !element.WasCollected && element != null &&
+                IsVisible(element.gameObject) && UiScreenGeometry.IsVisibleGraphic(element);
+        }
+        catch (System.Exception) { return false; }
+    }
+
+    internal static bool HasVisiblePresentation(GameObject element)
+    {
+        try { return IsVisible(element) && UiScreenGeometry.HasVisiblePresentation(element); }
+        catch (System.Exception) { return false; }
     }
 
     private static bool HasVisibleHierarchy(GameObject element)
@@ -31,7 +48,7 @@ internal static class UiVisibility
             foreach (var group in current.GetComponents<CanvasGroup>())
             {
                 if (group == null || !group.isActiveAndEnabled) continue;
-                if (group.alpha <= 0) return false;
+                if (!float.IsFinite(group.alpha) || group.alpha <= 0) return false;
                 ignoreParents |= group.ignoreParentGroups;
             }
             if (ignoreParents) checkGroups = false;

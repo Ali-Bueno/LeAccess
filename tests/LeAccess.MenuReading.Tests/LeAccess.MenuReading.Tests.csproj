@@ -12,6 +12,9 @@
     <Compile Include="../../LeAccess/Accessibility/Settings/SettingsFocusAnnouncer.cs" Link="SettingsFocusAnnouncer.cs" />
     <Compile Include="../../LeAccess/Accessibility/Settings/SettingsValueReader.cs" Link="SettingsValueReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/UiVisibility.cs" Link="UiVisibility.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Announcements/UiScreenGeometry.cs" Link="UiScreenGeometry.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Announcements/UiReadingOrder.cs" Link="UiReadingOrder.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Announcements/UiFocusOwnership.cs" Link="UiFocusOwnership.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/ButtonPromptAnnouncer.cs" Link="ButtonPromptAnnouncer.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/InputBindingText.cs" Link="InputBindingText.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/PromptAnnouncementTracker.cs" Link="PromptAnnouncementTracker.cs" />

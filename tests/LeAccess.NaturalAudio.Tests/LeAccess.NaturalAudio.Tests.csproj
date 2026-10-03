@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../LeAccess/Accessibility/Audio/NaturalCueBank.cs" Link="NaturalCueBank.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/PcmWaveReader.cs" Link="PcmWaveReader.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/WorldCueSynthesizer.cs" Link="WorldCueSynthesizer.cs" />
+    <Compile Include="../../LeAccess/Accessibility/WorldCues/WorldCueState.cs" Link="WorldCueState.cs" />
+    <EmbeddedResource Include="../../LeAccess/Sounds/*.wav" LogicalName="LeAccess.Sounds.%(Filename)%(Extension)" Condition="'$(OmitNaturalAudioResources)' != 'true'" />
+  </ItemGroup>
+</Project>

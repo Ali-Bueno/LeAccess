@@ -15,7 +15,13 @@ internal static class MenuDetailInput
         Math.Abs(previousX) < PushThreshold && Math.Abs(previousY) < PushThreshold &&
         y >= PushThreshold && y >= Math.Abs(x);
 
-    internal static bool ReadRequested()
+    internal static bool IsDownPush(float x, float y, float previousX, float previousY) =>
+        IsUpPush(x, -y, previousX, -previousY);
+
+    internal static bool ReadRequested() => ReadStickRequested(up: true);
+    internal static bool ReadGuidanceRequested() => ReadStickRequested(up: false);
+
+    private static bool ReadStickRequested(bool up)
     {
         if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible) return false;
         try
@@ -39,7 +45,8 @@ internal static class MenuDetailInput
                 if (stick is null || stick.WasCollected) continue;
                 var value = stick.value;
                 var previous = stick.valuePrev;
-                if (IsUpPush(value.x, value.y, previous.x, previous.y)) return true;
+                if (up ? IsUpPush(value.x, value.y, previous.x, previous.y)
+                    : IsDownPush(value.x, value.y, previous.x, previous.y)) return true;
             }
         }
         catch (Exception ex)

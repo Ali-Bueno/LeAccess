@@ -51,31 +51,35 @@ internal sealed class RadarWorldProbe
     public bool TryCapture(float openDepthInBodyWidths, out RadarWorldSnapshot snapshot)
     {
         snapshot = default;
+        var scene = SceneManager.GetActiveScene();
         var player = PlayerFinder.player;
-        if (!NavigationObjectLifetime.IsAlive(player) || !player.activeInHierarchy)
+        if (!scene.IsValid() || !scene.isLoaded || !NavigationObjectLifetime.IsAlive(player)
+            || !player.activeInHierarchy || (int)player.scene.handle != (int)scene.handle)
             return Unavailable("local player unavailable");
         var visuals = PlayerFinder.playerActorVisuals;
-        if (visuals is not null && (!NavigationObjectLifetime.IsAlive(visuals) || !visuals.isActiveAndEnabled || visuals.dead))
+        if (visuals is not null && (!Owned(visuals, player) || !visuals.isActiveAndEnabled || visuals.dead))
             return Unavailable("local player inactive or dead");
 
-        long session = ((long)(int)SceneManager.GetActiveScene().handle << 32) | (uint)player.GetInstanceID();
+        long session = ((long)(int)scene.handle << 32) | (uint)player.GetInstanceID();
         if (session != _session)
         {
             Reset();
             _session = session;
         }
 
-        if (!NavigationObjectLifetime.IsAlive(_agent))
+        if (!Owned(_agent, player))
         {
             var localPlayer = LocalPlayer.instance;
             _agent = NavigationObjectLifetime.IsAlive(localPlayer) ? localPlayer.navMeshAgent : null;
-            if (!NavigationObjectLifetime.IsAlive(_agent)) _agent = player.GetComponent<NavMeshAgent>();
+            if (!Owned(_agent, player)) _agent = player.GetComponentInChildren<NavMeshAgent>();
         }
-        if (!NavigationObjectLifetime.IsAlive(_agent)) return Unavailable("player NavMesh agent unavailable");
+        if (!Owned(_agent, player)) return Unavailable("player NavMesh agent unavailable");
         float agentRadius = _agent.radius;
         if (!float.IsFinite(agentRadius) || agentRadius <= 0f) return Unavailable("player NavMesh radius unavailable");
-        if (!NavigationObjectLifetime.IsAlive(_actor)) _actor = PlayerFinder.playerActorComponent;
-        float actorRadius = NavigationObjectLifetime.IsAlive(_actor) ? _actor.getRadius() : 0f;
+        if (!Owned(_actor, player)) _actor = PlayerFinder.playerActorComponent;
+        float actorRadius = Owned(_actor, player) && _actor.isActiveAndEnabled ? _actor.getRadius() : 0f;
+        if ((!float.IsFinite(actorRadius) || actorRadius <= 0f) && visuals is not null)
+            actorRadius = visuals.getRadius();
         // D2 measures warning reach in actual body widths; a helper NavMesh agent can be much narrower.
         float bodyRadius = float.IsFinite(actorRadius) && actorRadius > agentRadius ? actorRadius : agentRadius;
         float bodyWidth = bodyRadius * 2f;
@@ -93,7 +97,7 @@ internal sealed class RadarWorldProbe
             _camera = Camera.main;
             _hasCameraFrame = false;
         }
-        if (!NavigationObjectLifetime.IsAlive(_camera) || !TryUpdateAxes())
+        if (!NavigationObjectLifetime.IsAlive(_camera) || !_camera.isActiveAndEnabled || !TryUpdateAxes())
             return Unavailable("gameplay camera unavailable");
 
         // Unity 6's restored filter-object overloads contain invalid IL. See reference/runtime-feedback.md.
@@ -124,6 +128,11 @@ internal sealed class RadarWorldProbe
         UnavailableReason = reason;
         return false;
     }
+
+    private static bool Owned(Component component, GameObject player) =>
+        NavigationObjectLifetime.IsAlive(component) && NavigationObjectLifetime.IsAlive(component.gameObject)
+        && component.gameObject.activeInHierarchy && (int)component.gameObject.scene.handle == (int)player.scene.handle
+        && (component.transform.IsChildOf(player.transform) || player.transform.IsChildOf(component.transform));
 
     private bool TryUpdateAxes()
     {

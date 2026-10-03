@@ -12,6 +12,7 @@ internal static class EngineTests
         Confirmation();
         Unavailable();
         RetreatAndDoorway();
+        BaselineWallRetreatAndDoorway();
         OpeningCooldown(false);
         OpeningCooldown(true);
         LifecycleResets();
@@ -161,6 +162,30 @@ internal static class EngineTests
         Silent(lateral.Step(10, new Vector2(21, 5)), "Distant lateral opening starts a candidate.");
         Check(lateral.Step(11, new Vector2(21, 4))[0] == RadarState.Open,
             "A wall left outside the lateral neighbourhood no longer suppresses new openings.");
+    }
+
+    private static void BaselineWallRetreatAndDoorway()
+    {
+        foreach (bool resumed in new[] { false, true })
+        {
+            var retreat = new RadarRun(5);
+            if (resumed)
+            {
+                retreat.Engine.Reset();
+                Silent(retreat.Step(5), "Resuming beside a wall establishes a silent baseline.");
+            }
+            Silent(retreat.Step(10, new Vector2(0, -5)), "Backing away starts a longer-clearance candidate.");
+            Silent(retreat.Step(11, new Vector2(0, -6)),
+                "A wall present at startup or resume cannot be mistaken for a new opening on retreat.");
+            Check(retreat.Engine.States[0] == RadarState.Open, "Retreat still commits the current clearance.");
+            for (int step = 1; step <= 22; step++)
+                Silent(retreat.Step(11, new Vector2(step, -6)), "Suppressed baseline retreat does not replay later.");
+        }
+
+        var doorway = new RadarRun(5);
+        Silent(doorway.Step(20, Vector2.UnitX), "Moving beside the baseline wall starts a real opening candidate.");
+        Check(doorway.Step(20, Vector2.UnitX * 2)[0] == RadarState.Open,
+            "A real doorway beyond the baseline wall remains audible.");
     }
 
     private static void OpeningCooldown(bool replaceHeld)

@@ -296,10 +296,13 @@ Check(ScreenReader.Messages.Last().Contains("Item details are unavailable"), "Un
 InventoryAccessibility.Reset(); ScreenReader.Messages.Clear();
 InventoryAccessibility.Update(readDetails: true); UpdateTwice();
 Check(ScreenReader.Messages.Count == 1, "Immediate manual inspection suppresses pending automatic identity speech");
-container.identifier = ContainerID.EQ_WEAPON; UpdateTwice();
+container.identifier = ContainerID.EQ_WEAPON;
+container.container = new() { Id = ContainerID.EQ_WEAPON, Type = ContainerType.EQUIPPED, Entry = entry };
+UpdateTwice();
 Check(ScreenReader.Messages.Last().EndsWith("Equipped"), "An actual equipment container identifies the selected item as equipped");
 container.identifier = ContainerID.INVENTORY; UpdateTwice();
 Check(!ScreenReader.Messages.Last().Contains("Equipped"), "Returning item to inventory clears equipped status");
 InventoryPromptTests.Run(Check);
 InventoryActionTests.Run(Check);
+EquippedItemTests.Run(Check);
 Console.WriteLine($"Inventory tests passed: {checks} checks.");

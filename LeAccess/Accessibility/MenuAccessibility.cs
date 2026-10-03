@@ -3,6 +3,7 @@ using LeAccess.Accessibility.Announcements;
 using LeAccess.Accessibility.CharacterCreation;
 using LeAccess.Accessibility.Combat;
 using LeAccess.Accessibility.Navigation;
+using LeAccess.Accessibility.Navigation.Guidance;
 using LeAccess.Accessibility.ScreenContent;
 using LeAccess.Accessibility.Dialogue;
 using LeAccess.Accessibility.Inventory;
@@ -49,6 +50,7 @@ public class MenuAccessibility : MonoBehaviour
         PauseMenuFocusRecovery.Update();
         ScreenContentAnnouncer.Update();
         DialogueAnnouncer.Update();
+        ElementAnnouncer.ResetFocusIfUnowned();
         ControllerMenuAccessibility.Update();
         bool readDetails = MenuDetailInput.ReadRequested();
         PassiveAccessibility.Update();
@@ -63,35 +65,48 @@ public class MenuAccessibility : MonoBehaviour
         if (readDetails && !SkillAccessibility.HasActiveContent && !InventoryAccessibility.HasActiveContent)
             ReadSelectedDetails();
         ZoneAnnouncer.Update();
+        GuidanceAccessibility.Update(ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
+            InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
+            SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent);
         VisibleSubtitleAnnouncer.Update(ScreenReader.SpokeThisFrame || ZoneAnnouncer.HasPendingContent ||
             InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
             SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent);
-        MapSectionAccessibility.Update(ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
+        QuestUpdateAccessibility.Update(ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
             InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
             SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent,
             ZoneAnnouncer.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent);
-        GroundLootAccessibility.Update(ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent);
-        NpcSounds.Update(ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent);
+        MapSectionAccessibility.Update(ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
+            InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
+            SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent,
+            ZoneAnnouncer.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || QuestUpdateAccessibility.HasPendingContent);
+        GroundLootAccessibility.Update(ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || QuestUpdateAccessibility.HasPendingContent);
+        NpcSounds.Update(ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || QuestUpdateAccessibility.HasPendingContent);
         NearbyPlayerAccessibility.Update(ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent ||
-            VisibleSubtitleAnnouncer.HasPendingContent || GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName);
+            VisibleSubtitleAnnouncer.HasPendingContent || GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName || QuestUpdateAccessibility.HasPendingContent);
         WorldCueSounds.Update();
         LandmarkAccessibility.Update(ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
             InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
             SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent,
             ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent ||
-            GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent);
+            GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || QuestUpdateAccessibility.HasPendingContent);
         NotificationAnnouncer.Update(ScreenReader.SpokeThisFrame || DialogueAnnouncer.HasActiveContent || InventoryAccessibility.HasPendingContent ||
             PassiveAccessibility.HasPendingContent || QuestAccessibility.HasPendingContent || CharacterNameAccessibility.HasPendingContent ||
             ControllerMenuAccessibility.HasActiveContent || SkillAccessibility.HasPendingContent || ClassCarouselHandler.HasPendingContent || ZoneAnnouncer.HasPendingContent ||
-            GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || LandmarkAccessibility.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent);
+            GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || LandmarkAccessibility.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || QuestUpdateAccessibility.HasPendingContent);
         ButtonPromptAnnouncer.Update(InventoryAccessibility.HasPendingContent || GroundLootAccessibility.HasPendingContent ||
             PassiveAccessibility.HasPendingContent || QuestAccessibility.HasPendingContent || CharacterNameAccessibility.HasPendingContent ||
             ControllerMenuAccessibility.HasPendingContent || SkillAccessibility.HasPendingContent || ClassCarouselHandler.HasPendingContent ||
-            ZoneAnnouncer.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || LandmarkAccessibility.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent);
+            ZoneAnnouncer.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || LandmarkAccessibility.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || QuestUpdateAccessibility.HasPendingContent);
         CombatAccessibility.Update(PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent || VisibleSubtitleAnnouncer.HasPendingContent);
         VitalsAccessibility.Update(ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
             InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
             SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent);
+        PassiveGuidanceAccessibility.Update(ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
+            InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
+            SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent,
+            ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent ||
+            QuestUpdateAccessibility.HasPendingContent || GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName ||
+            NearbyPlayerAccessibility.HasPendingContent || LandmarkAccessibility.HasPendingContent);
     }
 
     private static void ReadSelectedDetails()
@@ -102,12 +117,8 @@ public class MenuAccessibility : MonoBehaviour
                 SettingsFocusAnnouncer.ReadCurrentDetails()) return;
             if (ClassCarouselHandler.TryReadDetails(out string text))
             { ScreenReader.Speak(text, true); return; }
-            var navigation = NavigationManager.currentlySelected;
-            var prioritized = navigation is null || navigation.WasCollected ? null : navigation.TryCast<PrioritizedNavigable>();
-            if (!NavigationObjectLifetime.IsAlive(prioritized) || !prioritized.isActiveAndEnabled) return;
-            var selected = prioritized.ActiveSelectable;
-            if (!NavigationObjectLifetime.IsAlive(selected) || !selected.isActiveAndEnabled) return;
-            if (ElementAnnouncer.TryReadDetails(selected.gameObject, out text)) ScreenReader.Speak(text, true);
+            if (UiFocusOwnership.TryGetSelected(out var selected) &&
+                ElementAnnouncer.TryReadDetails(selected, out text)) ScreenReader.Speak(text, true);
         }
         catch (System.Exception ex) { Plugin.Log.LogWarning($"Menu details unavailable: {ex.Message}"); }
     }
@@ -120,19 +131,12 @@ public class MenuAccessibility : MonoBehaviour
         {
             if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible)
             { _lastPolledSelection = 0; return; }
-            var navigation = NavigationManager.currentlySelected;
-            var prioritized = navigation is null || navigation.WasCollected
-                ? null : navigation.TryCast<PrioritizedNavigable>();
-            if (!NavigationObjectLifetime.IsAlive(prioritized) || !prioritized.isActiveAndEnabled)
-            { _lastPolledSelection = 0; return; }
-            var selected = prioritized.ActiveSelectable;
-            if (!NavigationObjectLifetime.IsAlive(selected) || !selected.isActiveAndEnabled ||
-                !UiVisibility.IsVisible(selected.gameObject))
+            if (!UiFocusOwnership.TryGetSelected(out var selected))
             { _lastPolledSelection = 0; return; }
             int id = selected.GetInstanceID();
             if (id == _lastPolledSelection) return;
             _lastPolledSelection = id;
-            ElementAnnouncer.AnnounceElement(selected.gameObject, interrupt: true);
+            ElementAnnouncer.AnnounceElement(selected, interrupt: true);
         }
         catch (System.Exception ex)
         {

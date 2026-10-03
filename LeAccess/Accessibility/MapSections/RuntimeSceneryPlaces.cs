@@ -14,10 +14,15 @@ internal static class RuntimeSceneryPlaces
     private static long _session;
     private static bool _indexed;
     private static string _lastFailure;
+    private static Candidate? _lastTent;
+    internal static bool HasValidObservation { get; private set; }
+
+    internal static void Initialize(string buildHash) => TentCanopy.Initialize(buildHash);
 
     internal static bool TryRead(MapSectionWorldSnapshot world, out RuntimeMapPlace place)
     {
         place = default;
+        HasValidObservation = false;
         try
         {
             var scene = SceneManager.GetActiveScene();
@@ -50,6 +55,11 @@ internal static class RuntimeSceneryPlaces
                 !NavMesh.SamplePositionFilter(position, out var origin, radius, agent.agentTypeID, agent.areaMask) ||
                 !SceneryFootprint.Finite(origin.position) || Math.Abs(position.y - origin.position.y) > clearance) return false;
             Candidate? selected = null;
+            HasValidObservation = !_lastTent.HasValue ||
+                Available(_lastTent.Value.Renderer, world.SceneHandle) &&
+                AllowedBranch(_lastTent.Value.Renderer.transform, player, world.SceneHandle) &&
+                SceneryFootprint.Classify(_lastTent.Value.Renderer.name, _lastTent.Value.Renderer.transform.parent?.name) == _lastTent.Value.Key &&
+                TentCanopy.IsAvailable(_lastTent.Value.Renderer);
             float nearest = float.PositiveInfinity;
             foreach (var candidate in Candidates)
             {
@@ -60,8 +70,9 @@ internal static class RuntimeSceneryPlaces
                     !SceneryFootprint.TryClosest(candidate.Renderer.transform, candidate.Renderer.localBounds, position, out var closest) ||
                     Math.Abs(closest.y - position.y) > clearance) continue;
                 float distance = SceneryFootprint.HorizontalDistance(position, closest);
-                if (!float.IsFinite(distance) || distance > reach || distance > nearest ||
-                    distance == nearest && selected.HasValue && candidate.Owner.GetInstanceID() >= selected.Value.Owner.GetInstanceID()) continue;
+                if (!float.IsFinite(distance) || distance > reach || distance > nearest) continue;
+                if (candidate.Key == "map.place.tents" && !TentCanopy.Contains(candidate.Renderer, position, origin.position, bodyRadius)) continue;
+                if (distance == nearest && selected.HasValue && candidate.Owner.GetInstanceID() >= selected.Value.Owner.GetInstanceID()) continue;
                 if (!Reachable(position, origin.position, closest, player, candidate.Owner, agent, clearance, reach, navigationClearance)) continue;
                 selected = candidate;
                 nearest = distance;
@@ -69,14 +80,17 @@ internal static class RuntimeSceneryPlaces
             if (!selected.HasValue) return false;
             var found = selected.Value;
             string identity = world.Session + ":scenery:" + found.Owner.GetInstanceID();
-            // Several neighboring tents or gate pieces describe one kind of place.
-            place = new RuntimeMapPlace(identity, found.Key, found.Key);
+            bool tent = found.Key == "map.place.tents";
+            _lastTent = tent ? found : null;
+            HasValidObservation = true;
+            place = new RuntimeMapPlace(identity, tent ? "map.place.tent" : found.Key, tent ? identity : found.Key);
             MapPlaceDiagnostics.Report("scenery-" + found.Key, $"{MapPlaceDiagnostics.Path(found.Owner)}, footprintDistance={nearest}, reach={reach}");
             return true;
         }
         catch (Exception ex)
         {
             string failure = ex.GetType().Name + ": " + ex.Message;
+            HasValidObservation = false;
             if (_lastFailure != failure) { _lastFailure = failure; Plugin.Log?.LogWarning("Map scenery: " + failure); }
             return false;
         }
@@ -153,5 +167,5 @@ internal static class RuntimeSceneryPlaces
     private static bool Available(Component value, int scene) => IsAlive(value) && IsAlive(value.gameObject) &&
         value.gameObject.activeInHierarchy && (int)value.gameObject.scene.handle == scene;
 
-    internal static void Reset() { Candidates.Clear(); _session = 0; _indexed = false; _lastFailure = null; }
+    internal static void Reset() { Candidates.Clear(); _session = 0; _indexed = HasValidObservation = false; _lastFailure = null; _lastTent = null; }
 }

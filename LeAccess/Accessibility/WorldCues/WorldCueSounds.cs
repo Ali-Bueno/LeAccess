@@ -23,6 +23,7 @@ internal static class WorldCueSounds
     private static double _nextPoll, _nextAudioRetry;
     private static long _session;
     private static string _lastFailure;
+    private static string _lastSampleFailure;
     private static double _nextDiagnostic;
     private static readonly WorldCueKey?[] LoggedTargets = new WorldCueKey?[3];
     private static WorldCueKey? _playingTarget;
@@ -76,14 +77,20 @@ internal static class WorldCueSounds
             { WorldAudioReservation.Cancel(WorldAudioSource.Object); return; }
             if (!EnsureAudio(now) || _audio.IsPlaying) return;
             if (!WorldAudioReservation.TryBegin(WorldAudioSource.Object, now,
-                WorldCueSynthesizer.Duration(target.Key.Category), AudioBufferMilliseconds)) return;
-            _audio.Play(WorldCueSynthesizer.Synthesize(target.Key.Category, target.Pan, target.Forward, _volume.Value / 100f));
+                WorldCueSynthesizer.Duration(target.Key.Category, target.Sound), AudioBufferMilliseconds)) return;
+            _audio.Play(WorldCueSynthesizer.Synthesize(target.Key.Category, target.Pan, target.Forward,
+                _volume.Value / 100f, target.Sound));
+            if (NaturalCueBank.LastFailure != null && _lastSampleFailure != NaturalCueBank.LastFailure)
+            {
+                _lastSampleFailure = NaturalCueBank.LastFailure;
+                Plugin.Log.LogWarning($"Natural world cue unavailable; retaining synthesized fallback: {_lastSampleFailure}");
+            }
             _playingTarget = target.Key;
             State.MarkPlayed(target, now);
             _lastFailure = null;
             if (LoggedTargets[(int)target.Key.Category] != target.Key)
             {
-                Plugin.Log.LogInfo($"[World cue] category={target.Key.Category} target={target.Key.InstanceId} distance={target.Distance:F2} range={target.Range:F2}");
+                Plugin.Log.LogInfo($"[World cue] category={target.Key.Category} sound={target.Sound?.ToString() ?? "category"} target={target.Key.InstanceId} distance={target.Distance:F2} range={target.Range:F2}");
                 LoggedTargets[(int)target.Key.Category] = target.Key;
             }
         }
@@ -137,6 +144,7 @@ internal static class WorldCueSounds
         _enabled = null;
         _nextPoll = _nextAudioRetry = 0;
         _lastFailure = null;
+        _lastSampleFailure = null;
         _nextDiagnostic = 0;
         DiagnosticStatus = "not initialized";
     }

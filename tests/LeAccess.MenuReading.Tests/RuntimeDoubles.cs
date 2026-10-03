@@ -12,6 +12,7 @@ public sealed class NativeArray<T> : NativeObject, IEnumerable<T>
     private readonly List<T> _items;
     public NativeArray(IEnumerable<T> items) => _items = items.ToList();
     public int Length => _items.Count;
+    public T this[int index] => _items[index];
     public bool Contains(T value) => _items.Contains(value);
     public IEnumerator<T> GetEnumerator() => _items.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -50,6 +51,7 @@ namespace UnityEngine
             return null;
         }
     }
+    public class Behaviour : Component { }
     public class Transform : Component
     {
         public Transform parent => gameObject.Parent?.transform;
@@ -71,7 +73,8 @@ namespace UnityEngine
         public readonly List<Component> Components = new();
         public readonly List<GameObject> Children = new();
         public readonly Transform transform;
-        public GameObject() => transform = new Transform { gameObject = this };
+        public GameObject(bool rectangular = false) => transform = rectangular
+            ? new RectTransform { gameObject = this } : new Transform { gameObject = this };
         public bool activeInHierarchy => Active && (Parent is null || Parent.activeInHierarchy);
         public T Add<T>(T value) where T : Component { value.gameObject = this; Components.Add(value); return value; }
         public GameObject Child(string label = "Control")
@@ -92,9 +95,16 @@ namespace UnityEngine
             return new NativeArray<T>(result);
         }
     }
-    public sealed class Canvas : Component { }
+    public sealed class Canvas : Component
+    {
+        public Canvas Root;
+        public Canvas rootCanvas => Root ?? this;
+        public RenderMode renderMode;
+        public bool overrideSorting;
+        public Camera worldCamera;
+    }
     public sealed class CanvasGroup : Component { public float alpha = 1; public bool ignoreParentGroups; }
-    public sealed class CanvasRenderer : Object { public bool cull; }
+    public sealed class CanvasRenderer : Object { public bool cull; public float Alpha = 1; public float GetAlpha() => Alpha; }
     public struct Color { public float a; }
     public static class Time { public static int frameCount; public static float unscaledTime; }
     public static class Application { public static bool isFocused = true; }
@@ -106,20 +116,28 @@ namespace UnityEngine
 }
 namespace TMPro
 {
-    public class TMP_Text : UnityEngine.Component
-    { public string text; public float alpha = 1; public UnityEngine.CanvasRenderer canvasRenderer = new(); }
+    public class TMP_Text : UnityEngine.UI.MaskableGraphic
+    { public string text; public float alpha { get => color.a; set => color = new() { a = value }; } }
     public class TextMeshProUGUI : TMP_Text { }
     public class TMP_InputField : UnityEngine.UI.Selectable { public string text; public UnityEngine.Component placeholder; }
     public class TMP_Dropdown : UnityEngine.UI.Selectable { public TMP_Text captionText; }
 }
 namespace UnityEngine.UI
 {
+    public class Graphic : Component
+    {
+        public Color color = new() { a = 1 };
+        public CanvasRenderer canvasRenderer = new();
+        public RectTransform rectTransform => transform.TryCast<RectTransform>();
+        public Canvas canvas => GetComponentInParent<Canvas>();
+    }
+    public class MaskableGraphic : Graphic { public bool maskable = true; }
     public class Selectable : Component { }
     public class Toggle : Selectable { public bool isOn; public Component group; }
     public class Slider : Selectable { public float value; }
     public class Button : Selectable { }
     public class InputField : Selectable { }
-    public class Text : Component { public string text; public Color color = new() { a = 1 }; }
+    public class Text : MaskableGraphic { public string text; }
 }
 namespace LE.Settings
 {
@@ -136,9 +154,10 @@ namespace LeAccess.Accessibility.Settings
     internal static class SettingsFocusReader
     {
         internal static SettingsFocusSnapshot? Current;
+        internal static string Details;
         internal static bool TryRead(out SettingsFocusSnapshot snapshot)
         { snapshot = Current.GetValueOrDefault(); return Current.HasValue; }
-        internal static bool TryReadTabDetails(out string text) { text = null; return false; }
+        internal static bool TryReadTabDetails(out string text) { text = Details; return !string.IsNullOrWhiteSpace(text); }
     }
 }
 namespace ChatView { public class ChatToggleField : UnityEngine.Component { public bool IsActive; } }
@@ -160,8 +179,35 @@ public class CharacterClass { public string className; }
 public class MasteryPanel : UnityEngine.Component { }
 public class LocalCharacterSlots : UnityEngine.Component { }
 public class CharacterSelect : UnityEngine.Component { }
-public class Navigable : UnityEngine.Component { public int Id; public int GetNavigableID() => Id; }
-public static class NavigationManager { public static Navigable currentlySelected; }
+public interface INavigable
+{
+    bool WasCollected { get; }
+    IntPtr Pointer { get; }
+    T TryCast<T>() where T : class;
+    int GetNavigableID();
+}
+public class Navigable : UnityEngine.Behaviour, INavigable
+{
+    bool INavigable.WasCollected => WasCollected;
+    public int Id;
+    public UnityEngine.UI.Selectable ActiveSelectable;
+    public int GetNavigableID() => Id;
+}
+public class CustomNavigable : UnityEngine.Behaviour, INavigable
+{
+    bool INavigable.WasCollected => WasCollected;
+    public int GetNavigableID() => 99;
+}
+public class VerticalNavigable : CustomNavigable
+{
+    public NativeArray<UnityEngine.UI.Button> selectables;
+    public int currentlySelectedIdx;
+}
+public class CraftingMaterialsPanelSearchInputFieldNavigable : CustomNavigable
+{
+    public TMPro.TMP_InputField inputField;
+}
+public static class NavigationManager { public static INavigable currentlySelected; }
 public static class PlayerFinder { public static UnityEngine.GameObject Player; public static UnityEngine.GameObject getPlayer() => Player; }
 public class MultiButtonsActionPrompt : UnityEngine.Component
 {

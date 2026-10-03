@@ -100,12 +100,8 @@ public static class TextDetector
         if (optionContainer == null)
             return;
 
-        var allTexts = optionContainer.GetComponentsInChildren<TextMeshProUGUI>();
-        foreach (var tmp in allTexts)
+        foreach (var text in ReadOrderedLabels(optionContainer))
         {
-            if (!TextUtils.IsVisibleLabel(tmp) || string.IsNullOrWhiteSpace(tmp.text)) continue;
-
-            var text = TextUtils.CleanText(tmp.text);
             if (string.IsNullOrEmpty(text) || seen.Contains(text)) continue;
 
             seen.Add(text);
@@ -132,15 +128,22 @@ public static class TextDetector
 
         var container = FindSingleOptionContainer(go);
         if (container == null) return null;
-        foreach (var tmp in container.GetComponentsInChildren<TextMeshProUGUI>(false))
+        foreach (string text in ReadOrderedLabels(container))
         {
-            if (!TextUtils.IsVisibleLabel(tmp)) continue;
-            string text = TextUtils.CleanText(tmp.text);
             if (string.IsNullOrWhiteSpace(text) || seen.Contains(text)) continue;
             var kind = TextClassifier.ClassifyText(text);
             if (kind == TextType.Label || kind == TextType.Unknown) return text;
         }
         return null;
+    }
+
+    private static List<string> ReadOrderedLabels(Transform container)
+    {
+        var labels = new List<UiReadingOrder.Fragment>();
+        foreach (var label in container.GetComponentsInChildren<TextMeshProUGUI>(false))
+            if (TextUtils.IsVisibleLabel(label) && !string.IsNullOrWhiteSpace(label.text))
+                labels.Add(new(label, TextUtils.CleanText(label.text)));
+        return UiReadingOrder.Read(labels);
     }
 
     /// <summary>
@@ -212,7 +215,7 @@ public static class TextDetector
         if (!string.IsNullOrEmpty(excludeValue))
             seen.Add(excludeValue);
 
-        var allTexts = new List<(string text, TextType type, int siblingIndex)>();
+        var allTexts = new List<(string text, TextType type, int siblingIndex, Component label)>();
 
         for (int i = 0; i < parent.childCount; i++)
         {
@@ -223,12 +226,13 @@ public static class TextDetector
 
             CollectTextsFromTransform(sibling, controlGo, seen, allTexts, i, 0);
         }
+        allTexts = UiReadingOrder.Order(allTexts, entry => entry.label);
 
         int controlSiblingIndex = controlGo.transform.parent == parent
             ? controlGo.transform.GetSiblingIndex()
             : controlGo.transform.parent?.GetSiblingIndex() ?? 0;
 
-        foreach (var (text, textType, siblingIndex) in allTexts)
+        foreach (var (text, textType, siblingIndex, _) in allTexts)
         {
             if (label == null && textType == TextType.Label && siblingIndex <= controlSiblingIndex)
             {
@@ -239,7 +243,7 @@ public static class TextDetector
 
         if (label == null)
         {
-            foreach (var (text, textType, siblingIndex) in allTexts)
+            foreach (var (text, textType, siblingIndex, _) in allTexts)
             {
                 if (textType == TextType.Label)
                 {
@@ -249,7 +253,7 @@ public static class TextDetector
             }
         }
 
-        foreach (var (text, textType, siblingIndex) in allTexts)
+        foreach (var (text, textType, siblingIndex, _) in allTexts)
         {
             if (description == null && textType == TextType.Description && siblingIndex >= controlSiblingIndex)
             {
@@ -260,7 +264,7 @@ public static class TextDetector
 
         if (description == null)
         {
-            foreach (var (text, textType, siblingIndex) in allTexts)
+            foreach (var (text, textType, siblingIndex, _) in allTexts)
             {
                 if (textType == TextType.Description)
                 {
@@ -272,7 +276,7 @@ public static class TextDetector
     }
 
     private static void CollectTextsFromTransform(Transform t, GameObject controlGo, HashSet<string> seen,
-        List<(string text, TextType type, int siblingIndex)> results, int siblingIndex, int depth)
+        List<(string text, TextType type, int siblingIndex, Component label)> results, int siblingIndex, int depth)
     {
         if (depth > 2 || !UiVisibility.IsVisible(t.gameObject)) return;
 
@@ -286,7 +290,7 @@ public static class TextDetector
             {
                 seen.Add(text);
                 var textType = TextClassifier.ClassifyText(text);
-                results.Add((text, textType, siblingIndex));
+                results.Add((text, textType, siblingIndex, tmp));
             }
         }
 

@@ -55,7 +55,7 @@ namespace UnityEngine
         public GameObject Parent;
         public readonly List<Component> Components = new();
         public readonly List<GameObject> Children = new();
-        public readonly Transform transform;
+        public Transform transform;
         public GameObject() => transform = new Transform { gameObject = this };
         public bool activeInHierarchy => Active && (Parent is null || Parent.activeInHierarchy);
         public T Add<T>(T component) where T : Component
@@ -82,7 +82,7 @@ namespace UnityEngine
         }
     }
 
-    internal sealed class CanvasRenderer : Object { public bool cull; }
+    internal sealed class CanvasRenderer : Object { public bool cull; public float Alpha = 1; }
     internal struct Color { public float a; }
     internal static class Time { public static int frameCount; }
     internal static class Application { public static bool isFocused = true; }
@@ -192,6 +192,14 @@ namespace LeAccess.Accessibility.Announcements
     }
     internal static class UiVisibility
     {
+        public static bool IsVisibleGraphic(UnityEngine.Component label) => label is not null && !label.WasCollected &&
+            IsVisible(label.gameObject) && (label switch
+            {
+                TMPro.TMP_Text text => text.isActiveAndEnabled && float.IsFinite(text.alpha) && text.alpha > 0 &&
+                    !text.canvasRenderer.cull && float.IsFinite(text.canvasRenderer.Alpha) && text.canvasRenderer.Alpha > 0,
+                UnityEngine.UI.Text text => text.isActiveAndEnabled && float.IsFinite(text.color.a) && text.color.a > 0,
+                _ => false
+            });
         public static bool IsVisible(UnityEngine.GameObject root)
         {
             for (var node = root; node is not null; node = node.Parent)
@@ -205,6 +213,8 @@ namespace LeAccess.Accessibility.Utils
     internal static class TextUtils
     {
         public static string CleanText(string text) => text?.Trim();
+        public static bool IsVisibleLabel(TMPro.TMP_Text label) =>
+            LeAccess.Accessibility.Announcements.UiVisibility.IsVisibleGraphic(label);
     }
 }
 namespace LeAccess.Accessibility

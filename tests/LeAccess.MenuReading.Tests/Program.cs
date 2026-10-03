@@ -15,7 +15,7 @@ void Check(bool condition, string message)
 void Reset()
 {
     ElementAnnouncer.ResetFocus(); ButtonPromptAnnouncer.Reset();
-    SettingsFocusAnnouncer.Reset(); SettingsFocusReader.Current = null;
+    SettingsFocusAnnouncer.Reset(); SettingsFocusReader.Current = null; SettingsFocusReader.Details = null;
     ScreenReader.Messages.Clear(); ScreenReader.Speaking = ScreenReader.SpokeThisFrame = false;
     ScreenContentAnnouncer.HasActiveContent = ScreenContentAnnouncer.HasPendingContent = false;
     DialogueAnnouncer.HasActiveContent = DialogueAnnouncer.HasPendingContent = false;
@@ -300,4 +300,6 @@ Check(ScreenReader.Messages.Count == beforeToggleChange, "Settings polling owns 
 TickSettings();
 Check(ScreenReader.Messages.Count == beforeToggleChange + 1 && ScreenReader.Messages.Last().Text == "Filtro de lenguaje: Desactivado",
     "A settings toggle change is announced exactly once with its label");
+Reset();
+checks += VisibilityTests.Run();
 Console.WriteLine($"Menu reading tests passed: {checks} checks.");

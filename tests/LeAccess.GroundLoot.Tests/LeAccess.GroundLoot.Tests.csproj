@@ -8,6 +8,7 @@
     <Compile Include="../../LeAccess/Accessibility/Items/GroundLootAccessibility.cs" Link="GroundLootAccessibility.cs" />
     <Compile Include="../../LeAccess/Accessibility/Items/GroundLootProbe.cs" Link="GroundLootProbe.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/UiVisibility.cs" Link="UiVisibility.cs" />
+    <Compile Include="../UiScreenGeometryStub.cs" Link="UiScreenGeometryStub.cs" />
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentTracker.cs" Link="ScreenContentTracker.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/GameplayInputState.cs" Link="GameplayInputState.cs" />

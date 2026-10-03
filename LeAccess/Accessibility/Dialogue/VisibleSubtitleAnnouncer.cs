@@ -177,9 +177,7 @@ internal static class VisibleSubtitleAnnouncer
 
     private static string Read(TMP_Text label)
     {
-        if (!IsAlive(label) || !label.isActiveAndEnabled || label.alpha <= 0 ||
-            !UiVisibility.IsVisible(label.gameObject) ||
-            IsAlive(label.canvasRenderer) && label.canvasRenderer.cull) return null;
+        if (!TextUtils.IsVisibleLabel(label)) return null;
         string text = TextUtils.CleanText(label.text);
         return string.IsNullOrWhiteSpace(text) ? null : text;
     }

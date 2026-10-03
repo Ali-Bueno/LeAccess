@@ -7,5 +7,7 @@
     <Compile Include="../../LeAccess/Accessibility/MapSections/MapPlaceDiagnostics.cs" Link="MapPlaceDiagnostics.cs" />
     <Compile Include="../../LeAccess/Accessibility/MapSections/RuntimeSceneryPlaces.cs" Link="RuntimeSceneryPlaces.cs" />
     <Compile Include="../../LeAccess/Accessibility/MapSections/SceneryFootprint.cs" Link="SceneryFootprint.cs" />
+    <Compile Include="../../LeAccess/Accessibility/MapSections/TentCanopy.cs" Link="TentCanopy.cs" />
+    <EmbeddedResource Include="../../LeAccess/Accessibility/MapSections/tent-canopies.json" LogicalName="LeAccess.TentCanopies.json" />
   </ItemGroup>
 </Project>
