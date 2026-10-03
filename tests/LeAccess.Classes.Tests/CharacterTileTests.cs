@@ -29,6 +29,8 @@ internal static class CharacterTileTests
         Check(TextUtils.ReadableObjectName("CloseButton") == "Close" && TextUtils.ReadableObjectName("Confirm Btn") == "Confirm" &&
             TextUtils.ReadableObjectName("BackButton(Clone)") == "Back", "role words are stripped from icon-only names");
         Check(TextUtils.ReadableObjectName("SpecialOfferPanel") == "Special Offer Panel", "specific object names remain usable");
+        Check(TextUtils.ReadableObjectName("XButton") == null && TextUtils.ReadableObjectName("Scrollbar Vertical") == null &&
+            TextUtils.ReadableObjectName("RerollButton") == "Reroll", "glued role suffixes and scrollbars are stripped");
 
         var statRoot = new GameObject();
         var line = statRoot.Add(new CharacterStatDisplayLineItem());

@@ -44,15 +44,17 @@ public static class TextUtils
     }
 
     private static readonly System.Text.RegularExpressions.Regex RoleWords = new(
-        @"\b(button|btn|toggle|slider|dropdown|background|image|icon|content|viewport|scroll|mask)\b|\(\d+\)",
+        @"\b(button|btn|toggle|slider|dropdown|background|image|icon|content|viewport|scroll|scrollbar|vertical|horizontal|mask)\b|\(\d+\)",
         System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    // Role suffixes glued to an uppercase word ("XButton", "OKButton") escape the word pass.
+    private static readonly System.Text.RegularExpressions.Regex RoleSuffix = new(@"(?<=\w)(Button|Btn)\b");
 
     /// <summary>Returns the cleaned object name without generic role words, or null when nothing meaningful remains.</summary>
     public static string ReadableObjectName(string rawName)
     {
         string name = CleanObjectName(rawName);
         if (string.IsNullOrEmpty(name)) return null;
-        name = System.Text.RegularExpressions.Regex.Replace(RoleWords.Replace(name, " "), @"\s+", " ").Trim();
+        name = System.Text.RegularExpressions.Regex.Replace(RoleWords.Replace(RoleSuffix.Replace(name, " "), " "), @"\s+", " ").Trim();
         return name.Length <= 2 ? null : name;
     }
 

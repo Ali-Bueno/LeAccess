@@ -1,3 +1,4 @@
+using System;
 using LE.UI.PanelSystem;
 using UnityEngine;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
@@ -7,6 +8,21 @@ namespace LeAccess.Accessibility.Map;
 /// <summary>Resolves the open world map through the registered navigable, never a scene search.</summary>
 internal static class OpenWorldMap
 {
+    private static string _lastFailure;
+
+    /// <summary>Polls the open map's selection; a failure resets it so the rest of the frame still runs.</summary>
+    internal static void AnnounceSelection(bool questMoved)
+    {
+        try { MapSelectionAnnouncer.Update(Find(), questMoved); }
+        catch (Exception ex)
+        {
+            MapSelectionAnnouncer.Reset();
+            if (_lastFailure == ex.Message) return;
+            _lastFailure = ex.Message;
+            Plugin.Log.LogWarning($"World map selection unavailable: {ex}");
+        }
+    }
+
     internal static MapPanel Find()
     {
         var manager = NavigationManager.instance;
