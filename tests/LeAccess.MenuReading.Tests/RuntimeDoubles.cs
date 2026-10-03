@@ -258,6 +258,11 @@ namespace Il2CppSystem.Collections.Generic
 namespace Rewired { public static class ReInput { public static bool isReady = true; } }
 namespace LE.UI { public static class LoadingScreen { public static bool IsVisible; } }
 namespace LeAccess.Accessibility.Navigation { public static class GameplayInputState { public static bool Owns = true; public static bool OwnsInput() => Owns; } }
+namespace LeAccess.Accessibility.Map
+{
+    internal static class WaypointReader
+    { internal static bool TryRead(UnityEngine.GameObject go, bool includeDetails, out string text) { text = null; return false; } }
+}
 namespace LeAccess.Accessibility.CharacterCreation
 {
     internal readonly record struct ClassSelection(string Name, string Description);

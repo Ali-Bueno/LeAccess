@@ -1,0 +1,47 @@
+# World-map waypoints and regions
+
+`WaypointReader` (`Accessibility/Map/`) is a typed reader called from
+`ElementAnnouncer.BuildAnnouncementText`, right after `CharacterTileReader`. Without it the
+generic path spoke the first visible text or a cleaned object name.
+
+## What is spoken
+
+Waypoint (nearest `UIWaypoint` in the focused object's parents, visible):
+
+1. Name: `UIWaypointStandard.locationLabel`; other types use the text under `UIWaypoint.label`.
+   An unreadable label (hidden, alpha 0) returns false so the generic path runs; no object names.
+2. `waypoint.here` when `GetIsPlayerHere()`.
+3. `waypoint.locked` when `!GetIsActive()`.
+4. Quests from `questIndicators` (`WaypointQuestIndicators`): active main, active side,
+   available main (`hasPotentialMainQuest`), available side (`haPotentialSideQuest`, sic).
+
+Region (`UIWaypointRegion`): `regionLabel`, `locationCountLabel` as displayed, here when
+`playerLocation` is visible, and the same four quest flags from the region.
+
+Right-stick-up (`includeDetails`): adds `MapPanel.waypointDescriptionPopup.description` when
+visible. The map is found as an ancestor `MapPanel`, or via `WorldMapPanel._mapPanel`.
+
+Keys: `waypoint.here`, `waypoint.locked`, `waypoint.quest_{main,side}_{active,available}`
+in `en.json`/`es.json`.
+
+## How focus reaches waypoints
+
+Not proven. The reader assumes the focused `Selectable` (typically `UIWaypoint.waypointButton`
+or a region button) sits inside the waypoint/region object, like the quest reader assumes for
+quest buttons. `MapPanel` is itself a navigable (`HandleNavigateInput`, `SelectRegion`,
+`FocusOnRegion`, `SelectLocation`, `focusedSceneID`, `focusedRegionID`, `mapCursor`) and the
+quest reference shows it moves quest selection without focusing a descendant, so waypoint
+navigation may likewise bypass `Selectable` focus.
+
+## Needs live verification
+
+- Which object `UiFocusOwnership.TryGetSelected` returns on the map with the controller: is
+  it inside a `UIWaypoint`/`UIWaypointRegion`? If not, add a hook on `MapPanel.SelectLocation`
+  / `FocusOnRegion` (or poll `focusedSceneID`/`focusedRegionID`) feeding the same reader.
+- `GetIsActive()` versus the `isActive` field for locked destinations; whether the player's
+  own waypoint reads locked; `noWaypointInScene` and monolith waypoints are not handled.
+- Whether `label`/`locationLabel` stays visible when `labelHidden` is set.
+- Whether quest flags are set while the indicators are hidden (`ShowIndicators(false)`).
+- Whether the description popup is open for the focused waypoint on controller.
+
+Tests: `tests/LeAccess.Waypoints.Tests` (17 checks, doubles only).

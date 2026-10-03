@@ -9,6 +9,7 @@ using LeAccess.Accessibility.ControllerMenus;
 using LeAccess.Accessibility.Skills;
 using LeAccess.Accessibility.Passives;
 using LeAccess.Accessibility.Quests;
+using LeAccess.Accessibility.Map;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -224,6 +225,7 @@ public static class ElementAnnouncer
         if (!restrictToControl && Items.MerchantMenuReader.TryReadTab(go, out string merchantTab))
             return merchantTab;
         if (CharacterTileReader.TryRead(go, out string tileText)) return tileText;
+        if (WaypointReader.TryRead(go, includeDetails, out string waypointText)) return waypointText;
         if (ClassSelectionReader.TryReadControl(go, out var classSelection))
             return string.IsNullOrWhiteSpace(classSelection.Name) ? null :
                 ScreenContentTracker.Combine(new[] { classSelection.Name, includeDetails ? classSelection.Description : null });

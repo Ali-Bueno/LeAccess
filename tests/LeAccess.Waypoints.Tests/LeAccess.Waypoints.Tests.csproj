@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../LeAccess/Accessibility/Map/WaypointReader.cs" Link="WaypointReader.cs" />
+    <Compile Include="../LeAccess.Classes.Tests/RuntimeDoubles.cs" Link="RuntimeDoubles.cs" />
+    <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentTracker.cs" Link="ScreenContentTracker.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Announcements/UiVisibility.cs" Link="UiVisibility.cs" />
+    <Compile Include="../UiScreenGeometryStub.cs" Link="UiScreenGeometryStub.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Utils/TextUtils.cs" Link="TextUtils.cs" />
+  </ItemGroup>
+  <Import Project="../LocalizationSources.props" />
+</Project>
