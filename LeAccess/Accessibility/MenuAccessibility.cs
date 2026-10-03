@@ -99,6 +99,7 @@ public class MenuAccessibility : MonoBehaviour
             ZoneAnnouncer.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || LandmarkAccessibility.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || questUpdatesPending);
         CombatAccessibility.Update(PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent || VisibleSubtitleAnnouncer.HasPendingContent);
         VitalsAccessibility.Update(worldContentActive);
+        BossLifeAccessibility.Update();
         PassiveGuidanceAccessibility.Update(worldContentActive,
             ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent ||
             questUpdatesPending || GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName ||

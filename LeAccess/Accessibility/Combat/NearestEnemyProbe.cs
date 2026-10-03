@@ -105,7 +105,7 @@ internal static class NearestEnemyProbe
         return IsAlive(nearest) ? ReadOfflineName(nearest) : null;
     }
 
-    private static string ReadOfflineName(Actor actor)
+    internal static string ReadOfflineName(Actor actor)
     {
         string name = CleanDisplay(actor.GetComponent<BaseDisplayInformation>());
         if (!string.IsNullOrWhiteSpace(name)) { LastStatus += " name_source=actor_display"; return name; }
@@ -137,7 +137,7 @@ internal static class NearestEnemyProbe
         IsAlive(component.gameObject) && component.gameObject.activeInHierarchy &&
         component.gameObject.scene.IsValid() && component.gameObject.scene.isLoaded;
 
-    private static string ReadName(BaseDisplayInformation display)
+    internal static string ReadName(BaseDisplayInformation display)
     {
         string name = CleanDisplay(display);
         if (string.IsNullOrWhiteSpace(name)) LastStatus += " nearest_name=unavailable";
