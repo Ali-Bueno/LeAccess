@@ -148,6 +148,15 @@ another zone has no marker in this one; exits need a visible minimap icon and
 a route within 32 body widths; with speech on, the pulse waits for the first
 accepted announcement, so blocked speech also silences the sound.
 
+Most likely cause: the user says they believe their minimap is hidden. Quest and
+exit targets require the icon to be drawn inside the minimap, so a hidden minimap
+silences the guidance. To confirm: play with the minimap shown and listen for the
+guidance. The game itself draws no route line to quests: sighted players follow the
+minimap icon or its edge arrow (`MinimapIconUI.ArrowImage`). The stubs contain no quest
+path/breadcrumb class; the only trail found is `MorditasHuntTrailController`
+(one encounter). A hidden minimap is useless to a blind player, so guidance should
+probably read markers without requiring the minimap to be shown (live check needed).
+
 Proposed next steps, awaiting the user's choice:
 
 1. A five-second status line like the radar's (targets read, minimap/icon
