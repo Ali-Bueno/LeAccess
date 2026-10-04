@@ -97,3 +97,25 @@ default true, which is now an unused cfg key). Read-only; no hooks.
 Research run done (22:41 log): results above. Limitation: in menus the press lines
 showed the `Default` map's elements disabled, yet no "enabled maps (menu)" line was
 logged; the once-per-second map summary missed that change. Not investigated.
+
+## User decisions (2026-10-03, after the binding run)
+
+- Scanner on the right stick: accepted. The user plays with auto-targeting, so
+  right-stick aim is not a concern for them.
+- Create (Share) held = a mod menu. While held: Square = life/mana report, Cross =
+  start guidance toward the target currently selected in the scanner.
+- Today Create alone already gives the vitals report: on the DualSense it is the
+  Rewired gamepad template's `back` (log 22:41: the report at line 578 is the same
+  frame as the Create press), which `VitalsInput` reads.
+- The user's concern: Xbox pads have only View/Menu, and View probably opens the
+  game's controller wheel (the DualSense touchpad does). Unverified: needs the
+  binding log run with an Xbox pad. Xbox Series pads have a Share button; Xbox One
+  pads do not. The modifier should be configurable.
+
+Technical consequence: the mod only reads input, so Square would also cast ability 1
+and Cross would interact. While the modifier is held the mod must switch off those
+buttons' game bindings and restore them on release, focus loss, scene change,
+errors and cleanup (restore only after the buttons are released, to avoid a cast).
+Compile-checked against the installed interop: `ActionElementMap.enabled`,
+`ControllerMap.enabled` and `MapHelper.SetMapsEnabled` are settable; no hook needed.
+Not yet tried live.
