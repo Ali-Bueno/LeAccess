@@ -85,6 +85,9 @@ Re-check these five first; then the list below.
 
 ## Next work
 
+- Radar precision proposals (bump/scrape from stick intent, heading parking sensor,
+  terrain audio priority first), awaiting the user's choice:
+  [review](reference/navigation-radar.md#precision-review-and-proposals-2026-10-03).
 - Items in the previous handoff that remain open: output-acceptance coverage in
   general menus, map/zone recovery, nearby-entity recovery, advanced filter/forge
   conditions, visual attack telegraphs (see `reference/hazard-sources.md`).
@@ -97,6 +100,9 @@ Re-check these five first; then the list below.
 
 - After each verified fix/feature: update `STATUS.md`, commit and push to `main`.
 - Do not launch the game without a new request; the user tests independently.
-- Keep everything in this repository (no external agent memory).
+- Keep everything in this repository: never write to Claude Code's auto-memory or any
+  other agent memory (repeated 2026-10-03). Discoveries and preferences go here.
+- Navigation and combat aids should work passively, by sound and speech, without
+  pressing keys; manual queries (F6/F7) are secondary extras.
 - Dev build: `dotnet build LeAccess/LeAccess.csproj --no-restore -p:SkipPluginDeployment=true`;
   a normal build deploys — check the game is closed, back up the plugin first.

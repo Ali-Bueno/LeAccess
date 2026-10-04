@@ -37,6 +37,14 @@ quieter than equipment; check that by listening.
 tool only; FFmpeg cannot decode FSB5 Vorbis) and records each bank's SHA-256 in
 `provenance.json`. The assets are embedded like the D2R recordings.
 
+Audition copies (not in the repository): every sample of a bank was dumped with
+`vgmstream-cli -S 0 -o "<dir>/?n.wav" <bank>` into
+`D:\code\unity and such\LastEpoch_sonidos\` (`UI/`, `Ingame_Events/`, a `loot/`
+subset and `candidatos/`, the per-category audition set). Loot drop/pickup
+sounds are mostly in `UI.bank`, chest landings in `Ingame_Events.bank`.
+`Master Bank.strings.bank` (event paths) is compressed, so a plain text search
+finds nothing in it. The user still wants better equipment-rarity and chest sounds.
+
 ## Original bright cues
 
 ### User preference, earlier on 2026-10-03

@@ -6,6 +6,10 @@
 > Progress and next steps live in this repo's `STATUS.md` — open it first.
 > Latest continuation handoff: [WHATS_NEXT.md](WHATS_NEXT.md).
 
+> **No agent memory (user rule):** never write to Claude Code's auto-memory or any other
+> memory outside this repository. Every discovery, preference and decision is documented
+> here (`STATUS.md`, `WHATS_NEXT.md`, `reference/`).
+
 > **Steam 1.5 port:** current loader, API changes and runtime limits are in [STATUS.md](STATUS.md) and [reference/steam-port.md](reference/steam-port.md). Detailed API notes below include the earlier game build; verify against the replaced `last epoch code/` before adding hooks.
 
 ## Project Overview

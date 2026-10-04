@@ -5,6 +5,10 @@
 > UI specs, per-engine screen-reader transport). The file below holds the game-specific rules for Last Epoch.
 > Progress and next steps live in this repo's `STATUS.md` — open it first.
 
+> **No agent memory (user rule):** never write to an agent's own memory store or any
+> other memory outside this repository. Every discovery, preference and decision is
+> documented here (`STATUS.md`, `WHATS_NEXT.md`, `reference/`).
+
 > **Steam 1.5 port:** current loader, API changes and runtime limits are in [STATUS.md](STATUS.md) and [reference/steam-port.md](reference/steam-port.md). Detailed API notes below include the earlier game build; verify against the replaced `last epoch code/` before adding hooks.
 
 ## Project Overview

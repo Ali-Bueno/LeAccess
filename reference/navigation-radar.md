@@ -313,3 +313,51 @@ adapter **44**. They cover sampled-origin consistency, gameplay/death gating,
 category/visibility/ownership filtering, target deduplication, fair scheduling,
 waveforms and device lifetime. They open no physical audio devices and do not
 replace an in-game listening test of the new Steam build.
+
+## Precision review and proposals (2026-10-03)
+
+Code and log review only; nothing below is implemented or heard in game. The user
+asked how precise the radar is and what would let them play by sound and speech
+without pressing keys.
+
+Live values from the 21:25 log: body radius 0.50, agent radius 0.10, close 2.33,
+open 3.33, reach 6.67 (world units).
+
+**Reliable, low resolution.** The NavMesh probe catches cliffs/void as well as walls,
+and confirmation, hysteresis and wall memory avoid false cues. The limits are:
+
+1. Four screen cardinals, one ray each: diagonal passages and corners between
+   rays are never heard.
+2. Binary state: a knock means "within 2.33", not how near or whether closing.
+3. Transition-only: standing still (after loading or a fight) says nothing.
+4. No movement direction: the mod reads no player velocity or stick intent anywhere.
+5. Latency: `WorldAudioReservation` is one FIFO turn across terrain, NPC, object,
+   guidance and enemy cues, each holding it for cue length plus device buffer.
+   Enemy growls can delay a wall knock past impact.
+6. Up and down knocks are both centred; down is only 0.86x pitch.
+7. Wall, edge and door share one knock.
+
+**Proposals, in recommended order (all passive):**
+
+1. Bump/scrape: stick intent `MovingPlayerThumbstick.input` /
+   `WorldMovementDir` (`last epoch code/MovingPlayerThumbstick.cs:144`, `:198`)
+   against actual motion of `ClientMovingPlayer.myAgent` (`ClientMovingPlayer.cs:97`).
+   Pushing without advancing → bump; advancing at an angle → scrape panned to the
+   wall side. Ignore dashes/teleports (`CollisionAndNavMeshToggler` disables the
+   agent). Stubs carry no logic: confirm live that velocity drops at walls.
+2. Parking sensor along the movement direction: ticks accelerating with distance.
+3. Terrain priority: an obstacle in the movement direction must not wait behind
+   other world cues.
+4. Distinct up/down (and front/back for guidance and enemies) by timbre, not
+   only pitch; stereo cannot separate front from back.
+5. Eight sectors instead of four.
+6. Wall vs edge: physics check at the NavMesh hit; collider → knock, none → hollow
+   edge sound. `NavMesh.FindClosestEdge` (unused) gives nearest boundary and normal.
+7. Dead end / junction events, spoken or sounded once.
+8. Guidance on-course feedback while moving; the far pulse (3 s) is too slow to steer.
+9. Explored regions: `MinimapVolume.hasBeenTriggered` and `col`
+   (`last epoch code/MinimapVolume.cs:38`, `:23`); coverage across zones unverified.
+10. Shrines: `ShrinesManager.allShrines` / `_allShrineObjects`
+    (`ShrinesManager.cs:1038`, `:1053`), unused by the mod.
+11. Attack telegraphs: no class with position, radius and impact time was found in
+    the stubs; needs a live discovery pass ([hazard sources](hazard-sources.md)).
