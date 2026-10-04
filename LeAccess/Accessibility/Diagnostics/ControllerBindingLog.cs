@@ -24,8 +24,9 @@ internal static class ControllerBindingLog
 
     internal static void Initialize(ConfigFile config)
     {
-        _enabled = config.Bind(ConfigSection, "ControllerBindingLog", true,
-            "Log the controller's game bindings and the game actions behind each controller press. Read-only; for choosing exploration-mode buttons.");
+        // Renamed from ControllerBindingLog (default true) so the finished research stops logging every press.
+        _enabled = config.Bind(ConfigSection, "ControllerInputLog", false,
+            "Log the controller's game bindings and the game actions behind each controller press. Read-only research aid.");
     }
 
     internal static void Update()

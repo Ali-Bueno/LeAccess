@@ -41,10 +41,17 @@ the right-stick scanner plus the beacon (`docs/entity-scan.md`, `docs/beacon.md`
   DodgeRoll 192, Map 14, QuestLog 41...). Bindings live in serialized Rewired user
   data, not on disk; `%USERPROFILE%\AppData\LocalLow\Eleventh Hour Games\Last Epoch\`
   holds no binding file.
-- Default D-pad and L3/R3 gameplay bindings are **unverified**. Glyph helpers
-  (`DPadAllButtonName`, `DPadUpDownButtonName`) and `SwapAcitonBarSkills` suggest the
-  D-pad is used somewhere. Settle it with a read-only runtime dump of the joystick's
-  Rewired action element maps, or the user's own knowledge.
+- Verified gameplay bindings (DualSense, Rewired `Default` map, live log 22:41,
+  layout Default): L1 potion; Square/Triangle/R1/L2/R2 abilities 1-5; Cross
+  interact; Circle dodge; Options main menu; **L3 overlay map; R3 portal;
+  D-pad up/down "Keybased Item Selection" (choose the nearby object to pick up);
+  D-pad left minion AI toggle; D-pad right dungeon ability**; left stick movement.
+  Touchpad opens the controller menu wheel (`FixedUiInputs`, right stick navigates
+  it). **Create (Share) has no action in any map.** The right stick has no
+  `Default` action, only `ControllerMenuH/V` (wheel) and `VirtualMouseH/V`.
+- Other maps (`SkillsMenu`, `InventoryMenu`, `WorldMap`, `ItemToolTip`,
+  `VirtualKeyboard`...) reuse the same buttons inside their panels; in the world map
+  the D-pad steps quests.
 - The right stick aims: `ControllerTargeting.RightStickTarget`,
   `RightStickHitTarget(Vector3)`, `GetMostViableTarget(..., rightStickInput)`.
 - Mod controller reads today (read-only, game still receives them): right stick up
@@ -54,8 +61,14 @@ the right-stick scanner plus the beacon (`docs/entity-scan.md`, `docs/beacon.md`
 
 ## Proposed Last Epoch mapping (awaiting the user)
 
-- Scanner on the D-pad if it is free in gameplay (the right stick already aims);
-  keyboard equivalents as in D2R. Lock button to be chosen after the binding dump.
+- The D-pad, L3 and R3 are all bound in gameplay, and the mod only reads input (the
+  game still receives it), so they cannot host the scanner.
+- Scanner on the right stick as in D2R (up/down category, left/right entry), only in
+  gameplay. It replaces today's F6/F7 flicks. Cost: `ControllerTargeting` reads the
+  stick for manual aim, so a flick during a fight may nudge aim; the user to confirm
+  whether the right stick visibly aims in practice.
+- Lock/cancel beacon on **Create (Share)**, the only button with no game action.
+  Keyboard equivalents as in D2R.
 - Categories: exits, waypoints, portals, NPCs/merchants, stash, shrines
   (`ShrinesManager.allShrines`), quest markers, enemies, players. Quest markers may
   be listed with straight-line distance and direction even when unexplored, because
@@ -69,8 +82,9 @@ the right-stick scanner plus the beacon (`docs/entity-scan.md`, `docs/beacon.md`
 
 ## Controller binding log (installed 2026-10-03)
 
-`Diagnostics/ControllerBindingLog.cs`, config `[Diagnostics] ControllerBindingLog`
-(default true). Read-only; no hooks, the game receives every input as before.
+`Diagnostics/ControllerBindingLog.cs`, config `[Diagnostics] ControllerInputLog`
+(default **false** since the research run; the first build used `ControllerBindingLog`,
+default true, which is now an unused cfg key). Read-only; no hooks.
 
 - On first sight of a joystick: `[Controller bindings]` lines with each Rewired map
   (category, layout, enabled) and every element → action (`name (descriptiveName)`).
@@ -80,5 +94,6 @@ the right-stick scanner plus the beacon (`docs/entity-scan.md`, `docs/beacon.md`
   `[Controller press] <element> (gameplay|menu): mapped=[actions in enabled maps]
   fired=[actions whose GetButtonDown is true this frame]`.
 
-User test: in gameplay, press each D-pad direction, L3, R3 and the other buttons
-once, then send the log. Turn the key off once the exploration buttons are chosen.
+Research run done (22:41 log): results above. Limitation: in menus the press lines
+showed the `Default` map's elements disabled, yet no "enabled maps (menu)" line was
+logged; the once-per-second map summary missed that change. Not investigated.
