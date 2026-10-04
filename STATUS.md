@@ -2,7 +2,8 @@
 
 **Updated:** 2026-10-04 afternoon (Claude session): Ctrl/Shift/Insert no longer drop controller mode
 and menu focus; the Skills panel, passive trees and specialization trees navigate as grids (row,
-column or branch named on entry, "N de M" inside it); see [WHATS_NEXT.md](WHATS_NEXT.md).
+column or branch named on entry, "N de M" inside it). **User confirms it works perfectly** (game 1.5.1.2);
+new friend ZIP built; see [WHATS_NEXT.md](WHATS_NEXT.md).
 Earlier that day: list navigation with positions for passive trees,
 skill trees and the backpack; a navigation-hook crash fixed and three similar hooks made safe;
 before that, the exploration scanner now has the D2R categories,
@@ -19,7 +20,7 @@ Startup, online play and listening on this build still need in-game validation.
 
 ## Current installation
 
-- **Game:** Steam build **25711439** since 2026-10-04 15:18 (after the user's session), Unity **6000.4.8f1**, IL2CPP metadata **39**. Installed interop is still from 25690669; BepInEx regenerates it on the next launch (`SkillsPanelManager`/`EpochInputManager` bodies only moved, same sizes).
+- **Game:** Steam build **25711439** (version 1.5.1.2) since 2026-10-04 15:18, Unity **6000.4.8f1**, IL2CPP metadata **39**. BepInEx regenerated interop at 16:28 on the user's launch; the repair patcher fixed the same 16 rows in five assemblies.
 - **Path:** `D:\games\steam\steamapps\common\Last Epoch`.
 - **Loader:** BepInEx **6.0.0-be.788**, Il2CppInterop **1.5.3**; automatic updates remain enabled.
 - **Interop:** regenerated offline from the installed binary/metadata, 214 DLLs and two native databases installed and byte-verified. The existing preloader repaired the same 16 Unity orphan rows. Native audit: 46 regressions, 60 declarations / 59 targets.
@@ -67,7 +68,7 @@ requested. No release or new ZIP has been requested.
 | Area | Current evidence / remaining work |
 |---|---|
 | Steam port | Earlier build 25672295 logged online creation, connection and InGame. Current hotfix compiles and passes native audit; startup/online listening pending. |
-| Native hook safety | 46 checks; build 25690669, 72 declarations / 71 distinct native targets; two new hooks (2026-10-04 afternoon: `SkillsPanelManager.HandleNavigateInput` prefix, `EpochInputManager.ControllerShouldBeActive` postfix) checked by hand on 25711439 (first relative branch +0x13/+0x15); the audit refuses the stale interop until regeneration. Hooks whose original runs must not start with a relative branch: the passive navigate prefix and three tiny bodies now replay the native code instead ([detour crash](reference/runtime-feedback.md#passive-navigation-crash-detoured-short-branch-prologue-2026-10-04)). |
+| Native hook safety | 46 checks; build 25690669, 72 declarations / 71 distinct native targets; two new hooks (2026-10-04 afternoon: `SkillsPanelManager.HandleNavigateInput` prefix, `EpochInputManager.ControllerShouldBeActive` postfix) first relative branch +0x13/+0x15. Audit on 25711439 after regeneration: 46 checks, 75 declarations / 74 native targets. Hooks whose original runs must not start with a relative branch: the passive navigate prefix and three tiny bodies now replay the native code instead ([detour crash](reference/runtime-feedback.md#passive-navigation-crash-detoured-short-branch-prologue-2026-10-04)). |
 | Reader recovery | Bounded reconnection; covered readers acknowledge accepted output and retry current content. 41 transport checks plus service regressions. [Scope/limits](reference/screen-reader-lifecycle.md); listening pending. |
 | Early online/offline selection | Empty native nullable no longer throws during readiness polling or erases the first click; observation failures retain intent, dispatch remains once-only. 56 checks; fresh startup listening pending. |
 | Menus/focus | Screen-reader keys (Ctrl, Shift, Alt, Insert, CapsLock, Windows) keep controller mode, so menus no longer lose focus and reset ([cause](reference/runtime-feedback.md#controller-mode-lost-to-screen-reader-keys-2026-10-04)). Settings sliders/toggles speak only the new value while focus stays; headings no longer repeat after dropdowns; popups never speak raw object names; controller button names localized; zero-height labels that render (main-menu "Partida sin conexión") are read again. Native mediator callbacks follow FocusedPanel; typed forge/material selections and background/faded guards. 307 menu + 63 settings-source checks. [Audit and limits](reference/menu-visibility.md); listening pending. |
@@ -111,9 +112,10 @@ requested. No release or new ZIP has been requested.
 
 ## Validation and references
 
-- 2026-10-04 afternoon: `dotnet build LeAccess/LeAccess.csproj --no-restore` zero warnings/errors; deployed with the game stopped. Installed plugin SHA-256 matches the build: `0162F933813DC3DC43ED7BA7FABE2CD43B8D5E8D9532A9D0A1E7C2E5CED4FE0C`.
-- 59 of 60 test invocations pass (Skills 233, Passives 160, Localization 610, VitalsInput 31 checks among them). PatchSafety refuses to audit, as designed, because the installed interop predates Steam build 25711439; rerun it after the next launch regenerates interop.
-- No game or audio device launched; host tests do not establish live UI visibility or audible output.
+- 2026-10-04 17:04: plugin rebuilt against the regenerated interop and installed with the game closed; installed SHA-256 equals the friend ZIP's copy: `E092FC7716951249FDD40837BFA93CBCBB90B14544B21E2239DDCC99B77D9EC2`.
+- Friend ZIP `LeAccess-Steam-1.5.1-prueba-20261004-170437.zip` (repo root, ignored by git), SHA-256 `0D178801E5F71B3D8ACB37C1090A72D0058B157B4EC0808D2A7C3A57C8F29A58`, 264 files; readme/manifest name game 1.5.1.2, build 25711439. Package tests: 242 checks.
+- All 60 test invocations pass, PatchSafety included (Skills 233, Passives 160, Localization 610, VitalsInput 31 checks among them).
+- User confirms in game: the grids and screen-reader keys work; the log shows `[Controller mode] kept ... (RightShift)`.
 
 Current-build regeneration and native audit: [Steam port notes](reference/steam-port.md).
 Newly covered native windows: [dungeon/warning reading](reference/dungeon-warning-reading.md).

@@ -128,7 +128,7 @@ WriteUnityLog = true
 UpdateInteropAssemblies = true
 '@ 'BepInEx/config/BepInEx.cfg'
 
-    $manifest = @('LeAccess test package; Windows x64; Last Epoch Steam 1.5.1 (build 25672295)',
+    $manifest = @('LeAccess test package; Windows x64; Last Epoch Steam 1.5.1.2 (build 25711439)',
         "BepInEx 6.0.0-be.788 archive SHA256: $loaderHash", '', 'SHA256  Relative file path', '')
     foreach ($relative in ($expected.Keys | Sort-Object -Culture en-US)) { $manifest += $expected[$relative] + '  ' + $relative }
     Add-PackageText ($manifest -join "`n") 'LeAccess-SHA256.txt'

@@ -20,6 +20,9 @@ walk every row, Up from the slots (search row), A on a skill; passive and skill 
 column/branch speech; Ctrl in the inventory. After regeneration rerun the PatchSafety audit
 (it refuses the stale interop now).
 
+Result (same afternoon): the user confirms everything works "a la perfección"; interop regenerated
+on launch, PatchSafety passes on 25711439, and a new friend ZIP was built for game 1.5.1.2.
+
 # Handoff — 2026-10-04: passive tree with a controller
 
 User report: switching trees cut the tab's speech; the cursor "skips nodes", no sense of first/last.
