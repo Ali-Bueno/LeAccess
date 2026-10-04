@@ -1,6 +1,7 @@
 using LeAccess.Accessibility;
 using LeAccess.Accessibility.Inventory;
 using LeAccess.Accessibility.Items;
+using LeAccess.Accessibility.ScreenContent;
 using LeAccess.I18n;
 using UnityEngine;
 
@@ -10,6 +11,8 @@ internal static class EquippedItemTests
     {
         void Observe() { InventoryAccessibility.Update(); InventoryAccessibility.Update(); }
         void Reset() { InventoryAccessibility.Reset(); ScreenReader.Messages.Clear(); }
+        string T(string key, params object[] args) => ModText.Format(key, args);
+        string J(params string[] fragments) => ScreenContentTracker.Combine(fragments);
         ModText.SetLanguage("en");
         UIBase.instance = null;
         var helmetItem = new ItemDataUnpacked { Id = "helmet", FullName = "Crown of fire", LocalisedBaseTypeName = "Iron helmet" };
@@ -41,37 +44,37 @@ internal static class EquippedItemTests
         check(!InventoryAccessibility.TryHandleFocus(gloves.gameObject) && !InventoryAccessibility.TryHandleFocus(new GameObject()),
             "Other equipment slots and unrelated controls cannot claim selected equipment focus");
         Observe();
-        check(ScreenReader.Messages.Single() == "Helmet. Crown of fire. Iron helmet. Equipped",
+        check(ScreenReader.Messages.Single() == J(T("inventory.slot_helmet"), helmetItem.FullName, helmetItem.LocalisedBaseTypeName, T("inventory.equipped")),
             "Equipped navigation reads localized slot, actual worn item and equipped status");
         Observe();
         check(ScreenReader.Messages.Count == 1, "Stable equipment focus remains silent");
         equipment.currentlySelectedIdx = new() { x = 0, y = 1 };
         Observe();
-        check(ScreenReader.Messages.Last() == "Gloves. Leather gloves. Equipped", "Navigation follows the next native selected cell");
+        check(ScreenReader.Messages.Last() == J(T("inventory.slot_gloves"), glovesItem.FullName, T("inventory.equipped")), "Navigation follows the next native selected cell");
         equipment.currentlySelectedIdx = new() { x = 2, y = 0 };
         Observe();
-        check(ScreenReader.Messages.Count == 3 && ScreenReader.Messages.Last().Contains("Crown of fire"),
+        check(ScreenReader.Messages.Count == 3 && ScreenReader.Messages.Last().Contains(helmetItem.FullName),
             "Returning to a worn slot rereads its current item");
         var replacement = new ItemDataUnpacked { Id = "replacement", FullName = "Oak crown" };
         helmet.currentlySelectedItem = new() { data = helmetItem };
         helmet.container.Entry = new() { data = replacement };
         Observe();
-        check(ScreenReader.Messages.Last() == "Helmet. Oak crown. Equipped",
+        check(ScreenReader.Messages.Last() == J(T("inventory.slot_helmet"), replacement.FullName, T("inventory.equipped")),
             "Changing equipment in place reads live slot contents instead of the retained old hover item");
         check(!InventorySelectionReader.OwnsSelection(helmetItem, helmet) && InventorySelectionReader.OwnsSelection(replacement, helmet),
             "Item action and detail ownership follows the current live equipment entry");
         ItemTooltipModelReader.Text = "Oak crown. Armor +12";
         InventoryAccessibility.Update(readDetails: true);
         check(ItemTooltipModelReader.LastItem == replacement && ItemTooltipModelReader.LastContainer == helmet &&
-            ScreenReader.Messages.Last() == "Helmet. Oak crown. Armor +12", "Manual equipped details use the actual selected slot item");
+            ScreenReader.Messages.Last() == J(T("inventory.slot_helmet"), ItemTooltipModelReader.Text), "Manual equipped details use the actual selected slot item");
         helmet.container.Entry = null;
         Observe();
-        check(ScreenReader.Messages.Last() == "Helmet. Empty slot", "Removed equipment announces the named empty slot despite old hover data");
+        check(ScreenReader.Messages.Last() == J(T("inventory.slot_helmet"), T("inventory.empty_slot")), "Removed equipment announces the named empty slot despite old hover data");
         InventoryAccessibility.Update(readDetails: true);
-        check(ScreenReader.Messages.Last() == "Helmet. Empty slot", "Empty manual equipment reading cannot duplicate its slot label");
+        check(ScreenReader.Messages.Last() == J(T("inventory.slot_helmet"), T("inventory.empty_slot")), "Empty manual equipment reading cannot duplicate its slot label");
         helmet.container = null;
         Observe();
-        check(ScreenReader.Messages.Last() == "Helmet. Item information is unavailable", "Unavailable equipment data is never called empty");
+        check(ScreenReader.Messages.Last() == J(T("inventory.slot_helmet"), T("inventory.selection_unavailable")), "Unavailable equipment data is never called empty");
         helmet.container = new() { Id = ContainerID.EQ_GLOVES, Type = ContainerType.EQUIPPED, Entry = new() { data = glovesItem } };
         check(!InventorySelectionReader.TryGetEntry(helmet, out _), "A foreign backing container cannot masquerade as the selected slot");
         helmet.container.Id = ContainerID.EQ_HELMET;
@@ -80,16 +83,16 @@ internal static class EquippedItemTests
         helmet.container.Type = ContainerType.EQUIPPED;
         helmet.container.Entry = new() { data = helmetItem };
         Observe();
-        check(ScreenReader.Messages.Last().Contains("Crown of fire"), "Same slot recovers when authoritative equipment data becomes available");
+        check(ScreenReader.Messages.Last().Contains(helmetItem.FullName), "Same slot recovers when authoritative equipment data becomes available");
         helmet.container.Entry.data = null;
         Observe();
-        check(ScreenReader.Messages.Last() == "Helmet. Item information is unavailable", "An existing entry with missing item data is unknown rather than empty");
+        check(ScreenReader.Messages.Last() == J(T("inventory.slot_helmet"), T("inventory.selection_unavailable")), "An existing entry with missing item data is unknown rather than empty");
         helmet.container.Entry.data = new ItemData { Id = "packed", Unpacked = new ItemDataUnpacked { Id = "foreign", FullName = "Foreign crown" } };
         Observe();
-        check(ScreenReader.Messages.Last() == "Helmet. Item information is unavailable", "Unpacked data with a different native identity is never spoken");
+        check(ScreenReader.Messages.Last() == J(T("inventory.slot_helmet"), T("inventory.selection_unavailable")), "Unpacked data with a different native identity is never spoken");
         helmet.container.Entry.data = new ItemDataUnpacked { Id = "pending name" };
         Observe();
-        check(ScreenReader.Messages.Last() == "Helmet. Item information is unavailable", "A not-yet-named item does not announce only an equipped marker");
+        check(ScreenReader.Messages.Last() == J(T("inventory.slot_helmet"), T("inventory.selection_unavailable")), "A not-yet-named item does not announce only an equipped marker");
         helmet.container.Entry.data = helmetItem;
         var priorGrid = equipment.navigables;
         equipment.navigables = null;
@@ -127,7 +130,7 @@ internal static class EquippedItemTests
             helmetItem.WasCollected = gate == "data";
             helmet.container.WasCollected = gate == "source";
             Observe();
-            check(ScreenReader.Messages.Last() == "Helmet. Item information is unavailable", "Collected equipment data remains unknown: " + gate);
+            check(ScreenReader.Messages.Last() == J(T("inventory.slot_helmet"), T("inventory.selection_unavailable")), "Collected equipment data remains unknown: " + gate);
         }
         helmet.container.WasCollected = false;
         helmet.container.Entry.WasCollected = false;
@@ -149,22 +152,23 @@ internal static class EquippedItemTests
         foreach (ContainerID id in Enum.GetValues<ContainerID>().Where(InventorySelectionReader.IsEquipmentSlot))
             check(!string.IsNullOrWhiteSpace(EquipmentSlotText.Read(id)), "Named equipment fallback exists for " + id);
         check(EquipmentSlotText.Read(ContainerID.INVENTORY) == null, "Ordinary inventory never acquires an equipment slot label");
-        check(EquipmentSlotText.Read(ContainerID.EQ_LEFTRING) == "Ring, left" &&
-            EquipmentSlotText.Read(ContainerID.EQ_RIGHTRING) == "Ring, right", "Two worn ring slots have distinct identities");
+        check(EquipmentSlotText.Read(ContainerID.EQ_LEFTRING) == T("inventory.left_slot", T("inventory.slot_ring")) &&
+            EquipmentSlotText.Read(ContainerID.EQ_RIGHTRING) == T("inventory.right_slot", T("inventory.slot_ring")), "Two worn ring slots have distinct identities");
         ModText.SetLanguage("es");
-        check(EquipmentSlotText.Read(ContainerID.EQ_HELMET) == "Yelmo" && EquipmentSlotText.Read(ContainerID.EQ_LEFTRING) == "Anillo, izquierdo",
+        check(EquipmentSlotText.Read(ContainerID.EQ_HELMET) == T("inventory.slot_helmet") &&
+            EquipmentSlotText.Read(ContainerID.EQ_LEFTRING) == T("inventory.left_slot", T("inventory.slot_ring")),
             "Equipment fallback slot and ring side follow Spanish localization");
         Localization.Texts["EquipmentType_HELMET"] = "YELMO DEL JUEGO";
-        check(EquipmentSlotText.Read(ContainerID.EQ_HELMET) == "YELMO DEL JUEGO", "Native game translation takes priority over mod fallback");
+        check(EquipmentSlotText.Read(ContainerID.EQ_HELMET) == Localization.Texts["EquipmentType_HELMET"], "Native game translation takes priority over mod fallback");
         Localization.Texts["EquipmentType_HELMET"] = "EquipmentType_HELMET";
-        check(EquipmentSlotText.Read(ContainerID.EQ_HELMET) == "Yelmo", "Unresolved game localization keys never leak into speech");
+        check(EquipmentSlotText.Read(ContainerID.EQ_HELMET) == T("inventory.slot_helmet"), "Unresolved game localization keys never leak into speech");
         Localization.Texts.Clear(); ModText.SetLanguage("en");
         Reset();
         var action = new LE.UI.PanelSystem.PanelActionPrompt { Label = "Unequip", ActionName = "unequip" };
         LE.UI.Tooltips.ItemTooltipPromptHelper.Actions.Add(action);
         LeAccess.Accessibility.Announcements.InputBindingText.Bindings["unequip"] = "A";
         Observe();
-        check(ScreenReader.Messages.Single().EndsWith("A, Unequip"), "Native item actions work while navigation owner is equipment grid");
+        check(ScreenReader.Messages.Single().EndsWith("A, " + action.Label), "Native item actions work while navigation owner is equipment grid");
         LE.UI.Tooltips.ItemTooltipPromptHelper.OnRead = () => equipment.currentlySelectedIdx = new() { x = 0, y = 1 };
         Time.unscaledTime += 1;
         Reset(); InventoryAccessibility.Update();

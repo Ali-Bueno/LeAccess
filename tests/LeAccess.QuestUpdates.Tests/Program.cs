@@ -333,7 +333,7 @@ static class Program
         tracked.objectives[0].progress = 3;
         Poll(menu: true); Poll(menu: true); Poll();
         Check(ScreenReader.Spoken.Count == 1 && ScreenReader.Spoken[0].Contains("3/10"), "latest change once after dialogue");
-        Check(ScreenReader.Spoken[0].StartsWith("Quest updated: Forest"), "English heading");
+        Check(ScreenReader.Spoken[0].StartsWith(ModText.Format("quest.update_changed", tracked.quest.displayName)), "English heading");
         Poll(); Check(ScreenReader.Spoken.Count == 1, "no polling spam");
         ScreenReader.Speaking = true;
         for (int counter = 4; counter < 7; counter++)
@@ -360,7 +360,7 @@ static class Program
         Poll(); Check(ScreenReader.Spoken.Count == 2 && ScreenReader.Spoken[1].Contains("4/10"), "area transition retains confirmed progress");
         ModText.SetLanguage("es"); tracked.Status = QuestState.Completed;
         Poll(); Poll();
-        Check(ScreenReader.Spoken.Count == 3 && ScreenReader.Spoken[2] == "Misión completada: Forest", "Spanish completed state has no outdated objective");
+        Check(ScreenReader.Spoken.Count == 3 && ScreenReader.Spoken[2] == ModText.Format("quest.update_completed", tracked.quest.displayName), "Spanish completed state has no outdated objective");
         tracked.Status = QuestState.Active; tracked.objectives[0].progress = 5; Poll(true); Poll(true);
         SceneList.Gameplay = false; Poll(); SceneList.Gameplay = true; Poll(); Poll();
         Check(ScreenReader.Spoken.Count == 3 && !QuestUpdateAccessibility.HasPendingContent, "return to menu cancels and rebaselines");

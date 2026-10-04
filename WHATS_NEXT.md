@@ -123,8 +123,9 @@ Re-check these five first; then the list below.
   other agent memory (repeated 2026-10-03). Discoveries and preferences go here.
 - Tests must not compare against translated literals: build expected speech from
   `ModText` keys and from the test's own data/labels, so catalogs can change or be
-  ported to another localization system (user, 2026-10-04). Older suites still contain
-  Spanish literals (19 set `es`); convert them when touched.
+  ported to another localization system (user, 2026-10-04). All suites were converted
+  the same day; only the small `ModText` doubles (NpcProbe, Passives, LandmarkProbe,
+  GuidanceTargets) still hold template text, and game-provided strings stay literal.
 - Navigation and combat aids should work passively, by sound and speech, without
   pressing keys; manual queries (F6/F7) are secondary extras.
 - Dev build: `dotnet build LeAccess/LeAccess.csproj --no-restore -p:SkipPluginDeployment=true`;

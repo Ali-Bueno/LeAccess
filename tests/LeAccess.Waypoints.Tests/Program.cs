@@ -9,6 +9,8 @@ using UnityEngine;
 int checks = 0;
 void Check(bool condition, string title) { checks++; if (!condition) throw new Exception(title); }
 ModText.Initialize(null, null);
+string T(string key) => ModText.Get(key);
+string J(params string[] fragments) => ScreenContentTracker.Combine(fragments);
 TextMeshProUGUI Label(GameObject parent, string text) => parent.Child().Add(new TextMeshProUGUI { text = text });
 UIWaypointStandard Waypoint(GameObject root, string name)
 {
@@ -23,22 +25,24 @@ var waypoint = Waypoint(root, "Ciudad Eterna");
 var button = root.Child();
 Check(Read(button) == "Ciudad Eterna", "unlocked waypoint away from the player reads only its label");
 waypoint.playerIsHere = true;
-Check(Read(button) == "Ciudad Eterna. You are here", "current location is spoken");
+Check(Read(button) == J(waypoint.locationLabel.text, T("waypoint.here")), "current location is spoken");
 ModText.SetLanguage("es");
-Check(Read(button) == "Ciudad Eterna. Estás aquí", "Spanish wording for the current location");
+Check(Read(button) == J(waypoint.locationLabel.text, T("waypoint.here")), "Spanish wording for the current location");
 waypoint.playerIsHere = false; waypoint.isActive = false;
-Check(Read(button) == "Ciudad Eterna. Bloqueado", "inactive waypoint is locked");
+Check(Read(button) == J(waypoint.locationLabel.text, T("waypoint.locked")), "inactive waypoint is locked");
 waypoint.playerIsHere = true;
 waypoint.questIndicators = root.Add(new WaypointQuestIndicators
     { hasActiveMainQuest = true, haPotentialSideQuest = true });
-Check(Read(button) == "Ciudad Eterna. Estás aquí. Bloqueado. Misión principal activa. Misión secundaria disponible",
+Check(Read(button) == J(waypoint.locationLabel.text, T("waypoint.here"), T("waypoint.locked"), T("waypoint.quest_main_active"),
+        T("waypoint.quest_side_available")),
     "here, locked and quests combine in a fixed order");
 waypoint.questIndicators.hasActiveMainQuest = waypoint.questIndicators.haPotentialSideQuest = false;
 waypoint.questIndicators.hasActiveSideQuest = waypoint.questIndicators.hasPotentialMainQuest = true;
-Check(Read(button) == "Ciudad Eterna. Estás aquí. Bloqueado. Misión secundaria activa. Misión principal disponible",
+Check(Read(button) == J(waypoint.locationLabel.text, T("waypoint.here"), T("waypoint.locked"), T("waypoint.quest_side_active"),
+        T("waypoint.quest_main_available")),
     "side active and main available are distinct states");
 ModText.SetLanguage("en");
-Check(Read(button).EndsWith("Active side quest. Main quest available"), "English quest wording");
+Check(Read(button).EndsWith(J(T("waypoint.quest_side_active"), T("waypoint.quest_main_available"))), "English quest wording");
 ModText.SetLanguage("es");
 
 waypoint.locationLabel.alpha = 0;
@@ -57,9 +61,10 @@ var region = regionRoot.Add(new UIWaypointRegion
     regionLabel = Label(regionRoot, "Eterra"), locationCountLabel = Label(regionRoot, "3/5"),
     playerLocation = regionRoot.Child(), hasPotentialMainQuest = true
 });
-Check(Read(regionRoot.Child()) == "Eterra. 3/5. Estás aquí. Misión principal disponible", "region reads label, count, here and quests");
+Check(Read(regionRoot.Child()) == J(region.regionLabel.text, region.locationCountLabel.text, T("waypoint.here"),
+    T("waypoint.quest_main_available")), "region reads label, count, here and quests");
 region.playerLocation.Active = false; region.hasPotentialMainQuest = false; region.hasActiveSideQuest = true;
-Check(Read(regionRoot) == "Eterra. 3/5. Misión secundaria activa", "region without the player omits the here state");
+Check(Read(regionRoot) == J(region.regionLabel.text, region.locationCountLabel.text, T("waypoint.quest_side_active")), "region without the player omits the here state");
 region.regionLabel.alpha = 0;
 Check(Read(regionRoot) is null, "hidden region label falls back");
 
@@ -94,16 +99,16 @@ controller.regionsInMenu.Add(mapRegion);
 void Frame(bool quest = false) { ScreenReader.SpokeThisFrame = false; MapSelectionAnnouncer.Update(map, quest); }
 void Reset() { ScreenReader.Messages.Clear(); MapSelectionAnnouncer.Reset(); }
 Reset(); Frame();
-Check(ScreenReader.Messages.Count == 1 && ScreenReader.Messages[0].Text == "Era Antigua. Ciudad Eterna. Nivel 10. Estás aquí" &&
+Check(ScreenReader.Messages.Count == 1 && ScreenReader.Messages[0].Text == J(map.mapTitle.text, map.selectedLocationLabel.text, map.selectedLocationLevelLabel.text, T("waypoint.here")) &&
     ScreenReader.Messages[0].Interrupt, "opening the map speaks the era, selection, level and waypoint states");
 Frame();
 Check(ScreenReader.Messages.Count == 1, "unchanged selection is silent");
 map.selectedLocationLabel.text = "Puerto"; map.focusedSceneID = "Port";
 Frame();
-Check(ScreenReader.Messages[^1].Text == "Puerto. Nivel 10", "new location without a matching waypoint speaks label and level only");
+Check(ScreenReader.Messages[^1].Text == J(map.selectedLocationLabel.text, map.selectedLocationLevelLabel.text), "new location without a matching waypoint speaks label and level only");
 map.focusedSceneID = null; map.focusedRegionID = "Eterra"; map.selectedLocationLabel.text = "Eterra";
 Frame();
-Check(ScreenReader.Messages[^1].Text == "Eterra. Nivel 10. Misión secundaria activa", "focused region speaks its quest states");
+Check(ScreenReader.Messages[^1].Text == J(map.selectedLocationLabel.text, map.selectedLocationLevelLabel.text, T("waypoint.quest_side_active")), "focused region speaks its quest states");
 int count = ScreenReader.Messages.Count;
 map.selectedLocationLabel.text = "Otra"; Frame(quest: true);
 Check(ScreenReader.Messages.Count == count + 1 && ScreenReader.Messages[^1].Text.StartsWith("Otra. Nivel 10") &&
@@ -114,7 +119,7 @@ count = ScreenReader.Messages.Count;
 map.selectedLocationLabel.text = "Nueva"; ScreenReader.SpokeThisFrame = true; MapSelectionAnnouncer.Update(map, false);
 Check(ScreenReader.Messages.Count == count, "focus path speech in the same frame is not doubled");
 map.CurrentEra = SceneList.Era.Divine; map.mapTitle.text = "Era Divina"; Frame();
-Check(ScreenReader.Messages[^1].Text.StartsWith("Era Divina."), "era change speaks the new map title");
+Check(ScreenReader.Messages[^1].Text.StartsWith(map.mapTitle.text + "."), "era change speaks the new map title");
 count = ScreenReader.Messages.Count;
 mapObject.Active = false; Frame(); mapObject.Active = true; Frame();
 Check(ScreenReader.Messages.Count == count + 1, "closing the map resets so reopening announces again");

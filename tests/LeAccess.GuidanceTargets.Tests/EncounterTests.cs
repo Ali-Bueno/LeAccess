@@ -49,7 +49,7 @@ internal static class EncounterTests
         check(result.Kind == GuidanceTargetKind.EncounterReturn && result.Priority < 0 && result.ArrivalRadius == 0,
             "Return arrow is a distinct prioritized encounter target, not a quest, exit or completion radius");
         check(result.Position == gauntlet.transform.position && result.Id == gauntlet.GetInstanceID() &&
-            result.Name == "guidance.encounter_return", "Orientation uses the exact native gauntlet target and localized return instruction");
+            result.Name == LeAccess.I18n.ModText.Get("guidance.encounter_return"), "Orientation uses the exact native gauntlet target and localized return instruction");
         EncounterGuidanceTargets.Track(pointer); check(Read(), "Repeated native update callbacks do not duplicate the target");
         gauntlet.transform.position = new(-20, 2, 30);
         check(Read() && targets[0].Position == gauntlet.transform.position, "Current target position is refreshed rather than cached");

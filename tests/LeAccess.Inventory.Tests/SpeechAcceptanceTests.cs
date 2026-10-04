@@ -57,7 +57,7 @@ internal static class SpeechAcceptanceTests
             InventoryAccessibility.Update(); InventoryAccessibility.Update();
             check(!ScreenReader.Messages.Contains("Refreshed full properties") &&
                 (gate == "changed" ? ScreenReader.Messages.Single() == "Next shield" :
-                    gate == "unready" ? ScreenReader.Messages.Single() == "Item information is unavailable" : ScreenReader.Messages.Count == 0),
+                    gate == "unready" ? ScreenReader.Messages.Single() == LeAccess.I18n.ModText.Get("inventory.selection_unavailable") : ScreenReader.Messages.Count == 0),
                 "Failed manual inventory intent cannot replay after ownership loss: " + gate);
             container.gameObject.Visible = true;
             container.WasCollected = false;

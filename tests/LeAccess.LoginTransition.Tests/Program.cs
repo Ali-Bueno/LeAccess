@@ -54,7 +54,7 @@ panel = Setup();
 panel.OnPlayOfflineClicked();
 Check(panel.OfflineStarts == 0 && panel.playOfflineButton.interactable && panel.playOnlineButton.interactable,
     "The real offline prefix defers before native code can disable both buttons or enter the failing transition");
-Check(ScreenReader.Spoken.Count == 1 && ScreenReader.Spoken[0].StartsWith("Cargando."),
+Check(ScreenReader.Spoken.Count == 1 && ScreenReader.Spoken[0].StartsWith(ModText.Get("login.waiting")),
     "Pending selection is announced once using the Spanish production catalog");
 panel.OnPlayOfflineClicked();
 panel.OnPlayOfflineClicked();
@@ -184,7 +184,7 @@ panel.OnPlayOfflineClicked();
 Check(panel.OfflineStarts == 0, "Login with an outstanding transition uses the same safe deferral as SystemLoading");
 ModText.SetLanguage("en");
 panel = Setup(); panel.OnPlayOfflineClicked();
-Check(ScreenReader.Spoken.Single() == "Loading. Your selection will continue when the game is ready.",
+Check(ScreenReader.Spoken.Single() == ModText.Get("login.waiting"),
     "English production catalog provides the same once-only pending indication");
 
 panel = Setup();

@@ -30,7 +30,7 @@ internal static class CraftingSelectionTests
         NavigationManager.currentlySelected = nav;
         Check(UiFocusOwnership.TryGetSelected(out var selected) && selected.Pointer == rune.gameObject.Pointer, "Flyout resolves the native selected rectangle without ActiveSelectable");
         ElementAnnouncer.AnnounceElement(selected);
-        Check(ScreenReader.Messages.Single().Text == "Rune of Shattering. Quantity: 7", "Icon-only native rune control reads its authored localized subtype and visible quantity");
+        Check(ScreenReader.Messages.Single().Text == Speech.Join("Rune of Shattering", Speech.F("crafting.quantity", 7)), "Icon-only native rune control reads its authored localized subtype and visible quantity");
         var tooltip = rune.gameObject.Add(new InfoForTooltip { tooltipInfo = new TooltipInfo { nameText = "Rune", mainText = "Destroys an item to recover shards." } });
         reset(); NavigationManager.currentlySelected = nav; ElementAnnouncer.AnnounceElement(rune.gameObject);
         Check(tooltip.SetTextCalls == 0, "Brief material speech does not populate tooltip models");
@@ -39,15 +39,15 @@ internal static class CraftingSelectionTests
         reset(); NavigationManager.currentlySelected = nav; nav._selectedButtonId = 1;
         Check(!UiFocusOwnership.Allows(rune.gameObject) && UiFocusOwnership.Allows(glyph.gameObject), "Same-frame flyout switches immediately reject the retained rune");
         ElementAnnouncer.AnnounceElement(glyph.gameObject);
-        Check(ScreenReader.Messages.Single().Text == "Glyph of Hope. Quantity: 0", "Empty material stacks remain named without constructing an item");
+        Check(ScreenReader.Messages.Single().Text == Speech.Join("Glyph of Hope", Speech.F("crafting.quantity", 0)), "Empty material stacks remain named without constructing an item");
         reset(); NavigationManager.currentlySelected = nav; glyph.externalItemNumber.text = "2";
         ElementAnnouncer.AnnounceElement(glyph.gameObject);
-        Check(ScreenReader.Messages.Single().Text.EndsWith("Quantity: 2"), "Material quantities are read afresh");
+        Check(ScreenReader.Messages.Single().Text.EndsWith(Speech.F("crafting.quantity", 2)), "Material quantities are read afresh");
         reset(); NavigationManager.currentlySelected = nav; glyph.interactable = false; ElementAnnouncer.AnnounceElement(glyph.gameObject);
-        Check(ScreenReader.Messages.Single().Text == "Glyph of Hope. Quantity: 2 (Disabled)", "Native material interaction state is announced exactly once"); glyph.interactable = true;
+        Check(ScreenReader.Messages.Single().Text == Speech.F("control.disabled", Speech.Join("Glyph of Hope", Speech.F("crafting.quantity", 2))), "Native material interaction state is announced exactly once"); glyph.interactable = true;
         reset(); NavigationManager.currentlySelected = nav; LeAccess.I18n.ModText.SetLanguage("es"); Localization.Items.Names[(17, 4)] = "Glifo de esperanza";
         ElementAnnouncer.AnnounceElement(glyph.gameObject);
-        Check(ScreenReader.Messages.Single().Text == "Glifo de esperanza. Cantidad: 2", "Native material names and mod quantity labels remain localized");
+        Check(ScreenReader.Messages.Single().Text == Speech.Join("Glifo de esperanza", Speech.F("crafting.quantity", 2)), "Native material names and mod quantity labels remain localized");
         reset(); LeAccess.I18n.ModText.SetLanguage("en"); NavigationManager.currentlySelected = nav;
         var nested = glyph.gameObject.Child().Add(new UnityEngine.UI.Button());
         Check(!CraftingMaterialReader.TryRead(nested.gameObject, out _, out _), "Nested side actions cannot borrow material identity");
@@ -91,7 +91,7 @@ internal static class CraftingSelectionTests
         NavigationManager.currentlySelected = matrixNav; matrixNav._selectedRowIndex = matrixNav._selectedColumnIndex = 1;
         Check(UiFocusOwnership.TryGetSelected(out selected) && selected.Pointer == bottom.gameObject.Pointer, "Materials matrix uses native row,column order");
         ElementAnnouncer.AnnounceElement(selected);
-        Check(ScreenReader.Messages.Single().Text == "Glyph of Stability. Quantity: 4", "Materials matrix glyph selection shares the typed name reader");
+        Check(ScreenReader.Messages.Single().Text == Speech.Join("Glyph of Stability", Speech.F("crafting.quantity", 4)), "Materials matrix glyph selection shares the typed name reader");
         reset(); NavigationManager.currentlySelected = matrixNav; matrixNav._selectedRowIndex = 0;
         Check(!UiFocusOwnership.TryGetSelected(out _) && !UiFocusOwnership.Allows(bottom.gameObject), "Empty matrix cells cannot retain old focus");
         matrixNav._selectedColumnIndex = 0;

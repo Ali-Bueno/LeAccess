@@ -51,7 +51,7 @@ internal static class EquippedModelTests
         UIBase.Shop = new();
         ItemTooltipContentBuilder.VendorResult = new() { IsForPurchase = false };
         ItemTooltipContentBuilder.VendorResult.Prices.Add(new() { Text = "10 gold" });
-        check(MerchantItemReader.ReadContext(item, helmet) == "Sale price: 10 gold", "Selected worn equipment retains verified merchant sale-price context");
+        check(MerchantItemReader.ReadContext(item, helmet) == LeAccess.I18n.ModText.Format("merchant.sell_price", ItemTooltipContentBuilder.VendorResult.Prices[0].Text), "Selected worn equipment retains verified merchant sale-price context");
         ItemTooltipContentBuilder.VendorAction = () => helmet.Container.Entry = null;
         check(MerchantItemReader.ReadContext(item, helmet) is null, "Removing equipment during merchant-price read rejects stale sale context");
         ItemTooltipContentBuilder.VendorAction = null;

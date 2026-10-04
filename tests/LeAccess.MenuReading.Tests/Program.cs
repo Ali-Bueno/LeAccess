@@ -39,7 +39,7 @@ Reset();
 var merchantTab = new GameObject { name = "Buyback" };
 LeAccess.Accessibility.Items.MerchantMenuReader.OwnedTab = merchantTab;
 ElementAnnouncer.AnnounceElement(merchantTab);
-Check(ScreenReader.Messages.Single().Text == "Recompra", "Owned merchant tab overrides generic object-name fallback");
+Check(ScreenReader.Messages.Single().Text == LeAccess.Accessibility.Items.MerchantMenuReader.BuybackText, "Owned merchant tab overrides generic object-name fallback");
 LeAccess.Accessibility.Items.MerchantMenuReader.OwnedTab = null;
 Reset();
 var menu = new GameObject();
@@ -197,7 +197,7 @@ var continueButton = modal.Child("NPC Subtitle Continue Button"); continueButton
 DialogueAnnouncer.Root = modal; DialogueAnnouncer.HasActiveContent = true; DialogueAnnouncer.Continue = continueButton;
 DialogueAnnouncer.LineToFollow = true;
 ElementAnnouncer.AnnounceElement(continueButton);
-Check(ScreenReader.Messages.Single() == ("Continue", false), "The icon-only continue button is named and follows the line");
+Check(ScreenReader.Messages.Single() == (Speech.T("dialogue.continue"), false), "The icon-only continue button is named and follows the line");
 Reset(); Application.isFocused = false; ElementAnnouncer.AnnounceElement(play);
 Check(ScreenReader.Messages.Count == 0, "Unfocused application does not announce cursor callbacks");
 Application.isFocused = true; LE.UI.LoadingScreen.IsVisible = true; ElementAnnouncer.AnnounceElement(play);
@@ -225,24 +225,24 @@ LeAccess.I18n.ModText.SetLanguage("es-MX");
 var nameField = new GameObject();
 var input = nameField.Add(new TMP_InputField { text = "" });
 ElementAnnouncer.AnnounceElement(nameField);
-Check(ScreenReader.Messages.Single().Text == "Campo de texto: vacío", "Spanish regional locale reads an empty input in Spanish");
+Check(ScreenReader.Messages.Single().Text == Speech.F("control.empty_field", Speech.T("control.text_field")), "Spanish regional locale reads an empty input in Spanish");
 input.placeholder = Label(nameField, "Nombre del personaje");
 Time.unscaledTime += 1;
 ElementAnnouncer.AnnounceElement(nameField);
-Check(ScreenReader.Messages.Last().Text == "Nombre del personaje: vacío", "Game placeholder is retained inside the localized empty-field format");
+Check(ScreenReader.Messages.Last().Text == Speech.F("control.empty_field", "Nombre del personaje"), "Game placeholder is retained inside the localized empty-field format");
 input.text = "Maga {0}";
 Time.unscaledTime += 1;
 ElementAnnouncer.AnnounceElement(nameField);
-Check(ScreenReader.Messages.Last().Text == "Nombre del personaje: Maga {0}", "User input including format braces remains literal");
+Check(ScreenReader.Messages.Last().Text == Speech.F("control.field_value", "Nombre del personaje", "Maga {0}"), "User input including format braces remains literal");
 
 Reset();
 var optionRow = new GameObject(); Label(optionRow, "Sonido");
 var optionControl = optionRow.Child("Control");
 var localizedToggle = optionControl.Add(new Toggle { isOn = true });
 ElementAnnouncer.AnnounceElement(optionControl);
-Check(ScreenReader.Messages.Single().Text == "Sonido: Activado", "Boolean value is localized alongside the game's own label");
+Check(ScreenReader.Messages.Single().Text == Speech.F("control.field_value", "Sonido", Speech.T("state.on")), "Boolean value is localized alongside the game's own label");
 ElementAnnouncer.HandleToggleValueChange(localizedToggle, false, "test");
-Check(ScreenReader.Messages.Last().Text == "Desactivado", "Toggle changes use the selected mod language");
+Check(ScreenReader.Messages.Last().Text == Speech.T("state.off"), "Toggle changes use the selected mod language");
 ElementAnnouncer.HandleToggleValueChange(localizedToggle, false, "test");
 Check(ScreenReader.Messages.Count == 2, "Localized toggle changes remain deduplicated");
 
@@ -250,13 +250,13 @@ Reset();
 var disabledRow = new GameObject { name = "DisabledSetting" }; Label(disabledRow, "Brillo");
 var disabledControl = disabledRow.Child("Control"); disabledControl.Add(new Slider { value = 40 });
 ElementAnnouncer.AnnounceElement(disabledControl);
-Check(ScreenReader.Messages.Single().Text == "Brillo: 40 (No disponible)", "Unavailable options use a translated full-message wrapper");
+Check(ScreenReader.Messages.Single().Text == Speech.F("control.disabled", Speech.F("control.field_value", "Brillo", 40)), "Unavailable options use a translated full-message wrapper");
 
 Reset();
 LeAccess.I18n.ModText.SetLanguage("en");
 input.placeholder = null; input.text = "";
 ElementAnnouncer.AnnounceElement(nameField);
-Check(ScreenReader.Messages.Single().Text == "Text field: empty", "Returning to English replaces the mod-owned field text");
+Check(ScreenReader.Messages.Single().Text == Speech.F("control.empty_field", Speech.T("control.text_field")), "Returning to English replaces the mod-owned field text");
 foreach (bool passive in new[] { true, false })
 {
     Reset();
@@ -334,7 +334,7 @@ int beforeToggleChange = ScreenReader.Messages.Count;
 boolSetting.isOn = false; ElementAnnouncer.HandleToggleValueChange(boolSetting, false, "native");
 Check(ScreenReader.Messages.Count == beforeToggleChange, "Settings polling owns the value instead of duplicating the native toggle callback");
 TickSettings();
-Check(ScreenReader.Messages.Count == beforeToggleChange + 1 && ScreenReader.Messages.Last().Text == "Desactivado",
+Check(ScreenReader.Messages.Count == beforeToggleChange + 1 && ScreenReader.Messages.Last().Text == Speech.T("state.off"),
     "A settings toggle change is announced exactly once as its value only");
 Reset();
 checks += VisibilityTests.Run();

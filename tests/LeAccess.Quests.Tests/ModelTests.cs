@@ -1,6 +1,7 @@
 using LeAccess.Accessibility;
 using LeAccess.Accessibility.Quests;
 using LeAccess.Accessibility.ScreenContent;
+using LeAccess.I18n;
 using TMPro;
 using UnityEngine;
 
@@ -10,6 +11,7 @@ internal static class ModelTests
     {
         int checks = 0;
         void Check(bool condition, string label) { checks++; if (!condition) throw new Exception(label); }
+        string T(string key, params object[] args) => ModText.Format(key, args);
         void Tick() { ScreenReader.SpokeThisFrame = false; QuestAccessibility.Update(); }
         var panel = new GameObject().Add(new QuestPanel());
         var generator = new GameObject().Add(new QuestButtonGenerator { questPanel = panel });
@@ -46,11 +48,11 @@ internal static class ModelTests
         QuestAccessibility.Reset();
 
         Check(QuestSelectionReader.TryRead(generator, out var selected), "native model reads without rendered information");
-        Check(selected.Summary.StartsWith("Selected quest. Localized Active") && selected.Objectives.Contains("Current objectives: Native active objective"),
+        Check(selected.Summary.StartsWith("Selected quest. Localized Active") && selected.Objectives.Contains(T("quest.current_objectives", "Native active objective")),
             "navigation includes authoritative active state and current objective");
         Check(!selected.Objectives.Contains("Prior completed") && !selected.Objectives.Contains("step description"),
             "completed objectives and description deferred to manual gesture");
-        Check(selected.Details.Contains("step description") && selected.Details.Contains("Objective history for this quest: Prior completed objective (Completed)"),
+        Check(selected.Details.Contains("step description") && selected.Details.Contains(T("quest.objective_history", T("quest.objective_completed", "Prior completed objective"))),
             "manual content includes native step and completed objectives");
         Check(selected.Text.Split("Native active objective").Length == 2, "active objective appears once in full read");
         Check(QuestAccessibility.TryHandleFocus(main), "declared main button focus claimed");
@@ -72,16 +74,16 @@ internal static class ModelTests
             Text = "An earlier failed objective" }, state = QuestState.Failed };
         quest.List.Objectives.Add(failed);
         QuestSelectionReader.TryRead(generator, out var withHistory);
-        Check(!withHistory.Objectives.Contains("failed") && withHistory.Details.Contains("An earlier failed objective (Failed)"),
+        Check(!withHistory.Objectives.Contains("failed") && withHistory.Details.Contains(T("quest.objective_failed", failed.objective.Text)),
             "Failed objectives are labeled and confined to manual history");
-        Check(withHistory.Details.Split("Objective history for this quest:").Length == 2,
+        Check(withHistory.Details.Split(T("quest.objective_history", "").Trim()).Length == 2,
             "One history introduction groups all earlier objectives of the selected quest");
         failed.objective.quest = new Quest();
         QuestSelectionReader.TryRead(generator, out withHistory);
         Check(!withHistory.Text.Contains("An earlier failed objective"),
             "History cannot borrow an objective from an unselected quest");
         Check(QuestSelectionReader.TryRead(generator, out selected) &&
-            selected.Objectives.StartsWith("Current objectives:") && !selected.Objectives.Contains("Completed"),
+            selected.Objectives.StartsWith(T("quest.current_objectives", "").Trim()) && !selected.Objectives.Contains(T("quest.completed")),
             "The first journal selection distinguishes current objectives from completed history");
         step.displayText = "Changed longer native description";
         Tick(); Tick();

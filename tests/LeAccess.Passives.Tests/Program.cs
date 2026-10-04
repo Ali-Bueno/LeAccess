@@ -21,7 +21,7 @@ bareModel.Refresh();
 Check(bareModel.Name is null && bareModel.Description is null, "native bare constructor and Refresh do not initialize strings");
 Check(PassiveSelectionReader.TryRead(out var read), "selected cell readable");
 Check(NodeTooltipContentBuilder.Builds == 1, "fallback uses populated native builder");
-Check(read.Text.Contains("Localized passive") && read.Text.Contains("0 of 5") &&
+Check(read.Text.Contains("Localized passive") && read.Text.Contains(F("node.points", 0, 5)) &&
     read.Text.Contains("Game description") && read.Text.Contains("Localized modifier") &&
     read.Text.Contains("Localized requirement"), "full localized data");
 int refreshes = NodeTooltipInfo.Refreshes;
@@ -29,7 +29,7 @@ for (int i = 0; i < 20; i++) Check(PassiveSelectionReader.TryRead(out _), "stabl
 Check(NodeTooltipInfo.Refreshes == refreshes, "stable frames do not rebuild modifiers");
 Check(UnityEngine.Object.Searches == 0, "no scene scans");
 first.pointsAllocated = 1;
-Check(PassiveSelectionReader.TryRead(out read) && read.Text.Contains("1 of 5"), "allocated points update");
+Check(PassiveSelectionReader.TryRead(out read) && read.Text.Contains(F("node.points", 1, 5)), "allocated points update");
 Check(NodeTooltipInfo.Refreshes == refreshes + 1, "changed points refresh");
 tree.unspentPoints--;
 PassiveSelectionReader.TryRead(out _);
@@ -79,9 +79,9 @@ system.ActiveNodeTooltipNode = first;
 Check(PassiveSelectionReader.TryRead(out read) && !read.Text.Contains("Owned bonus"), "mismatched bound info excluded");
 system._nodeTooltip._info = system._activeNodeTooltipInfo;
 Check(PassiveSelectionReader.TryRead(out read) && read.Text.Contains("Owned bonus"), "matching displayed tooltip preferred");
-Check(read.Text.Contains("requirement not met"), "unmet state preserved after cleaning colors");
+Check(read.Text.Contains(F("node.requirement_unmet", "Localized requirement")), "unmet state preserved after cleaning colors");
 system._activeNodeTooltipInfo.Requirements[0].IsMet = true;
-Check(PassiveSelectionReader.TryRead(out read) && read.Text.Contains("requirement met"), "met state preserved");
+Check(PassiveSelectionReader.TryRead(out read) && read.Text.Contains(F("node.requirement_met", "Localized requirement")), "met state preserved");
 system.ActiveNodeTooltipNode = second;
 Check(PassiveSelectionReader.TryRead(out read) && !read.Text.Contains("Owned bonus"), "mismatched active node excluded");
 system.ActiveNodeTooltipNode = first;
@@ -109,8 +109,8 @@ Check(NodeTooltipInfo.Refreshes == refreshes + 1, "reopen refreshes fallback des
 var fullscreen = new GameObject().Add(new LE.UI.PanelSystem.FullScreenPanelPassiveTree { ActiveChildNavigable = owner });
 NavigationManager.currentlySelected = fullscreen;
 Check(PassiveSelectionReader.TryRead(out read), "modern fullscreen delegates to active passive child");
-Check(read.Summary.Contains("Localized passive") && read.Summary.Contains("points allocated") &&
-    read.Summary.Contains("Locked") && !read.Summary.Contains("Game description"), "brief selection contains points and status only");
+Check(read.Summary.Contains("Localized passive") && read.Summary.Contains(F("node.points", first.pointsAllocated, first.maxPoints)) &&
+    read.Summary.Contains(T("node.locked")) && !read.Summary.Contains("Game description"), "brief selection contains points and status only");
 Check(read.Details.Contains("Game description") && read.Details.Contains("Localized modifier"), "full native details retained");
 fullscreen.Enabled = false;
 Check(!PassiveSelectionReader.TryRead(out _), "disabled modern panel rejected");
@@ -129,7 +129,7 @@ Check(ScreenReader.Messages.Count == spoken + 1 && !ScreenReader.Messages.Last()
     "modern navigation speaks only brief");
 first.requirementsMet = true;
 Tick(); Tick();
-Check(ScreenReader.Messages.Count == spoken + 2 && ScreenReader.Messages.Last().Text.Contains("Available"),
+Check(ScreenReader.Messages.Count == spoken + 2 && ScreenReader.Messages.Last().Text.Contains(T("node.available")),
     "requirements status update speaks brief once");
 Check(PassiveAccessibility.ReadCurrentDetails() && ScreenReader.Messages.Last().Text.Contains("Game description") &&
     ScreenReader.Messages.Last().Text.Contains("Localized modifier"), "manual gesture speaks native details");

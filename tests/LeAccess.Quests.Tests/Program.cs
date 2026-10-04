@@ -48,9 +48,10 @@ info.rewards.Add(reward);
 var navigation = panelGo.Add(new PrioritizedNavigable { ActiveSelectable = button });
 NavigationManager.currentlySelected = navigation;
 ModText.Initialize(null, null);
+string T(string key, params object[] args) => ModText.Format(key, args);
 
 string full = Read(generator);
-foreach (string part in new[] { "The Ruined World", "Chapter 1", "Not pinned", "In progress", "Find the keeper", "Speak to the keeper", "100 gold" })
+foreach (string part in new[] { "The Ruined World", "Chapter 1", T("quest.unpinned"), "In progress", "Find the keeper", "Speak to the keeper", "100 gold" })
     Check(full.Contains(part), "structured content " + part);
 Check(QuestAccessibility.TryHandleFocus(buttonGo), "selected button focus claimed");
 Check(!QuestAccessibility.TryHandleFocus(Child(button.transform)), "nested control not swallowed");
@@ -66,13 +67,13 @@ Tick();
 Check(ScreenReader.Spoken.Count == 1 && !QuestAccessibility.HasPendingContent, "unchanged silent");
 button.pinned = true;
 Tick(); Tick();
-Check(ScreenReader.Spoken.Count == 2 && ScreenReader.Spoken.Last().Contains("Pinned"), "pin update stationary");
+Check(ScreenReader.Spoken.Count == 2 && ScreenReader.Spoken.Last().Contains(T("quest.pinned")), "pin update stationary");
 button.completed = true;
 objective.check.activeInHierarchy = true;
 Tick(); Tick();
-Check(ScreenReader.Spoken.Last().Contains("Completed") && !ScreenReader.Spoken.Last().Contains("Speak to the keeper"),
+Check(ScreenReader.Spoken.Last().Contains(T("quest.completed")) && !ScreenReader.Spoken.Last().Contains("Speak to the keeper"),
     "completed quest navigation does not read its old objectives as current tasks");
-Check(Read(generator).Contains("Objective history for this quest: Speak to the keeper (Completed)"),
+Check(Read(generator).Contains(T("quest.objective_history", T("quest.objective_completed", "Speak to the keeper"))),
     "fallback manual content explicitly identifies completed rows as this quest's history");
 int spoken = ScreenReader.Spoken.Count;
 var secondQuest = new Quest();
@@ -162,7 +163,7 @@ NavigationManager.currentlySelected = navigation;
 ModText.SetLanguage("es");
 QuestAccessibility.Reset();
 Tick(); Tick();
-Check(ScreenReader.Spoken.Last().Contains("Fijada") && ScreenReader.Spoken.Last().Contains("Completada"), "localized quest states");
+Check(ScreenReader.Spoken.Last().Contains(T("quest.pinned")) && ScreenReader.Spoken.Last().Contains(T("quest.completed")), "localized quest states");
 Check(ScreenReader.Spoken.Last().Contains("The Ruined World"), "game title preserved");
 ModText.SetLanguage("en");
 QuestAccessibility.Reset();
@@ -177,7 +178,7 @@ Check(ScreenReader.Spoken.Count == spoken, "restored unchanged detail does not r
 info.allContent.activeInHierarchy = false;
 button.pinned = false;
 Tick(); Tick();
-Check(ScreenReader.Spoken.Count == spoken + 1 && ScreenReader.Spoken.Last().Contains("Not pinned") &&
+Check(ScreenReader.Spoken.Count == spoken + 1 && ScreenReader.Spoken.Last().Contains(T("quest.unpinned")) &&
     !ScreenReader.Spoken.Last().Contains("keeper"), "hidden pin change speaks only current summary");
 spoken = ScreenReader.Spoken.Count;
 info.allContent.activeInHierarchy = true;
@@ -186,7 +187,7 @@ Check(ScreenReader.Spoken.Count == spoken, "same details after hidden pin change
 info.allContent.activeInHierarchy = false;
 button.completed = false;
 Tick(); Tick();
-Check(ScreenReader.Spoken.Count == spoken + 1 && !ScreenReader.Spoken.Last().Contains("Completed") &&
+Check(ScreenReader.Spoken.Count == spoken + 1 && !ScreenReader.Spoken.Last().Contains(T("quest.completed")) &&
     !ScreenReader.Spoken.Last().Contains("keeper"), "hidden completion change has no stale detail");
 spoken = ScreenReader.Spoken.Count;
 button.chapterText.text = "Chapter 2";

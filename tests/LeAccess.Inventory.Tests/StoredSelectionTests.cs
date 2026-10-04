@@ -23,7 +23,7 @@ internal static class StoredSelectionTests
                 !InventorySelectionReader.OwnsSelection(oldItem, container),
                 "Retained hover data cannot identify a different item in the active " + kind + " container");
             InventoryAccessibility.Update(); InventoryAccessibility.Update();
-            check(ScreenReader.Messages.Single() == "Item information is unavailable",
+            check(ScreenReader.Messages.Single() == LeAccess.I18n.ModText.Get("inventory.selection_unavailable"),
                 "Retained " + kind + " item is reported unavailable instead of speaking a previous tab/stock item");
             container.container.Entry = null;
             check(!InventorySelectionReader.TryGetEntry(container, out _),
@@ -73,7 +73,7 @@ internal static class StoredSelectionTests
         ItemTooltipModelReader.Text = "Old stored sword. Stale properties";
         InventoryAccessibility.Reset(); ScreenReader.Messages.Clear();
         InventoryAccessibility.Update(readDetails: true);
-        check(ScreenReader.Messages.Single() == "Item information is unavailable",
+        check(ScreenReader.Messages.Single() == LeAccess.I18n.ModText.Get("inventory.selection_unavailable"),
             "Manual details cannot read an old tooltip when the backing container is absent");
         ItemTooltipModelReader.Text = null;
         ItemTooltipModelReader.Reads = 0;

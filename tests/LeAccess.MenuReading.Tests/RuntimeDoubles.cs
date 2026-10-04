@@ -307,8 +307,9 @@ namespace LeAccess.Accessibility.Items
     internal static class MerchantMenuReader
     {
         internal static UnityEngine.GameObject OwnedTab;
+        internal const string BuybackText = "Recompra";
         internal static bool TryReadTab(UnityEngine.GameObject go, out string text)
-        { text = go == OwnedTab ? "Recompra" : null; return text != null; }
+        { text = go == OwnedTab ? BuybackText : null; return text != null; }
     }
 }
 namespace LeAccess.Accessibility.Inventory { public static class InventoryAccessibility { public static bool TryHandleFocus(UnityEngine.GameObject go) => false; } }

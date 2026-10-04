@@ -16,9 +16,9 @@ internal static class MerchantMenuTests
         UIBase.instance = new UIBase();
         UIBase.Shop = panel;
         Localization.Texts["Shop_Panel_Title"] = "Tienda";
-        check(MerchantMenuReader.TryReadTab(shopButton.gameObject, out var text) && text == "Tienda",
+        check(MerchantMenuReader.TryReadTab(shopButton.gameObject, out var text) && text == Localization.Texts["Shop_Panel_Title"],
             "Exact merchant tab uses native localized key over serialized English TMP");
-        check(MerchantMenuReader.TryReadTab(buybackButton.gameObject, out text) && text == "Recompra",
+        check(MerchantMenuReader.TryReadTab(buybackButton.gameObject, out text) && text == buybackButton.Text.text,
             "Exact buyback tab retains current visible localized label");
         check(!MerchantMenuReader.TryReadTab(new GameObject(), out _), "Unrelated controls cannot inherit shop tab labels");
         owner.isActiveAndEnabled = false;
@@ -28,9 +28,9 @@ internal static class MerchantMenuTests
         var activeBuybackButton = new Selectable { Text = new TMP_Text { text = "Recompra activa" } };
         var buybackOwner = new BaseShopContainerUI { shopBtn = activeShopButton, buyBackBtn = activeBuybackButton };
         panel._buyback = buybackOwner;
-        check(MerchantMenuReader.TryReadTab(activeShopButton.gameObject, out text) && text == "Tienda",
+        check(MerchantMenuReader.TryReadTab(activeShopButton.gameObject, out text) && text == Localization.Texts["Shop_Panel_Title"],
             "Buyback container's separately owned shop button uses the native tab label");
-        check(MerchantMenuReader.TryReadTab(activeBuybackButton.gameObject, out text) && text == "Recompra activa",
+        check(MerchantMenuReader.TryReadTab(activeBuybackButton.gameObject, out text) && text == activeBuybackButton.Text.text,
             "Buyback container's visible buyback button does not depend on the inactive shop grid's button identities");
         foreach (string missingShop in new[] { "missing", "collected", "different type" })
         {

@@ -9,6 +9,7 @@ using UnityEngine.SceneManagement;
 
 int checks = 0;
 LeAccess.I18n.ModText.SetLanguage("es");
+string menuTitle = LeAccess.I18n.ModText.Get("controller.menu");
 void Check(bool result, string message)
 {
     checks++;
@@ -39,7 +40,7 @@ Check(ControllerMenuAccessibility.HasActiveContent && ControllerMenuAccessibilit
 MenuFrame();
 Check(ControllerMenuAccessibility.HasPendingContent && ScreenReader.Messages.Count == 0, "Radial option waits for settled localized text");
 MenuFrame();
-Check(ScreenReader.Messages.Single() == ("Menú del mando. Inventario", true), "Radial opening and its selected option are spoken with interruption");
+Check(ScreenReader.Messages.Single() == (ScreenContentTracker.Combine(new[] { menuTitle, first._optionText.text }), true), "Radial opening and its selected option are spoken with interruption");
 MenuFrame(); MenuFrame();
 Check(ScreenReader.Messages.Count == 1, "Holding stick/unchanged radial selection does not repeat");
 var second = new RadialMenuSector();
@@ -48,11 +49,11 @@ radial._selectedSector = second;
 MenuFrame();
 radial._selectedSector = first;
 MenuFrame(); MenuFrame();
-Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text == "Inventario", "Rapid selection replaces stale option and returning to previous option rereads it");
+Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text == first._optionText.text, "Rapid selection replaces stale option and returning to previous option rereads it");
 var secondary = new RadialMenuSector { _assignedOption = new() { m_TextKey = "menu.inventory" } };
 menu.FocusedRadialMenu = new() { _selectedSector = secondary };
 MenuFrame(); MenuFrame();
-Check(ScreenReader.Messages.Count == 3 && ScreenReader.Messages.Last().Text == "Inventario", "Secondary radial uses its actual focused sector and localized option key when label is absent");
+Check(ScreenReader.Messages.Count == 3 && ScreenReader.Messages.Last().Text == first._optionText.text, "Secondary radial uses its actual focused sector and localized option key when label is absent");
 secondary._selected = false;
 MenuFrame(); MenuFrame();
 Check(ScreenReader.Messages.Count == 3 && !ControllerMenuAccessibility.HasPendingContent, "Retained unselected sector does not announce");
@@ -80,7 +81,7 @@ Check(!ControllerMenuAccessibility.HasActiveContent, "Changing controller input 
 ControllerManager.instance._CurrentMap_k__BackingField = map;
 secondary.WasCollected = true;
 MenuFrame();
-Check(ScreenReader.Messages.Count == 4 && ScreenReader.Messages.Last().Text == "Menú del mando" &&
+Check(ScreenReader.Messages.Count == 4 && ScreenReader.Messages.Last().Text == menuTitle &&
     LeAccess.Plugin.Log.Warnings.Count == 0, "A collected sector is not read, but the reopened menu can announce itself");
 secondary.WasCollected = false;
 ControllerMenuAccessibility.Reset();
@@ -90,11 +91,11 @@ ControllerManager.instance._CurrentMap_k__BackingField = map;
 secondary.WasCollected = false;
 menu.FocusedRadialMenu._selectedSector = null;
 MenuFrame(); MenuFrame(); MenuFrame();
-Check(ScreenReader.Messages.Count == 1 && ScreenReader.Messages[0] == ("Menú del mando", true),
+Check(ScreenReader.Messages.Count == 1 && ScreenReader.Messages[0] == (menuTitle, true),
     "Holding the radial button without stick movement announces opening once even with no selected sector");
 menu.FocusedRadialMenu._selectedSector = first;
 MenuFrame(); MenuFrame();
-Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text == "Inventario",
+Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text == first._optionText.text,
     "Moving from the neutral position reads the selected option without repeating the opening title");
 ControllerManager.instance._CurrentMap_k__BackingField = new NativeObject(); MenuFrame();
 ControllerManager.instance._CurrentMap_k__BackingField = map;
@@ -103,7 +104,7 @@ ScreenReader.Available = false; MenuFrame();
 Check(ControllerMenuAccessibility.HasPendingContent && ScreenReader.Messages.Count == 2,
     "Opening remains pending while the screen reader is unavailable");
 ScreenReader.Available = true; MenuFrame();
-Check(ScreenReader.Messages.Count == 3 && ScreenReader.Messages.Last().Text == "Menú del mando",
+Check(ScreenReader.Messages.Count == 3 && ScreenReader.Messages.Last().Text == menuTitle,
     "Reopening the same radial widget announces a new opening when speech becomes available");
 ControllerMenuAccessibility.Reset();
 ControllerManager.instance._CurrentMap_k__BackingField = new NativeObject();

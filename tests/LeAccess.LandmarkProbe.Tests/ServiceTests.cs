@@ -27,14 +27,14 @@ internal static class ServiceTests
         activator.transform.parent = go.transform;
         go.Children.Add(activator);
         var waypoint = Add(activator, new EnableWaypointInteraction());
-        Check(LandmarkProbe.TryRead(out var result) && result.Name == "Punto de viaje",
+        Check(LandmarkProbe.TryRead(out var result) && result.Name == LeAccess.I18n.ModText.Get("service.waypoint"),
             "Z32 Map interaction with owned EnableWaypoint child and no HoverTag is announced");
         Check(LandmarkProbe.LastStatus.Contains("service.waypoint"), "Service source is available in bounded landmark diagnostics");
         var childListener = Add(activator, new WorldObjectClickListener());
         Check(!LandmarkProbe.TryRead(out _), "Nested listener's waypoint does not label the parent map");
         activator.Components.Remove(childListener);
         activator.activeInHierarchy = false;
-        Check(LandmarkProbe.TryRead(out result) && result.Name == "Punto de viaje",
+        Check(LandmarkProbe.TryRead(out result) && result.Name == LeAccess.I18n.ModText.Get("service.waypoint"),
             "Owned waypoint identity survives an inactive activation trigger after discovery");
         activator.activeInHierarchy = true;
         waypoint.WasCollected = true;
@@ -52,16 +52,16 @@ internal static class ServiceTests
         menu.menu = OpenMenuInteraction.MenuToOpen.Stash;
         Check(!LandmarkProbe.TryRead(out _), "Current native OpenMenu Stash enum is a no-op and not a service");
         var stash = Add(go, new OpenStash());
-        Check(LandmarkProbe.TryRead(out result) && result.Name == "Alijo", "Native OpenStash.OnUse target announced without tag");
+        Check(LandmarkProbe.TryRead(out result) && result.Name == LeAccess.I18n.ModText.Get("service.stash"), "Native OpenStash.OnUse target announced without tag");
         stash.isActiveAndEnabled = false;
         Check(!LandmarkProbe.TryRead(out _), "Inactive direct stash action is ignored");
         go.Components.Remove(stash);
         menu.menu = OpenMenuInteraction.MenuToOpen.CraftingPanel;
-        Check(LandmarkProbe.TryRead(out result) && result.Name == "Forja", "Typed crafting interaction announced without tag");
+        Check(LandmarkProbe.TryRead(out result) && result.Name == LeAccess.I18n.ModText.Get("service.forge"), "Typed crafting interaction announced without tag");
         menu.menu = OpenMenuInteraction.MenuToOpen.MtxShop;
         Check(!LandmarkProbe.TryRead(out _), "Cosmetic shop is not mistaken for an equipment merchant");
         var shop = Add(go, new OpenShop { enabled = false });
-        Check(LandmarkProbe.TryRead(out result) && result.Name == "Mercader", "Typed shop without an NPC has one landmark announcement");
+        Check(LandmarkProbe.TryRead(out result) && result.Name == LeAccess.I18n.ModText.Get("service.merchant"), "Typed shop without an NPC has one landmark announcement");
         var npc = Add(go, new NPCInteraction());
         Check(!LandmarkProbe.TryRead(out _), "NPC sound and name reader own merchant speech without duplicate landmarks");
         go.Components.Remove(npc);

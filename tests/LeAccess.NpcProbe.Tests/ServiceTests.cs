@@ -10,11 +10,11 @@ internal static class ServiceTests
         var go = new GameObject();
         var listener = go.Add(new WorldObjectClickListener());
         var tooltip = go.Add(new NpcNameTooltip { TopText = "Isfarger", BottomText = "Merchant" });
-        Check(NpcNameReader.Read(listener, out _) == "Isfarger. Merchant",
+        Check(NpcNameReader.Read(listener, out _) == "Isfarger. " + tooltip.BottomText,
             "Native NpcNameTooltip.OnPointerEnter renders both authored text fields");
         tooltip.BottomTextKey = "npc.role";
         Localization.Translations["npc.role"] = "Mercader";
-        Check(NpcNameReader.Read(listener, out _) == "Isfarger. Mercader", "Native subtitle uses its own localization key");
+        Check(NpcNameReader.Read(listener, out _) == "Isfarger. " + Localization.Translations["npc.role"], "Native subtitle uses its own localization key");
         tooltip.BottomTextKey = null;
         tooltip.BottomText = "Isfarger";
         Check(NpcNameReader.Read(listener, out _) == "Isfarger", "Duplicate title does not repeat name");
@@ -26,10 +26,10 @@ internal static class ServiceTests
         var shop = interactionGo.Add(new OpenShop { isActiveAndEnabled = false });
         Check(WorldServiceReader.ReadServiceKey(listener) is null, "An arbitrary shop descendant does not identify a service");
         relay.otherInteractables.Add(condition);
-        Check(NpcNameReader.Read(listener, out var source) == "Isfarger. Mercader" && source.Contains("native service"),
+        Check(NpcNameReader.Read(listener, out var source) == "Isfarger. " + LeAccess.I18n.ModText.Get("service.merchant") && source.Contains("native service"),
             "Z32 Isfarger relay references its exact ConditionHandler GO with disabled OpenShop");
         tooltip.BottomText = "Mercader";
-        Check(NpcNameReader.Read(listener, out _) == "Isfarger. Mercader", "Authored role and native service do not duplicate speech");
+        Check(NpcNameReader.Read(listener, out _) == "Isfarger. " + LeAccess.I18n.ModText.Get("service.merchant"), "Authored role and native service do not duplicate speech");
         tooltip.BottomText = null;
         condition.isActiveAndEnabled = false;
         Check(WorldServiceReader.ReadServiceKey(listener) is null, "Inactive relay branch cannot claim merchant");
@@ -62,7 +62,7 @@ internal static class ServiceTests
         Check(WorldServiceReader.ReadServiceKey(listener) is null, "Conflicting live service branches are not guessed");
         relay.otherInteractables.Remove(second);
         tooltip.TopText = "";
-        Check(NpcNameReader.Read(listener, out _) == "Mercader", "A proven service remains useful if NPC localization is unavailable");
+        Check(NpcNameReader.Read(listener, out _) == LeAccess.I18n.ModText.Get("service.merchant"), "A proven service remains useful if NPC localization is unavailable");
         relay.isActiveAndEnabled = false;
         Check(WorldServiceReader.ReadServiceKey(listener) is null, "Disabled relay does not supply service metadata");
         relay.isActiveAndEnabled = true;

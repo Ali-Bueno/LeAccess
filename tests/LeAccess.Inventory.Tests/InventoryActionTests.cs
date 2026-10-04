@@ -41,7 +41,7 @@ internal static class InventoryActionTests
             "Item merchant context and native action are integrated into one focus announcement");
         container.currentlySelectedItem = null;
         InventoryAccessibility.Update(); InventoryAccessibility.Update();
-        check(ScreenReader.Messages.Last() == "Empty slot", "Empty cells clear previous merchant prices and buttons");
+        check(ScreenReader.Messages.Last() == LeAccess.I18n.ModText.Get("inventory.empty_slot"), "Empty cells clear previous merchant prices and buttons");
         container.currentlySelectedItem = new() { data = item };
         equip.Controls = PanelAction.ControlType.MouseAndKeyboard;
         check(!InventoryActionReader.ReadForItem(item, container).Any(), "Other device actions cannot leak through model fallback");
@@ -49,7 +49,7 @@ internal static class InventoryActionTests
         check(InventoryActionReader.ReadForItem(item, container).Single() == "Triángulo, Equipar", "Matching device action uses provider binding");
         equip.MouseAndKeyboardButtonNamesOverride = new() { Values = new[] { "Shift", "Right click" } };
         equip.IsHoldAction = true;
-        check(InventoryActionReader.ReadForItem(item, container).Single() == "Hold Shift + Right click, Equipar",
+        check(InventoryActionReader.ReadForItem(item, container).Single() == LeAccess.I18n.ModText.Format("input.hold", "Shift + Right click") + ", Equipar",
             "Explicit native overrides and hold are retained without invoking actions");
         equip.MouseAndKeyboardButtonNamesOverride.Values = new[] { "Shift", "" };
         check(InventoryActionReader.ReadForItem(item, container).Single() == "Equipar", "Incomplete chord never fabricates a binding");

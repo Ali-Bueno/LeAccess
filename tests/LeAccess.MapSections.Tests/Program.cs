@@ -12,6 +12,9 @@ string fixture = Path.GetFullPath(Path.Combine(Path.GetTempPath(),"LeAccess.MapS
 string originalDataPath = Application.dataPath;
 Directory.CreateDirectory(fixture);
 void Check(bool condition, string name) { checks++; if (!condition) throw new Exception(name); }
+string T(string key) => ModText.Get(key);
+string F(string key, params object[] args) => ModText.Format(key, args);
+string J(params string[] parts) => string.Join(". ", parts);
 void Start(string hash = "verified-build", bool overview = false, bool surfaces = false)
 {
     MapSectionAccessibility.Cleanup();
@@ -58,7 +61,7 @@ try
     Tick(.199);
     Check(MapSectionWorld.Captures == 1 && ScreenReader.Spoken.Count == 0,"200ms throttle");
     Tick(.2);
-    Last("Wooden bridge 1","matching observations queued delivery English");
+    Last(T("map.section.oldroad_bridge_1"),"matching observations queued delivery English");
     Check(!MapSectionAccessibility.HasPendingContent && Plugin.Log.Information.Count == 1 &&
         Plugin.Log.Information[0].Contains("scene=ControlledTown section=bridge1"),"delivery-only diagnostic");
     Tick(.4); Tick(.61);
@@ -68,7 +71,7 @@ try
     Move(4.3); Tick(1.24);
     Check(ScreenReader.Spoken.Count == 1 && MapSectionAccessibility.HasPendingContent,"strict different region overrides old margin");
     Tick(1.45);
-    Last("Wooden bridge 2","second region delivered");
+    Last(T("map.section.oldroad_bridge_2"),"second region delivered");
     Move(10); Tick(1.66); Tick(1.87);
     Check(!MapSectionAccessibility.HasPendingContent,"confirmed outside clears current section");
     Move(2); Tick(2.08); Tick(2.29);
@@ -76,9 +79,9 @@ try
 
     Start(); Tick(0); Move(6); Tick(.2); Tick(.41);
     Check(ScreenReader.Spoken.Count == 1,"only newest pending section speaks");
-    Last("Wooden bridge 2","old pending bridge discarded");
+    Last(T("map.section.oldroad_bridge_2"),"old pending bridge discarded");
     Start(); Tick(0,pending:true); Tick(.2,pending:true); Move(6); Tick(.41); Tick(.62);
-    Last("Wooden bridge 2","deferred section revalidated before speech");
+    Last(T("map.section.oldroad_bridge_2"),"deferred section revalidated before speech");
     Check(ScreenReader.Spoken.Count == 1,"no older deferred bridge");
 
     foreach (string gate in new[] {"menu","pause","input"})
@@ -94,7 +97,7 @@ try
     Start(); Tick(0); Tick(.01,menu:true); Move(6); Tick(.02);
     Check(ScreenReader.Spoken.Count == 0,"return from menu settles latest candidate");
     Tick(.23);
-    Last("Wooden bridge 2","menu never resumes old section");
+    Last(T("map.section.oldroad_bridge_2"),"menu never resumes old section");
     Start(); Tick(0); Tick(.01,menu:true); Move(10); Tick(.02); Tick(.23);
     Check(ScreenReader.Spoken.Count == 0 && !MapSectionAccessibility.HasPendingContent,"outside after menu clears deferred section");
 
@@ -105,7 +108,7 @@ try
     Tick(.83); Tick(1.04);
     Check(ScreenReader.Spoken.Count == 2 && !MapSectionAccessibility.HasPendingContent,"new profile does not reuse previous polygon");
     Move(22,z:22); Tick(1.25); Tick(1.46);
-    Last("Wooden bridge 2","new profile uses own current section");
+    Last(T("map.section.oldroad_bridge_2"),"new profile uses own current section");
 
     foreach (string mismatch in new[] {"build","scene","path"})
     {
@@ -123,7 +126,7 @@ try
     MapSectionWorld.Snapshot = MapSectionWorld.Snapshot with {Variant=1}; Tick(.62);
     Check(Plugin.Log.Warnings.Count == 2,"new variant guard logged");
     MapSectionWorld.AnchorsValid = true; Tick(.83); Tick(1.04);
-    Last("Wooden bridge 1","anchors recovery settles current section");
+    Last(T("map.section.oldroad_bridge_1"),"anchors recovery settles current section");
     MapSectionWorld.Available = false; Tick(1.25);
     Check(!MapSectionAccessibility.HasPendingContent,"missing player/world clears pending");
     MapSectionWorld.Available = true; Tick(1.46); Tick(1.67);
@@ -143,19 +146,19 @@ try
     Start(); Tick(0); Tick(.2,pending:true); Tick(.41,spoke:true);
     Check(ScreenReader.Spoken.Count == 0 && MapSectionAccessibility.HasPendingContent,"zone/current-frame speech gets priority");
     Tick(.62);
-    Last("Wooden bridge 1","priority-delayed current section queued");
+    Last(T("map.section.oldroad_bridge_1"),"priority-delayed current section queued");
     Start(); ScreenReader.Available = false; Tick(0); Tick(.2);
     Check(ScreenReader.Spoken.Count == 0 && MapSectionAccessibility.HasPendingContent,"reader unavailable defers current section");
     ScreenReader.Available = true; Tick(.41);
-    Last("Wooden bridge 1","available reader receives current section");
+    Last(T("map.section.oldroad_bridge_1"),"available reader receives current section");
     Start(); ModText.SetLanguage("es"); Tick(0); Tick(.2);
-    Last("Puente de madera 1","actual Spanish section label");
+    Last(T("map.section.oldroad_bridge_1"),"actual Spanish section label");
     Move(6); Tick(.41); Tick(.62);
-    Last("Puente de madera 2","second Spanish section label");
+    Last(T("map.section.oldroad_bridge_2"),"second Spanish section label");
     Start(); MapSectionWorld.Throw = true; Tick(0); Tick(.2);
     Check(Plugin.Log.Warnings.Count == 1 && !MapSectionAccessibility.HasPendingContent,"repeated capture failure warning dedup/reset");
     MapSectionWorld.Throw = false; Tick(.21); Tick(.42);
-    Last("Wooden bridge 1","capture exception recovery");
+    Last(T("map.section.oldroad_bridge_1"),"capture exception recovery");
     MapSectionAccessibility.Cleanup(); int captures = MapSectionWorld.Captures;
     Check(!MapSectionAccessibility.HasPendingContent,"cleanup clears pending");
     Tick(.63);
@@ -166,7 +169,7 @@ try
     Tick(0); Tick(.2,pending:true);
     Check(ScreenReader.Spoken.Count == 0 && MapSectionAccessibility.HasPendingContent,"generated room yields to zone speech");
     Tick(.41);
-    Last("Cámara de la cueva 1. Entrada","generated room and entrance are localized");
+    Last(J(F("map.section.cave_room", 1), T("map.section.entrance")),"generated room and entrance are localized");
     Check(MapSectionWorld.Validations == 0,"generated layout does not consult fixed anchors");
     Tick(.62,menu:true); Tick(.63); Tick(.84);
     Check(ScreenReader.Spoken.Count == 1,"generated room not repeated after menu");
@@ -182,53 +185,53 @@ try
     Check(ScreenReader.Spoken.Count == 2,"departure of at least the repeat gap rearms generated room");
     PcgMapSections.Snapshot = new(1,"room-1",2,false,true,null,"map.section.tomb_room");
     Tick(8.42); Tick(8.63);
-    Last("Cámara de la tumba 2. Salida","new room and exit spoken once");
-    Check(!ScreenReader.Spoken.Last().Text.Contains("Conexiones"),"unverified connection count remains absent");
+    Last(J(F("map.section.tomb_room", 2), T("map.section.exit")),"new room and exit spoken once");
+    Check(!ScreenReader.Spoken.Last().Text.Contains(F("map.section.passages", "").TrimEnd()),"unverified connection count remains absent");
     PcgMapSections.Snapshot = PcgMapSections.Snapshot with {Session=2}; Tick(8.94); Tick(9.15);
     Check(ScreenReader.Spoken.Count == 3,"same text in a new generation stays silent without a world session change");
     PcgMapSections.Snapshot = new(2,"room-2",3,false,false,3,null);
     Tick(9.36,pending:true); Tick(9.57,pending:true);
     PcgMapSections.Snapshot = new(2,"room-3",4,false,false,null,null);
     Tick(9.78); Tick(9.99);
-    Last("Sala 4","latest generated location replaces pending room");
-    Check(ScreenReader.Spoken.All(s => !s.Text.Contains("Sala 3")),"no stale generated room delivered");
+    Last(F("map.section.room", 4),"latest generated location replaces pending room");
+    Check(ScreenReader.Spoken.All(s => !s.Text.Contains(F("map.section.room", 3))),"no stale generated room delivered");
     ModText.SetLanguage("en"); Tick(10.20); Tick(10.41);
-    Last("Room 4","language changes settle current room text");
+    Last(F("map.section.room", 4),"language changes settle current room text");
     PcgMapSections.Snapshot=PcgMapSections.Snapshot with{ConnectedPassages=3};
     Tick(10.62);Tick(10.83);
-    Last("Room 4. Connections: 3","verified generated links use neutral wording without claiming open passages");
+    Last(J(F("map.section.room", 4), F("map.section.passages", 3)),"verified generated links use neutral wording without claiming open passages");
 
     Start(null); PcgMapSections.Available = true;
     MapSectionWorld.Snapshot = MapSectionWorld.Snapshot with {IsFixedLayout=false};
     Tick(0); Tick(.2);
-    Last("Cave chamber 1. Entrance","procedural data remains available without fixed build catalog");
+    Last(J(F("map.section.cave_room", 1), T("map.section.entrance")),"procedural data remains available without fixed build catalog");
     Start(); Tick(0); Tick(.2); PcgMapSections.Available = true;
     MapSectionWorld.Snapshot = MapSectionWorld.Snapshot with {IsFixedLayout=false};
     Tick(.41); Tick(.62);
-    Last("Cave chamber 1. Entrance","fixed to generated transition chooses current source");
+    Last(J(F("map.section.cave_room", 1), T("map.section.entrance")),"fixed to generated transition chooses current source");
     PcgMapSections.Available = false;
     MapSectionWorld.Snapshot = MapSectionWorld.Snapshot with {IsFixedLayout=true};
     Tick(.83); Tick(1.04);
-    Last("Wooden bridge 1","return to fixed layout resets generated identity");
+    Last(T("map.section.oldroad_bridge_1"),"return to fixed layout resets generated identity");
 
     Start(); MapSectionWorld.Snapshot = MapSectionWorld.Snapshot with {SceneName="GeneratedCatalog",ScenePath="Assets/GeneratedCatalog.unity"};
     Tick(0); Tick(.2);
-    Last("Stairs","all map resource files are loaded");
+    Last(T("map.section.stairs"),"all map resource files are loaded");
     Start(overview:true); ModText.SetLanguage("es");
     Check(config.Describe.Value,"map overview can be explicitly enabled");
     Move(20); Tick(0,pending:true); Tick(.2,pending:true);
     Check(ScreenReader.Spoken.Count == 0 && MapSectionAccessibility.HasPendingContent,"map overview waits for scene name");
     Tick(.41);
-    Last("Referencias del mapa: Puente","overview describes verified features even outside any section");
+    Last(F("map.overview", T("map.section.bridge")),"overview describes verified features even outside any section");
     Tick(.62); Tick(.83,menu:true); Tick(.84); Tick(1.05);
     Check(ScreenReader.Spoken.Count == 1,"overview not repeated when standing or closing menu");
     Move(2); Tick(1.26); Tick(1.47);
-    Last("Puente de madera 1","section follows one-time overview");
+    Last(T("map.section.oldroad_bridge_1"),"section follows one-time overview");
     Start(overview:true); Tick(0); Tick(.2);
-    Last("Map landmarks: Bridge","overview has priority when loading inside a section");
+    Last(F("map.overview", T("map.section.bridge")),"overview has priority when loading inside a section");
     Check(MapSectionAccessibility.HasPendingContent,"section remains pending after overview");
     Tick(.41);
-    Last("Wooden bridge 1","section delivered after overview without interruption");
+    Last(T("map.section.oldroad_bridge_1"),"section delivered after overview without interruption");
     Start(overview:true); MapSectionWorld.AnchorsValid = false; Tick(0); Tick(.2);
     Check(ScreenReader.Spoken.Count == 0,"unverified layout has no overview");
     Start(); Tick(0); MapSectionSources.Available=false; Tick(.2); Tick(.41);
@@ -242,23 +245,23 @@ try
     MapSectionWorld.Snapshot=MapSectionWorld.Snapshot with{SceneName="Unmapped"};
     Check(config.Surfaces.Value,"surface descriptions can be explicitly enabled");
     Tick(0); Tick(.2);
-    Last("Suelo de madera","ground works on maps without fixed profiles");
+    Last(T("map.surface.wood"),"ground works on maps without fixed profiles");
     Tick(.41); MapSurfaceProbe.Available=false; Tick(.62); Tick(.83);
     Check(!MapSectionAccessibility.HasPendingContent,"unknown ground cancels stale pending description");
     MapSurfaceProbe.Available=true; Tick(1.04); Tick(1.25);
     Check(ScreenReader.Spoken.Count==1,"unknown foot samples do not repeat previous ground");
     MapSurfaceProbe.Key="map.surface.water"; Tick(1.46,pending:true); Tick(1.67,pending:true);
     MapSurfaceProbe.Key="map.surface.grass"; Tick(1.88); Tick(2.09);
-    Last("Suelo de hierba","newest surface replaces stale queued water");
-    Check(ScreenReader.Spoken.All(s=>s.Text!="Agua bajo los pies"),"old surface never delivered");
+    Last(T("map.surface.grass"),"newest surface replaces stale queued water");
+    Check(ScreenReader.Spoken.All(s=>s.Text!=T("map.surface.water")),"old surface never delivered");
     Tick(2.30,menu:true); Tick(2.31); Tick(2.52);
     Check(ScreenReader.Spoken.Count==2,"menu close does not repeat ground");
     config.Surfaces.Value=false; MapSurfaceProbe.Key="map.surface.snow"; Tick(2.73); Tick(2.94);
     Check(ScreenReader.Spoken.Count==2&&!MapSectionAccessibility.HasPendingContent,"surface option disables only surface speech");
     Start(overview:true,surfaces:true); MapSurfaceProbe.Available=true; Tick(0); Tick(.2);
-    Last("Map landmarks: Bridge","overview precedes section and surface");
-    Tick(.41); Last("Wooden bridge 1","section precedes surface");
-    Tick(.62); Last("Wooden ground","surface follows higher-priority map descriptions");
+    Last(F("map.overview", T("map.section.bridge")),"overview precedes section and surface");
+    Tick(.41); Last(T("map.section.oldroad_bridge_1"),"section precedes surface");
+    Tick(.62); Last(T("map.surface.wood"),"surface follows higher-priority map descriptions");
     Check(ScreenReader.Spoken.Count==3&&!MapSectionAccessibility.HasPendingContent,"all current descriptions delivered once");
     foreach (string sourceFailure in new[] {"unmapped", "build", "path", "anchors", "source", "procedural"})
     {
@@ -271,21 +274,21 @@ try
         if (sourceFailure == "source") MapSectionSources.Available = false;
         if (sourceFailure == "procedural") MapSectionWorld.Snapshot = MapSectionWorld.Snapshot with {IsFixedLayout=false};
         Tick(0); Tick(.2);
-        Last("Puente", "live source independent of unavailable catalog: " + sourceFailure);
+        Last(T("map.section.bridge"), "live source independent of unavailable catalog: " + sourceFailure);
         Tick(.41); Tick(.62);
         Check(ScreenReader.Spoken.Count == 1, "live structure remains quiet: " + sourceFailure);
     }
     Start(); RuntimeMapPlaces.Available = true; Tick(0); Tick(.2);
-    Last("Wooden bridge 1", "specific verified name wins over generic live category");
+    Last(T("map.section.oldroad_bridge_1"), "specific verified name wins over generic live category");
     Check(RuntimeMapPlaces.Captures == 2, "live contacts still inspect parts inside a broad mapped structure");
     RuntimeMapPlaces.Place = new("bridge-stairs", "map.section.stairs", "map.section.stairs");
     Tick(.41); Tick(.62);
-    Last("Stairs", "live stairs inside a broader fixed bridge have their own place announcement");
+    Last(T("map.section.stairs"), "live stairs inside a broader fixed bridge have their own place announcement");
     RuntimeMapPlaces.Place = new("bridge-floor", "map.section.bridge", "map.section.bridge");
-    Tick(.83); Tick(1.04); Last("Wooden bridge 1", "matching bridge contact preserves the specific verified name");
+    Tick(.83); Tick(1.04); Last(T("map.section.oldroad_bridge_1"), "matching bridge contact preserves the specific verified name");
     Move(4.1); RuntimeMapPlaces.Place = new("stairs-owner", "map.section.stairs", "map.section.stairs");
     Tick(1.25); Tick(1.46);
-    Last("Stairs", "actual new live place wins over old polygon hysteresis");
+    Last(T("map.section.stairs"), "actual new live place wins over old polygon hysteresis");
 
     Start(); MapSectionWorld.Snapshot = MapSectionWorld.Snapshot with {SceneName="GeneratedCatalog",ScenePath="Assets/GeneratedCatalog.unity"};
     Tick(0); Tick(.2); MapSectionSources.Available = false; RuntimeMapPlaces.Available = true;
@@ -308,18 +311,18 @@ try
     Start(); MapSectionWorld.Snapshot = MapSectionWorld.Snapshot with {SceneName="ControlledCourtyard",ScenePath="Assets/ControlledCourtyard.unity"};
     ModText.SetLanguage("es"); RuntimeMapPlaces.Available = true;
     RuntimeMapPlaces.Place = new("courtyard", "map.section.courtyard", "live:courtyard");
-    Tick(0); Tick(.2); Last("Patio", "explicit live place owner overrides generic walkway floor pieces");
+    Tick(0); Tick(.2); Last(T("map.section.courtyard"), "explicit live place owner overrides generic walkway floor pieces");
     RuntimeMapPlaces.Available = false; Tick(.41); Tick(.62);
-    Last("Pasarela", "verified walkway remains available when contact reading is absent");
+    Last(T("map.section.walkway"), "verified walkway remains available when contact reading is absent");
 
     Start(); MapSectionWorld.Snapshot = MapSectionWorld.Snapshot with {IsFixedLayout=false};
     RuntimeMapPlaces.Available = PcgMapSections.Available = true;
-    Tick(0); Tick(.2); Last("Bridge", "live structure is read within a generated room");
+    Tick(0); Tick(.2); Last(T("map.section.bridge"), "live structure is read within a generated room");
     RuntimeMapPlaces.Available = false; Tick(.41); Tick(.62);
-    Last("Cave chamber 1. Entrance", "leaving structure exposes current native room");
+    Last(J(F("map.section.cave_room", 1), T("map.section.entrance")), "leaving structure exposes current native room");
     ModText.SetLanguage("es");
     PcgMapSections.Snapshot = new(1, "hallway-1", 5, false, false, null, "map.section.passage");
-    Tick(.83); Tick(1.04); Last("Pasillo", "native hallway speaks concrete place without room number");
+    Tick(.83); Tick(1.04); Last(T("map.section.passage"), "native hallway speaks concrete place without room number");
     PcgMapSections.Snapshot = PcgMapSections.Snapshot with {SectionId="hallway-2", Number=6};
     Tick(1.25); Tick(1.46);
     Check(ScreenReader.Spoken.Count == 3, "adjoining hallway pieces share speech identity");
@@ -332,18 +335,18 @@ try
     Tick(0,pending:true); Tick(.2,pending:true);
     Check(ScreenReader.Spoken.Count == 0 && MapSectionAccessibility.HasPendingContent, "live place yields to pending zone speech");
     RuntimeMapPlaces.Place = new("walkway-owner", "map.section.walkway", "map.section.walkway");
-    Tick(.41); Tick(.62); Last("Walkway", "live location replaces stale pending place");
+    Tick(.41); Tick(.62); Last(T("map.section.walkway"), "live location replaces stale pending place");
     Check(ScreenReader.Spoken.Count == 1, "old deferred bridge never spoken");
     int liveCaptures = RuntimeMapPlaces.Captures;
     Tick(.83,menu:true); Check(RuntimeMapPlaces.Captures == liveCaptures, "no live probes in menus");
     Tick(.84); Tick(1.05); Check(ScreenReader.Spoken.Count == 1, "menu return does not repeat live place");
     MapSectionWorld.Snapshot = MapSectionWorld.Snapshot with {Session=2};
     Tick(1.26); Tick(1.47); Check(ScreenReader.Spoken.Count == 2, "new player session rearms live place");
-    ModText.SetLanguage("es"); Tick(1.68); Tick(1.89); Last("Pasarela", "live place follows game language");
+    ModText.SetLanguage("es"); Tick(1.68); Tick(1.89); Last(T("map.section.walkway"), "live place follows game language");
     Start(); ModText.SetLanguage("es"); RuntimeSceneryPlaces.Available = true;
-    Tick(0); Tick(.2); Last("Puente de madera 1", "actual floor announcement precedes nearby scenery");
+    Tick(0); Tick(.2); Last(T("map.section.oldroad_bridge_1"), "actual floor announcement precedes nearby scenery");
     Check(MapSectionAccessibility.HasPendingContent, "nearby scenery waits while physical section speaks");
-    Tick(.41); Last("Cerca: Pórtico", "scenery complements existing map and physical floor coverage");
+    Tick(.41); Last(F("landmark.nearby", T("map.place.gate")), "scenery complements existing map and physical floor coverage");
     Check(ScreenReader.Spoken.Count == 2 && !MapSectionAccessibility.HasPendingContent, "nearby scenery delivered once without interrupting section");
     RuntimeSceneryPlaces.Place = RuntimeSceneryPlaces.Place with { Identity = "next-gate" };
     Tick(.62); Tick(.83); Check(ScreenReader.Spoken.Count == 2, "adjacent gateway pieces do not repeat category");
@@ -352,15 +355,15 @@ try
     Check(MapSectionAccessibility.HasPendingContent && ScreenReader.Spoken.Count == 2, "nearby changes yield to pending gameplay speech");
     RuntimeSceneryPlaces.Available = false; Tick(1.46);
     Check(!MapSectionAccessibility.HasPendingContent && ScreenReader.Spoken.Count == 2, "leaving range cancels deferred nearby text");
-    RuntimeSceneryPlaces.Available = true; Tick(1.67); Tick(1.88); Last("Cerca: Carreta", "new current prop replaces stale deferred prop");
+    RuntimeSceneryPlaces.Available = true; Tick(1.67); Tick(1.88); Last(F("landmark.nearby", T("map.place.wagon")), "new current prop replaces stale deferred prop");
     int sceneryCaptures = RuntimeSceneryPlaces.Captures;
     Tick(2.09, menu:true); Check(RuntimeSceneryPlaces.Captures == sceneryCaptures, "no geometry queries while in menus");
     Tick(2.1); Tick(2.31); Check(ScreenReader.Spoken.Count == 3, "closing menu beside same prop does not repeat it");
-    ModText.SetLanguage("en"); Tick(2.52); Tick(2.73); Tick(2.94); Last("Nearby: Wagon", "nearby descriptions follow changed localization after current section");
+    ModText.SetLanguage("en"); Tick(2.52); Tick(2.73); Tick(2.94); Last(F("landmark.nearby", T("map.place.wagon")), "nearby descriptions follow changed localization after current section");
     LE.UI.LoadingScreen.IsVisible = true; Tick(3.15);
     Check(RuntimeSceneryPlaces.Resets > 0 && !MapSectionAccessibility.HasPendingContent, "loading clears scenery cache and pending speech");
     Start(); MapSectionWorld.Snapshot = MapSectionWorld.Snapshot with { SceneName="Unmapped" };
-    RuntimeSceneryPlaces.Available = true; Tick(0); Last("Nearby: Gateway", "a fully validated footprint speaks on a brief pass without waiting a second geometry sample");
+    RuntimeSceneryPlaces.Available = true; Tick(0); Last(F("landmark.nearby", T("map.place.gate")), "a fully validated footprint speaks on a brief pass without waiting a second geometry sample");
     Tick(.2); Check(ScreenReader.Spoken.Count == 1, "unchanged confirmed scenery does not repeat");
     RuntimeSceneryPlaces.Available = false; Tick(.41);
     RuntimeSceneryPlaces.Available = true; Tick(.62);
@@ -379,24 +382,24 @@ try
     Start(); ModText.SetLanguage("es");
     MapSectionWorld.Snapshot = MapSectionWorld.Snapshot with { SceneName="Unmapped" };
     RuntimeSceneryPlaces.Place = new("tent-a", "map.place.tent", "tent-a");
-    RuntimeSceneryPlaces.Available = true; Tick(0); Last("Tienda de campaña", "actual tent presence omits nearby qualifier");
+    RuntimeSceneryPlaces.Available = true; Tick(0); Last(T("map.place.tent"), "actual tent presence omits nearby qualifier");
     Tick(.2); Check(ScreenReader.Spoken.Count==1, "unchanged exact presence is quiet");
     RuntimeSceneryPlaces.HasValidObservation=false;RuntimeSceneryPlaces.Available=false;
     Tick(.41);Tick(.62);Check(ScreenReader.Spoken.Count==1, "missing support observation never claims exit");
     RuntimeSceneryPlaces.HasValidObservation=true;RuntimeSceneryPlaces.Available=true;
     Tick(.83);Check(ScreenReader.Spoken.Count==1, "same tent recovery does not repeat entry");
     RuntimeSceneryPlaces.Available=false;Tick(1.04);Tick(1.25);
-    Last("Has salido de la tienda de campaña", "verified tent departure speaks once");
+    Last(T("map.place.left_tent"), "verified tent departure speaks once");
     Tick(1.46);Check(ScreenReader.Spoken.Count==2, "remaining outside is quiet");
     RuntimeSceneryPlaces.Available=true;RuntimeSceneryPlaces.Place=new("tent-b","map.place.tent","tent-b");
-    Tick(1.67);Last("Tienda de campaña", "new tent has independent arrival identity");
+    Tick(1.67);Last(T("map.place.tent"), "new tent has independent arrival identity");
     RuntimeSceneryPlaces.Place=new("tent-c","map.place.tent","tent-c");
     Tick(1.88);Check(ScreenReader.Spoken.Count==3, "neighboring tents with the same text stay silent");
     Tick(2.09,menu:true);Tick(2.10);Check(ScreenReader.Spoken.Count==3, "menu return preserves actual tent entry");
     RuntimeSceneryPlaces.Available=false;Tick(2.31,pending:true);Tick(2.52,pending:true);
     Check(MapSectionAccessibility.HasPendingContent, "tent exit defers to other reader content");
     RuntimeSceneryPlaces.Available=true;Tick(2.73);
-    Last("Tienda de campaña", "return cancels stale deferred exit");
+    Last(T("map.place.tent"), "return cancels stale deferred exit");
     Console.WriteLine($"Passed {checks} map section service checks.");
 }
 finally

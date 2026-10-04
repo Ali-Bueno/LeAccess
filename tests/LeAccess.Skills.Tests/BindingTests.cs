@@ -132,12 +132,12 @@ internal static class BindingTests
         first = Icon(skill); Equip(1, null); first.abilityNumber = 4; Equip(4, skill);
         Bind("actual-remapped-slot", EpochInputManager.InputActions.Ability4, "LT", "X");
         check(SkillBindingReader.Read(skill) == "LT + X", "A real glyph-only hotbar icon resolves its authoritative slot without prompt children");
-        check(SkillBindingReader.ReadAssignment(skill) == "Equipped: LT + X", "Equipped status explicitly labels the current binding");
+        check(SkillBindingReader.ReadAssignment(skill) == Speech.F("skill.equipped_binding", "LT + X"), "Equipped status explicitly labels the current binding");
         Bind("actual-remapped-slot", EpochInputManager.InputActions.Ability4, "Y");
-        check(SkillBindingReader.ReadAssignment(skill) == "Equipped: Y", "Current remapping updates assignment speech");
+        check(SkillBindingReader.ReadAssignment(skill) == Speech.F("skill.equipped_binding", "Y"), "Current remapping updates assignment speech");
         first.abilityNumber = 0;
-        check(SkillBindingReader.Read(skill) == "Y" && SkillBindingReader.ReadAssignment(skill) == "Equipped: Y", "Equipped list retains assignment independently of stale HUD slot data");
-        check(SkillBindingReader.ReadAssignment(unrelated) == "Not equipped", "A valid unmatched ability is explicitly not equipped");
+        check(SkillBindingReader.Read(skill) == "Y" && SkillBindingReader.ReadAssignment(skill) == Speech.F("skill.equipped_binding", "Y"), "Equipped list retains assignment independently of stale HUD slot data");
+        check(SkillBindingReader.ReadAssignment(unrelated) == Speech.T("skill.not_equipped"), "A valid unmatched ability is explicitly not equipped");
         CheckAuthoritativeAssignment(check);
         CheckPartialAssignmentReadiness(check);
         CheckAssignmentContext(check);
@@ -151,14 +151,14 @@ internal static class BindingTests
         var hit = new Ability { abilityName = "Ráfaga" };
         Equip(2, flurry);
         Bind("actual-slot-two", EpochInputManager.InputActions.Ability2, "Square");
-        check(SkillBindingReader.ReadAssignment(flurry) == "Equipped: Square", "Equipped parent resolves even when HUD registry is empty");
-        check(SkillBindingReader.ReadAssignment(hit) == "Not equipped", "Equal localized names cannot invent ability identity");
+        check(SkillBindingReader.ReadAssignment(flurry) == Speech.F("skill.equipped_binding", "Square"), "Equipped parent resolves even when HUD registry is empty");
+        check(SkillBindingReader.ReadAssignment(hit) == Speech.T("skill.not_equipped"), "Equal localized names cannot invent ability identity");
         var bow = new Ability { abilityName = "Ráfaga", overridePrimaryAbility = true, customPrimaryAbility = new AbilityRef { target = flurry } };
-        check(SkillBindingReader.ReadAssignment(bow) == "Equipped: Square", "Bow Flurry's declared primary matches equipped melee Flurry");
+        check(SkillBindingReader.ReadAssignment(bow) == Speech.F("skill.equipped_binding", "Square"), "Bow Flurry's declared primary matches equipped melee Flurry");
         Equip(2, bow);
-        check(SkillBindingReader.ReadAssignment(flurry) == "Equipped: Square", "Melee Flurry matches its equipped bow variant through declared primary");
+        check(SkillBindingReader.ReadAssignment(flurry) == Speech.F("skill.equipped_binding", "Square"), "Melee Flurry matches its equipped bow variant through declared primary");
         var comboHit = new Ability { abilityName = "Melee attack", overridePrimaryAbility = true, customPrimaryAbility = new AbilityRef { target = flurry } };
-        check(SkillBindingReader.ReadAssignment(comboHit) == "Equipped: Square", "Declared Flurry hit primary resolves the same real cast slot");
+        check(SkillBindingReader.ReadAssignment(comboHit) == Speech.F("skill.equipped_binding", "Square"), "Declared Flurry hit primary resolves the same real cast slot");
         var unresolved = new Ability { overridePrimaryAbility = true, customPrimaryAbility = new AbilityRef() };
         check(SkillBindingReader.ReadAssignment(unresolved) is null, "Unresolved requested primary remains unknown instead of falsely not equipped");
         Equip(2, unresolved);
@@ -169,11 +169,11 @@ internal static class BindingTests
         check(SkillBindingReader.ReadAssignment(flurry) is null, "Uninitialized combo list cannot claim a skill is not equipped");
         comboList.HasInitialised = true;
         AbilityBarIcon.all.WasCollected = true;
-        check(SkillBindingReader.ReadAssignment(flurry) == "Equipped: Square", "Collected HUD does not erase player equipped state");
+        check(SkillBindingReader.ReadAssignment(flurry) == Speech.F("skill.equipped_binding", "Square"), "Collected HUD does not erase player equipped state");
         AbilityBarIcon.all = new NativeArray<AbilityBarIcon>(Array.Empty<AbilityBarIcon>());
         var list = (ComboAbilityList)PlayerFinder.getPlayerActor().abilities;
         list.allEquipped = new NativeArray<Ability>(new[] { hit, flurry });
-        check(SkillBindingReader.ReadAssignment(hit) == "Not equipped", "Inactive human-form abilities appended by virtual getter do not claim current slots");
+        check(SkillBindingReader.ReadAssignment(hit) == Speech.T("skill.not_equipped"), "Inactive human-form abilities appended by virtual getter do not claim current slots");
         var icon = new GameObject().Add(new AbilityBarIcon { player = PlayerFinder.player, abilityNumber = 2, ability = hit, correspondingAbility = hit });
         check(SkillBindingReader.TryReadSlot(icon, out var current) && current == flurry,
             "Bar identity comes from current equipped list while displayed combo hit differs");
@@ -189,7 +189,7 @@ internal static class BindingTests
         check(SkillBindingReader.ReadAssignment(flurry) is null,
             "Missing authoritative equipped data means unknown, never not equipped");
         Reset(); Equip(1, flurry); ReInput.isReady = false;
-        check(SkillBindingReader.ReadAssignment(flurry) == "Equipped", "Unavailable binding retains proven equipped status");
+        check(SkillBindingReader.ReadAssignment(flurry) == Speech.T("skill.equipped"), "Unavailable binding retains proven equipped status");
         Reset();
     }
 
@@ -201,7 +201,7 @@ internal static class BindingTests
         Equip(1, pending);
         Equip(2, selected);
         Bind("second-slot", EpochInputManager.InputActions.Ability2, "Triangle");
-        check(SkillBindingReader.ReadAssignment(selected) == "Equipped: Triangle",
+        check(SkillBindingReader.ReadAssignment(selected) == Speech.F("skill.equipped_binding", "Triangle"),
             "First-open unresolved variant in another slot cannot hide a proven equipped skill");
         check(SkillBindingReader.Read(selected) == "Triangle", "Positive slot binding does not depend on unrelated primary loading");
         check(SkillBindingReader.LastStatus == "ready", "Positive assignment is diagnostically ready with another pending slot");
@@ -211,26 +211,26 @@ internal static class BindingTests
         var icon = new GameObject().Add(new AbilityBarIcon { player = PlayerFinder.player, abilityNumber = 2 });
         check(SkillBindingReader.TryReadSlot(icon, out var occupant) && occupant == selected,
             "Known slot identity survives another unresolved slot on first hotbar opening");
-        check(SkillBindingReader.ReadAssignment(icon) == "Equipped: Triangle", "Selected hotbar slot has its actual assignment immediately");
+        check(SkillBindingReader.ReadAssignment(icon) == Speech.F("skill.equipped_binding", "Triangle"), "Selected hotbar slot has its actual assignment immediately");
         icon.abilityNumber = 3;
         check(SkillBindingReader.TryReadSlot(icon, out occupant) && occupant is null,
             "Known empty slot is readable while another slot's primary identity loads");
         Bind("first-slot", EpochInputManager.InputActions.Ability1, "Square");
-        check(SkillBindingReader.ReadAssignment(pending) == "Equipped: Square",
+        check(SkillBindingReader.ReadAssignment(pending) == Speech.F("skill.equipped_binding", "Square"),
             "Exact equipped native object proves its slot even if its optional primary remains unresolved");
         pending.customPrimaryAbility.target = selected;
-        check(SkillBindingReader.ReadAssignment(selected) == "Equipped: Square, Triangle",
+        check(SkillBindingReader.ReadAssignment(selected) == Speech.F("skill.equipped_binding", "Square, Triangle"),
             "Later primary resolution adds a second proven slot without reinitializing the reader");
-        check(SkillBindingReader.ReadAssignment(absent) == "Not equipped", "Resolved complete snapshot can finally establish absence");
+        check(SkillBindingReader.ReadAssignment(absent) == Speech.T("skill.not_equipped"), "Resolved complete snapshot can finally establish absence");
         pending.WasCollected = true;
-        check(SkillBindingReader.ReadAssignment(selected) == "Equipped: Triangle", "Collected unrelated slot does not erase a valid assignment");
+        check(SkillBindingReader.ReadAssignment(selected) == Speech.F("skill.equipped_binding", "Triangle"), "Collected unrelated slot does not erase a valid assignment");
         check(SkillBindingReader.ReadAssignment(absent) is null, "Collected unrelated slot does not become evidence of absence");
         var combo = (ComboAbilityList)PlayerFinder.getPlayerActor().abilities;
         combo.HasInitialised = false;
         check(SkillBindingReader.ReadAssignment(selected) is null && SkillBindingReader.LastStatus == "combo initialization pending",
             "Uninitialized list remains unknown and reports its distinct readiness gate");
         combo.HasInitialised = true;
-        check(SkillBindingReader.ReadAssignment(selected) == "Equipped: Triangle", "Same list recovers after initialization without menu reopen");
+        check(SkillBindingReader.ReadAssignment(selected) == Speech.F("skill.equipped_binding", "Triangle"), "Same list recovers after initialization without menu reopen");
     }
 
     private static void CheckAssignmentContext(Action<bool, string> check)

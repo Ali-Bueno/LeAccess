@@ -32,9 +32,9 @@ internal static class FilterRangeTests
         foreach (var item in new[] { lp, fp, ww, wt })
         {
             reset(); ElementAnnouncer.AnnounceElement(item.Min.gameObject);
-            Check(ScreenReader.Messages.Single().Text == item.Header.text + ". Min: 2", "Filter minimum retains its own visible condition heading");
+            Check(ScreenReader.Messages.Single().Text == Speech.Join(item.Header.text, Speech.F("control.field_value", "Min", 2)), "Filter minimum retains its own visible condition heading");
             reset(); ElementAnnouncer.AnnounceElement(item.Max.gameObject);
-            Check(ScreenReader.Messages.Single().Text == item.Header.text + ". Max: 5", "Filter maximum retains its own visible condition heading");
+            Check(ScreenReader.Messages.Single().Text == Speech.Join(item.Header.text, Speech.F("control.field_value", "Max", 5)), "Filter maximum retains its own visible condition heading");
         }
         reset(); var count = new GameObject().Add(new AffixCountConditionUI());
         var prefixes = Row(count.gameObject, "Prefixes"); var suffixes = Row(count.gameObject, "Suffixes");
@@ -42,22 +42,22 @@ internal static class FilterRangeTests
         foreach (var item in new[] { prefixes, suffixes })
         {
             reset(); ElementAnnouncer.AnnounceElement(item.Min.gameObject);
-            Check(ScreenReader.Messages.Single().Text == item.Header.text + ". Min: 2", "Affix counts retain their own prefix or suffix heading");
+            Check(ScreenReader.Messages.Single().Text == Speech.Join(item.Header.text, Speech.F("control.field_value", "Min", 2)), "Affix counts retain their own prefix or suffix heading");
         }
         reset(); lp.Min.text = ""; ElementAnnouncer.AnnounceElement(lp.Min.gameObject);
-        Check(ScreenReader.Messages.Single().Text == "Legendary Potential. Min: empty", "Empty bounds are announced without inventing zero");
+        Check(ScreenReader.Messages.Single().Text == Speech.Join(lp.Header.text, Speech.F("control.empty_field", "Min")), "Empty bounds are announced without inventing zero");
         reset(); lp.Min.text = "3"; lp.Min.Interactable = false; ElementAnnouncer.AnnounceElement(lp.Min.gameObject);
-        Check(ScreenReader.Messages.Single().Text.EndsWith("(Disabled)"), "Unavailable filter inputs retain disabled state"); lp.Min.Interactable = true;
+        Check(ScreenReader.Messages.Single().Text.EndsWith(Speech.DisabledMark()), "Unavailable filter inputs retain disabled state"); lp.Min.Interactable = true;
         reset(); lp.Header.text = "Potencial legendario"; lp.Min.placeholder.GetComponent<TMP_Text>().text = "Mínimo";
         ElementAnnouncer.AnnounceElement(lp.Min.gameObject);
-        Check(ScreenReader.Messages.Single().Text == "Potencial legendario. Mínimo: 3", "Native heading and bound role remain localized");
+        Check(ScreenReader.Messages.Single().Text == Speech.Join(lp.Header.text, Speech.F("control.field_value", "Mínimo", 3)), "Native heading and bound role remain localized");
         reset(); root._legendaryPotentialRange = null; ElementAnnouncer.AnnounceElement(lp.Min.gameObject);
         Check(!ScreenReader.Messages.Single().Text.StartsWith("Potencial legendario"), "Replaced condition range cannot borrow old context"); root._legendaryPotentialRange = lp.Range;
         reset(); lp.Header.gameObject.Active = false; ElementAnnouncer.AnnounceElement(lp.Min.gameObject);
         Check(!ScreenReader.Messages.Single().Text.Contains("Potencial legendario"), "Hidden headings are rejected"); lp.Header.gameObject.Active = true;
         reset(); ScreenContentAnnouncer.HasActiveContent = true; ScreenContentAnnouncer.Root = root.gameObject;
         ElementAnnouncer.AnnounceElement(lp.Min.gameObject);
-        Check(ScreenReader.Messages.Single().Text == "Potencial legendario. Mínimo: 3", "Foreground filter modal retains associated field context");
+        Check(ScreenReader.Messages.Single().Text == Speech.Join(lp.Header.text, Speech.F("control.field_value", "Mínimo", 3)), "Foreground filter modal retains associated field context");
         reset(); ScreenContentAnnouncer.HasActiveContent = true; ScreenContentAnnouncer.Root = new GameObject();
         ElementAnnouncer.AnnounceElement(lp.Min.gameObject); Check(ScreenReader.Messages.Count == 0, "Another modal suppresses retained filter fields");
         reset(); root.gameObject.Active = false; ElementAnnouncer.AnnounceElement(lp.Min.gameObject);
@@ -81,7 +81,7 @@ internal static class FilterRangeTests
         reset(); lp.Header.text = "<b></b>";
         Check(!FilterRangeControlReader.TryRead(lp.Min.gameObject, out _, out _), "Markup-only headings cannot supply retained context"); lp.Header.text = "Potencial legendario";
         reset(); lp.Min.placeholder.gameObject.Active = false; ElementAnnouncer.AnnounceElement(lp.Min.gameObject);
-        Check(ScreenReader.Messages.Single().Text == "Potencial legendario. Mínimo: 3", "Owned placeholders supply their role when populated fields hide them");
+        Check(ScreenReader.Messages.Single().Text == Speech.Join(lp.Header.text, Speech.F("control.field_value", "Mínimo", 3)), "Owned placeholders supply their role when populated fields hide them");
         lp.Min.placeholder.gameObject.Active = true;
         reset(); return checks;
     }

@@ -95,11 +95,11 @@ selected = Item("Anillo"); Focus(selected); Tick();
 selected.itemText.text = "Anillo ártico"; Tick();
 Check(ScreenReader.Messages.Count == 0, "Localization changes restart settlement");
 Tick();
-Check(ScreenReader.Messages.Single().Text == "Anillo ártico", "Settled localized name wins");
+Check(ScreenReader.Messages.Single().Text == selected.itemText.text, "Settled localized name wins");
 Details(selected, "Anillo ártico. +12 de resistencia al frío"); Tick();
 Check(ScreenReader.Messages.Count == 1, "Automatic tooltip population does not repeat the drop");
 Tick();
-Check(ScreenReader.Messages.Single().Text == "Anillo ártico", "Ground focus stays name-only even when stats appear");
+Check(ScreenReader.Messages.Single().Text == selected.itemText.text, "Ground focus stays name-only even when stats appear");
 ItemTooltipReader.Text = null; Tick(); Tick();
 Check(ScreenReader.Messages.Count == 1, "Closing details does not repeat the bare name");
 
@@ -110,11 +110,11 @@ foreach (string mismatch in new[] { "slot", "opener", "item" })
     if (mismatch == "opener") ItemTooltipReader.Opener = new GameObject();
     if (mismatch == "item") ItemTooltipReader.Item = new ItemDataUnpacked();
     Tick(); Tick();
-    Check(ScreenReader.Messages.Single().Text == "Guantes", $"Reject stale tooltip with wrong {mismatch}");
+    Check(ScreenReader.Messages.Single().Text == selected.itemText.text, $"Reject stale tooltip with wrong {mismatch}");
 }
 Reset(); selected = Item("Botas"); Focus(selected); Details(selected, "Botas. +4 de armadura");
 ItemTooltipReader.Opener = selected.gameObject; Tick(); Tick();
-Check(ScreenReader.Messages.Single().Text == "Botas", "Already-populated ground tooltip still speaks only the visible name");
+Check(ScreenReader.Messages.Single().Text == selected.itemText.text, "Already-populated ground tooltip still speaks only the visible name");
 selected.visuals.gameObject.Active = false; Tick(); Tick();
 Check(ScreenReader.Messages.Count == 1 && !GroundLootAccessibility.HasPendingContent,
     "Picking up an item after tooltip population leaves no delayed property reading");

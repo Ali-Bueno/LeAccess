@@ -271,26 +271,26 @@ tutorial._tutorialNotice = new TutorialNotice { textLocalizationKey = "Tutorials
 Rewired.ReInput.mapping.Actions[8] = new Rewired.InputAction { name = "UsePotion" };
 LeAccess.Accessibility.Announcements.InputBindingText.Bindings["UsePotion"] = "LB";
 ScreenContentAnnouncer.TrackTutorial(tutorial); Frame(); Frame();
-Check(ScreenReader.Messages.Single().Text.EndsWith("Botón: LB"),
+Check(ScreenReader.Messages.Single().Text.EndsWith(LeAccess.I18n.ModText.Format("tutorial.control", "LB")),
     "Installed potion notice receives its actual action binding even when body omits a button");
 Frame(); Frame();
 Check(ScreenReader.Messages.Count == 1, "Stable tutorial binding is not repeated");
 LeAccess.Accessibility.Announcements.InputBindingText.Bindings["UsePotion"] = "RT";
 Frame(); Frame();
-Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text.EndsWith("Botón: RT"),
+Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text.EndsWith(LeAccess.I18n.ModText.Format("tutorial.control", "RT")),
     "Remapping while a tutorial remains visible refreshes its current instruction");
 tutorial._tutorialNotice.textLocalizationKey = "Tutorials_Evade_Text";
 tutorial.titleTMP.text = "Evasión";
 Rewired.ReInput.mapping.Actions[192] = new Rewired.InputAction { name = "Evade" };
 LeAccess.Accessibility.Announcements.InputBindingText.Bindings["Evade"] = "B";
 Frame(); Frame();
-Check(ScreenReader.Messages.Last().Text.EndsWith("Botón: B"), "Evade uses its own action rather than last tutorial binding");
+Check(ScreenReader.Messages.Last().Text.EndsWith(LeAccess.I18n.ModText.Format("tutorial.control", "B")), "Evade uses its own action rather than last tutorial binding");
 tutorial._tutorialNotice.textLocalizationKey = "Tutorials_NewPassivePoint_Text";
 EpochInputManager.IsControllerActive = true;
 Rewired.ReInput.mapping.Actions[61] = new Rewired.InputAction { name = "Radial" };
 LeAccess.Accessibility.Announcements.InputBindingText.Bindings["Radial"] = "Mantener Back";
 Frame(); Frame();
-Check(ScreenReader.Messages.Last().Text.EndsWith("Abrir menú del mando: Mantener Back"),
+Check(ScreenReader.Messages.Last().Text.EndsWith(LeAccess.I18n.ModText.Format("tutorial.controller_menu", "Mantener Back")),
     "A menu tutorial without a direct controller binding supplies actual radial opening control");
 EpochInputManager.IsControllerActive = false;
 Frame(); Frame();
@@ -298,7 +298,7 @@ Check(!ScreenReader.Messages.Last().Text.Contains("Back"), "Keyboard input never
 tutorial._tutorialNotice.textLocalizationKey = "Unknown_Tutorial";
 var closePrompt = hintRoot.Child().Add(new MultiButtonsActionPrompt { Text = "Continuar: A" });
 Frame(); Frame();
-Check(ScreenReader.Messages.Last().Text.EndsWith("Continuar: A"), "Visible native tutorial prompts supply their own action and control");
+Check(ScreenReader.Messages.Last().Text.EndsWith(closePrompt.Text), "Visible native tutorial prompts supply their own action and control");
 closePrompt.Active = false; Frame(); Frame();
 Check(!ScreenReader.Messages.Last().Text.Contains("Continuar"), "Inactive tutorial prompt cannot leave stale button instructions");
 closePrompt.Active = true; closePrompt.gameObject.Visible = false; Frame(); Frame();

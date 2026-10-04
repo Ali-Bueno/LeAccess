@@ -32,7 +32,7 @@ internal static class ForgeSummaryTests
         Label(forge.forgeButton.gameObject, "Forge");
         NavigationManager.currentlySelected = forge;
         ElementAnnouncer.AnnounceElement(row.addAffixButton.gameObject);
-        Check(ScreenReader.Messages.Single().Text == "Add affix. Added fire damage", "Forge navigation keeps brief selected-control content");
+        Check(ScreenReader.Messages.Single().Text == Speech.Join(Speech.T("crafting.add_affix"), "Added fire damage"), "Forge navigation keeps brief selected-control content");
         Check(ElementAnnouncer.TryReadDetails(row.addAffixButton.gameObject, out var details) && details.Contains("Will add 3 random affixes"), "Manual forge inspection recovers the visible native preview");
         Check(details.Contains("Rerolls the values of all affixes.") && details.Contains("Glyph of Hope may prevent"), "Manual forge details retain readable modifier and glyph preview text");
         Check(details.Contains("Forging Potential: 19") && !details.Contains("Retained unavailable"), "Ready forging uses its visible authored potential heading and excludes stale failure reasons");
@@ -40,7 +40,7 @@ internal static class ForgeSummaryTests
         forge.cannotForgeText.text = "This item has no forging potential.";
         reset(); NavigationManager.currentlySelected = forge;
         ElementAnnouncer.AnnounceElement(row.addAffixButton.gameObject);
-        Check(ScreenReader.Messages.Single().Text == "Add affix. Added fire damage", "Blocked forging does not replace the selected affix's brief speech");
+        Check(ScreenReader.Messages.Single().Text == Speech.Join(Speech.T("crafting.add_affix"), "Added fire damage"), "Blocked forging does not replace the selected affix's brief speech");
         Check(ElementAnnouncer.TryReadDetails(row.addAffixButton.gameObject, out details) && details.EndsWith("This item has no forging potential."), "Exact unavailable reason remains readable from a live control when native forge action is hidden");
         Check(!details.Contains("Will add") && !details.Contains("Rerolls") && !details.Contains("Forging Potential:"), "Blocked forging excludes retained ready preview fields");
         forge.cannotForgeText.text = "Este objeto ya tiene cuatro afijos.";
@@ -75,7 +75,7 @@ internal static class ForgeSummaryTests
         forge.singleSuccessChanceString.text = "Will upgrade the selected affix.";
         Check(ElementAnnouncer.TryReadDetails(row.addAffixButton.gameObject, out details) && details.Contains("Owned affix description.") && details.Contains("Will upgrade"), "Forge summary adds to existing selected tooltip descriptions");
         reset(); NavigationManager.currentlySelected = forge; ElementAnnouncer.AnnounceElement(row.addAffixButton.gameObject);
-        Check(ScreenReader.Messages.Single().Text == "Add affix. Added fire damage", "Manual summary never leaks into later brief navigation");
+        Check(ScreenReader.Messages.Single().Text == Speech.Join(Speech.T("crafting.add_affix"), "Added fire damage"), "Manual summary never leaks into later brief navigation");
         Check(tooltip.SetTextCalls == 2, "Brief forge navigation never invokes the manual tooltip population path");
         forge.currentlySelectedIdx = new(1, 0);
         Check(!ElementAnnouncer.TryReadDetails(row.addAffixButton.gameObject, out _), "Unready native forge selection cannot inspect retained controls"); forge.currentlySelectedIdx = new(0, 0);

@@ -84,7 +84,7 @@ Check(GuidanceTargetReader.TryRead(world, targets) && targets.Count == 1, "visib
 Check(targets[0].Kind == GuidanceTargetKind.Quest && targets[0].ArrivalRadius == 0, "marker center is not arrival or completion");
 Check(targets[0].Position == q.owner.icon.transform.position, "world marker position, not UI position");
 Check(targets[0].Id == q.owner.GetInstanceID(), "owner identity");
-Check(targets[0].Name.Contains("Find the letter") && targets[0].Name.Contains("Objective marker"), "explicit objective label");
+Check(targets[0].Name == LeAccess.I18n.ModText.Format("guidance.quest_marker", q.quest.displayName, q.owner.objectiveCondition.objective.activeText), "explicit objective label");
 Check(targets[0].Priority == 2, "tracked side quest");
 q.quest.mainLineQuest = true; GuidanceTargetReader.TryRead(world, targets); Check(targets[0].Priority == 1, "main quest priority");
 q.quest.List.State.trackStatus = LE.Data.SavedQuest.TrackStatus.FORCE_TRACKED;
@@ -145,7 +145,7 @@ Check(targets.Count == 2 && targets.Exists(target => target.Kind == GuidanceTarg
     "passive selection can retain verified exit candidates beside a quest whose route may be unavailable");
 q.quest.List.Tracked = false;
 GuidanceTargetReader.TryRead(world, targets);
-Check(targets.Count == 1 && targets[0].Kind == GuidanceTargetKind.Exit && targets[0].Name == "Exit to Forest", "fallback names exit without quest claim");
+Check(targets.Count == 1 && targets[0].Kind == GuidanceTargetKind.Exit && targets[0].Name == LeAccess.I18n.ModText.Format("guidance.exit_to", "Forest"), "fallback names exit without quest claim");
 Check(targets[0].ArrivalRadius == e.listener.interactionRange && targets[0].Priority == 3, "native interaction range only for real exit");
 e.listener.Interactable = false; Empty("locked exit"); e.listener.Interactable = true;
 e.map.awaitingDestruction = true; Empty("retiring exit icon"); e.map.awaitingDestruction = false;

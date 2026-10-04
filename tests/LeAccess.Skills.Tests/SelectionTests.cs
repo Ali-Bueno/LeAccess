@@ -9,6 +9,9 @@ using UnityEngine.UI;
 
 internal static class SelectionTests
 {
+    private const string Fireball = "Bola de fuego";
+    private const string IceShield = "Escudo de hielo";
+
     private sealed class Fixture
     {
         internal SkillsPanelManager Panel;
@@ -43,7 +46,7 @@ internal static class SelectionTests
         var panel = new GameObject().Add(new SkillsPanelManager());
         var control = panel.gameObject.Child().Add(new Selectable());
         var ability = new Ability { abilityName = "Internal Fireball" };
-        Localization.Abilities.Names[ability] = "Bola de fuego";
+        Localization.Abilities.Names[ability] = Fireball;
         Localization.Abilities.Descriptions[ability] = "Lanza una bola ardiente.";
         var icon = control.gameObject.Add(new AbilityPanelIcon { ability = ability });
         var cells = new Component[2, 3];
@@ -58,7 +61,7 @@ internal static class SelectionTests
     {
         var tooltip = new GameObject().Add(new UITooltipAbility { currentAbility = fixture.Ability });
         tooltip.content = tooltip.gameObject.Child();
-        tooltip.nameText = Text(tooltip.content, "Bola de fuego");
+        tooltip.nameText = Text(tooltip.content, Fireball);
         tooltip.descriptionText = Text(tooltip.content, "Inflige 24 de daño de fuego.");
         tooltip.skillDefinition = Text(tooltip.content, "Hechizo");
         tooltip.moreInfoObj = tooltip.content.Child();
@@ -79,7 +82,7 @@ internal static class SelectionTests
     internal static void Run(Action<bool, string> check)
     {
         var fixture = Reset();
-        check(SkillSelectionReader.TryRead(out var selection) && selection.Name == "Bola de fuego" &&
+        check(SkillSelectionReader.TryRead(out var selection) && selection.Name == Fireball &&
             selection.Root == fixture.Control.gameObject && !selection.Details.Contains("Más información"),
             "Actual non-square panel cell [x,y] supplies the skill independently of generic More information prompts");
         foreach (string invalid in new[] { "bounds", "rank", "collected array", "empty cell" })
@@ -128,7 +131,7 @@ internal static class SelectionTests
         var node = tree.gameObject.Child().Add(new SkillTreeNode
         { tree = tree, id = 4, nodeName = "Nodo retenido", description = "Descripción del nodo" });
         fixture.Panel.CurrentlyOpenTree = tree; fixture.Panel.currentlySelectedNode = node;
-        check(SkillSelectionReader.TryRead(out selection) && selection.Name == "Bola de fuego",
+        check(SkillSelectionReader.TryRead(out selection) && selection.Name == Fireball,
             "Top specialization area keeps its selected skill while an old tree node remains stored");
         fixture.Panel.inTopArea = false;
         check(SkillSelectionReader.TryRead(out selection) && selection.Name == "Nodo retenido" && selection.Root == node.gameObject,
@@ -142,7 +145,7 @@ internal static class SelectionTests
         check(ScreenReader.Messages.Count == 0 && SkillAccessibility.HasPendingContent,
             "Selected name settles before reading");
         Tick();
-        check(ScreenReader.Messages.Single() == ("Bola de fuego. Equipped: A. Learned", true),
+        check(ScreenReader.Messages.Single() == (Speech.Join(Fireball, Speech.F("skill.equipped_binding", "A"), Speech.T("skill.learned")), true),
             "Navigation reads only name and assignment, without description or tooltip");
         check(SkillAccessibility.TryHandleFocus(fixture.Control.gameObject.Child()) &&
             !SkillAccessibility.TryHandleFocus(new GameObject()), "Focus ownership stays with the selected control");
@@ -151,10 +154,10 @@ internal static class SelectionTests
         Tick(); Tick();
         check(ScreenReader.Messages.Count == 1, "Tooltip changes cannot restart automatic navigation speech");
         BindingTests.Bind("cast", EpochInputManager.InputActions.Ability1, "RB"); Tick(0.21); Tick();
-        check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text == "Bola de fuego. Equipped: RB. Learned",
+        check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text == Speech.Join(Fireball, Speech.F("skill.equipped_binding", "RB"), Speech.T("skill.learned")),
             "Live remapping updates the brief assigned button");
         SkillAccessibility.Update(readDetails: true);
-        check(ScreenReader.Messages.Last().Text.Contains("36") && ScreenReader.Messages.Last().Text.Contains("Equipped: RB"),
+        check(ScreenReader.Messages.Last().Text.Contains("36") && ScreenReader.Messages.Last().Text.Contains(Speech.F("skill.equipped_binding", "RB")),
             "Right stick requests current full details and assignment");
         int spoken = ScreenReader.Messages.Count;
         Tick(); Tick();
@@ -169,11 +172,11 @@ internal static class SelectionTests
 
         fixture = Reset(); Tick();
         var second = fixture.Panel.gameObject.Child().Add(new Selectable());
-        second.gameObject.Add(new AbilitySelectionIcon { ability = new Ability { abilityName = "Escudo de hielo" } });
+        second.gameObject.Add(new AbilitySelectionIcon { ability = new Ability { abilityName = IceShield } });
         fixture.Cells[1, 2] = second; Tick();
         check(ScreenReader.Messages.Count == 0, "Rapid navigation discards the unsettled previous skill");
         Tick();
-        check(ScreenReader.Messages.Single().Text == "Escudo de hielo. Not equipped", "Only latest stable skill and assignment are announced");
+        check(ScreenReader.Messages.Single().Text == Speech.Join(IceShield, Speech.T("skill.not_equipped")), "Only latest stable skill and assignment are announced");
         foreach (string gate in new[] { "popup", "dialogue", "radial menu", "loading", "focus" })
         {
             fixture = Reset(); Tick();
@@ -190,7 +193,7 @@ internal static class SelectionTests
         BindingTests.Icon(fixture.Ability, "cast"); BindingTests.Bind("cast", EpochInputManager.InputActions.Ability1, "A");
         PromptsInfoProvider.Instance.Throw = true;
         Tick(); Tick();
-        check(ScreenReader.Messages.Single().Text == "Bola de fuego. Equipped. Learned",
+        check(ScreenReader.Messages.Single().Text == Speech.Join(Fireball, Speech.T("skill.equipped"), Speech.T("skill.learned")),
             "Unavailable binding preserves known equipped status");
         NavigationManager.currentlySelected = null; Tick();
         check(!SkillAccessibility.HasActiveContent && !SkillAccessibility.HasPendingContent, "Closing resets ownership");
@@ -258,7 +261,7 @@ internal static class SelectionTests
         check(ScreenReader.Messages.Count == afterNodeRead,
             "Differently worded tooltip title cannot cause a brief node reread after manual inspection");
         node.pointsAllocated = 1; Tick(); Tick();
-        check(ScreenReader.Messages.Last().Text == "Nombre local. 1 of 5 points allocated",
+        check(ScreenReader.Messages.Last().Text == Speech.Join("Nombre local", Speech.F("node.points", 1, 5)),
             "Allocating a node updates points without its description or the parent ability binding");
 
         fixture = Reset();
@@ -270,10 +273,10 @@ internal static class SelectionTests
         BindingTests.Equip(1, fixture.Ability);
         BindingTests.Bind("bar-one", EpochInputManager.InputActions.Ability1, "Square");
         Tick(); Tick();
-        check(ScreenReader.Messages.Single().Text == "Bola de fuego. Equipped: Square. Learned. Action bar: Square",
+        check(ScreenReader.Messages.Single().Text == Speech.Join(Fireball, Speech.F("skill.equipped_binding", "Square"), Speech.T("skill.learned"), Speech.F("skill.bar_slot", "Square")),
             "Assignment bar reads the stable skill and actual destination button rather than its current combo hit");
         BindingTests.Equip(1, null); Tick(); Tick();
-        check(ScreenReader.Messages.Last().Text == "Empty skill slot. Action bar: Square",
+        check(ScreenReader.Messages.Last().Text == Speech.Join(Speech.T("skill.empty_slot"), Speech.F("skill.bar_slot", "Square")),
             "Empty action bar slot retains its button and does not announce old skill text");
         SkillAccessibility.Update(readDetails: true);
         check(ScreenReader.Messages.Last().Text.Contains("open the list"), "Manual slot details explain how to choose a replacement");
@@ -284,7 +287,7 @@ internal static class SelectionTests
         AbilityBarSelectorManager.instance = new GameObject().Add(new AbilityBarSelectorManager { IsMenuOpened = true,
             abilityClicked = 1, _playerObject = PlayerFinder.player, _gridNavigable = choices });
         NavigationManager.currentlySelected = choices; Tick(); Tick();
-        check(ScreenReader.Messages.Last().Text == "Bola de fuego. Not equipped. Learned. Assign to: Square",
+        check(ScreenReader.Messages.Last().Text == Speech.Join(Fireball, Speech.T("skill.not_equipped"), Speech.T("skill.learned"), Speech.F("skill.assign_to", "Square")),
             "Available skill menu distinguishes the destination button from current assignment");
         SkillAccessibility.Update(readDetails: true);
         check(ScreenReader.Messages.Last().Text.Contains("confirm to assign"), "Manual candidate details explain confirmation");
@@ -296,10 +299,10 @@ internal static class SelectionTests
         BindingTests.Equip(2, variant);
         BindingTests.Bind("equipped-variant", EpochInputManager.InputActions.Ability2, "Square");
         Tick(); Tick();
-        check(ScreenReader.Messages.Single().Text == "Bola de fuego. Equipped: Square. Learned. Required level: 8",
+        check(ScreenReader.Messages.Single().Text == Speech.Join(Fireball, Speech.F("skill.equipped_binding", "Square"), Speech.T("skill.learned"), Speech.F("skill.required_level", 8)),
             "Navigation combines declared-primary assignment, learned state and hidden owned required level without tooltip body");
         fixture.Icon.locked = true; BindingTests.Equip(2, null); Tick(0.21); Tick();
-        check(ScreenReader.Messages.Last().Text == "Bola de fuego. Not equipped. Not learned. Required level: 8",
+        check(ScreenReader.Messages.Last().Text == Speech.Join(Fireball, Speech.T("skill.not_equipped"), Speech.T("skill.not_learned"), Speech.F("skill.required_level", 8)),
             "Changed native lock and assignment state update automatically without a manual description request");
         SkillAccessibility.Reset();
         foreach (string gate in new[] { "popup", "dialogue", "radial menu", "loading", "focus", "selection" })
@@ -330,7 +333,7 @@ internal static class SelectionTests
         BindingTests.Equip(2, fixture.Ability);
         BindingTests.Bind("cast-two", EpochInputManager.InputActions.Ability2, "Triangle");
         Tick(); Tick();
-        check(ScreenReader.Messages.Single().Text == "Bola de fuego. Equipped: Triangle. Learned",
+        check(ScreenReader.Messages.Single().Text == Speech.Join(Fireball, Speech.F("skill.equipped_binding", "Triangle"), Speech.T("skill.learned")),
             "First class-panel opening announces its assigned button while another primary is pending");
         pending.customPrimaryAbility.target = new Ability();
         Tick(0.21); Tick();
@@ -341,7 +344,7 @@ internal static class SelectionTests
         BindingTests.Equip(1, pending);
         BindingTests.Bind("cast-one", EpochInputManager.InputActions.Ability1, "Square");
         Tick(); Tick();
-        check(ScreenReader.Messages.Single().Text == "Bola de fuego. Learned",
+        check(ScreenReader.Messages.Single().Text == Speech.Join(Fireball, Speech.T("skill.learned")),
             "An unresolved selected variant stays unknown instead of falsely announcing not equipped");
         for (int index = 0; index < 4; index++) { Tick(0.21); Tick(); }
         check(ScreenReader.Messages.Count == 1, "Pending first-open identity does not repeat the name");
@@ -349,7 +352,7 @@ internal static class SelectionTests
             "Persistent first-open readiness failure has one diagnostic");
         pending.customPrimaryAbility.target = fixture.Ability;
         Tick(0.21); Tick();
-        check(ScreenReader.Messages.Last().Text == "Bola de fuego. Equipped: Square. Learned" && ScreenReader.Messages.Count == 2,
+        check(ScreenReader.Messages.Last().Text == Speech.Join(Fireball, Speech.F("skill.equipped_binding", "Square"), Speech.T("skill.learned")) && ScreenReader.Messages.Count == 2,
             "Primary becomes readable during the first opening and assignment is announced without closing");
         check(LeAccess.Plugin.Log.Information.Count(line => line == "[Skill binding] ready") == 1,
             "Recovery is logged once after a pending identity");
@@ -357,7 +360,7 @@ internal static class SelectionTests
         check(ScreenReader.Messages.Count == 2, "Recovered binding does not repeat every refresh");
         NavigationManager.currentlySelected = null; Tick();
         NavigationManager.currentlySelected = fixture.Panel; Tick(); Tick();
-        check(ScreenReader.Messages.Count == 3 && ScreenReader.Messages.Last().Text.Contains("Equipped: Square"),
+        check(ScreenReader.Messages.Count == 3 && ScreenReader.Messages.Last().Text.Contains(Speech.F("skill.equipped_binding", "Square")),
             "Second opening remains correct after first-opening recovery");
 
         fixture = Reset();
@@ -366,10 +369,10 @@ internal static class SelectionTests
         var combo = (ComboAbilityList)PlayerFinder.getPlayerActor().abilities;
         combo.HasInitialised = false;
         Tick(); Tick();
-        check(ScreenReader.Messages.Single().Text == "Bola de fuego. Learned", "Pre-initialization menu never guesses equipped state");
+        check(ScreenReader.Messages.Single().Text == Speech.Join(Fireball, Speech.T("skill.learned")), "Pre-initialization menu never guesses equipped state");
         combo.HasInitialised = true;
         Tick(0.21); Tick();
-        check(ScreenReader.Messages.Last().Text == "Bola de fuego. Equipped: Square. Learned" && ScreenReader.Messages.Count == 2,
+        check(ScreenReader.Messages.Last().Text == Speech.Join(Fireball, Speech.F("skill.equipped_binding", "Square"), Speech.T("skill.learned")) && ScreenReader.Messages.Count == 2,
             "Combo initialization completes while first menu remains open and speech recovers");
         check(LeAccess.Plugin.Log.Information.Contains("[Skill binding] combo initialization pending"),
             "Initialization delay is distinguished from unresolved primary metadata");
