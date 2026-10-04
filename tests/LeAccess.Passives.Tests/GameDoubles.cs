@@ -179,7 +179,7 @@ namespace LeAccess.I18n
             ["passive.ability"] = "Tree skill", ["passive.mastery_ability"] = "Mastery skill",
             ["passive.ability_unlocked"] = "Unlocked", ["passive.ability_unlockable"] = "Unlocks at {0}, you have {1}",
             ["passive.ability_unreachable"] = "Needs {0}, tree allows {1}",
-            ["list.position"] = "{0} of {1}", ["passive.unspent"] = "{0} unspent",
+            ["list.position"] = "{0} of {1}", ["passive.column"] = "Column {0}", ["passive.unspent"] = "{0} unspent",
             ["passive.tree_shown"] = "Shown tree",
             ["skill.learned"] = "Learned", ["skill.not_learned"] = "Not learned",
         };

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using LeAccess.Accessibility.Navigation;
 
 namespace LeAccess.Accessibility.Skills;
 
@@ -46,27 +47,47 @@ internal static class SkillTreeOrder
         }
     }
 
-    /// <summary>Down/Up step through the list; Right/Left jump to the first node of the next/previous branch.</summary>
+    /// <summary>Down/Up step inside the branch and stop at its ends; Right/Left go to the neighbouring branch at the same place.</summary>
     internal static Move Plan(IReadOnlyList<int> branch, int position, Direction direction)
     {
         if (branch.Count == 0) return new Move(MoveKind.Native);
         if (position < 0 || position >= branch.Count) return new Move(MoveKind.Select, 0);
-        switch (direction)
+        GroupedGridOrder.Step? step = direction switch
         {
-            case Direction.DOWN:
-                return position + 1 < branch.Count ? new Move(MoveKind.Select, position + 1) : new Move(MoveKind.Stay);
-            case Direction.UP:
-                return position > 0 ? new Move(MoveKind.Select, position - 1) : new Move(MoveKind.Stay);
-            case Direction.RIGHT:
-                for (int p = position + 1; p < branch.Count; p++)
-                    if (branch[p] != branch[position]) return new Move(MoveKind.Select, p);
-                return new Move(MoveKind.Stay);
-            case Direction.LEFT:
-                if (branch[position] == 0) return new Move(MoveKind.Stay);
-                for (int p = 0; p < branch.Count; p++)
-                    if (branch[p] == branch[position] - 1) return new Move(MoveKind.Select, p);
-                return new Move(MoveKind.Stay);
-        }
-        return new Move(MoveKind.Native);
+            Direction.DOWN => GroupedGridOrder.Step.NextInGroup,
+            Direction.UP => GroupedGridOrder.Step.PreviousInGroup,
+            Direction.RIGHT => GroupedGridOrder.Step.NextGroup,
+            Direction.LEFT => GroupedGridOrder.Step.PreviousGroup,
+            _ => null
+        };
+        if (step is null) return new Move(MoveKind.Native);
+        var sizes = BranchSizes(branch);
+        int group = branch[position];
+        var move = GroupedGridOrder.Plan(sizes, group, position - Start(branch, group), step.Value);
+        return move.Kind == GroupedGridOrder.MoveKind.Select
+            ? new Move(MoveKind.Select, Start(branch, move.Group) + move.Index) : new Move(MoveKind.Stay);
+    }
+
+    /// <summary>The 1-based place of a position inside its branch, and the branch's size.</summary>
+    internal static (int Place, int Count) PlaceInBranch(IReadOnlyList<int> branch, int position)
+    {
+        int group = branch[position];
+        return (position - Start(branch, group) + 1, BranchSizes(branch)[group]);
+    }
+
+    private static int Start(IReadOnlyList<int> branch, int group)
+    {
+        for (int p = 0; p < branch.Count; p++) if (branch[p] == group) return p;
+        return -1;
+    }
+
+    // Build numbers branches in list order, so each branch is one contiguous run of positions.
+    private static int[] BranchSizes(IReadOnlyList<int> branch)
+    {
+        int highest = 0;
+        foreach (int number in branch) highest = System.Math.Max(highest, number);
+        var sizes = new int[highest + 1];
+        foreach (int number in branch) sizes[number]++;
+        return sizes;
     }
 }

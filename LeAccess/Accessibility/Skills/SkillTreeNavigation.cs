@@ -1,16 +1,19 @@
 using System;
 using System.Collections.Generic;
+using LeAccess.Accessibility.Navigation;
+using LeAccess.I18n;
 using UnityEngine;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Skills;
 
-/// <summary>Moves through an open skill tree in reading order instead of the native nearest-node search.</summary>
+/// <summary>Moves through an open skill tree branch by branch instead of the native nearest-node search.</summary>
 /// <remarks>See reference/skill-tree-navigation.md.</remarks>
 internal static class SkillTreeNavigation
 {
     private static readonly List<SkillTreeNode> Nodes = new();
     private static readonly List<int> Branch = new();
+    private static readonly GroupEntryTracker Entry = new();
     private static List<int> _order = new();
     private static IntPtr _tree;
     private static int _listCount = -1;
@@ -70,17 +73,23 @@ internal static class SkillTreeNavigation
         return null;
     }
 
-    /// <summary>The node's place in the open tree's reading order.</summary>
-    internal static bool TryGetPosition(SkillsPanelManager panel, SkillTreeNode node, out int position, out int count)
+    /// <summary>The node's place in its branch, with the branch's name when the selection just entered it.</summary>
+    internal static bool TryDescribe(SkillsPanelManager panel, SkillTreeNode node, out string label, out int position, out int count)
     {
+        label = null;
         position = count = 0;
         if (!IsAlive(panel) || !TryReadOrder(panel)) return false;
         int place = PositionOf(node);
         if (place < 0) return false;
-        position = place + 1;
-        count = _order.Count;
+        (position, count) = SkillTreeOrder.PlaceInBranch(Branch, place);
+        // The root is the skill itself; its branches are numbered from 1.
+        int branch = Branch[place];
+        if (Entry.Entered(node.Pointer, (_tree, branch)) && branch > 0) label = ModText.Format("skill.branch", branch);
         return true;
     }
+
+    /// <summary>The next selection names its branch again.</summary>
+    internal static void ForgetBranch() => Entry.Reset();
 
     internal static void Reset()
     {

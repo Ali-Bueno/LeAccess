@@ -4,6 +4,7 @@
     <Compile Include="../../LeAccess/Accessibility/Vitals/VitalsInput.cs" Link="VitalsInput.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/MenuDetailInput.cs" Link="MenuDetailInput.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/ControllerModeKeys.cs" Link="ControllerModeKeys.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationInputLogic.cs" Link="ExplorationInputLogic.cs" />
   </ItemGroup>
 </Project>

@@ -8,7 +8,11 @@ namespace UnityEngine
     internal class Object : NativeObject { }
     internal struct Vector2 { public float x, y; }
     internal static class Application { internal static bool isFocused = true; }
-    internal enum KeyCode { None, R, LeftControl, RightControl, LeftAlt, RightAlt, LeftShift, RightShift }
+    internal enum KeyCode
+    {
+        None, R, LeftControl, RightControl, LeftAlt, RightAlt, LeftShift, RightShift,
+        AltGr, Insert, CapsLock, LeftWindows, RightWindows, LeftCommand, RightCommand, Tab, Keypad0
+    }
     internal static class Input
     {
         internal static readonly HashSet<KeyCode> Held = new(), Down = new();

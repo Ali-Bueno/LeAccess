@@ -42,7 +42,11 @@ internal static class PassiveAccessibility
             ReportStatus();
             if (!read)
             {
-                if (!PassiveSelectionReader.Blocked && !PassiveSelectionReader.HasPassiveContext) _announcedTree = null;
+                if (!PassiveSelectionReader.Blocked && !PassiveSelectionReader.HasPassiveContext)
+                {
+                    _announcedTree = null;
+                    PassiveSelectionReader.ForgetColumn();
+                }
                 ResetSelection(PassiveSelectionReader.HasPendingModel);
                 return;
             }
@@ -123,6 +127,7 @@ internal static class PassiveAccessibility
         ResetSelection();
         PassiveTreeNavigation.Reset();
         _announcedTree = null;
+        PassiveSelectionReader.ForgetColumn();
         _lastFailure = null;
         _lastStatus = null;
         _nextStatusLog = 0;

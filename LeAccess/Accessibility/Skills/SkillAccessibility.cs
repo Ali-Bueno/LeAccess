@@ -35,7 +35,12 @@ internal static class SkillAccessibility
         try
         {
             SkillSwapCarry.Update();
-            if (!SkillSelectionReader.TryRead(out var selection, includeDetails: false)) { ClearSelection(); return; }
+            if (!SkillSelectionReader.TryRead(out var selection, includeDetails: false))
+            {
+                ClearSelection();
+                ForgetGroups();
+                return;
+            }
             if (_selectionKey != selection.Key)
             {
                 ClearSelection();
@@ -67,7 +72,7 @@ internal static class SkillAccessibility
             }
 
             string brief = string.IsNullOrWhiteSpace(selection.Name) ? null :
-                ScreenContentTracker.Combine(new[] { selection.Name, _binding, selection.Status });
+                ScreenContentTracker.Combine(new[] { selection.Context, selection.Name, _binding, selection.Status });
             if (brief == null) _detailsRequested = false;
             HasPendingContent = Tracker.Observe(1, brief,
                 ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame, out string announcement, acknowledge: false);
@@ -108,9 +113,16 @@ internal static class SkillAccessibility
     /// <summary>Speaks the current selection again, as when a move cannot go further.</summary>
     internal static void RepeatCurrent() => _selectionKey = null;
 
+    // Rows and branches announce their name again the next time a selection enters them.
+    private static void ForgetGroups()
+    {
+        SkillPanelGrid.Forget();
+        SkillTreeNavigation.ForgetBranch();
+    }
+
     internal static void Reset()
     {
-        ClearSelection(); SkillTreeNavigation.Reset(); SkillSwapCarry.Clear(); _lastFailure = null; _bindingStatus = null;
+        ClearSelection(); ForgetGroups(); SkillTreeNavigation.Reset(); SkillSwapCarry.Clear(); _lastFailure = null; _bindingStatus = null;
     }
 
     private static void ReportFailure(Exception ex)

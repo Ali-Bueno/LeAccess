@@ -1,3 +1,25 @@
+# Handoff — 2026-10-04 afternoon: grids and controller mode
+
+User report (15:05–15:18 log): the Skills panel d-pad "does not register well", acts outside the
+menu and jumps (base class straight to 30/35-point mastery skills); pressing Ctrl breaks movement;
+asked for grid-like navigation in the Skills panel and the other trees, the inventory only needs to
+stop interfering. Steam updated the game to **25711439** at 15:18, after that session.
+
+- **Controller mode:** any held/released key (Ctrl to silence NVDA) made the game leave controller
+  mode and clear menu focus; the next d-pad press rebuilt it at the default. Screen-reader keys now
+  keep controller mode ([cause/fix](reference/runtime-feedback.md#controller-mode-lost-to-screen-reader-keys-2026-10-04)).
+- **Skills overview:** one row per class (slots, base class, masteries 1–3), Left/Right inside,
+  Up/Down between rows at the same place, no wrap, row name on entry, "N de M"; empty/locked slots
+  speak ([grid](reference/skill-tree-navigation.md#skills-overview-grid-2026-10-04)).
+- **Trees:** passives by column ("Columna N"), specialization trees by branch ("Rama N"), Up/Down
+  inside, Left/Right to the neighbour at the same place; edge exits as before for passives.
+
+First live checks: BepInEx regenerates interop on the first launch of 25711439 (the repair patcher
+should log its rows); then hold Ctrl in the Skills panel and move (log `[Controller mode] kept`),
+walk every row, Up from the slots (search row), A on a skill; passive and skill trees with the new
+column/branch speech; Ctrl in the inventory. After regeneration rerun the PatchSafety audit
+(it refuses the stale interop now).
+
 # Handoff — 2026-10-04: passive tree with a controller
 
 User report: switching trees cut the tab's speech; the cursor "skips nodes", no sense of first/last.

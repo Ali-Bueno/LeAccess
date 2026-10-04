@@ -70,4 +70,10 @@ device.Template.rightStick.WasCollected = true;
 Check(!LeAccess.Accessibility.Announcements.MenuDetailInput.ReadRequested(), "Collected stick is safely ignored");
 GameplayInputState.Owns = true; device.Template.rightStick.WasCollected = false; device.Template.rightStick.value = new() { y = 1 };
 Check(!LeAccess.Accessibility.Announcements.MenuDetailInput.ReadRequested(), "Right stick up no longer reads details in gameplay");
+bool OnlyReaderKeys(params KeyCode[] keys) => LeAccess.Accessibility.Navigation.ControllerModeKeys.OnlyScreenReaderKeys(keys);
+Check(OnlyReaderKeys(KeyCode.LeftControl) && OnlyReaderKeys(KeyCode.RightControl) && OnlyReaderKeys(KeyCode.LeftShift, KeyCode.Insert) &&
+    OnlyReaderKeys(KeyCode.CapsLock) && OnlyReaderKeys(KeyCode.LeftAlt, KeyCode.AltGr), "Silencing, pausing and reader-modifier keys keep controller mode");
+Check(!OnlyReaderKeys(KeyCode.R) && !OnlyReaderKeys(KeyCode.LeftControl, KeyCode.R) && !OnlyReaderKeys(KeyCode.Tab) &&
+    !OnlyReaderKeys(KeyCode.Keypad0), "Any other key, alone or with a modifier, still switches to the keyboard");
+Check(!OnlyReaderKeys(), "No key activity leaves the game's own verdict alone");
 Console.WriteLine($"Vitals/menu detail input tests passed: {checks} checks.");

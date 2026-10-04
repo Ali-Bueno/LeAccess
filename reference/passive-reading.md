@@ -185,18 +185,24 @@ directly, not `FullScreenPanelPassiveTree`. Native evidence, build 25690669:
 
 Mod behaviour:
 
-- `PassiveTreeNavigation` prefixes `HandleNavigateInput`/`HandleLeftStickInput`: the grid becomes one
-  list (columns left to right, each top to bottom; duplicates and inactive nodes skipped). Down/Up =
-  next/previous node across columns; Right/Left = top node of the next/previous column. List ends
-  place the cursor on the matching grid border and take the game's own step, which leaves (Up → top
-  buttons, Down → strip, Left from the first column → banner); Right on the last column repeats the
-  node. Selection mirrors native: hover exit on the old node, set column/row, `SelectNode()`. The
-  prefixes never run the original body: called through its detour it crashes
+- `PassiveTreeNavigation` prefixes `HandleNavigateInput`/`HandleLeftStickInput`: the grid becomes
+  columns (left to right, each top to bottom; duplicates and inactive nodes skipped), planned by
+  `GroupedGridOrder` through `PassiveNavigationOrder` (2026-10-04, grid rework: the long list made
+  moves feel like sudden jumps). Down/Up = next/previous node inside the column only; Up at the top
+  or Down at the bottom of **any** column leaves (Up → top buttons, Down → strip) by placing the
+  cursor on the matching grid border and taking the game's own step. Right/Left = neighbouring
+  non-empty column at the same position, clamped to its size; Left from the first column → banner;
+  Right on the last column repeats the node. A cursor on an empty cell resumes from its place in
+  reading order. Selection mirrors native: hover exit on the old node, set column/row,
+  `SelectNode()`. The prefixes never run the original body: called through its detour it crashes
   ([dump](runtime-feedback.md#passive-navigation-crash-detoured-short-branch-prologue-2026-10-04)),
   so they replay its dispatch to `VerticalMoveToClosestNode`/`HorizontalMoveToClosestNode`.
 - `OnSelected` postfixes (old panel, controller only): from the top buttons land on the first node,
   from the strip on the last. Other entries keep the native landing.
-- Nodes and strip skills end with "N de M".
+- Nodes end with "N de M" within their column (strip skills within the strip). Entering a different
+  column (also the first node after opening or a tree switch; `GroupEntryTracker`, reset when focus
+  leaves the tree) puts `passive.column` ("Columna N", N among non-empty columns) after the tree
+  introduction and before the node name; it stays in the brief while that node stays selected.
 - `PassivePanelReader` gives the old panel the same context as the fullscreen one: overview on
   opening, "tree, points, role, unspent" before the first node of a newly shown tree, unmet node
   thresholds, strip unlock state from the shown tree's points. Name: `MasteryReader.ReadName`
@@ -208,7 +214,7 @@ Mod behaviour:
   its first node. A deliberately focused diamond reads its tree (plus "Árbol mostrado"); details read
   the mastery description. The scrollable description stays with the generic reader.
 
-Passive suite: 153 checks (order planning, moves/exits/stay, stick, re-entry gates, banner, switch
+Passive suite: 160 checks since the grid rework (order planning, moves/exits/stay, stick, re-entry gates, banner, switch
 silence, controller strip, empty selection, reopen). Patch audit: 70 declarations / 69 targets, no shared bodies.
 Runtime unverified: one navigable per page, `levelTMP` being a bare number, lock-icon meaning,
 the top-buttons/strip previous-ID values seen by `OnSelected`, and how the fullscreen panel's own

@@ -490,3 +490,28 @@ changed or the UI never updated; `OnClose` stops `clipboardChecker`. Rel32 `call
 `TextMeshProDialogueUI.HideSubtitle`, `MultiButtonsActionPrompt.OnEnable/UpdatePrompt`,
 `Toggle.set_isOn` and `SetIsOnWithoutNotify`; those run constantly without a dump, so near
 branches relocate correctly. Whether the detour covers 5 or 14 bytes is unverified.
+
+## Controller mode lost to screen-reader keys (2026-10-04)
+
+User report: in the Skills panel the d-pad "does not register well", acts outside the menu and
+returns to the first skill; "today pressing Control made the movement go crazy again". The
+15:05–15:18 log shows the radar/enemy cues resuming (gameplay owning input) more than 20 times while
+the panel stayed open, each followed by the default cell "Ráfaga"; many follow long detail reads
+the user silences with Ctrl.
+
+Static analysis (build 25690669; `EpochInputManager` bodies unchanged in 25711439):
+`ControllerShouldBeActive` (0x10be5d0) = gamepad connected and assigned, and no Rewired keyboard
+button held or released, no mouse button held or released, no mouse axis activity this frame.
+`Update` and `ControllerUpdate` set `IsControllerActive=false` whenever it fails, every frame;
+the setter clears navigation (`ClearNavigableSelection`). Back to controller needs gamepad
+activity, so the next d-pad press only re-selects the panel's default. Ctrl, Shift or NVDA's
+Insert therefore drop menu focus; the right stick cannot change the mode (it only reads the
+gamepad; tooltips scroll their `ScrollRect`).
+
+Fix (`ControllerModeGuard`, postfix on `ControllerShouldBeActive`, first relative branch +0x15):
+when the game would leave controller mode while it is active, the gamepad is assigned and the
+mouse is idle, and every keyboard key held or released this frame is a screen-reader key
+(Ctrl, Shift, Alt/AltGr, Insert, CapsLock, Windows/Command; `ControllerModeKeys`), the verdict
+stays "controller". Any other key or real mouse input switches as before (typing a name still
+works). The first kept frame logs `[Controller mode] kept while screen-reader keys were pressed`.
+Unverified: whether NVDA's numpad Insert reaches Rewired as Insert, and live behaviour.

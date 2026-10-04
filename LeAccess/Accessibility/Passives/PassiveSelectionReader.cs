@@ -3,6 +3,7 @@ using LE.UI.Tooltips;
 using LeAccess.Accessibility.Announcements;
 using LeAccess.Accessibility.ControllerMenus;
 using LeAccess.Accessibility.Dialogue;
+using LeAccess.Accessibility.Navigation;
 using LeAccess.Accessibility.ScreenContent;
 using LeAccess.Accessibility.Utils;
 using LeAccess.I18n;
@@ -24,6 +25,7 @@ internal static class PassiveSelectionReader
     private static SkillTreeNode _node;
     private static NodeTooltipInfo _fallback;
     private static string _revision;
+    private static readonly GroupEntryTracker Columns = new();
     private static double _nextFallbackRetry;
     // Match the existing inventory/skill refresh rate while native text becomes available.
     private const double FallbackRetrySeconds = 0.2;
@@ -32,6 +34,9 @@ internal static class PassiveSelectionReader
     internal static bool HasPendingModel { get; private set; }
     /// <summary>True when focus, loading or foreground content hid the panel from the last read.</summary>
     internal static bool Blocked { get; private set; }
+
+    /// <summary>The next node read counts as entering its column again.</summary>
+    internal static void ForgetColumn() => Columns.Reset();
 
     internal static void Reset()
     {
@@ -183,9 +188,14 @@ internal static class PassiveSelectionReader
             return Fail($"node name empty; {LastStatus}");
         }
         var state = ReadTreeState(panel, PassivePanelReader.Owns(owner) ? manager : null, owner);
-        string position = PassiveTreeNavigation.TryGetPosition(owner, node, out int place, out int count)
-            ? ModText.Format("list.position", place, count) : null;
-        string summary = ScreenContentTracker.Combine(new[] { name,
+        string key = $"{node.tree.GetInstanceID()}:{node.GetInstanceID()}";
+        string position = null, columnLabel = null;
+        if (PassiveTreeNavigation.TryGetPosition(owner, node, out int place, out int count, out int columnNumber))
+        {
+            position = ModText.Format("list.position", place, count);
+            if (Columns.Entered(key, $"{state.Key}:{columnNumber}")) columnLabel = ModText.Format("passive.column", columnNumber);
+        }
+        string summary = ScreenContentTracker.Combine(new[] { columnLabel, name,
             ModText.Format("node.points", info.PointsAllocated, info.MaxPoints),
             ModText.Get(node.requirementsMet ? "node.available" : "node.locked"),
             PassiveTreeReader.ReadNodeThreshold(node, state.Index, state.Points), position });
@@ -205,7 +215,7 @@ internal static class PassiveSelectionReader
                     if (!string.IsNullOrWhiteSpace(text)) fragments.Add(ModText.Format(requirement.IsMet ?
                         "node.requirement_met" : "node.requirement_unmet", text));
                 }
-        selection = new PassiveSelection($"{node.tree.GetInstanceID()}:{node.GetInstanceID()}", root, summary,
+        selection = new PassiveSelection(key, root, summary,
             ScreenContentTracker.Combine(fragments), state.Key, state.Context, state.Index);
         return true;
     }

@@ -6,7 +6,7 @@ using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Passives;
 
-/// <summary>Moves the passive cursor in reading order instead of the native same-row/column search.</summary>
+/// <summary>Moves the passive cursor through the columns instead of the native same-row/column search.</summary>
 internal static class PassiveTreeNavigation
 {
     private static readonly List<(int Column, int Row)> Order = new();
@@ -15,7 +15,7 @@ internal static class PassiveTreeNavigation
     private static int _orderColumn = -1, _orderRow = -1;
     private static string _lastFailure;
 
-    /// <summary>Moves in reading order; leaving the list, or an unreadable grid, takes the game's own step.</summary>
+    /// <summary>Moves inside the column grid; leaving it, or an unreadable grid, takes the game's own step.</summary>
     internal static void Navigate(PassiveTreeNavigable owner, Direction direction)
     {
         bool handled = false;
@@ -87,10 +87,11 @@ internal static class PassiveTreeNavigation
         catch (Exception ex) { ReportFailure(ex); }
     }
 
-    /// <summary>The node's place in the reading order, or false when it is not in the grid.</summary>
-    internal static bool TryGetPosition(PassiveTreeNavigable owner, SkillTreeNode node, out int position, out int count)
+    /// <summary>The node's place in its column and the column's ordinal, or false when it is not in the grid.</summary>
+    internal static bool TryGetPosition(PassiveTreeNavigable owner, SkillTreeNode node, out int position, out int count,
+        out int column)
     {
-        position = count = 0;
+        position = count = column = 0;
         if (!IsAlive(node)) return false;
         if (!IsAlive(owner) || owner.Pointer != _orderOwner || owner._currentColumn != _orderColumn ||
             owner._currentRow != _orderRow)
@@ -99,8 +100,11 @@ internal static class PassiveTreeNavigation
         }
         int index = Nodes.IndexOf(node.Pointer);
         if (index < 0) return false;
-        position = index + 1;
-        count = Nodes.Count;
+        var cell = Order[index];
+        if (PassiveNavigationOrder.PlaceOf(Order, cell.Column, cell.Row) is not { } place) return false;
+        position = place.Index + 1;
+        count = place.Size;
+        column = place.Group + 1;
         return true;
     }
 

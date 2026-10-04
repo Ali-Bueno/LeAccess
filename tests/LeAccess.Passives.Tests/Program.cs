@@ -442,12 +442,15 @@ var order = new List<(int Column, int Row)> { (1, 3), (1, 1), (3, 4), (3, 2), (5
 PassiveNavigationOrder.Move Plan(int column, int row, Direction direction) => PassiveNavigationOrder.Plan(order, column, row, direction);
 PassiveNavigationOrder.Move Select(int column, int row) => new(PassiveNavigationOrder.MoveKind.Select, column, row);
 var exit = new PassiveNavigationOrder.Move(PassiveNavigationOrder.MoveKind.Exit);
-Check(Plan(1, 3, Direction.DOWN) == Select(1, 1) && Plan(1, 1, Direction.DOWN) == Select(3, 4),
-    "Down reads each column top to bottom, then the next column");
-Check(Plan(3, 4, Direction.UP) == Select(1, 1) && Plan(1, 3, Direction.UP) == exit && Plan(5, 1, Direction.DOWN) == exit,
-    "Up steps back across columns and both list ends leave the grid");
-Check(Plan(1, 1, Direction.RIGHT) == Select(3, 4) && Plan(3, 2, Direction.LEFT) == Select(1, 3) && Plan(1, 1, Direction.LEFT) == exit,
-    "Right and Left jump to the top node of the next or previous column; Left from the first column leaves");
+Check(Plan(1, 3, Direction.DOWN) == Select(1, 1) && Plan(1, 1, Direction.DOWN) == exit &&
+    Plan(3, 2, Direction.DOWN) == exit && Plan(5, 1, Direction.DOWN) == exit,
+    "Down steps down its column only and the bottom of every column leaves the grid");
+Check(Plan(1, 1, Direction.UP) == Select(1, 3) && Plan(1, 3, Direction.UP) == exit && Plan(3, 4, Direction.UP) == exit,
+    "Up steps up its column only and the top of every column leaves the grid");
+Check(Plan(1, 3, Direction.RIGHT) == Select(3, 4) && Plan(1, 1, Direction.RIGHT) == Select(3, 2) &&
+    Plan(3, 2, Direction.RIGHT) == Select(5, 1) && Plan(5, 1, Direction.LEFT) == Select(3, 4) &&
+    Plan(3, 2, Direction.LEFT) == Select(1, 1) && Plan(1, 1, Direction.LEFT) == exit,
+    "Right and Left keep the position in the neighbouring column, clamped to its size; Left from the first column leaves");
 Check(Plan(5, 1, Direction.RIGHT) == new PassiveNavigationOrder.Move(PassiveNavigationOrder.MoveKind.Stay),
     "Right from the last column stays put");
 Check(Plan(2, 0, Direction.DOWN) == Select(3, 4) && Plan(2, 0, Direction.UP) == Select(1, 1) &&
@@ -482,7 +485,7 @@ string controllerOpened = ScreenReader.Messages.Single().Text;
 string rogueTree = Join(Tree("Rogue", 5, T("passive.tree_class")), F("passive.unspent", 4));
 Check(controllerOpened.StartsWith(F("passive.overview", string.Join("; ", Tree("Rogue", 5, T("passive.tree_class")),
     Tree("Bladedancer", 3, T("passive.tree_chosen")), Tree("Falconer", 0, T("passive.tree_locked"))))) &&
-    controllerOpened.Contains(rogueTree) && controllerOpened.Contains(nodeA.Name) && controllerOpened.EndsWith(F("list.position", 1, 5)),
+    controllerOpened.Contains(rogueTree) && controllerOpened.Contains(Join(F("passive.column", 1), nodeA.Name)) && controllerOpened.EndsWith(F("list.position", 1, 2)),
     "Opening the controller panel speaks every tree, the shown tree and the first node's place: " + controllerOpened);
 PassiveTreeNavigation.Navigate(pageOwner, Direction.DOWN);
 Check((pageOwner._currentColumn, pageOwner._currentRow) == (1, 1) && pageOwner.NativeSteps.Count == 0 &&
@@ -490,11 +493,23 @@ Check((pageOwner._currentColumn, pageOwner._currentRow) == (1, 1) && pageOwner.N
     "A handled move ends the old hover, places the cursor and selects the node natively");
 Tick(); Tick();
 Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text.Contains(nodeB.Name) &&
-    ScreenReader.Messages.Last().Text.EndsWith(F("list.position", 2, 5)) && !ScreenReader.Messages.Last().Text.Contains(rogueTree),
-    "Moving within a tree speaks the node and its place only");
+    ScreenReader.Messages.Last().Text.EndsWith(F("list.position", 2, 2)) && !ScreenReader.Messages.Last().Text.Contains(rogueTree) &&
+    !ScreenReader.Messages.Last().Text.Contains(F("passive.column", 1)),
+    "Moving within a column speaks the node and its place only");
 PassiveTreeNavigation.Navigate(pageOwner, new Vector3 { x = 0.9f });
-Check((pageOwner._currentColumn, pageOwner._currentRow) == (3, 4),
+Check((pageOwner._currentColumn, pageOwner._currentRow) == (3, 2),
     "A stick flick moves like the d-pad");
+Tick(); Tick();
+Check(ScreenReader.Messages.Last().Text.Contains(Join(F("passive.column", 2), nodeD.Name)) &&
+    ScreenReader.Messages.Last().Text.EndsWith(F("list.position", 2, 2)), "Entering another column puts its label before the node");
+Check(PassiveSelectionReader.TryRead(out var entered) && PassiveSelectionReader.TryRead(out var enteredAgain) &&
+    entered.Summary == enteredAgain.Summary && entered.Summary.StartsWith(F("passive.column", 2)),
+    "The column label stays for as long as the same node is selected");
+PassiveTreeNavigation.Navigate(pageOwner, Direction.UP);
+Tick(); Tick();
+Check(ScreenReader.Messages.Last().Text.Contains(nodeC.Name) && !ScreenReader.Messages.Last().Text.Contains(F("passive.column", 2)),
+    "Moving inside the same column does not repeat the label");
+PassiveTreeNavigation.Navigate(pageOwner, Direction.DOWN);
 pageOwner._currentColumn = 5; pageOwner._currentRow = 1;
 Tick(); Tick();
 int beforeStay = ScreenReader.Messages.Count;
@@ -503,7 +518,7 @@ Check((pageOwner._currentColumn, pageOwner._currentRow) == (5, 1) && pageOwner.N
     "Right from the last column keeps the cursor");
 Tick(); Tick();
 Check(ScreenReader.Messages.Count == beforeStay + 1 && ScreenReader.Messages.Last().Text.Contains(nodeE.Name) &&
-    ScreenReader.Messages.Last().Text.EndsWith(F("list.position", 5, 5)), "A move that cannot go further repeats the node and its place");
+    ScreenReader.Messages.Last().Text.EndsWith(F("list.position", 1, 1)), "A move that cannot go further repeats the node and its place");
 PassiveTreeNavigation.Navigate(pageOwner, Direction.DOWN);
 Check(pageOwner.NativeSteps.Last() == "vertical -1 from 5,0", "Down from the last node takes the game's step from the bottom border");
 pageOwner._currentColumn = 1; pageOwner._currentRow = 3;
@@ -558,7 +573,7 @@ NavigationManager.currentlySelected = masteryOwner;
 Tick(); Tick();
 string switched = ScreenReader.Messages.Last().Text;
 Check(ScreenReader.Messages.Count == beforeSwitch + 1 &&
-    switched.StartsWith(Join(Tree("Bladedancer", 3, T("passive.tree_chosen")), F("passive.unspent", 4), nodeG.Name)) &&
+    switched.StartsWith(Join(Tree("Bladedancer", 3, T("passive.tree_chosen")), F("passive.unspent", 4), F("passive.column", 1), nodeG.Name)) &&
     !switched.Contains(overviewPrefix) && switched.Contains(F("passive.node_threshold", 10, 3)),
     "The new tree's name and points lead its first node in one utterance: " + switched);
 bannerNavigable._currentButton = diamonds[2].GetComponent<UnityEngine.UI.Button>();
@@ -592,7 +607,8 @@ classTree.Active = false; NavigationManager.currentlySelected = null;
 Tick();
 classTree.Active = true; NavigationManager.currentlySelected = masteryOwner;
 Tick(); Tick();
-Check(ScreenReader.Messages.Last().Text.StartsWith(overviewPrefix), "Reopening the controller panel speaks the overview again");
+Check(ScreenReader.Messages.Last().Text.StartsWith(overviewPrefix) && ScreenReader.Messages.Last().Text.Contains(F("passive.column", 1)),
+    "Reopening the controller panel speaks the overview and the first node's column again");
 PassivePanelManager.instance = null;
 PlayerFinder.Actor = null;
 PassiveAccessibility.Reset();

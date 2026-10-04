@@ -13,6 +13,15 @@ internal static class SkillTreeMovePatch
         !SkillTreeNavigation.TryNavigate(__instance, input);
 }
 
+// The native overview walk wraps around and mixes base-class and mastery skills in one row; see
+// reference/skill-tree-navigation.md. The prologue's first relative branch is at +0x13, so the original may run.
+[HarmonyPatch(typeof(SkillsPanelManager), nameof(SkillsPanelManager.HandleNavigateInput))]
+internal static class SkillPanelMovePatch
+{
+    private static bool Prefix(SkillsPanelManager __instance, Direction direction) =>
+        !SkillPanelGrid.TryNavigate(__instance, direction);
+}
+
 [HarmonyPatch(typeof(SkillsPanelManager), nameof(SkillsPanelManager.OnOpenSkillTree))]
 internal static class SkillTreeOpenedPatch
 {

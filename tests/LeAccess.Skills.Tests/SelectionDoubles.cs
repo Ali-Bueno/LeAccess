@@ -22,6 +22,14 @@ internal sealed class SkillsPanelManager : UnityEngine.Component
     internal readonly List<SkillTreeNode> Focused = new();
     internal int Coroutines;
     internal void FocusTreeNode() { Focused.Add(currentlySelectedNode); currentlySelectedIdx.y = 1; }
+    internal Il2CppSystem.Collections.Generic.List<AbilityPanelIcon> baseClassPanelIcons, baseClassTreePanelIcons,
+        masteryClass1PanelIcons, masteryClass2PanelIcons, masteryClass3PanelIcons;
+    internal AbilityPanelIcon masteryAbilityPanelIcon1, masteryAbilityPanelIcon2, masteryAbilityPanelIcon3;
+    internal TMPro.TMP_Text baseClassName, mastery1ClassName, mastery2ClassName, mastery3ClassName;
+    internal readonly List<UnityEngine.Vector2Int> FocusedCells = new();
+    internal int HiddenTooltips;
+    internal void HideIconTooltip() => HiddenTooltips++;
+    internal void FocusSelectable() => FocusedCells.Add(currentlySelectedIdx);
     internal string ShowTreeNodeTooltip() => "tooltip";
     internal void StartCoroutine(string routine) => Coroutines++;
 }
@@ -51,7 +59,17 @@ internal sealed class KnownAbilityList : UnityEngine.Component
 }
 internal sealed class AbilitySelectionIcon : UnityEngine.Component
 { internal Ability ability; internal AbilityTooltip tooltipAbility { get; set; } }
-internal sealed class SpecialisedAbilityIcon : UnityEngine.Component { internal Ability ability { get; set; } }
+internal sealed class SpecialisedAbilityIcon : UnityEngine.Component
+{ internal Ability ability { get; set; } internal bool locked; internal TMPro.TMP_Text levelLockedText; }
+namespace UnityEngine.EventSystems
+{
+    internal sealed class EventSystem : UnityEngine.Component
+    {
+        internal static EventSystem current;
+        internal UnityEngine.GameObject Selected;
+        internal void SetSelectedGameObject(UnityEngine.GameObject selected) => Selected = selected;
+    }
+}
 internal sealed class AbilityTooltipSelectableAdapter : UnityEngine.UI.Selectable
 { internal AbilityTooltip _abilityTooltip { get; set; } }
 internal sealed class AbilityTooltip : UnityEngine.Component

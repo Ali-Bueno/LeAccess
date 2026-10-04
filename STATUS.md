@@ -1,6 +1,9 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-04 (Claude session): list navigation with positions for passive trees,
+**Updated:** 2026-10-04 afternoon (Claude session): Ctrl/Shift/Insert no longer drop controller mode
+and menu focus; the Skills panel, passive trees and specialization trees navigate as grids (row,
+column or branch named on entry, "N de M" inside it); see [WHATS_NEXT.md](WHATS_NEXT.md).
+Earlier that day: list navigation with positions for passive trees,
 skill trees and the backpack; a navigation-hook crash fixed and three similar hooks made safe;
 before that, the exploration scanner now has the D2R categories,
 speech, new-place announcements and room sounds; earlier that night, unexplored rooms from the
@@ -16,7 +19,7 @@ Startup, online play and listening on this build still need in-game validation.
 
 ## Current installation
 
-- **Game:** Steam build **25690669**, Unity **6000.4.8f1**, IL2CPP metadata **39**.
+- **Game:** Steam build **25711439** since 2026-10-04 15:18 (after the user's session), Unity **6000.4.8f1**, IL2CPP metadata **39**. Installed interop is still from 25690669; BepInEx regenerates it on the next launch (`SkillsPanelManager`/`EpochInputManager` bodies only moved, same sizes).
 - **Path:** `D:\games\steam\steamapps\common\Last Epoch`.
 - **Loader:** BepInEx **6.0.0-be.788**, Il2CppInterop **1.5.3**; automatic updates remain enabled.
 - **Interop:** regenerated offline from the installed binary/metadata, 214 DLLs and two native databases installed and byte-verified. The existing preloader repaired the same 16 Unity orphan rows. Native audit: 46 regressions, 60 declarations / 59 targets.
@@ -64,10 +67,10 @@ requested. No release or new ZIP has been requested.
 | Area | Current evidence / remaining work |
 |---|---|
 | Steam port | Earlier build 25672295 logged online creation, connection and InGame. Current hotfix compiles and passes native audit; startup/online listening pending. |
-| Native hook safety | 46 checks; build 25690669, 72 declarations / 71 distinct native targets. Hooks whose original runs must not start with a relative branch: the passive navigate prefix and three tiny bodies now replay the native code instead ([detour crash](reference/runtime-feedback.md#passive-navigation-crash-detoured-short-branch-prologue-2026-10-04)). |
+| Native hook safety | 46 checks; build 25690669, 72 declarations / 71 distinct native targets; two new hooks (2026-10-04 afternoon: `SkillsPanelManager.HandleNavigateInput` prefix, `EpochInputManager.ControllerShouldBeActive` postfix) checked by hand on 25711439 (first relative branch +0x13/+0x15); the audit refuses the stale interop until regeneration. Hooks whose original runs must not start with a relative branch: the passive navigate prefix and three tiny bodies now replay the native code instead ([detour crash](reference/runtime-feedback.md#passive-navigation-crash-detoured-short-branch-prologue-2026-10-04)). |
 | Reader recovery | Bounded reconnection; covered readers acknowledge accepted output and retry current content. 41 transport checks plus service regressions. [Scope/limits](reference/screen-reader-lifecycle.md); listening pending. |
 | Early online/offline selection | Empty native nullable no longer throws during readiness polling or erases the first click; observation failures retain intent, dispatch remains once-only. 56 checks; fresh startup listening pending. |
-| Menus/focus | Settings sliders/toggles speak only the new value while focus stays; headings no longer repeat after dropdowns; popups never speak raw object names; controller button names localized; zero-height labels that render (main-menu "Partida sin conexión") are read again. Native mediator callbacks follow FocusedPanel; typed forge/material selections and background/faded guards. 307 menu + 63 settings-source checks. [Audit and limits](reference/menu-visibility.md); listening pending. |
+| Menus/focus | Screen-reader keys (Ctrl, Shift, Alt, Insert, CapsLock, Windows) keep controller mode, so menus no longer lose focus and reset ([cause](reference/runtime-feedback.md#controller-mode-lost-to-screen-reader-keys-2026-10-04)). Settings sliders/toggles speak only the new value while focus stays; headings no longer repeat after dropdowns; popups never speak raw object names; controller button names localized; zero-height labels that render (main-menu "Partida sin conexión") are read again. Native mediator callbacks follow FocusedPanel; typed forge/material selections and background/faded guards. 307 menu + 63 settings-source checks. [Audit and limits](reference/menu-visibility.md); listening pending. |
 | Mod localization | Automatic game language, en/es catalogs, override and per-key fallback; 376 checks. |
 | Return from Start | Character creation owner/control restored after pause closes; 134 checks. User confirms it works. |
 | Internal panel chatter | Removed; background Forge/Skill Tree opening or closing no longer speaks object names. |
@@ -77,8 +80,8 @@ requested. No release or new ZIP has been requested.
 | Hints/notifications | Button-first hints retained. Countdown reads once per restart with menu/typing priority; rejected batch output keeps current sources pending. 79 binding/prompt + 115 notification checks. [Evidence](reference/announcement-lifecycle.md). |
 | Controller menu/zones | Announces opening with neutral stick, then selected localized option; fully faded wheels/sectors cannot speak retained models. 40 checks. Listening pending. |
 | Classes/masteries/realm | Character-select tiles read name, level/mastery, cycle and hardcore tag; character-sheet stat lines read name and value ([sheet](reference/character-sheet.md)). Season/legacy labels; descriptions manual. Disabled retained carousel and background mastery rejected. 102 checks; listening pending. |
-| Skills/assigned buttons | Verified assignments and learned/unlock state; rejected briefs/details retry the current owned selection. Specialization trees are navigated as one list by branch with "N de M"; opening focuses the tree's own root ([tree navigation](reference/skill-tree-navigation.md)). Square carries the highlighted skill into the chosen slot's list ([assignment](reference/skill-assignment.md#square-carries-the-highlighted-skill-2026-10-04)). 211 checks; listening pending. |
-| Passive nodes | Native name/description; overview on opening, tree name/points before a new tree's first node, unmet thresholds, skill strip. The controller panel (`PassivePanelManager`) is covered too; the grid is navigated as one list with "N de M" ([controller panel](reference/passive-reading.md#controller-panel-reading-order-and-tree-switching-2026-10-04)). 153 checks; listening pending. |
+| Skills/assigned buttons | Verified assignments and learned/unlock state; rejected briefs/details retry the current owned selection. The overview is a grid: slots, base class and each mastery as rows, row name on entry, "N de M", no wrap; empty/locked slots speak ([overview](reference/skill-tree-navigation.md#skills-overview-grid-2026-10-04)). Specialization trees are a grid by branch ("Rama N"); opening focuses the tree's own root ([tree navigation](reference/skill-tree-navigation.md)). Square carries the highlighted skill into the chosen slot's list ([assignment](reference/skill-assignment.md#square-carries-the-highlighted-skill-2026-10-04)). 233 checks; listening pending. |
+| Passive nodes | Native name/description; overview on opening, tree name/points before a new tree's first node, unmet thresholds, skill strip. The controller panel (`PassivePanelManager`) is covered too; the grid is navigated by column ("Columna N", "N de M" in the column) ([controller panel](reference/passive-reading.md#controller-panel-reading-order-and-tree-switching-2026-10-04)). 160 checks; listening pending. |
 | World map/waypoints | Map selection reads location, level, "here", locked and quest markers; a quest's tweened location queues after its brief. Cross says "Viajando a X" or why travel is impossible instead of silence ([travel](reference/waypoint-map.md#cross-on-the-map-travel-2026-10-04)). 35 checks; listening pending. |
 | Quest journal | Current state/objectives and manual history retained; rejected briefs/details retry only while selection remains owned. 136 checks; listening pending. |
 | Automatic quest updates | Failed output preserves current pending changes, shared pacing and fair turns with dynamic objectives. 116 checks. [Evidence](reference/quest-updates.md). Listening pending. |
@@ -108,10 +111,9 @@ requested. No release or new ZIP has been requested.
 
 ## Validation and references
 
-- `dotnet build LeAccess/LeAccess.csproj --no-restore`: zero warnings/errors; deployed with the game stopped (2026-10-04, D2R categories).
-- All **58 test suites / 58,771 checks** pass. Native safety unchanged: **66 declarations / 65 targets**; no new hooks.
-- Built and installed plugin SHA-256 match: `B581321F8EF4A5D2DF96C9F0EBA8CD03B7581FE1E22A4F475207AFE8CC5835E3`. Previous plugin, config and exploration saves backed up to `C:\Users\ali-b\Documents\LeAccess backups\pre-d2r-categories-5c442bf-20261004`.
-- Both installed configuration files and both personal translation catalogs retain their original hashes. No game or audio device launched; host tests do not establish live UI visibility or audible output.
+- 2026-10-04 afternoon: `dotnet build LeAccess/LeAccess.csproj --no-restore` zero warnings/errors; deployed with the game stopped. Installed plugin SHA-256 matches the build: `0162F933813DC3DC43ED7BA7FABE2CD43B8D5E8D9532A9D0A1E7C2E5CED4FE0C`.
+- 59 of 60 test invocations pass (Skills 233, Passives 160, Localization 610, VitalsInput 31 checks among them). PatchSafety refuses to audit, as designed, because the installed interop predates Steam build 25711439; rerun it after the next launch regenerates interop.
+- No game or audio device launched; host tests do not establish live UI visibility or audible output.
 
 Current-build regeneration and native audit: [Steam port notes](reference/steam-port.md).
 Newly covered native windows: [dungeon/warning reading](reference/dungeon-warning-reading.md).

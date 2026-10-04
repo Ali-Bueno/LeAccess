@@ -15,7 +15,7 @@ internal enum SkillDetailsSource { Description, Tooltip, ExpandedTooltip }
 internal readonly record struct SkillSelection(string Key, GameObject Root, Ability Ability,
     AbilityBarIcon BarIcon, string Name, string Details,
     SkillDetailsSource DetailsSource = SkillDetailsSource.Description, string LiveDetails = null,
-    string Status = null, bool IsNode = false);
+    string Status = null, bool IsNode = false, string Context = null);
 
 /// <summary>Reads the game's current selection; never opens a tooltip or changes navigation.</summary>
 internal static class SkillSelectionReader
@@ -46,7 +46,14 @@ internal static class SkillSelectionReader
             var cell = cells.GetValue(index.x, index.y);
             if (cell is null || cell.WasCollected) return false;
             var component = cell.TryCast<Component>();
-            return IsAlive(component) && TryReadControl(component.gameObject, out selection, includeDetails);
+            if (!IsAlive(component) || !TryReadControl(component.gameObject, out selection, includeDetails)) return false;
+            if (SkillPanelGrid.TryDescribe(panel, out string row, out int position, out int count))
+                selection = selection with
+                {
+                    Context = row,
+                    Status = ScreenContentTracker.Combine(new[] { selection.Status, ModText.Format("list.position", position, count) })
+                };
+            return true;
         }
 
         // The ability assignment grid/hotbar uses the ordinary active Selectable.
@@ -112,7 +119,18 @@ internal static class SkillSelectionReader
                 else
                 {
                     var specialised = Find<SpecialisedAbilityIcon>(root);
-                    if (IsAlive(specialised)) { hasItemIdentity = true; ability = specialised.ability; }
+                    if (IsAlive(specialised))
+                    {
+                        hasItemIdentity = true;
+                        ability = specialised.ability;
+                        if (!IsAlive(ability))
+                        {
+                            selection = new SkillSelection($"specialization:{root.GetInstanceID()}", root, null, null,
+                                ModText.Get(specialised.locked ? "skill.specialization_locked" : "skill.specialization_empty"),
+                                null, Status: specialised.locked ? ReadLabel(specialised.levelLockedText) : null);
+                            return true;
+                        }
+                    }
                 }
             }
         }
@@ -178,9 +196,9 @@ internal static class SkillSelectionReader
         string name = TextUtils.CleanText(localized.GetNodeName(tree.treeID, node.id, node.nodeName));
         string description = TextUtils.CleanText(localized.GetNodeDescription(tree.treeID, node.id, node.description));
         string points = null;
+        bool placed = SkillTreeNavigation.TryDescribe(panel, node, out string branch, out int place, out int count);
         string status = ScreenContentTracker.Combine(new[] { ModText.Format("node.points", node.pointsAllocated, node.maxPoints),
-            SkillTreeNavigation.TryGetPosition(panel, node, out int place, out int count)
-                ? ModText.Format("list.position", place, count) : null });
+            placed ? ModText.Format("list.position", place, count) : null });
         var detailsSource = SkillDetailsSource.Description;
         bool modernVisible = false;
         if (includeDetails && SkillTooltipDetailsReader.TryReadModernNode(node, out string modernName, out string modernDetails,
@@ -188,7 +206,7 @@ internal static class SkillSelectionReader
         {
             if (!string.IsNullOrWhiteSpace(modernName)) name = modernName;
             selection = new SkillSelection($"node:{tree.GetInstanceID()}:{node.GetInstanceID()}", node.gameObject,
-                tree.ability, null, name, modernDetails, SkillDetailsSource.Tooltip, Status: status, IsNode: true);
+                tree.ability, null, name, modernDetails, SkillDetailsSource.Tooltip, Status: status, IsNode: true, Context: branch);
             return !string.IsNullOrWhiteSpace(name);
         }
         var tooltip = NodeTooltipManager.instance;
@@ -207,7 +225,7 @@ internal static class SkillSelectionReader
         if (string.IsNullOrWhiteSpace(name)) return false;
         selection = new SkillSelection($"node:{tree.GetInstanceID()}:{node.GetInstanceID()}", node.gameObject,
             tree.ability, null, name, ScreenContentTracker.Combine(new[] { description, points }), detailsSource,
-            Status: status, IsNode: true);
+            Status: status, IsNode: true, Context: branch);
         return true;
     }
 
