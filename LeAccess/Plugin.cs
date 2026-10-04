@@ -13,6 +13,7 @@ using LeAccess.Accessibility.Quests;
 using LeAccess.Accessibility.Npcs;
 using LeAccess.Accessibility.WorldCues;
 using LeAccess.Accessibility.Vitals;
+using LeAccess.Accessibility.Diagnostics;
 using LeAccess.Accessibility.Landmarks;
 using LeAccess.Accessibility.MapSections;
 using LeAccess.I18n;
@@ -68,6 +69,7 @@ public class Plugin : BasePlugin
         NpcSounds.Initialize(Config);
         WorldCueSounds.Initialize(Config);
         EnemyCueSounds.Initialize(Config);
+        ControllerBindingLog.Initialize(Config);
         WallSonar.Initialize();
 
         // Register UI component for menu accessibility
@@ -106,6 +108,7 @@ public class Plugin : BasePlugin
         CombatAccessibility.Cleanup();
         EnemyScanAccessibility.Cleanup();
         VitalsAccessibility.Cleanup();
+        ControllerBindingLog.Cleanup();
         BossLifeAccessibility.Cleanup();
         LandmarkAccessibility.Cleanup();
         MapSectionAccessibility.Cleanup();

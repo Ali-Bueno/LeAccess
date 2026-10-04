@@ -66,3 +66,19 @@ the right-stick scanner plus the beacon (`docs/entity-scan.md`, `docs/beacon.md`
   arrow), or D2R's route through explored ground only.
 - Existing route-computing guidance (automatic orientation, F6) conflicts with the
   rule and would be turned off by default or removed.
+
+## Controller binding log (installed 2026-10-03)
+
+`Diagnostics/ControllerBindingLog.cs`, config `[Diagnostics] ControllerBindingLog`
+(default true). Read-only; no hooks, the game receives every input as before.
+
+- On first sight of a joystick: `[Controller bindings]` lines with each Rewired map
+  (category, layout, enabled) and every element → action (`name (descriptiveName)`).
+- When the set of enabled maps changes: `[Controller bindings] enabled maps
+  (gameplay|menu): ...`, showing which categories are live in each context.
+- On every button press, and every axis crossing 0.5 (sticks, triggers):
+  `[Controller press] <element> (gameplay|menu): mapped=[actions in enabled maps]
+  fired=[actions whose GetButtonDown is true this frame]`.
+
+User test: in gameplay, press each D-pad direction, L3, R3 and the other buttons
+once, then send the log. Turn the key off once the exploration buttons are chosen.

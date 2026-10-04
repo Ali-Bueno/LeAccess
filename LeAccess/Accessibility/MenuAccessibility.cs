@@ -18,6 +18,7 @@ using LeAccess.Accessibility.Passives;
 using LeAccess.Accessibility.Map;
 using LeAccess.Accessibility.Quests;
 using LeAccess.Accessibility.Vitals;
+using LeAccess.Accessibility.Diagnostics;
 using LeAccess.Accessibility.Landmarks;
 using LeAccess.Accessibility.MapSections;
 using LeAccess.Accessibility.Login;
@@ -103,6 +104,7 @@ public class MenuAccessibility : MonoBehaviour
             ZoneAnnouncer.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || LandmarkAccessibility.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || questUpdatesPending);
         CombatAccessibility.Update(PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent || VisibleSubtitleAnnouncer.HasPendingContent);
         VitalsAccessibility.Update(worldContentActive);
+        ControllerBindingLog.Update();
         BossLifeAccessibility.Update();
         PassiveGuidanceAccessibility.Update(worldContentActive,
             ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent ||
