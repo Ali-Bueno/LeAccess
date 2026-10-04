@@ -11,8 +11,9 @@ using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Passives;
 
+/// <summary>A readable passive selection; Context is the panel whose tree TreeIndex names.</summary>
 internal readonly record struct PassiveSelection(string Key, GameObject Root, string Summary, string Details,
-    string TreeKey = null, string Tree = null, LE.UI.PanelSystem.FullScreenPanelPassiveTree Panel = null)
+    string TreeKey = null, Component Context = null, int TreeIndex = -1)
 {
     internal string Text => ScreenContentTracker.Combine(new[] { Summary, Details });
 }
@@ -52,8 +53,14 @@ internal static class PassiveSelectionReader
             DialogueAnnouncer.HasActiveContent || ControllerMenuAccessibility.HasActiveContent;
         if (Blocked) return false;
         var current = NavigationManager.currentlySelected;
-        if (current is null || current.WasCollected) return Fail("navigation missing or collected");
+        if (current is null || current.WasCollected)
+        {
+            // Page switches can clear the selection while the controller panel stays open.
+            HasPassiveContext = PassivePanelReader.TryGetOpen(out _);
+            return Fail("navigation missing or collected");
+        }
         var panel = current.TryCast<LE.UI.PanelSystem.FullScreenPanelPassiveTree>();
+        PassivePanelManager manager = null;
         if (IsAlive(panel))
         {
             HasPassiveContext = true;
@@ -61,14 +68,29 @@ internal static class PassiveSelectionReader
             // The fullscreen panel forwards navigation to this exact active child.
             current = panel.ActiveChildNavigable;
             if (current is null || current.WasCollected) return Fail("fullscreen active child missing or collected");
-            var strip = current.TryCast<PassiveTreeUnlockPanelNavigable>();
-            if (IsAlive(strip))
+        }
+        else if (PassivePanelReader.TryGetOpen(out manager))
+        {
+            // The controller panel selects its banner, strip and trees directly.
+            HasPassiveContext = true;
+            var banner = current.TryCast<PassiveTreeBannerNavigable>();
+            if (IsAlive(banner))
             {
-                if (!PassiveTreeReader.TryReadUnlock(panel, strip, out selection)) return Fail("unlock strip selection unavailable");
-                LastStatus = "ready; unlock strip";
-                selection = WithTree(selection, panel);
+                if (PassivePanelReader.IsSwitching(manager)) return Fail("mastery page switching");
+                if (!PassivePanelReader.TryReadBanner(manager, banner, out selection)) return Fail("banner selection unavailable");
+                LastStatus = "ready; mastery banner";
                 return true;
             }
+        }
+        var strip = current.TryCast<PassiveTreeUnlockPanelNavigable>();
+        if (IsAlive(strip) && (IsAlive(panel) || IsAlive(manager)))
+        {
+            var tree = ReadTreeState(panel, manager, strip);
+            if (!PassiveTreeReader.TryReadUnlock(strip, tree.Points, tree.MaxPoints, out selection))
+                return Fail("unlock strip selection unavailable");
+            LastStatus = "ready; unlock strip";
+            selection = selection with { TreeKey = tree.Key, Context = tree.Context, TreeIndex = tree.Index };
+            return true;
         }
         var owner = current.TryCast<PassiveTreeNavigable>();
         if (!IsAlive(owner))
@@ -160,10 +182,13 @@ internal static class PassiveSelectionReader
             }
             return Fail($"node name empty; {LastStatus}");
         }
+        var state = ReadTreeState(panel, PassivePanelReader.Owns(owner) ? manager : null, owner);
+        string position = PassiveTreeNavigation.TryGetPosition(owner, node, out int place, out int count)
+            ? ModText.Format("list.position", place, count) : null;
         string summary = ScreenContentTracker.Combine(new[] { name,
             ModText.Format("node.points", info.PointsAllocated, info.MaxPoints),
             ModText.Get(node.requirementsMet ? "node.available" : "node.locked"),
-            IsAlive(panel) ? PassiveTreeReader.ReadNodeThreshold(panel, node) : null });
+            PassiveTreeReader.ReadNodeThreshold(node, state.Index, state.Points), position });
         var fragments = new List<string> { TextUtils.CleanText(info.Description) };
         if (info.Modifiers is not null && !info.Modifiers.WasCollected)
             foreach (var modifier in info.Modifiers)
@@ -180,16 +205,44 @@ internal static class PassiveSelectionReader
                     if (!string.IsNullOrWhiteSpace(text)) fragments.Add(ModText.Format(requirement.IsMet ?
                         "node.requirement_met" : "node.requirement_unmet", text));
                 }
-        selection = WithTree(new PassiveSelection($"{node.tree.GetInstanceID()}:{node.GetInstanceID()}", root, summary,
-            ScreenContentTracker.Combine(fragments)), panel);
+        selection = new PassiveSelection($"{node.tree.GetInstanceID()}:{node.GetInstanceID()}", root, summary,
+            ScreenContentTracker.Combine(fragments), state.Key, state.Context, state.Index);
         return true;
     }
 
-    private static PassiveSelection WithTree(PassiveSelection selection, LE.UI.PanelSystem.FullScreenPanelPassiveTree panel)
+    /// <summary>The spoken name, points and role of the selection's tree.</summary>
+    internal static string ReadTree(PassiveSelection selection)
     {
-        if (!IsAlive(panel)) return selection;
-        string tree = PassiveTreeReader.ReadTree(panel, out string key);
-        return selection with { TreeKey = key, Tree = tree, Panel = panel };
+        var panel = selection.Context?.TryCast<LE.UI.PanelSystem.FullScreenPanelPassiveTree>();
+        if (IsAlive(panel)) return PassiveTreeReader.ReadTree(panel);
+        var manager = selection.Context?.TryCast<PassivePanelManager>();
+        return IsAlive(manager) ? PassivePanelReader.ReadTree(manager, selection.TreeIndex) : null;
+    }
+
+    /// <summary>Every tree of the selection's panel.</summary>
+    internal static string ReadOverview(PassiveSelection selection)
+    {
+        var panel = selection.Context?.TryCast<LE.UI.PanelSystem.FullScreenPanelPassiveTree>();
+        if (IsAlive(panel)) return PassiveTreeReader.ReadOverview(panel);
+        var manager = selection.Context?.TryCast<PassivePanelManager>();
+        return IsAlive(manager) ? PassivePanelReader.ReadOverview(manager) : null;
+    }
+
+    private readonly record struct TreeState(string Key, Component Context, int Index, int? Points, int? MaxPoints);
+
+    private static TreeState ReadTreeState(LE.UI.PanelSystem.FullScreenPanelPassiveTree panel, PassivePanelManager manager,
+        Component navigable)
+    {
+        if (IsAlive(panel))
+        {
+            int shown = panel._currentMasteryIndex;
+            bool bar = PassiveTreeReader.TryReadBar(panel._masteryBarDisplay, out int points, out int max);
+            return new($"{panel.GetInstanceID()}:{shown}", panel, shown, bar ? points : null, bar ? max : null);
+        }
+        if (!IsAlive(manager)) return new(null, null, -1, null, null);
+        int index = PassivePanelReader.TreeIndex(manager, navigable);
+        return new($"{manager.GetInstanceID()}:{index}", manager, index,
+            PassivePanelReader.Points(manager, index), PassivePanelReader.MaxPoints(manager, index));
     }
 
     private static bool Fail(string status) { LastStatus = status; return false; }

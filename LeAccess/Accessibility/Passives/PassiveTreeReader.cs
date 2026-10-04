@@ -11,16 +11,14 @@ using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Passives;
 
-/// <summary>Reads the fullscreen passive panel's trees and their skill-unlock strip.</summary>
+/// <summary>Reads the fullscreen passive panel's trees, and the skill-unlock strip of either passive panel.</summary>
 internal static class PassiveTreeReader
 {
     /// <summary>The displayed tree's name, role and allocated points.</summary>
-    internal static string ReadTree(FullScreenPanelPassiveTree panel, out string key)
+    internal static string ReadTree(FullScreenPanelPassiveTree panel)
     {
-        key = null;
         if (!IsAlive(panel)) return null;
         int index = panel._currentMasteryIndex;
-        key = $"{panel.GetInstanceID()}:{index}";
         var tab = FindTab(panel, index);
         string name = Label(panel._masteryNameText) ?? TreeName(panel, index);
         if (string.IsNullOrWhiteSpace(name)) return null;
@@ -53,15 +51,14 @@ internal static class PassiveTreeReader
     }
 
     /// <summary>The tree-point threshold of a node on the displayed page while it is still unmet.</summary>
-    internal static string ReadNodeThreshold(FullScreenPanelPassiveTree panel, SkillTreeNode node)
+    internal static string ReadNodeThreshold(SkillTreeNode node, int treeIndex, int? points)
     {
-        if (!IsAlive(panel) || !IsAlive(node) || node.mastery != panel._currentMasteryIndex) return null;
-        if (!TryReadBar(panel, out int points, out _) || node.masteryRequirement <= points) return null;
-        return ModText.Format("passive.node_threshold", node.masteryRequirement, points);
+        if (!IsAlive(node) || node.mastery != treeIndex || points is null || node.masteryRequirement <= points) return null;
+        return ModText.Format("passive.node_threshold", node.masteryRequirement, points.Value);
     }
 
     /// <summary>The selected skill of the strip that unlocks with this tree's points.</summary>
-    internal static bool TryReadUnlock(FullScreenPanelPassiveTree panel, PassiveTreeUnlockPanelNavigable strip,
+    internal static bool TryReadUnlock(PassiveTreeUnlockPanelNavigable strip, int? points, int? maxPoints,
         out PassiveSelection selection)
     {
         selection = default;
@@ -79,21 +76,21 @@ internal static class PassiveTreeReader
         string name = TextUtils.CleanText(localized.GetName(ability));
         if (string.IsNullOrWhiteSpace(name)) return false;
         string state = null;
-        if (IsAlive(icon) && icon.requirement > 0 && TryReadBar(panel, out int points, out int maxPoints))
+        if (IsAlive(icon) && icon.requirement > 0 && points is int have)
             // Native MasteryBarDisplay.ApplyUnlockedAbilityStates compares the requirement with these two values.
-            state = points >= icon.requirement ? ModText.Get("passive.ability_unlocked") :
-                icon.requirement <= maxPoints ? ModText.Format("passive.ability_unlockable", icon.requirement, points) :
-                ModText.Format("passive.ability_unreachable", icon.requirement, maxPoints);
+            state = have >= icon.requirement ? ModText.Get("passive.ability_unlocked") :
+                maxPoints is int max && icon.requirement > max ? ModText.Format("passive.ability_unreachable", icon.requirement, max) :
+                ModText.Format("passive.ability_unlockable", icon.requirement, have);
         string summary = ScreenContentTracker.Combine(new[] { name,
-            ModText.Get(IsAlive(icon) && icon.isMasteryAbility ? "passive.mastery_ability" : "passive.ability"), state });
+            ModText.Get(IsAlive(icon) && icon.isMasteryAbility ? "passive.mastery_ability" : "passive.ability"), state,
+            ModText.Format("list.position", index + 1, tooltips.Count) });
         selection = new PassiveSelection($"unlock:{tooltip.GetInstanceID()}", tooltip.gameObject, summary,
             TextUtils.CleanText(localized.GetDescription(ability)));
         return true;
     }
 
-    private static bool TryReadBar(FullScreenPanelPassiveTree panel, out int points, out int maxPoints)
+    internal static bool TryReadBar(MasteryBarDisplay bar, out int points, out int maxPoints)
     {
-        var bar = IsAlive(panel) ? panel._masteryBarDisplay : null;
         bool ready = IsAlive(bar) && bar._hasFillValues;
         points = ready ? bar._lastFillPoints : 0;
         maxPoints = ready ? bar._lastFillMaxPoints : 0;

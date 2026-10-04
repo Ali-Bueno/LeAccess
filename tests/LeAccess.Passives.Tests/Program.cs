@@ -373,21 +373,21 @@ var strip = new GameObject().Add(new PassiveTreeUnlockPanelNavigable
 fullscreen._currentMasteryIndex = 1;
 fullscreen._masteryNameText = Label("Visible Paladin");
 fullscreen.ActiveChildNavigable = strip;
-Check(PassiveSelectionReader.TryRead(out read) && read.Summary == Join("Smite", T("passive.ability"), T("passive.ability_unlocked")) &&
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary == Join("Smite", T("passive.ability"), T("passive.ability_unlocked"), F("list.position", 1, 3)) &&
     read.Details == "Smite description", "Unlock strip reads the skill name, unlocked state and description");
 var sprite = strip.ActiveAbilityTooltips[0].gameObject.Child();
 Check(PassiveAccessibility.TryHandleFocus(sprite), "The strip's sprite focus is owned instead of read as an object name");
 strip.SelectedIndex = 1;
-Check(PassiveSelectionReader.TryRead(out read) && read.Summary == Join("Judgement", T("passive.mastery_ability"), F("passive.ability_unlockable", 20, 15)),
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary == Join("Judgement", T("passive.mastery_ability"), F("passive.ability_unlockable", 20, 15), F("list.position", 2, 3)),
     "A reachable skill states its threshold and the tree's points");
 strip.SelectedIndex = 2;
-Check(PassiveSelectionReader.TryRead(out read) && read.Summary == Join("Far skill", T("passive.ability"), F("passive.ability_unreachable", 200, 113)),
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary == Join("Far skill", T("passive.ability"), F("passive.ability_unreachable", 200, 113), F("list.position", 3, 3)),
     "A skill beyond the tree's maximum says it cannot be reached");
 strip.SelectedIndex = 3;
 Check(!PassiveSelectionReader.TryRead(out _), "Out-of-range strip selection is rejected");
 strip.SelectedIndex = 0;
 fullscreen._masteryBarDisplay._hasFillValues = false;
-Check(PassiveSelectionReader.TryRead(out read) && read.Summary == Join("Smite", T("passive.ability")), "Without bar values no state is guessed");
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary == Join("Smite", T("passive.ability"), F("list.position", 1, 3)), "Without bar values no state is guessed");
 NavigationManager.currentlySelected = null;
 Tick();
 NavigationManager.currentlySelected = fullscreen;
@@ -398,5 +398,186 @@ ScreenContentAnnouncer.HasActiveContent = true; Tick();
 ScreenContentAnnouncer.HasActiveContent = false; strip.SelectedIndex = 1; Tick(); Tick();
 Check(ScreenReader.Messages.Count == 2 && !ScreenReader.Messages.Last().Text.Contains(overviewPrefix) &&
     !ScreenReader.Messages.Last().Text.Contains(paladin), "A modal inside the open panel does not repeat the tree context");
+// Controller passive panel: reading order, moves, exits, banner and tree switching.
+NavigationManager.currentlySelected = null; Tick();
+PassiveAccessibility.Reset(); ScreenReader.Messages.Clear();
+var classTree = new GameObject();
+var pages = new[] { classTree.Child(), classTree.Child() };
+pages[1].Active = false;
+var characterTree = classTree.Add(new CharacterTree { unspentPoints = 4, masteries = new(pages) });
+var grid = new Il2CppSystem.Array { Cells = new NativeObject[11, 5] };
+var pageOwner = pages[0].Add(new PassiveTreeNavigable { _navigationElements = grid });
+SkillTreeNode Place(Il2CppSystem.Array cellsOf, GameObject page, string name, int column, int row)
+{
+    var go = page.Child();
+    var node = go.Add(new SkillTreeNode { tree = characterTree, Name = name, Description = name + " details" });
+    go.Add(new SkillnodeTooltip { node = node });
+    cellsOf.Cells[column, row] = node;
+    return node;
+}
+var nodeA = Place(grid, pages[0], "Node A", 1, 3);
+var nodeB = Place(grid, pages[0], "Node B", 1, 1);
+var nodeC = Place(grid, pages[0], "Node C", 3, 4);
+var nodeD = Place(grid, pages[0], "Node D", 3, 2);
+var nodeE = Place(grid, pages[0], "Node E", 5, 1);
+grid.Cells[7, 4] = nodeA;
+Place(grid, pages[0], "Hidden node", 7, 2).gameObject.Active = false;
+var order = new List<(int Column, int Row)> { (1, 3), (1, 1), (3, 4), (3, 2), (5, 1) };
+PassiveNavigationOrder.Move Plan(int column, int row, Direction direction) => PassiveNavigationOrder.Plan(order, column, row, direction);
+PassiveNavigationOrder.Move Select(int column, int row) => new(PassiveNavigationOrder.MoveKind.Select, column, row);
+var exit = new PassiveNavigationOrder.Move(PassiveNavigationOrder.MoveKind.Exit);
+Check(Plan(1, 3, Direction.DOWN) == Select(1, 1) && Plan(1, 1, Direction.DOWN) == Select(3, 4),
+    "Down reads each column top to bottom, then the next column");
+Check(Plan(3, 4, Direction.UP) == Select(1, 1) && Plan(1, 3, Direction.UP) == exit && Plan(5, 1, Direction.DOWN) == exit,
+    "Up steps back across columns and both list ends leave the grid");
+Check(Plan(1, 1, Direction.RIGHT) == Select(3, 4) && Plan(3, 2, Direction.LEFT) == Select(1, 3) && Plan(1, 1, Direction.LEFT) == exit,
+    "Right and Left jump to the top node of the next or previous column; Left from the first column leaves");
+Check(Plan(5, 1, Direction.RIGHT) == new PassiveNavigationOrder.Move(PassiveNavigationOrder.MoveKind.Stay),
+    "Right from the last column stays put");
+Check(Plan(2, 0, Direction.DOWN) == Select(3, 4) && Plan(2, 0, Direction.UP) == Select(1, 1) &&
+    Plan(2, 0, Direction.RIGHT) == Select(3, 4) && Plan(2, 0, Direction.LEFT) == Select(1, 3),
+    "A cursor left on an empty cell resumes from its place in the order");
+Check(Plan(1, 2, Direction.DOWN) == Select(1, 1) && Plan(1, 2, Direction.UP) == Select(1, 3),
+    "An empty cell inside a column sits between the nodes above and below it");
+Check(Plan(1, 3, (Direction)9) == new PassiveNavigationOrder.Move(PassiveNavigationOrder.MoveKind.Native),
+    "Unknown directions fall back to the game");
+
+var mastered = new GameObject();
+MasteryButton Diamond(string name, string points, bool mastery, bool locked = false)
+{
+    var go = mastered.Child();
+    var lockIcon = go.Child();
+    lockIcon.Active = locked;
+    var button = go.Add(new MasteryButton { Name = name, Definition = name + " definition", isMasteryClass = mastery,
+        levelTMP = go.Child().Add(new TMPro.TextMeshProUGUI { text = points }), lockIcon = lockIcon });
+    go.Add(new UnityEngine.UI.Button());
+    return button;
+}
+var diamonds = new[] { Diamond("Rogue", "5", false), Diamond("Bladedancer", "3", true), Diamond("Falconer", "0", true, locked: true) };
+var manager = new GameObject().Add(new PassivePanelManager { activeTree = characterTree,
+    openedBanner = mastered.Add(new MasteryBanner { masteryButtons = new(diamonds) }) });
+PassivePanelManager.instance = manager;
+PlayerFinder.Actor = new GameObject().Add(new Actor { localTreeData = new LocalTreeData { chosenMastery = 1, masteryLevels = new(new byte[] { 5, 3, 0 }) } });
+
+pageOwner._currentColumn = 1; pageOwner._currentRow = 3;
+NavigationManager.currentlySelected = pageOwner;
+Tick(); Tick();
+string controllerOpened = ScreenReader.Messages.Single().Text;
+string rogueTree = Join(Tree("Rogue", 5, T("passive.tree_class")), F("passive.unspent", 4));
+Check(controllerOpened.StartsWith(F("passive.overview", string.Join("; ", Tree("Rogue", 5, T("passive.tree_class")),
+    Tree("Bladedancer", 3, T("passive.tree_chosen")), Tree("Falconer", 0, T("passive.tree_locked"))))) &&
+    controllerOpened.Contains(rogueTree) && controllerOpened.Contains(nodeA.Name) && controllerOpened.EndsWith(F("list.position", 1, 5)),
+    "Opening the controller panel speaks every tree, the shown tree and the first node's place: " + controllerOpened);
+PassiveTreeNavigation.Navigate(pageOwner, Direction.DOWN);
+Check((pageOwner._currentColumn, pageOwner._currentRow) == (1, 1) && pageOwner.NativeSteps.Count == 0 &&
+    pageOwner.Selected.Last() == (1, 1) && nodeA.GetComponent<SkillnodeTooltip>().Exits == 1,
+    "A handled move ends the old hover, places the cursor and selects the node natively");
+Tick(); Tick();
+Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text.Contains(nodeB.Name) &&
+    ScreenReader.Messages.Last().Text.EndsWith(F("list.position", 2, 5)) && !ScreenReader.Messages.Last().Text.Contains(rogueTree),
+    "Moving within a tree speaks the node and its place only");
+PassiveTreeNavigation.Navigate(pageOwner, new Vector3 { x = 0.9f });
+Check((pageOwner._currentColumn, pageOwner._currentRow) == (3, 4),
+    "A stick flick moves like the d-pad");
+pageOwner._currentColumn = 5; pageOwner._currentRow = 1;
+Tick(); Tick();
+int beforeStay = ScreenReader.Messages.Count;
+PassiveTreeNavigation.Navigate(pageOwner, Direction.RIGHT);
+Check((pageOwner._currentColumn, pageOwner._currentRow) == (5, 1) && pageOwner.NativeSteps.Count == 0,
+    "Right from the last column keeps the cursor");
+Tick(); Tick();
+Check(ScreenReader.Messages.Count == beforeStay + 1 && ScreenReader.Messages.Last().Text.Contains(nodeE.Name) &&
+    ScreenReader.Messages.Last().Text.EndsWith(F("list.position", 5, 5)), "A move that cannot go further repeats the node and its place");
+PassiveTreeNavigation.Navigate(pageOwner, Direction.DOWN);
+Check(pageOwner.NativeSteps.Last() == "vertical -1 from 5,0", "Down from the last node takes the game's step from the bottom border");
+pageOwner._currentColumn = 1; pageOwner._currentRow = 3;
+PassiveTreeNavigation.Navigate(pageOwner, Direction.UP);
+Check(pageOwner.NativeSteps.Last() == "vertical 1 from 1,4", "Up from the first node takes the game's step from the top border");
+pageOwner._currentRow = 3;
+PassiveTreeNavigation.Navigate(pageOwner, Direction.LEFT);
+Check(pageOwner.NativeSteps.Last() == "horizontal -1 from 0,3", "Left from the first column takes the game's step toward the banner");
+var unreadable = pageOwner._navigationElements;
+pageOwner._navigationElements = null;
+PassiveTreeNavigation.Navigate(pageOwner, Direction.RIGHT);
+pageOwner._navigationElements = unreadable;
+Check(pageOwner.NativeSteps.Last() == "horizontal 1 from 0,3" && pageOwner.NativeSteps.Count == 4,
+    "An unreadable grid moves exactly as the game's dispatch would");
+
+pageOwner._currentColumn = 3; pageOwner._currentRow = 2;
+NavigationManager.previousSelectedNavigableId = NavigableID.PASSIVE_TREE_TOP_BUTTONS;
+PassiveTreeNavigation.AfterSelected(pageOwner);
+Check((pageOwner._currentColumn, pageOwner._currentRow) == (1, 3), "Coming down from the top buttons lands on the first node");
+NavigationManager.previousSelectedNavigableId = NavigableID.PASSIVE_TREE_UNLOCK_PANEL;
+PassiveTreeNavigation.AfterSelected(pageOwner);
+Check((pageOwner._currentColumn, pageOwner._currentRow) == (5, 1), "Coming up from the skill strip lands on the last node");
+pageOwner._currentColumn = 3; pageOwner._currentRow = 2;
+NavigationManager.previousSelectedNavigableId = NavigableID.PASSIVE_TREE_BANNER;
+PassiveTreeNavigation.AfterSelected(pageOwner);
+EpochInputManager.IsControllerActive = false;
+NavigationManager.previousSelectedNavigableId = NavigableID.PASSIVE_TREE_TOP_BUTTONS;
+PassiveTreeNavigation.AfterSelected(pageOwner);
+EpochInputManager.IsControllerActive = true;
+owner._currentColumn = 2; owner._currentRow = 1;
+PassiveTreeNavigation.AfterSelected(owner);
+Check((pageOwner._currentColumn, pageOwner._currentRow) == (3, 2) && (owner._currentColumn, owner._currentRow) == (2, 1),
+    "Other entries, mouse input and trees outside the controller panel keep the game's landing");
+NavigationManager.previousSelectedNavigableId = NavigableID.NONE;
+
+var bannerNavigable = mastered.Add(new PassiveTreeBannerNavigable());
+var shoulderFocus = diamonds[1].gameObject.Child();
+Check(PassiveAccessibility.TryHandleFocus(shoulderFocus) && !PassiveAccessibility.TryHandleFocus(new GameObject()),
+    "Banner diamonds are owned so the shoulder-button focus hops stay silent");
+int beforeSwitch = ScreenReader.Messages.Count;
+bannerNavigable._currentButton = diamonds[1].GetComponent<UnityEngine.UI.Button>();
+manager.activeMastery = 1;
+NavigationManager.currentlySelected = bannerNavigable;
+Tick(); Tick(); Tick();
+Check(ScreenReader.Messages.Count == beforeSwitch, "Nothing is spoken while the clicked mastery's page is still loading");
+var masteryGrid = new Il2CppSystem.Array { Cells = new NativeObject[11, 5] };
+var masteryOwner = pages[1].Add(new PassiveTreeNavigable { _navigationElements = masteryGrid, _currentColumn = 0, _currentRow = 4 });
+var nodeG = Place(masteryGrid, pages[1], "Node G", 0, 4);
+nodeG.mastery = 1; nodeG.masteryRequirement = 10;
+pages[0].Active = false; pages[1].Active = true;
+NavigationManager.currentlySelected = masteryOwner;
+Tick(); Tick();
+string switched = ScreenReader.Messages.Last().Text;
+Check(ScreenReader.Messages.Count == beforeSwitch + 1 &&
+    switched.StartsWith(Join(Tree("Bladedancer", 3, T("passive.tree_chosen")), F("passive.unspent", 4), nodeG.Name)) &&
+    !switched.Contains(overviewPrefix) && switched.Contains(F("passive.node_threshold", 10, 3)),
+    "The new tree's name and points lead its first node in one utterance: " + switched);
+bannerNavigable._currentButton = diamonds[2].GetComponent<UnityEngine.UI.Button>();
+NavigationManager.currentlySelected = bannerNavigable;
+Tick(); Tick();
+Check(ScreenReader.Messages.Last().Text == Tree("Falconer", 0, T("passive.tree_locked")),
+    "Browsing the banner reads each mastery's points and lock");
+bannerNavigable._currentButton = diamonds[1].GetComponent<UnityEngine.UI.Button>();
+Tick(); Tick();
+Check(ScreenReader.Messages.Last().Text == Join(Tree("Bladedancer", 3, T("passive.tree_chosen")), T("passive.tree_shown")),
+    "The diamond of the shown tree says so");
+Check(PassiveAccessibility.ReadCurrentDetails() && ScreenReader.Messages.Last().Text.EndsWith(diamonds[1].Definition),
+    "Details on a diamond read the mastery's description");
+bannerNavigable.isDescriptionSelected = true;
+Check(!PassiveSelectionReader.TryRead(out _), "The scrolled description is left to the generic reader");
+bannerNavigable.isDescriptionSelected = false;
+var controllerStrip = new GameObject().Add(new PassiveTreeUnlockPanelNavigable { ActiveAbilityTooltips = new(new[] { Unlock("Shift", 10) }) });
+NavigationManager.currentlySelected = controllerStrip;
+Check(PassiveSelectionReader.TryRead(out read) &&
+    read.Summary == Join("Shift", T("passive.ability"), F("passive.ability_unlockable", 10, 3), F("list.position", 1, 1)),
+    "The controller strip uses the shown tree's points: " + read.Summary);
+NavigationManager.currentlySelected = masteryOwner;
+Tick(); Tick();
+int beforeGap = ScreenReader.Messages.Count;
+NavigationManager.currentlySelected = null; Tick();
+NavigationManager.currentlySelected = masteryOwner; Tick(); Tick();
+Check(ScreenReader.Messages.Count == beforeGap + 1 && !ScreenReader.Messages.Last().Text.Contains(overviewPrefix) &&
+    !ScreenReader.Messages.Last().Text.Contains(F("passive.unspent", 4)), "An empty selection inside the open panel keeps the tree context");
+// Closing disables the page navigable, whose OnDisable clears the selection.
+classTree.Active = false; NavigationManager.currentlySelected = null;
+Tick();
+classTree.Active = true; NavigationManager.currentlySelected = masteryOwner;
+Tick(); Tick();
+Check(ScreenReader.Messages.Last().Text.StartsWith(overviewPrefix), "Reopening the controller panel speaks the overview again");
+PassivePanelManager.instance = null;
+PlayerFinder.Actor = null;
 PassiveAccessibility.Reset();
 Console.WriteLine($"Passed {checks} passive checks.");

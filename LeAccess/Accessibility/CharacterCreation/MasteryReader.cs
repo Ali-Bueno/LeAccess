@@ -16,6 +16,14 @@ public static class MasteryReader
         if (!IsAlive(go)) return false;
         var button = go.GetComponentInParent<MasteryButton>();
         if (!IsAlive(button)) return false;
+        name = ReadName(button);
+        description = ReadDefinition(button);
+        return !string.IsNullOrWhiteSpace(name);
+    }
+
+    internal static string ReadName(MasteryButton button)
+    {
+        string name = null;
         var tooltip = button.GetComponent<MasteryButtonTooltip>();
         // OpenTooltip displays this title directly; it is not a localization key.
         if (IsAlive(tooltip)) name = TextUtils.CleanText(tooltip.masteryName);
@@ -27,27 +35,23 @@ public static class MasteryReader
                 if (IsAlive(buttons[i]) && button.transform.IsChildOf(buttons[i].transform) &&
                     TextUtils.IsVisibleLabel(labels[i])) name = TextUtils.CleanText(labels[i].text);
         }
-        if (string.IsNullOrWhiteSpace(name))
+        if (!string.IsNullOrWhiteSpace(name)) return name;
+        string label = null;
+        foreach (var text in button.GetComponentsInChildren<TextMeshProUGUI>(true))
         {
-            string label = null;
-            foreach (var text in button.GetComponentsInChildren<TextMeshProUGUI>(true))
-            {
-                var owner = IsAlive(text) ? text.GetComponentInParent<MasteryButton>() : null;
-                if (!TextUtils.IsVisibleLabel(text) || !IsAlive(owner) || owner.Pointer != button.Pointer ||
-                    IsAlive(button.levelTMP) && button.levelTMP.Pointer == text.Pointer ||
-                    IsAlive(button.masteredTMP) && text.transform.IsChildOf(button.masteredTMP.transform) ||
-                    IsAlive(text.GetComponentInParent<MultiButtonsActionPrompt>()) ||
-                    IsAlive(text.GetComponentInParent<InputDependantPrompt>()) ||
-                    IsAlive(text.GetComponentInParent<InputCharacterForAction>())) continue;
-                string candidate = TextUtils.CleanText(text.text);
-                if (string.IsNullOrWhiteSpace(candidate)) continue;
-                if (label != null && label != candidate) { label = null; break; }
-                label = candidate;
-            }
-            name = label;
+            var owner = IsAlive(text) ? text.GetComponentInParent<MasteryButton>() : null;
+            if (!TextUtils.IsVisibleLabel(text) || !IsAlive(owner) || owner.Pointer != button.Pointer ||
+                IsAlive(button.levelTMP) && button.levelTMP.Pointer == text.Pointer ||
+                IsAlive(button.masteredTMP) && text.transform.IsChildOf(button.masteredTMP.transform) ||
+                IsAlive(text.GetComponentInParent<MultiButtonsActionPrompt>()) ||
+                IsAlive(text.GetComponentInParent<InputDependantPrompt>()) ||
+                IsAlive(text.GetComponentInParent<InputCharacterForAction>())) continue;
+            string candidate = TextUtils.CleanText(text.text);
+            if (string.IsNullOrWhiteSpace(candidate)) continue;
+            if (label != null && label != candidate) return null;
+            label = candidate;
         }
-        description = ReadDefinition(button);
-        return !string.IsNullOrWhiteSpace(name);
+        return label;
     }
 
     internal static string ReadDefinition(MasteryButton button)

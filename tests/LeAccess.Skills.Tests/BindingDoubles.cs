@@ -55,6 +55,7 @@ internal static class EpochInputManager
 {
     internal enum InputActions { Ability1, Ability2, Ability3, Ability4, Ability5, MoreInformation }
     internal static void SetActiveVirtualMouse(bool value) { }
+    internal static bool IsControllerActive = true;
 }
 internal sealed class ButtonInfo : NativeObject { internal string ButtonName; }
 internal sealed class PromptsInfoProvider : UnityEngine.Object

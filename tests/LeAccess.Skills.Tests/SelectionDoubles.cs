@@ -19,6 +19,17 @@ internal sealed class SkillsPanelManager : UnityEngine.Component
     internal bool inTopArea;
     internal SkillTreeNode currentlySelectedNode;
     internal SkillTree CurrentlyOpenTree;
+    internal readonly List<SkillTreeNode> Focused = new();
+    internal int Coroutines;
+    internal void FocusTreeNode() { Focused.Add(currentlySelectedNode); currentlySelectedIdx.y = 1; }
+    internal string ShowTreeNodeTooltip() => "tooltip";
+    internal void StartCoroutine(string routine) => Coroutines++;
+}
+internal enum Direction { LEFT, UP, RIGHT, DOWN }
+internal static class DirectionExtensions
+{
+    internal static Direction ToDirection(UnityEngine.Vector3 input, float threshold = 0.6f) => Math.Abs(input.x) >= Math.Abs(input.y)
+        ? input.x < 0 ? Direction.LEFT : Direction.RIGHT : input.y < 0 ? Direction.DOWN : Direction.UP;
 }
 internal sealed class AbilityPanelIcon : UnityEngine.Component
 {
@@ -64,7 +75,8 @@ internal sealed class UITooltipAbility : UnityEngine.Component
     internal TMPro.TMP_Text nameText, descriptionText, skillDefinition, moreInfoDetailsText;
     internal UnityEngine.GameObject moreInfoObj;
 }
-internal sealed class SkillTree : UnityEngine.Component { internal int treeID; internal Ability ability; }
+internal sealed class SkillTree : UnityEngine.Component
+{ internal int treeID; internal Ability ability; internal NativeArray<SkillTreeNode> nodeList; }
 internal sealed class SkillTreeNode : UnityEngine.Component
 {
     internal int pointsAllocated;
@@ -72,6 +84,8 @@ internal sealed class SkillTreeNode : UnityEngine.Component
     internal SkillTree tree;
     internal int id;
     internal string nodeName, description;
+    internal NativeArray<RequirementFromNode> requirements;
+    internal sealed class RequirementFromNode : NativeObject { internal SkillTreeNode node; }
 }
 internal sealed class NodeTooltipManager : UnityEngine.Component
 {

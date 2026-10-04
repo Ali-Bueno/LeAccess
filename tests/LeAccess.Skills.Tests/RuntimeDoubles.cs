@@ -50,8 +50,10 @@ namespace UnityEngine
             return null;
         }
     }
+    internal struct Vector3 { internal float x, y, z; }
     internal class Transform : Component
     {
+        internal Vector3 position;
         internal Transform parent => gameObject.Parent?.transform;
         internal int childCount => gameObject.Children.Count;
         internal Transform GetChild(int index) => gameObject.Children[index].transform;

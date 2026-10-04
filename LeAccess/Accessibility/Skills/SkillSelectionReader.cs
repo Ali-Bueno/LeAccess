@@ -167,7 +167,7 @@ internal static class SkillSelectionReader
     private static bool TryReadNode(SkillsPanelManager panel, out SkillSelection selection, bool includeDetails)
     {
         selection = default;
-        var node = panel.currentlySelectedNode;
+        var node = SkillTreeNavigation.ResolveNode(panel);
         var tree = panel.CurrentlyOpenTree;
         if (!IsAlive(node) || !IsAlive(tree) || !IsAlive(node.tree) || node.tree.Pointer != tree.Pointer ||
             !UiVisibility.IsVisible(node.gameObject)) return false;
@@ -176,7 +176,9 @@ internal static class SkillSelectionReader
         string name = TextUtils.CleanText(localized.GetNodeName(tree.treeID, node.id, node.nodeName));
         string description = TextUtils.CleanText(localized.GetNodeDescription(tree.treeID, node.id, node.description));
         string points = null;
-        string status = ModText.Format("node.points", node.pointsAllocated, node.maxPoints);
+        string status = ScreenContentTracker.Combine(new[] { ModText.Format("node.points", node.pointsAllocated, node.maxPoints),
+            SkillTreeNavigation.TryGetPosition(panel, node, out int place, out int count)
+                ? ModText.Format("list.position", place, count) : null });
         var detailsSource = SkillDetailsSource.Description;
         bool modernVisible = false;
         if (includeDetails && SkillTooltipDetailsReader.TryReadModernNode(node, out string modernName, out string modernDetails,

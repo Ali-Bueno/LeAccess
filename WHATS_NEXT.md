@@ -1,3 +1,32 @@
+# Handoff — 2026-10-04: passive tree with a controller
+
+User report: switching trees cut the tab's speech; the cursor "skips nodes", no sense of first/last.
+Cause: the controller uses the old `PassivePanelManager` panel, so the tree code never ran, and the
+native grid search skips nodes. Now: the grid is one list (Down/Up next/previous, Right/Left jump
+column, "N de M"), a tree switch speaks "tree, points, role, unspent" plus its first node once, the
+banner diamonds and the controller's skill strip are read. Four new hooks on `PassiveTreeNavigable`.
+[Details](reference/passive-reading.md#controller-panel-reading-order-and-tree-switching-2026-10-04).
+
+First live checks: open Passives (overview + first node "1 de N"); walk Down to the end and Up back;
+Right/Left between columns; LB/RB between trees; Left from the first column to the banner and back;
+Up from node 1 (top buttons) and Down from the last (strip) and return. `[PassiveStatus]` lines show
+`mastery banner` / `mastery page switching`. 60 test invocations pass; installed with the game
+closed; not committed yet.
+
+First listen (10:09): the list worked, then the game crashed on Up from "1 de 29" — the hook let the
+game's original `HandleNavigateInput` run, and that function cannot be called through its detour.
+Fixed (the original never runs; [cause](reference/runtime-feedback.md#passive-navigation-crash-detoured-short-branch-prologue-2026-10-04));
+three older hooks shared the risk and now replay their tiny bodies instead (name-field mouse click,
+chat option toggle, loot-filter modal close). Re-check: Up from the first node, Down from the last,
+Left from the first column, several times.
+
+Same list navigation added on request for the backpack and the merchant's stock/buyback grids ([inventory](reference/inventory-drop-focus.md#controller-navigation-2026-10-04):
+Right/Left item by item, Down/Up by row, no wrap, "N de M") and the skill specialization trees
+([skill trees](reference/skill-tree-navigation.md): Down/Up node by node, Right/Left by branch,
+opening now focuses the tree's own root). Listen for: the backpack with a held d-pad (game
+auto-repeat kept), Up from the top row to the equipment, a skill tree right after opening and after
+LB/RB, A on a node at the end of the list (it must spend the point, not click a slot).
+
 # Handoff — 2026-10-04 morning: D2R scanner categories
 
 User (after the night batch): "I want the same categories as the D2R radar; I asked you to implement
@@ -165,4 +194,5 @@ Re-check these five first; then the list below.
 - Navigation and combat aids should work passively, by sound and speech, without
   pressing keys; manual queries (F6/F7) are secondary extras.
 - Dev build: `dotnet build LeAccess/LeAccess.csproj --no-restore -p:SkipPluginDeployment=true`;
-  a normal build deploys — check the game is closed, back up the plugin first.
+  a normal build deploys — check the game is closed. No plugin/config backups: git is the
+  history (user rule, 2026-10-04).

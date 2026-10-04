@@ -27,7 +27,9 @@ internal static class PassiveAccessibility
             bool read = PassiveSelectionReader.TryRead(out var selection);
             var focusedNode = element.GetComponentInParent<SkillTreeNode>();
             ReportStatus(IsAlive(focusedNode) && IsAlive(focusedNode.tree) && focusedNode.inPassiveTree());
-            return read && element.transform.IsChildOf(selection.Root.transform);
+            // Shoulder buttons focus two diamonds before the new tree loads; Update speaks the result once.
+            return read && element.transform.IsChildOf(selection.Root.transform) ||
+                PassivePanelReader.TryGetOpen(out var manager) && PassivePanelReader.DiamondIndex(manager, element) >= 0;
         }
         catch (Exception ex) { ReportFailure(ex); return false; }
     }
@@ -65,7 +67,8 @@ internal static class PassiveAccessibility
             { ResetSelection(PassiveSelectionReader.HasPendingModel); return; }
             bool newTree = selection.TreeKey is not null && selection.TreeKey != _announcedTree;
             if (newTree) announcement = ScreenContentTracker.Combine(new[] {
-                _announcedTree is null ? PassiveTreeReader.ReadOverview(selection.Panel) : null, selection.Tree, announcement });
+                _announcedTree is null ? PassiveSelectionReader.ReadOverview(selection) : null,
+                PassiveSelectionReader.ReadTree(selection), announcement });
             if (!ScreenReader.TrySpeak(announcement, interrupt: true))
             { HasPendingContent = true; return; }
             if (newTree) _announcedTree = selection.TreeKey;
@@ -102,6 +105,9 @@ internal static class PassiveAccessibility
         catch (Exception ex) { ResetSelection(); ReportFailure(ex); return false; }
     }
 
+    /// <summary>Speaks the current selection again, as when a move cannot go further.</summary>
+    internal static void RepeatCurrent() => _key = null;
+
     private static void ResetSelection(bool retainPendingModel = false)
     {
         if (!retainPendingModel) PassiveSelectionReader.Reset();
@@ -115,6 +121,7 @@ internal static class PassiveAccessibility
     internal static void Reset()
     {
         ResetSelection();
+        PassiveTreeNavigation.Reset();
         _announcedTree = null;
         _lastFailure = null;
         _lastStatus = null;

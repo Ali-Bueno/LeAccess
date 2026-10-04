@@ -15,19 +15,19 @@ internal static class CharacterNameKeyboardPatches
         public static void Prefix(TMP_InputField __instance) => CharacterNameKeyboard.RequestEditing(__instance);
     }
 
+    // Native OnPointerClick (0x3e77960) only activates the field on a left click. Its opening short branch breaks
+    // when the original runs through the detour, so the hook replays it instead (reference/runtime-feedback.md).
     [HarmonyPatch(typeof(TMP_InputField), nameof(TMP_InputField.OnPointerClick))]
     internal static class Click
     {
-        public static void Prefix(TMP_InputField __instance, PointerEventData eventData)
+        public static bool Prefix(TMP_InputField __instance, PointerEventData eventData)
         {
-            if (eventData is { WasCollected: false } && eventData.button == PointerEventData.InputButton.Left)
-                CharacterNameKeyboard.RequestEditing(__instance);
-        }
-
-        public static void Postfix(TMP_InputField __instance, PointerEventData eventData)
-        {
-            if (eventData is { WasCollected: false } && eventData.button == PointerEventData.InputButton.Left)
-                CharacterNameKeyboard.CompleteClick(__instance);
+            if (eventData is null || eventData.WasCollected || eventData.button != PointerEventData.InputButton.Left)
+                return false;
+            CharacterNameKeyboard.RequestEditing(__instance);
+            __instance.ActivateInputField();
+            CharacterNameKeyboard.CompleteClick(__instance);
+            return false;
         }
     }
 

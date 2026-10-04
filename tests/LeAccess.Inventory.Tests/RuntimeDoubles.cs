@@ -142,8 +142,10 @@ internal sealed class ItemDataUnpacked : ItemData
     public string FullName;
     public string LocalisedBaseTypeName;
 }
-internal sealed class ItemContainerEntry : NativeObject { public ItemData data; public UnityEngine.Vector2Int Position; }
-internal sealed class ItemContainerUI : UnityEngine.Component
+internal sealed class ItemContainerEntry : NativeObject
+{ public ItemData data; public UnityEngine.Vector2Int Position; public UnityEngine.Vector2Int size = new() { x = 1, y = 1 }; }
+internal enum Direction { LEFT, UP, RIGHT, DOWN }
+internal class ItemContainerUI : UnityEngine.Component
 {
     public IItemContainer container = new();
     public IItemContainer Container => container;
@@ -151,6 +153,7 @@ internal sealed class ItemContainerUI : UnityEngine.Component
     public ItemContainerEntry currentlySelectedItem;
     public UnityEngine.Vector2Int currentFocusSlot { get; set; }
     public bool forceUpdate;
+    public bool singleSlotControllerNavigation;
     internal UnityEngine.Vector2Int NearestSlot;
     internal readonly List<ItemContainerEntry> Focused = new();
     internal void FocusNearestItem() => currentFocusSlot = NearestSlot;
@@ -163,7 +166,8 @@ internal sealed class ItemContainersManager : UnityEngine.Component
     internal OneSlotItemContainer cursor = new();
 }
 internal enum ContainerID { UNDEFINED, INVENTORY, EQ_HELMET, EQ_ARMOR, EQ_WEAPON, EQ_OFFHAND, EQ_GLOVES, EQ_BELT,
-    EQ_BOOTS, EQ_RIGHTRING, EQ_LEFTRING, EQ_AMULET, EQ_RELIC }
+    EQ_BOOTS, EQ_RIGHTRING, EQ_LEFTRING, EQ_AMULET, EQ_RELIC, SHOP, SHOP_BUYBACK }
+namespace LE.Factions { internal sealed class ShopContainerUI : ItemContainerUI { } }
 internal enum ContainerType { INVENTORY, EQUIPPED, STASH, SHOP }
 internal sealed class IItemContainer : NativeObject
 {
@@ -173,6 +177,14 @@ internal sealed class IItemContainer : NativeObject
     internal UnityEngine.Vector2Int LastReadPosition;
     internal ContainerID GetContainerID() => Id;
     internal Dictionary<(int, int), ItemContainerEntry> Slots;
+    internal UnityEngine.Vector2Int Size = new() { x = 14, y = 8 };
+    internal UnityEngine.Vector2Int GetSize() => Size;
+    internal NativeList<ItemContainerEntry> GetContent()
+    {
+        var content = new NativeList<ItemContainerEntry>();
+        if (Slots is not null) foreach (var entry in Slots.Values) if (!content.Contains(entry)) content.Add(entry);
+        return content;
+    }
     internal ItemContainerEntry GetEntryAt(UnityEngine.Vector2Int slot)
     {
         LastReadPosition = slot;

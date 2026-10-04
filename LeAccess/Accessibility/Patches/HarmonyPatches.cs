@@ -105,10 +105,25 @@ public static class HarmonyPatches
     /// <summary>
     /// Patch ChatToggleField.IsActive setter for chat options.
     /// </summary>
+    // Its opening short branch breaks when the original runs through the detour, so the hook replays the setter
+    // (native 0x18f8030) instead of running it; see reference/runtime-feedback.md.
     [HarmonyPatch(typeof(ChatToggleField), nameof(ChatToggleField.IsActive), MethodType.Setter)]
     public static class ChatToggleFieldIsActivePatch
     {
-        public static void Postfix(ChatToggleField __instance, bool value)
+        public static bool Prefix(ChatToggleField __instance, bool value)
+        {
+            if (__instance._isActive != value || __instance.neverUpdatedUI)
+            {
+                __instance._isActive = value;
+                var check = __instance.check;
+                if (check is not null && !check.WasCollected) check.SetActive(value);
+                __instance.neverUpdatedUI = false;
+            }
+            Announce(__instance, value);
+            return false;
+        }
+
+        private static void Announce(ChatToggleField __instance, bool value)
         {
             try
             {

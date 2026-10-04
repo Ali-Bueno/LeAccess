@@ -104,7 +104,10 @@ internal static class SkillAccessibility
         _detailsRequested = false;
     }
 
-    internal static void Reset() { ClearSelection(); _lastFailure = null; _bindingStatus = null; }
+    /// <summary>Speaks the current selection again, as when a move cannot go further.</summary>
+    internal static void RepeatCurrent() => _selectionKey = null;
+
+    internal static void Reset() { ClearSelection(); SkillTreeNavigation.Reset(); _lastFailure = null; _bindingStatus = null; }
 
     private static void ReportFailure(Exception ex)
     {

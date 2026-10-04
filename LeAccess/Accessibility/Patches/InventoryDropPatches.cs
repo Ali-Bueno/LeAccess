@@ -10,8 +10,13 @@ internal static class InventoryDropPatch
     private static void Postfix(ItemContainerUI __instance) => InventoryDropFocus.AfterDrop(__instance);
 }
 
+// The native prologue has no relative branch, so the original may still run (reference/runtime-feedback.md).
 [HarmonyPatch(typeof(ItemContainerUI), nameof(ItemContainerUI.HandleNavigateInput))]
 internal static class InventoryNavigatePatch
 {
-    private static void Prefix() => InventoryDropFocus.CancelGuard();
+    private static bool Prefix(ItemContainerUI __instance, Direction d)
+    {
+        InventoryDropFocus.CancelGuard();
+        return !InventoryNavigation.TryNavigate(__instance, d);
+    }
 }

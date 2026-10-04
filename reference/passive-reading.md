@@ -154,3 +154,62 @@ User report: no way to tell whether points follow the chosen mastery, and "Sprit
 The overview speaks again only after the panel closes; modals inside it keep the tree
 context. Passive suite: 123 checks. Listening pending, in particular what
 `_lockedPoints` means to players and whether unsaved allocations change tab points.
+
+## Controller panel, reading order and tree switching (2026-10-04)
+
+User report: switching tabs cut off the tab's announcement; the order "skips nodes" and gives no
+sense of first, middle or last. The 00:46 log ran the tree build above (`ReadOverview` is in the
+installed DLL of that hour) yet never spoke a tree or the strip: with a controller the game opens
+the **old `PassivePanelManager` panel**, whose banner, strip and trees `NavigationManager` selects
+directly, not `FullScreenPanelPassiveTree`. Native evidence, build 25690669:
+
+- **Grid:** `PassiveTreeNavigable._navigationElements` is `SkillTreeNode[11,5]`, authored by Odin in
+  each mastery page prefab (the ctor @0x105e1e0 only allocates it). Column 0 is left; row 0 is the
+  **bottom** (Up adds 1). Columns follow point requirements (`UnlockPanel.getPassiveTreeIndex`
+  @0x105f1a0). Cells can be empty; nothing prevents a node in two cells.
+- **Native moves** (`HandleNavigateInput` @0x105c980; `VerticalMoveToClosestNode` @0x105df10,
+  horizontal mirror @0x105ca30): a press keeps scanning the *same* column (vertical) or row
+  (horizontal) to the edge and only falls back to nearby lines when that line is empty, so closer
+  nodes in neighbouring rows/columns are skipped. Borders (`IsOutBorder` @0x105ccf0, old panel):
+  below row 0 → skill strip at (column, 0); above row 4 → top buttons (or the lower respec row);
+  left of column 0 → banner (its right diamond); right of column 10 wraps to column 0.
+- **Re-entry** (`OnSelected()` @0x105d3e0): from the top buttons → rightmost node of the top row;
+  from the strip (`selectSkillTreeWithIndexAndDirection`) → the cell under the skill's requirement;
+  otherwise the remembered cell, or top of column 0. No auto-repeat: d-pad steps on release, the
+  stick once per flick (`PassivesMap`).
+- **LB/RB** (`PassivesMap` MoveNext @0x103b750) in one frame selects the banner (focus 1: current
+  diamond), rotates focus (focus 2: next diamond), then submits; `MasteryBanner.Clicked`
+  @0x17a22e0 sets `PassivePanelManager.activeMastery` and loads the page asynchronously. The page's
+  navigable `OnEnable` selects the tree and its first node interrupts the diamond speech; the
+  tree is then selected once more after `UniTask.Yield`.
+
+Mod behaviour:
+
+- `PassiveTreeNavigation` prefixes `HandleNavigateInput`/`HandleLeftStickInput`: the grid becomes one
+  list (columns left to right, each top to bottom; duplicates and inactive nodes skipped). Down/Up =
+  next/previous node across columns; Right/Left = top node of the next/previous column. List ends
+  place the cursor on the matching grid border and take the game's own step, which leaves (Up → top
+  buttons, Down → strip, Left from the first column → banner); Right on the last column repeats the
+  node. Selection mirrors native: hover exit on the old node, set column/row, `SelectNode()`. The
+  prefixes never run the original body: called through its detour it crashes
+  ([dump](runtime-feedback.md#passive-navigation-crash-detoured-short-branch-prologue-2026-10-04)),
+  so they replay its dispatch to `VerticalMoveToClosestNode`/`HorizontalMoveToClosestNode`.
+- `OnSelected` postfixes (old panel, controller only): from the top buttons land on the first node,
+  from the strip on the last. Other entries keep the native landing.
+- Nodes and strip skills end with "N de M".
+- `PassivePanelReader` gives the old panel the same context as the fullscreen one: overview on
+  opening, "tree, points, role, unspent" before the first node of a newly shown tree, unmet node
+  thresholds, strip unlock state from the shown tree's points. Name: `MasteryReader.ReadName`
+  (diamond `MasteryButtonTooltip`); points: visible diamond `levelTMP`, else
+  `Actor.localTreeData.masteryLevels`; chosen mastery: `localTreeData.chosenMastery`; tree index:
+  the `CharacterTree.masteries` page containing the navigable; unspent: `activeTree.unspentPoints`.
+- Banner diamonds are owned focus (silent at focus time). While the banner is selected and the
+  page of `activeMastery` exists but is inactive, nothing speaks; the new tree then speaks once with
+  its first node. A deliberately focused diamond reads its tree (plus "Árbol mostrado"); details read
+  the mastery description. The scrollable description stays with the generic reader.
+
+Passive suite: 153 checks (order planning, moves/exits/stay, stick, re-entry gates, banner, switch
+silence, controller strip, empty selection, reopen). Patch audit: 70 declarations / 69 targets, no shared bodies.
+Runtime unverified: one navigable per page, `levelTMP` being a bare number, lock-icon meaning,
+the top-buttons/strip previous-ID values seen by `OnSelected`, and how the fullscreen panel's own
+exits feel with the list order (its exits are left native).

@@ -16,7 +16,7 @@ internal static class InventoryAccessibility
     private static readonly InventoryAnnouncementState Announcements = new();
     private static readonly ScreenContentTracker Comparison = new();
     private static string _lastFailure;
-    private static string _contextKey, _context;
+    private static string _contextKey, _context, _position;
     private static float _nextContextRead;
     private static string _detailsKey;
 
@@ -100,10 +100,12 @@ internal static class InventoryAccessibility
                         MerchantItemReader.ReadContext(selectedData, container),
                         ScreenContentTracker.Combine(InventoryActionReader.ReadForItem(selectedData, container))
                     });
+                    _position = InventoryNavigation.TryGetPosition(container, entry, out int place, out int count)
+                        ? ModText.Format("list.position", place, count) : null;
                 }
-                text = ScreenContentTracker.Combine(new[] { text, _context });
+                text = ScreenContentTracker.Combine(new[] { text, _position, _context });
             }
-            else { _contextKey = _context = null; }
+            else { _contextKey = _context = _position = null; }
             string requestedText = text;
             if (requestDetails && selectedData is not null && !selectedData.WasCollected)
                 hasTooltip = ItemTooltipReader.TryReadForItem(selectedData, container.gameObject, out requestedText);
@@ -169,10 +171,13 @@ internal static class InventoryAccessibility
         return InventorySelectionReader.GetFocusedContainer();
     }
 
+    /// <summary>Speaks the current selection again, as when a move cannot go further.</summary>
+    internal static void RepeatCurrent() => Announcements.Reset();
+
     internal static void Reset()
     {
         Announcements.Reset(); Comparison.Reset(); _lastFailure = null;
-        _contextKey = _context = null; _nextContextRead = 0;
+        _contextKey = _context = _position = null; _nextContextRead = 0;
         _detailsKey = null;
     }
 

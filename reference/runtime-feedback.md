@@ -466,3 +466,27 @@ and backend queue semantics, not `IsSpeaking` or estimated speech-duration timer
 The LE port preserves its existing centralized transport and uses game-specific
 display hooks, not D2R widget offsets or timing constants. No new runtime package
 or native library is introduced.
+
+## Passive navigation crash: detoured short-branch prologue (2026-10-04)
+
+`Last Epoch.exe.42412.dmp` (10:11:50): breakpoint exception at `GameAssembly+0x105C9C9`, the `int3`
+padding right after native `PassiveTreeNavigable.HandleNavigateInput` (0x105c980–0x105c9c7). Stack:
+`(il2cpp -> managed) HandleNavigateInput` → Harmony replacement → `il2cpp_runtime_invoke` of the
+original. The log's last moves were up to "1 de 29" and Up again: the list-end case, the only one
+where the prefix let the original run. That function opens with `cmp edx,1; je …; cmp edx,3; je …`;
+called through its detour trampoline, the relocated short branch lands in the padding. The other
+seven dumps (2026-10-03 20:25 to 2026-10-04 01:17) are a different fault, a null read at
+`UnityPlayer+0x109ad1` under `UnityMain` while the process shuts down.
+
+Rule: a hook whose original runs (postfix, or a prefix that can return true) must not target a
+function with a relative branch in its first 16 bytes. The passive hooks now always skip the
+original and replay its dispatch (`VerticalMoveToClosestNode`/`HorizontalMoveToClosestNode`).
+Capstone audit of all hooked prologues (16-byte window), same build: short `jcc` in
+`TMP_InputField.OnPointerClick` (+0x7), `ChatToggleField.set_IsActive` (+0xc) and
+`AddLootFilterModal.OnClose` (+0x5, plus `jmp` +0xe). These three are tiny, so their prefixes now
+replay the whole native body and skip the original: left click → `ActivateInputField()`; the
+setter writes `_isActive`, `check.SetActive(value)` and clears `neverUpdatedUI` when the value
+changed or the UI never updated; `OnClose` stops `clipboardChecker`. Rel32 `call`/`jmp` remain in
+`TextMeshProDialogueUI.HideSubtitle`, `MultiButtonsActionPrompt.OnEnable/UpdatePrompt`,
+`Toggle.set_isOn` and `SetIsOnWithoutNotify`; those run constantly without a dump, so near
+branches relocate correctly. Whether the detour covers 5 or 14 bytes is unverified.

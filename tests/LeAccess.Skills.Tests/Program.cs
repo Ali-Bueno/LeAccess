@@ -10,5 +10,6 @@ BindingTests.Run(Check);
 LearningTests.Run(Check);
 SelectionTests.Run(Check);
 TooltipDetailsTests.Run(Check);
+TreeNavigationTests.Run(Check);
 if (failures.Count != 0) throw new InvalidOperationException(string.Join(Environment.NewLine, failures));
 Console.WriteLine($"Skill tests passed: {checks} checks.");

@@ -1,13 +1,59 @@
 using UnityEngine;
 
-internal static class NavigationManager { internal static NativeObject currentlySelected; }
+internal enum Direction { LEFT, UP, RIGHT, DOWN }
+internal enum NavigableID { NONE, PASSIVE_TREE, PASSIVE_TREE_TOP_BUTTONS, PASSIVE_TREE_UNLOCK_PANEL, PASSIVE_TREE_BANNER, PASSIVE_TREE_TOP_BUTTONS_LOWER }
+internal static class NavigationManager
+{
+    internal static NativeObject currentlySelected;
+    internal static NavigableID previousSelectedNavigableId;
+}
+internal static class EpochInputManager { internal static bool IsControllerActive = true; }
+internal static class DirectionExtensions
+{
+    internal static Direction ToDirection(Vector3 input, float threshold = 0.6f) => Math.Abs(input.x) >= Math.Abs(input.y)
+        ? input.x < 0 ? Direction.LEFT : Direction.RIGHT : input.y < 0 ? Direction.DOWN : Direction.UP;
+}
 internal sealed class PassiveTreeNavigable : Component
 {
     internal NativeObject _navigationElements;
     internal int _currentColumn, _currentRow;
+    internal readonly List<(int Column, int Row)> Selected = new();
+    internal readonly List<string> NativeSteps = new();
+    internal void SelectNode() => Selected.Add((_currentColumn, _currentRow));
+    internal void VerticalMoveToClosestNode(int direction) => NativeSteps.Add($"vertical {direction} from {_currentColumn},{_currentRow}");
+    internal void HorizontalMoveToClosestNode(int direction) => NativeSteps.Add($"horizontal {direction} from {_currentColumn},{_currentRow}");
 }
-internal sealed class SkillnodeTooltip : Component { internal SkillTreeNode node; }
-internal sealed class Tree : Component { internal int unspentPoints; }
+internal sealed class SkillnodeTooltip : Component
+{
+    internal SkillTreeNode node;
+    internal int Exits;
+    internal void EmulateOnPointerExit() => Exits++;
+}
+internal class Tree : Component { internal int unspentPoints; }
+internal sealed class CharacterTree : Tree { internal NativeArray<GameObject> masteries; }
+internal sealed class PassivePanelManager : Component
+{
+    internal static PassivePanelManager instance;
+    internal CharacterTree activeTree;
+    internal MasteryBanner openedBanner;
+    internal byte activeMastery;
+}
+internal sealed class MasteryBanner : Component { internal NativeArray<MasteryButton> masteryButtons; }
+internal sealed class MasteryButton : Component
+{
+    internal TMPro.TextMeshProUGUI levelTMP;
+    internal bool isMasteryClass;
+    internal GameObject lockIcon;
+    internal MasteryBarDisplay masteryBarDisplay;
+    internal string Name, Definition;
+}
+internal sealed class PassiveTreeBannerNavigable : Component
+{
+    internal UnityEngine.UI.Button _currentButton;
+    internal bool isDescriptionSelected;
+}
+internal sealed class Actor : Component { internal LocalTreeData localTreeData; }
+internal static class PlayerFinder { internal static Actor Actor; internal static Actor getPlayerActor() => Actor; }
 internal sealed class SkillTreeNode : Component
 {
     internal Tree tree;
@@ -49,7 +95,7 @@ internal sealed class TabButton : Component
 internal sealed class MasteryTabButton : Component { internal TabButton _tabButton; }
 internal sealed class MasteryBarDisplay : Component
 { internal bool _hasFillValues; internal int _lastFillPoints, _lastFillMaxPoints; }
-internal sealed class LocalTreeData : NativeObject
+internal sealed class LocalTreeData : UnityEngine.Object
 { internal NativeArray<byte> masteryLevels; internal byte chosenMastery; }
 internal static class PassivePanelData
 { internal sealed class MasteryData : NativeObject { internal string name; internal bool isMastery; } }
@@ -133,6 +179,8 @@ namespace LeAccess.I18n
             ["passive.ability"] = "Tree skill", ["passive.mastery_ability"] = "Mastery skill",
             ["passive.ability_unlocked"] = "Unlocked", ["passive.ability_unlockable"] = "Unlocks at {0}, you have {1}",
             ["passive.ability_unreachable"] = "Needs {0}, tree allows {1}",
+            ["list.position"] = "{0} of {1}", ["passive.unspent"] = "{0} unspent",
+            ["passive.tree_shown"] = "Shown tree",
         };
         internal static string Get(string key) => Text[key];
         internal static string Format(string key, params object[] args) => string.Format(Text[key], args);
@@ -141,7 +189,11 @@ namespace LeAccess.I18n
 namespace LeAccess.Accessibility.CharacterCreation
 {
     internal static class MasteryReader
-    { internal static string LocalizedName(string name, bool mastery) => name is null ? null : "Localized " + name; }
+    {
+        internal static string LocalizedName(string name, bool mastery) => name is null ? null : "Localized " + name;
+        internal static string ReadName(MasteryButton button) => button.Name;
+        internal static string ReadDefinition(MasteryButton button) => button.Definition;
+    }
 }
 namespace LE.UI.PanelSystem
 {
@@ -156,3 +208,8 @@ namespace LE.UI.PanelSystem
         internal MasteryBarDisplay _masteryBarDisplay;
     }
 }
+namespace UnityEngine
+{
+    internal struct Vector3 { internal float x, y, z; }
+}
+namespace UnityEngine.UI { internal sealed class Button : Selectable { } }

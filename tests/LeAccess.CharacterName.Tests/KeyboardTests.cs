@@ -225,9 +225,10 @@ internal static class KeyboardTests
         EpochInputManager.IsControllerActive = false;
         EventSystem.current.SetSelectedGameObject(null);
         input.ActivationPending = false;
+        Check(!CharacterNameKeyboardPatches.Click.Prefix(input, new PointerEventData { button = PointerEventData.InputButton.Right }) &&
+            !input.ActivationPending, "A right click replays the native no-op and never runs the detoured original");
         var leftClick = new PointerEventData { button = PointerEventData.InputButton.Left };
-        CharacterNameKeyboardPatches.Click.Prefix(input, leftClick);
-        CharacterNameKeyboardPatches.Click.Postfix(input, leftClick);
+        Check(!CharacterNameKeyboardPatches.Click.Prefix(input, leftClick), "A left click is replayed without the detoured original");
         Check(EventSystem.current.currentSelectedGameObject == input.gameObject && input.ActivationPending,
             "Mouse click explicitly focuses and activates the actual TMP field for physical typing");
         int physicalCloseCount = keyboard.CloseCount;

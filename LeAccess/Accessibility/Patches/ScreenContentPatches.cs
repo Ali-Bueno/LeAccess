@@ -96,11 +96,24 @@ internal static class PopupContentClosedPatch
     private static IEnumerable<MethodBase> TargetMethods()
     {
         yield return AccessTools.Method(typeof(BinaryChoiceModalWindow), nameof(BinaryChoiceModalWindow.OnDisable), Type.EmptyTypes);
-        yield return AccessTools.Method(typeof(AddLootFilterModal), nameof(AddLootFilterModal.OnClose), Type.EmptyTypes);
     }
     private static void Prefix(Component __instance)
     {
         ScreenContentAnnouncer.RemovePopup(__instance);
+    }
+}
+
+// Native OnClose (0x117f320) only stops the clipboard check. Its opening short branch breaks when the original runs
+// through the detour, so the hook replays it instead (reference/runtime-feedback.md).
+[HarmonyPatch(typeof(AddLootFilterModal), nameof(AddLootFilterModal.OnClose))]
+internal static class LootFilterModalClosedPatch
+{
+    private static bool Prefix(AddLootFilterModal __instance)
+    {
+        ScreenContentAnnouncer.RemovePopup(__instance);
+        var checker = __instance.clipboardChecker;
+        if (checker is not null && !checker.WasCollected) __instance.StopCoroutine(checker);
+        return false;
     }
 }
 
