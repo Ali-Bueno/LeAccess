@@ -14,8 +14,10 @@ the right-stick scanner plus the beacon (`docs/entity-scan.md`, `docs/beacon.md`
 `docs/decisions.md`). "Full assistance" is opt-in.
 
 - Scanner: right stick up/down picks a category (empty ones skipped, name spoken),
-  left/right steps through its entries nearest first: name, straight-line distance,
-  one of eight screen directions. No walking steps.
+  left/right steps through its entries nearest first: name, straight-line distance
+  in steps (`esES.h` "%d pasos", `EntityRadar::DistancePhrase`) and one of eight
+  screen directions ("arriba y a la izquierda", `Radar::ScreenSector`). Both describe
+  the direct line to the target, not the walking route.
 - Categories: exits, portals, waypoints, NPCs, stash, shrines, other objects, quest
   objects, unexplored rooms, enemies (live only), players, corpses. Loot and
   ordinary chests excluded (they have their own loops).
