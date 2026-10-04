@@ -88,6 +88,8 @@ Re-check these five first; then the list below.
 - Radar precision proposals (bump/scrape from stick intent, heading parking sensor,
   terrain audio priority first), awaiting the user's choice:
   [review](reference/navigation-radar.md#precision-review-and-proposals-2026-10-03).
+- Automatic orientation was silent for the user's whole last session, with no log
+  reason; diagnose before tuning ([report](reference/automatic-orientation.md#live-report-silent-for-a-whole-session-2026-10-03-2118-log)).
 - Items in the previous handoff that remain open: output-acceptance coverage in
   general menus, map/zone recovery, nearby-entity recovery, advanced filter/forge
   conditions, visual attack telegraphs (see `reference/hazard-sources.md`).

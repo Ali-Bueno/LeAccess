@@ -132,3 +132,33 @@ change zones. Verify direction and accelerating cadence without a key press.
 Check nearby named exits with no reachable quest marker, including a return
 exit. Confirm its name and the unconfirmed-for-quest qualification, and that
 far-away exits stay quiet. Test online play, death, typing and focus loss.
+
+## Live report: silent for a whole session (2026-10-03, 21:18 log)
+
+The user felt something was missing to reach quest destinations quickly. Their
+last log (Campamento de los guardianes, then Jardines de la fortaleza, with
+"Cámara de los guardianes" pinned and active; `Enabled`/`Sound` true) contains no
+`[Automatic orientation]` speech and no `Automatic orientation unavailable` warning.
+The guidance was silent throughout, and the log cannot say why: target absence,
+an incomplete route and suspension all return without logging.
+
+Unconfirmed candidates from the code: quest targets need the native icon to be
+drawn inside the minimap rect (`GuidanceMarkerVisibility`); an objective in
+another zone has no marker in this one; exits need a visible minimap icon and
+a route within 32 body widths; with speech on, the pulse waits for the first
+accepted announcement, so blocked speech also silences the sound.
+
+Proposed next steps, awaiting the user's choice:
+
+1. A five-second status line like the radar's (targets read, minimap/icon
+   visibility, route result, speech gate), then one live quest session.
+2. Heading feedback: compare stick intent (`MovingPlayerThumbstick.WorldMovementDir`)
+   with the route direction; on course gives a soft steady tick, off course plays the
+   guide sound at once from the side to turn toward, faster the larger the error.
+   The 3 s far pulse is too slow to steer.
+3. Aim at a look-ahead point along the path instead of the next corner, to avoid
+   zigzags when corners are close.
+4. Cross-zone objectives: check whether the game marks the exit toward them.
+
+Automatic walking (`ClientMovingPlayer.MoveToPoint`) would be fastest but conflicts
+with the playbook's player-agency default; not proposed unless the user asks.
