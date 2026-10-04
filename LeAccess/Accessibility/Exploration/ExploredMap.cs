@@ -138,6 +138,7 @@ internal sealed partial class ExploredMap
         _cellColumns.Add(column);
         if (!_columns.TryGetValue(column, out var cells)) _columns[column] = cells = new List<int>(1);
         cells.Add(index);
+        TrackFrontier(index);
         return index;
     }
 

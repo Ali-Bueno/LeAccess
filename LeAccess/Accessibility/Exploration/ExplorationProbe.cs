@@ -14,13 +14,16 @@ using Vector3 = System.Numerics.Vector3;
 namespace LeAccess.Accessibility.Exploration;
 
 // Builds the scanner's entries: seen places from the click-listener registry, the quest markers and
-// encounter arrow the game shows, and live enemies in skill-targeting range.
+// encounter arrow the game shows, live enemies in skill-targeting range and unexplored areas.
 internal static class ExplorationProbe
 {
     private static readonly List<GuidanceTarget> Targets = new();
     private static readonly List<EnemyContact> Contacts = new();
     private static readonly ExplorationSeenMemory Seen = new();
     private static readonly List<string> Unseen = new();
+    private static readonly List<MinimapRoom> Rooms = new();
+    private static readonly List<FrontierArea> Frontier = new();
+    private static readonly RoomGlimpses Glimpses = new();
     private const int UnseenLogged = 6;
     private const float MinimumArrival = 1.5f;
     // Right beside the player a place counts as seen even without walkable line of sight: the
@@ -34,8 +37,8 @@ internal static class ExplorationProbe
     internal static string LastFailure { get; private set; }
     internal static string LastStatus { get; private set; }
 
-    internal static bool TryRefresh(MapSectionWorldSnapshot world, IWalkability nav, float seenRange,
-        List<ExplorationEntry> entries)
+    internal static bool TryRefresh(MapSectionWorldSnapshot world, IWalkability nav, ExploredMap explored,
+        float seenRange, double now, List<ExplorationEntry> entries)
     {
         entries.Clear();
         LastFailure = null;
@@ -114,7 +117,34 @@ internal static class ExplorationProbe
         catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
         finally { Contacts.Clear(); }
 
-        LastStatus = $"places={places} unseen={unseen} remembered={Seen.Count} objectives={objectives} enemies={enemies} origin={hasOrigin} not_yet_seen=[{string.Join("; ", Unseen)}]";
+        int unexplored = 0, rooms = 0, visited = 0;
+        string source = "none";
+        bool hasRooms = false;
+        // A failed room read falls back to the frontier rather than listing nothing.
+        try { hasRooms = MinimapRoomReader.TryRead(world, now, Rooms); }
+        catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
+        try
+        {
+            string name = ModText.Get("exploration.unexplored_area");
+            if (hasRooms)
+            {
+                source = "rooms";
+                rooms = Rooms.Count;
+                unexplored = UnexploredAreas.AddRooms(Rooms, MinimapRoomReader.Layout, player, Seen, explored, name,
+                    entries, out visited, Glimpses);
+            }
+            else if (explored is not null)
+            {
+                source = "frontier";
+                unexplored = UnexploredAreas.AddFrontier(explored, Frontier, name, entries);
+            }
+        }
+        catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
+        finally { Rooms.Clear(); }
+
+        LastStatus = $"places={places} unseen={unseen} remembered={Seen.Count} objectives={objectives} enemies={enemies} " +
+            $"unexplored={unexplored} source={source} rooms={rooms} visited_rooms={visited} " +
+            $"frontier_pending={explored?.FrontierPending ?? 0} origin={hasOrigin} not_yet_seen=[{string.Join("; ", Unseen)}]";
         return true;
     }
 
@@ -175,6 +205,10 @@ internal static class ExplorationProbe
     internal static void Reset()
     {
         Seen.Clear();
+        Rooms.Clear();
+        Frontier.Clear();
+        Glimpses.Clear();
+        MinimapRoomReader.Reset();
         Targets.Clear();
         Contacts.Clear();
         LastFailure = LastStatus = null;

@@ -42,6 +42,7 @@ internal static class ExplorationBeacon
     private static string _lastFailure;
 
     internal static string LockedKey => State.LockedKey;
+    internal static float ExploreRadius => _exploreRadius?.Value ?? ExploredMap.DefaultExploreRadius;
 
     internal static void Initialize(ConfigFile config)
     {
@@ -177,15 +178,19 @@ internal static class ExplorationBeacon
             BeaconAudio.DropPing();
         }
         _map.Observe(player, Walkability);
+        if (!MinimapRoomReader.HasRooms) _map.UpdateFrontier(Walkability);
         if (State.LockedKey == null || !TryAxes(out var forward, out var right)) return null;
         _last = State.Tick(player, target, forward, right, now, Router);
         string name = _last.Target.Name;
+        // An unexplored area leaves the scanner once entered or seen: that is its arrival.
+        bool area = UnexploredAreas.IsUnexplored(_last.Target.Key);
         switch (_last.Release)
         {
             case BeaconRelease.Arrived:
-                Released("arrived", name);
+            case BeaconRelease.TargetLost when area:
+                Released(area ? "explored" : "arrived", name);
                 BeaconAudio.Queue(BeaconSound.Arrived);
-                return ModText.Format("exploration.beacon.arrived", name);
+                return area ? ModText.Get("exploration.beacon.area_explored") : ModText.Format("exploration.beacon.arrived", name);
             case BeaconRelease.RouteLost:
                 _routeLosses++;
                 Released($"route-lost failure={_map.LastFailure ?? "none"}", name);
@@ -260,6 +265,9 @@ internal static class ExplorationBeacon
     }
 
     internal static ExploredMemory ExploredGround => Memory;
+
+    // The explored ground of this scene session, once the beacon has resolved it.
+    internal static ExploredMap CurrentMap(long session) => _map != null && _mapSession == session ? _map : null;
 
     // Drops the cached map so the next tick resolves it again after the memory was cleared or imported.
     internal static void ForgetMap()

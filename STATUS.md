@@ -1,11 +1,14 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-04 (Claude session): menu fixes from the user's report — map travel
+**Updated:** 2026-10-04 night (Claude session): unexplored areas in the scanner (the game's
+minimap rooms, frontier fallback), beacon to them, radar cues no longer wait behind other
+sounds and mark openings toward unexplored ground; see [WHATS_NEXT.md](WHATS_NEXT.md).
+Earlier, 2026-10-04: menu fixes from the user's report — map travel
 speech, passive trees/mastery overview and skill strip, inventory focus after drops,
 equipment comparison, NPC lines no longer cut by the response menu. Earlier, 2026-10-03: Spam fixes (vitals, places/NPCs, generic
 modals, settings), D2R ports (potions, effects, boss life), enemy scan and audio cues, world-map
 waypoints, character tiles and localized button names; see [WHATS_NEXT.md](WHATS_NEXT.md).
-All 54 host suites pass; the rebuilt plugin is installed for Steam **25690669**.
+All 58 host suites pass; the rebuilt plugin is installed for Steam **25690669**.
 Startup, online play and listening on this build still need in-game validation.
 
 ## Current installation
@@ -80,7 +83,7 @@ requested. No release or new ZIP has been requested.
 | Inventory/merchants | Current stash/shop/buyback and [equipped selections](reference/equipped-items.md); rejected briefs/details retry while owned. After a drop, focus moves to the nearest item instead of the first slot ([drop focus](reference/inventory-drop-focus.md)); holding compare reads the equipped item, differences and changed lines ([comparison](reference/item-comparison.md)). 236 service + 111 model checks. Listening pending. |
 | Forge/filter controls | Typed selections, filter-range labels and manual visible preview/potential/unavailable reason. 118 regressions within 296 menu checks. [Scope/limits](reference/crafting-reading.md); listening pending. |
 | Ground loot | New targeting API, brief current-item names; 67 checks. Listening pending. |
-| Radar | Initial/resumed wall memory prevents false openings on retreat; owned online visuals supply body radius. 447 navigation checks; sound/control vocabulary unchanged. Listening pending. |
+| Radar | Wall memory, owned body radius as before. 2026-10-04: terrain cues never wait behind NPC/enemy/object/beacon sounds (`max_wait_ms` in the status); openings toward a listed unexplored area end in a D2R double pip (`UnexploredMark`). 504 navigation checks. [Details](reference/navigation-radar.md#latency-and-the-unexplored-mark-2026-10-04); listening pending. |
 | Objective orientation | Removed 2026-10-03 (F6/right stick down); replaced by the exploration scanner. Target/route classes kept for reuse. [Notes](reference/objective-orientation.md) |
 | Automatic orientation | Removed 2026-10-03; replaced by the exploration scanner. [Notes](reference/automatic-orientation.md) |
 | NPC/world sounds | Natural recordings for loot and typed chest/stash/portal/transition identities: Last Epoch's own for gold, potions, tomes, portals/waypoints and exits (user choice), D2R for equipment, chests and the stash ([sound design](reference/sound-design.md)); generic/NPC/radar cues retained. Gold, equipment, potions, tomes, chests, the stash, portals, waypoints and exits now play whole recordings as continuous loops (up to 8, from 12 m, `Loops`/`LoopRange`), replacing the 0.3 s excerpts that sputtered ([loops](reference/world-object-sounds.md)). 153 world + 167 sample/fallback checks. [Details](reference/natural-world-sounds.md). Listening pending. |
@@ -89,7 +92,7 @@ requested. No release or new ZIP has been requested.
 | Quest ping | Removed as requested. Optional continuous sonar now also mutes in non-pausing menus and after failed queries. 48 radar/audio checks. |
 | Nearest enemy | Owned visual display/ActorData; 156 checks. Latest log announces Reptador chamuscado and Ojo de Rahyeh offline. Audible results still need confirmation. |
 | Enemy cues | D2R port, on by default: ordinary enemies growl, nearest boss/miniboss swoops; max three streams in targeting range and walkable line of sight, faster when closer, camera-relative pan, shared audio queue with radar/NPC/world sounds; off-mesh bosses still sound, brief absences keep cadence. 141 checks; listening pending. [Details](reference/enemy-cues.md) |
-| Exploration scanner | New 2026-10-03, D2R port: right stick (gameplay only) steps categories/entries of seen places, shown quest markers and enemies; hold Create = mod menu (Square vitals, Cross beacon) with the game's button actions paused while held; beacon routes only through explored ground. Explored ground and seen places saved per character (online/offline keys) in `BepInEx/config/LeAccess/Exploration`. User confirmed it works offline (2026-10-04); additive-scene NPCs and stash classification fixed after. Catalog 37, input 27, map/beacon/store 300, vitals input 28 checks. [Design](reference/exploration-mode.md). Online and saved-exploration listening pending. |
+| Exploration scanner | New 2026-10-03, D2R port: right stick (gameplay only) steps categories/entries of seen places, shown quest markers and enemies; hold Create = mod menu (Square vitals, Cross beacon) with the game's button actions paused while held; beacon routes only through explored ground. Explored ground and seen places saved per character (online/offline keys) in `BepInEx/config/LeAccess/Exploration`. User confirmed it works offline (2026-10-04); additive-scene NPCs and stash classification fixed after. New category *Zonas sin explorar* (D2R unexplored rooms): minimap persistence volumes not entered but glimpsed, or explored-ground edges where a scene has none; the beacon leads there and says "Zona explorada". Catalog 45, input 27, map/beacon/store/unexplored 342, vitals input 28 checks. [Design](reference/exploration-mode.md), [unexplored areas](reference/exploration-mode.md#unexplored-areas-2026-10-04). Online, saved-exploration and unexplored-area listening pending. |
 | Enemy scan | F7/right-stick trigger removed 2026-10-03; probe, report and hostile registry (20 checks) kept as the scanner's enemies category. [Details](reference/enemy-scan.md) |
 | Boss life | D2R port: bosses/minibosses read "Name, 74 percent" on band falls, death once as 0; on-screen bosses only, one step below 10 percent; first sighting silent, queued speech. 31 checks. Online bar scale (`IOverheadBar.HealthNormalized`) and live bosses unverified. [Details](reference/boss-life.md) |
 | Life/mana | Falls read the band; one-band rises (regeneration between casts) stay silent, ending the 62/75 mana spam; low mana never interrupts and below 10 percent speaks only its first step and empty. [Rules](reference/vitals-api.md). Potion charges speak on use/pickup and in the R / Create+Square report (D2R belt port; Create alone no longer reports); the report also lists HUD debuffs. 513 checks. Online hierarchy, controller mapping and listening pending. |
@@ -102,9 +105,9 @@ requested. No release or new ZIP has been requested.
 
 ## Validation and references
 
-- `dotnet build LeAccess/LeAccess.csproj --no-restore`: zero warnings/errors; deployed with the game stopped.
-- All **51 C# suites / 58,040 checks** passed, plus **24** missing-audio-resource checks and **20** Python map-extractor tests. This batch adds 219 checks. Native safety includes the current loader fingerprint and **60 declarations / 59 targets**.
-- Built and installed plugin SHA-256 match: `DF7E5CF8A58D9AFD6EABA6A907A78F9C9E72D7F2CD742BFF6B8EAC90865740FD`.
+- `dotnet build LeAccess/LeAccess.csproj --no-restore`: zero warnings/errors; deployed with the game stopped (2026-10-04 night).
+- All **58 test suites / 58,732 checks** pass (unexplored areas, radar mark and terrain priority included). Native safety unchanged: **66 declarations / 65 targets**; no new hooks.
+- Built and installed plugin SHA-256 match: `721C68A6CA994E68E24478D0765D96DE58065D4CA2D79A8BBCD4C3A272A45F70`. Previous plugin, config and exploration saves backed up to `C:\Users\ali-b\Documents\LeAccess backups\pre-unexplored-a921963-20261004`.
 - Both installed configuration files and both personal translation catalogs retain their original hashes. No game or audio device launched; host tests do not establish live UI visibility or audible output.
 
 Current-build regeneration and native audit: [Steam port notes](reference/steam-port.md).

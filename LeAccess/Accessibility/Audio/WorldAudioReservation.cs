@@ -19,6 +19,14 @@ internal static class WorldAudioReservation
         if (now < _lastTime) Reset();
         _lastTime = now;
         int index = (int)source;
+        // Terrain warnings never wait behind other world sounds (the D2R radar owns its output);
+        // the others still wait for the terrain cue. See reference/navigation-radar.md.
+        if (source == WorldAudioSource.Terrain)
+        {
+            Waiting[index] = 0;
+            _until = Math.Max(_until, now + duration + bufferMilliseconds / 1000);
+            return true;
+        }
         if (Waiting[index] == 0) Waiting[index] = ++_sequence;
         if (now < _until) return false;
         foreach (long order in Waiting)

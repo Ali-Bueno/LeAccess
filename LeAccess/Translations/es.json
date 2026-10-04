@@ -239,5 +239,8 @@
   "exploration.category.travel": "Viaje",
   "exploration.category.characters": "Personajes",
   "exploration.category.services": "Servicios",
-  "exploration.category.enemies": "Enemigos"
+  "exploration.category.enemies": "Enemigos",
+  "exploration.category.unexplored": "Zonas sin explorar",
+  "exploration.unexplored_area": "Zona sin explorar",
+  "exploration.beacon.area_explored": "Zona explorada"
 }

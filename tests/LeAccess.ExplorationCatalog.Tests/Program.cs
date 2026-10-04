@@ -17,6 +17,7 @@ var words = new Dictionary<string, string>
     ["exploration.category.objectives"] = "Objetivos", ["exploration.category.exits"] = "Salidas",
     ["exploration.category.travel"] = "Viaje", ["exploration.category.characters"] = "Personajes",
     ["exploration.category.services"] = "Servicios", ["exploration.category.enemies"] = "Enemigos",
+    ["exploration.category.unexplored"] = "Zonas sin explorar",
     ["guidance.direction.up"] = "arriba", ["guidance.direction.up_right"] = "arriba a la derecha",
     ["guidance.direction.right"] = "derecha", ["guidance.direction.down_right"] = "abajo a la derecha",
     ["guidance.direction.down"] = "abajo", ["guidance.direction.down_left"] = "abajo a la izquierda",
@@ -127,5 +128,26 @@ Equal(0, restored.ImportFixed("PCG#3", new[] { "x" }), "procedural scope import 
 restored.Enter("Town");
 Equal(true, restored.Contains("1|Salida|5|1"), "imported key is remembered");
 Equal(1, restored.Count, "entering an imported scope reuses it");
+
+// Unexplored areas come right after the ways out (D2R); saved seen-place keys keep their category numbers.
+var withAreas = new List<ExplorationEntry>
+{
+    Entry("exit", "Salida hacia Cueva", ExplorationCategory.Exits, 0, 4),
+    Entry("room:2", "Zona sin explorar", ExplorationCategory.Unexplored, 6, 6),
+    Entry("room:5", "Zona sin explorar", ExplorationCategory.Unexplored, -2, -2),
+    Entry("waypoint", "Punto de viaje", ExplorationCategory.Travel, 0, -9),
+};
+var areas = new ExplorationCatalog();
+areas.StepCategory(1, withAreas, player, forward, right, step, text);
+Equal(ExplorationCategory.Exits, areas.Category, "exits first");
+Equal("Zonas sin explorar, 2. Zona sin explorar, 3 pasos, abajo a la izquierda",
+    areas.StepCategory(1, withAreas, player, forward, right, step, text), "unexplored areas follow the exits");
+Equal("room:5", areas.SelectedKey, "nearest unexplored area selected");
+Equal("Zona sin explorar, 8 pasos, arriba a la derecha", areas.StepEntry(1, withAreas, player, forward, right, step, text), "next area");
+areas.StepCategory(1, withAreas, player, forward, right, step, text);
+Equal(ExplorationCategory.Travel, areas.Category, "travel after unexplored areas");
+Equal(ExplorationCatalog.Order.Length, Enum.GetValues<ExplorationCategory>().Length, "every category is in the scanner order");
+Equal("3|Maeve", ExplorationSeenMemory.Key(ExplorationCategory.Characters, "Maeve", Vector3.Zero), "saved character keys unchanged");
+Equal("2|Punto|0|0", ExplorationSeenMemory.Key(ExplorationCategory.Travel, "Punto", Vector3.Zero), "saved travel keys unchanged");
 
 Console.WriteLine($"Exploration catalog tests passed: {checks} checks");

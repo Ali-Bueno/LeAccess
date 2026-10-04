@@ -152,24 +152,27 @@ Check(state.TryChoose(nearby, target, 12, out chosen) && chosen.Key.Category == 
 
 Reset();
 Check(WorldAudioReservation.TryBegin(WorldAudioSource.Npc, 0, 0.084, 50), "First source reserves audio");
-Check(!WorldAudioReservation.TryBegin(WorldAudioSource.Terrain, 0.1, 0.12, 100), "Reservation includes queued device samples");
-Check(!WorldAudioReservation.TryBegin(WorldAudioSource.Object, 0.14, 0.16, 100), "Later source cannot jump ahead of waiting terrain");
-Check(WorldAudioReservation.TryBegin(WorldAudioSource.Terrain, 0.14, 0.12, 100), "Oldest pending source gets its turn");
+Check(!WorldAudioReservation.TryBegin(WorldAudioSource.Guidance, 0.1, 0.12, 100), "Reservation includes queued device samples");
+Check(!WorldAudioReservation.TryBegin(WorldAudioSource.Object, 0.14, 0.16, 100), "Later source cannot jump ahead of waiting guidance");
+Check(WorldAudioReservation.TryBegin(WorldAudioSource.Guidance, 0.14, 0.12, 100), "Oldest pending source gets its turn");
 Check(!WorldAudioReservation.TryBegin(WorldAudioSource.Npc, 0.4, 0.084, 50), "Repeating NPC does not starve waiting objects");
 Check(WorldAudioReservation.TryBegin(WorldAudioSource.Object, 0.4, 0.16, 100), "Object source receives its fair turn");
 WorldAudioReservation.Cancel(WorldAudioSource.Npc);
-Check(WorldAudioReservation.TryBegin(WorldAudioSource.Terrain, 0.7, 0.12, 100), "Suspending a waiter removes its claim");
+Check(WorldAudioReservation.TryBegin(WorldAudioSource.Guidance, 0.7, 0.12, 100), "Suspending a waiter removes its claim");
 Check(WorldAudioReservation.TryBegin(WorldAudioSource.Npc, 0, 0.084, 50), "Time reversal clears stale device reservations");
 Check(!WorldAudioReservation.TryBegin(WorldAudioSource.Npc, double.NaN, 0.1, 50), "Invalid reservation times are rejected");
 
 WorldAudioReservation.Reset();
 Check(WorldAudioReservation.TryBegin(WorldAudioSource.Guidance, 0, 0.3, 100), "Guidance reserves its natural sample and device tail");
-Check(!WorldAudioReservation.TryBegin(WorldAudioSource.Terrain, 0.1, 0.12, 100), "Terrain waits for the bounded guidance pulse");
-Check(!WorldAudioReservation.TryBegin(WorldAudioSource.Guidance, 0.4, 0.3, 100), "Repeating guidance cannot starve pending terrain");
-Check(WorldAudioReservation.TryBegin(WorldAudioSource.Terrain, 0.4, 0.12, 100), "Terrain receives the next turn after guidance");
-Check(!WorldAudioReservation.TryBegin(WorldAudioSource.Object, 0.7, 0.16, 100), "Later object cue respects waiting guidance");
+Check(WorldAudioReservation.TryBegin(WorldAudioSource.Terrain, 0.1, 0.12, 100), "Terrain never waits behind a guidance pulse");
+Check(!WorldAudioReservation.TryBegin(WorldAudioSource.Object, 0.35, 0.16, 100), "Other sounds still wait for the guidance pulse");
+Check(!WorldAudioReservation.TryBegin(WorldAudioSource.Guidance, 0.4, 0.3, 100), "Repeating guidance cannot starve a waiting object");
+Check(WorldAudioReservation.TryBegin(WorldAudioSource.Object, 0.4, 0.16, 100), "The waiting object receives the next turn");
+Check(!WorldAudioReservation.TryBegin(WorldAudioSource.Npc, 0.7, 0.084, 50), "Later NPC cue respects waiting guidance");
 WorldAudioReservation.Cancel(WorldAudioSource.Guidance);
-Check(WorldAudioReservation.TryBegin(WorldAudioSource.Object, 0.7, 0.16, 100), "Losing a route removes its waiting guidance claim");
+Check(WorldAudioReservation.TryBegin(WorldAudioSource.Npc, 0.7, 0.084, 50), "Losing a route removes its waiting guidance claim");
+Check(WorldAudioReservation.TryBegin(WorldAudioSource.Terrain, 0.71, 0.12, 100), "Terrain plays over a running NPC tap");
+Check(!WorldAudioReservation.TryBegin(WorldAudioSource.Npc, 0.9, 0.084, 50), "The next tap waits for the terrain cue and its buffer");
 WorldAudioReservation.Reset();
 Check(WorldAudioReservation.TryBegin(WorldAudioSource.Guidance, 0, 0.3, 100), "Scene reset clears all four audio sources");
 

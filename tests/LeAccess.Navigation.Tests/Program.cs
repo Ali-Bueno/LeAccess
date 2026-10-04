@@ -11,6 +11,7 @@ internal static class Program
             EngineTests.Run();
             QueueTests.Run();
             AudioTests.Run();
+            MarkTests.Run();
             LifecycleTests.Run();
             Console.WriteLine($"Navigation tests passed: {_checks} checks.");
             return 0;

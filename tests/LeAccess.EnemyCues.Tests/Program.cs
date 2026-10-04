@@ -313,9 +313,13 @@ internal static partial class Program
             "A repeating enemy cannot take the next turn from the waiting NPC.");
         Check(WorldAudioReservation.TryBegin(WorldAudioSource.Npc, 0.38, NpcCueSynthesizer.DurationSeconds, 50),
             "The NPC tap follows the enemy cue.");
+        Check(WorldAudioReservation.TryBegin(WorldAudioSource.Terrain, 0.4, 0.12, 100),
+            "A radar knock never waits behind other world sounds.");
         WorldAudioReservation.Cancel(WorldAudioSource.Enemy);
-        Check(WorldAudioReservation.TryBegin(WorldAudioSource.Terrain, 0.52, 0.12, 100),
-            "A canceled enemy request no longer holds a turn.");
+        Check(!WorldAudioReservation.TryBegin(WorldAudioSource.Enemy, 0.52, EnemyCueSynthesizer.DurationSeconds, 50),
+            "Other sounds still wait for the knock and its buffer.");
+        Check(WorldAudioReservation.TryBegin(WorldAudioSource.Enemy, 0.63, EnemyCueSynthesizer.DurationSeconds, 50),
+            "The enemy cue plays once the knock ends.");
         WorldAudioReservation.Reset();
     }
 }

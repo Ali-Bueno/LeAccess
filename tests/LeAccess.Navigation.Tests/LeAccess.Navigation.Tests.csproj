@@ -17,5 +17,6 @@
     <Compile Include="../../LeAccess/Accessibility/MapSections/MapPlayerVisuals.cs" Link="MapPlayerVisuals.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/ReactiveRadar.cs" Link="ReactiveRadar.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/RadarDiagnostics.cs" Link="RadarDiagnostics.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/RadarUnexploredMarks.cs" Link="RadarUnexploredMarks.cs" />
   </ItemGroup>
 </Project>

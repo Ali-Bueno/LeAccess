@@ -82,11 +82,14 @@ and visible challenge states when no button is available. Descriptions remain
 available with right-stick-up.
 
 During gameplay the right stick is the [exploration scanner](reference/exploration-mode.md):
-push it up or down to change category (objectives, exits, travel, characters, services,
-enemies) and left or right to step through that category's entries, nearest first. Each
-entry gives its name, distance in steps (one step is the character's width) and one of
-eight screen directions. Places are listed once you have seen them; quest markers and
-enemies as the game shows them. Keyboard: Ctrl+Numpad 8/2 and 4/6.
+push it up or down to change category (objectives, exits, unexplored areas, travel,
+characters, services, enemies) and left or right to step through that category's entries,
+nearest first. Each entry gives its name, distance in steps (one step is the character's
+width) and one of eight screen directions. Places are listed once you have seen them; quest
+markers and enemies as the game shows them. Unexplored areas are the game's minimap rooms
+you have glimpsed but never entered (or, in maps without them, edges where unseen ground
+continues), so you can head for new ground; the beacon leads to one and says "area explored"
+when you reach it. Keyboard: Ctrl+Numpad 8/2 and 4/6.
 Hold **Create** (Share) for the mod menu: **Square** reads life, mana and potions, **Cross**
 starts the beacon toward the selected entry (again cancels). While Create is held the
 game's button actions pause, so Square and Cross do not cast or interact. The beacon pings
@@ -99,8 +102,8 @@ when closer; `[Enemy cues]` in the configuration turns them off or adjusts them.
 
 [Natural world sounds](reference/natural-world-sounds.md) reuse recordings from
 the D2R mod for loot and identified world interactions. Short repeating samples
-share playback time with the existing radar knocks and breaths so each cue stays
-distinct. The sounds are embedded in the plugin; no separate audio installation
+share playback time with each other; radar knocks and breaths never wait behind
+them. An opening breath that ends in a quick double pip leads toward an unexplored area. The sounds are embedded in the plugin; no separate audio installation
 is required.
 The previous bright coin and equipment cues are preserved as playable WAVs in
 the [sound design reference](reference/sound-design.md). D2R recordings remain

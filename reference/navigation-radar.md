@@ -361,3 +361,32 @@ and confirmation, hysteresis and wall memory avoid false cues. The limits are:
     (`ShrinesManager.cs:1038`, `:1053`), unused by the mod.
 11. Attack telegraphs: no class with position, radius and impact time was found in
     the stubs; needs a live discovery pass ([hazard sources](hazard-sources.md)).
+
+## Latency and the unexplored mark (2026-10-04)
+
+The user asked to "improve the radar's precision a bit". A comparison with the current D2R
+radar found the confirmation, hysteresis, wall memory and queue already ported; the difference
+that remained was delivery. D2R gives the radar its own output, while here
+`WorldAudioReservation` made terrain cues take a FIFO turn behind NPC taps, enemy growls,
+object cues and beacon pings, each holding the turn for its length plus the device buffer, so a
+knock could arrive after the wall. Rejected D2R experiments (eight rays, diagonal frames,
+speed-scaled depths, playback forecasts, new cue sounds) were not revisited.
+
+- **Terrain first.** A terrain cue never waits for other world sounds and plays over one already
+  sounding; the other sources still wait for the terrain cue and its buffer. The radar's own
+  four directions stay serialized with the 50 ms gap. The arbitration checks in the world-cue
+  (198) and enemy-cue (143) suites were rewritten for this rule.
+- **Telemetry.** The five-second status adds `max_wait_ms`: the longest time a cue waited from
+  becoming pending to playback in that window (radar serialization included).
+- **Unexplored mark** (D2R `docs/exploration.md`, user request there of 2026-09-21): an opening
+  breath toward a screen quadrant (dominant screen axis of the offset) holding an unexplored area
+  the scanner lists, within twice the explored radius (`[Exploration beacon] ExploreRadius`, 40
+  by default), ends in two 900 Hz pips (35 ms, 30 ms apart) after a 30 ms gap, lowered for
+  screen-down like the cue (`radar.h`, `radar_synth.cpp`). Walls never carry it. Unlike D2R the
+  mark is not part of the radar state: it never makes a cue of its own, so it adds no events. The
+  scanner republishes areas every 0.5 s; older than 2 s they are ignored. `[Reactive radar]
+  UnexploredMark` (default true) turns it off. Log: `Reactive radar cue: ... unexplored`.
+
+Navigation suite: 504 checks (57 new: quadrants, camera turn, range, staleness, mark sound,
+unchanged breath, walls unmarked). Not heard in game: check knock timing near NPCs and in fights
+(`max_wait_ms` should stay near the radar's own cue spacing) and whether the pips help or clutter.

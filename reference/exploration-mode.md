@@ -1,6 +1,7 @@
 # Exploration mode (proposal, 2026-10-03)
 
-Status: design research only; nothing implemented. Requested by the user after
+Status: implemented 2026-10-03 (sections below); unexplored areas added 2026-10-04
+([unexplored areas](#unexplored-areas-2026-10-04)). Requested by the user after
 learning that Last Epoch gives sighted players no route line to quests (only the
 minimap icon and its edge arrow, see
 [automatic orientation](automatic-orientation.md#live-report-silent-for-a-whole-session-2026-10-03-2118-log)).
@@ -231,3 +232,55 @@ The user confirmed the scanner, Create menu and beacon work offline. Fixes:
 - Online characters: the code paths use the online player visuals and the player's own
   NavMesh agent like the radar, but nothing has been heard online yet. `origin=False` in the
   `[Exploration]` status would mean no walkable mesh for line of sight and routing.
+
+## Unexplored areas (2026-10-04)
+
+User report (2026-10-04, 00:46 log): in Z62 the quest marker "Escapa de la cámara de los
+guardianes" stayed 190-260 steps away, the beacon refused it (`no explored route`, 403 cells)
+and nothing listed new ground "like the unexplored rooms in Diablo 2". Port of the D2R
+*unexplored room* category (`d2r-access docs/entity-scan.md`, `docs/decisions.md` 2026-09-24):
+only the edge of the known map is listed, nothing inside is revealed, the beacon may enter it.
+
+**Rooms: the game's minimap persistence volumes.** `MinimapVolumesManager.volumes` holds one
+`MinimapVolume` (`SphereCollider col`, `hasBeenTriggered`) per room; `Statuses` (bool per volume,
+same order) is what the game saves with the character (`MinimapVolumesSaving`, packed into a
+ulong, 64 slots). Bundle survey of build 25690669 (scratch scripts, not kept): 185 of 360 scenes
+have exactly one manager plus volumes, the other 175 (Z12 and, presumably, procedural maps)
+have none. Z62 has 61 volumes, Z32 43, Z42 55, Z52 62; most scenes have at most 64, but WE505 has
+74 and C2S10 157 (how those are saved is unknown). Volumes are all named
+`MinimapPersistenceVolume` under `MinimapVolumesHolder`, so identity is the array index. Z62 radii
+are 8.0-21.3 (median 14.9), centres 8-19 apart, spheres overlapping in a chain along the paths.
+All colliders are serialized with `m_IsTrigger=False`; whether `Start` turns them into triggers is
+unknown, so the mod does not rely on the game's flags alone.
+
+- `MinimapRoomReader`: finds the manager with `FindAnyObjectByType` at most every 5 s while
+  absent, reads centre (`TransformPoint(center)`) and radius (`radius` x largest lossy scale)
+  once per scene session, statuses and `hasBeenTriggered` on every scanner refresh.
+- A room is **visited** when the game marks it, or once the player stands inside its sphere;
+  the latter is remembered with the seen places (`room|<version>.<count>|<index>`, saved per
+  character). A room is **listed** when not visited and at least one explored cell lies inside
+  its sphere (the player has seen some of its ground). Position is the sphere centre (it may sit
+  inside scenery; it gives direction and distance), arrival radius the sphere radius.
+
+**Frontier, for scenes without rooms** (`ExploredFrontier.cs`). Each explored cell checks its eight
+neighbour columns: walkable on the same floor, unexplored, a straight step away, and opening onto
+an unseen region of at least 6 cells (breadth-first over unexplored walkable columns, verdict
+kept), so a pocket behind a crate is not listed. Checks run newest cell first within 24 NavMesh
+queries per beacon tick (a region search may add up to 48), only while the scene has no rooms;
+saved cells are checked again after loading. Links are grouped into 8x8-cell areas per floor,
+anchored at the edge nearest the group's middle; key `frontier:x,z,floor`, arrival 2 cells.
+
+**Scanner and beacon.** Category *Zonas sin explorar* right after the exits; entries are all
+"Zona sin explorar", nearest first. Category numbers are now explicit and the new one is
+appended, because seen-place keys store them. A locked area is released with "Zona explorada"
+and the arrival sound once it leaves the list (entered, or its edge seen) or is reached;
+the next flick right reads the nearest remaining area. The radar marks opening cues toward a
+listed area ([unexplored mark](navigation-radar.md#latency-and-the-unexplored-mark-2026-10-04)).
+
+**Evidence and limits.** 338 exploration checks (corridor edge moving ahead, pillar pocket not
+listed, doorway, budget and backlog, saved maps, rooms visited/listed/layout change) and 45
+catalog checks. Not heard in game. Live checks: the `[Exploration]` status line now has
+`unexplored= source=rooms|frontier rooms= visited_rooms= frontier_pending=`; confirm
+`source=rooms rooms=61` in Z62 and `source=frontier` in Z12 or a dungeon; whether `Statuses`
+already marks rooms entered before this version (`visited_rooms` right after loading); that
+listed rooms point along real paths; the frontier's cost in a large saved map.

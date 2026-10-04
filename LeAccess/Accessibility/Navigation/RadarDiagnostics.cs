@@ -7,7 +7,8 @@ internal sealed class RadarDiagnostics
     // One compact heartbeat per five seconds distinguishes a quiet scene from a stalled radar.
     private const double ReportSeconds = 5;
     private readonly int[] _resets = new int[Enum.GetValues<RadarResetReason>().Length];
-    private double _nextReport;
+    private double _nextReport, _maxWait;
+    private double? _waitingSince;
     private int _polls, _generated, _submitted;
 
     public void Observe(RadarEngine engine, bool rebased)
@@ -18,7 +19,19 @@ internal sealed class RadarDiagnostics
             if (state != RadarState.Unknown) _generated++;
     }
 
-    public void Submitted() => _submitted++;
+    // Time from a cue becoming pending to its playback, including waits for the radar's own output.
+    public void Pending(double now, bool pending)
+    {
+        if (!pending) _waitingSince = null;
+        else _waitingSince ??= now;
+    }
+
+    public void Submitted(double now, bool stillPending)
+    {
+        _submitted++;
+        if (_waitingSince is { } since && now >= since) _maxWait = Math.Max(_maxWait, now - since);
+        _waitingSince = stillPending ? now : null;
+    }
 
     public string Report(double now, RadarWorldSnapshot snapshot, RadarEngine engine, int pending, Func<string> audio)
     {
@@ -30,8 +43,9 @@ internal sealed class RadarDiagnostics
         var settings = snapshot.Settings;
         var depths = snapshot.Readings;
         string geometry = FormattableString.Invariant($"position={snapshot.Position.X:F2},{snapshot.Position.Y:F2} body_radius={snapshot.BodyRadius:F3} agent_radius={snapshot.AgentRadius:F3} agent_type={snapshot.AgentTypeId} mask={snapshot.AreaMask} close={settings.CloseDepth:F2} open={settings.OpenDepth:F2} reach={settings.ReachDepth:F2} depths_ULRD={depths[0].Depth:F2},{depths[1].Depth:F2},{depths[2].Depth:F2},{depths[3].Depth:F2}");
-        string result = $"Reactive radar status: polls={_polls} generated={_generated} submitted={_submitted} queued={pending} resets=[{resets.Trim()}] states={string.Join(",", engine.States)} {geometry} audio={audio()}";
+        string result = $"Reactive radar status: polls={_polls} generated={_generated} submitted={_submitted} queued={pending} max_wait_ms={_maxWait * 1000:F0} resets=[{resets.Trim()}] states={string.Join(",", engine.States)} {geometry} audio={audio()}";
         _polls = _generated = _submitted = 0;
+        _maxWait = 0;
         Array.Clear(_resets, 0, _resets.Length);
         return result;
     }
@@ -39,7 +53,8 @@ internal sealed class RadarDiagnostics
     public void Reset()
     {
         _polls = _generated = _submitted = 0;
-        _nextReport = 0;
+        _nextReport = _maxWait = 0;
+        _waitingSince = null;
         Array.Clear(_resets, 0, _resets.Length);
     }
 }

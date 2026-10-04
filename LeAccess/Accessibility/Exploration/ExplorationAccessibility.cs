@@ -21,6 +21,7 @@ internal static class ExplorationAccessibility
     private static ConfigEntry<float> _seenRange;
     private static readonly ExplorationCatalog Catalog = new();
     private static readonly List<ExplorationEntry> Entries = new();
+    private static readonly List<System.Numerics.Vector2> UnexploredPositions = new();
     private static MapSectionWorldSnapshot _world;
     private static bool _hasEntries;
     private static long _session;
@@ -89,11 +90,23 @@ internal static class ExplorationAccessibility
         _world = world;
         ExplorationPersistence.Update(now, world);
         ExplorationBeacon.TryGetWalkability(out var nav);
-        _hasEntries = ExplorationProbe.TryRefresh(world, nav, _seenRange.Value, Entries);
+        _hasEntries = ExplorationProbe.TryRefresh(world, nav, ExplorationBeacon.CurrentMap(world.Session),
+            _seenRange.Value, now, Entries);
+        PublishUnexplored(now);
         if (ExplorationProbe.LastFailure != null) ReportFailure(ExplorationProbe.LastFailure);
         if (now < _nextStatus) return;
         _nextStatus = now + StatusSeconds;
         Plugin.Log.LogInfo($"[Exploration] scene={world.SceneName} {ExplorationProbe.LastStatus}");
+    }
+
+    // The radar marks openings toward listed unexplored areas within twice the explored radius.
+    private static void PublishUnexplored(double now)
+    {
+        UnexploredPositions.Clear();
+        foreach (var entry in Entries)
+            if (entry.Category == ExplorationCategory.Unexplored)
+                UnexploredPositions.Add(new System.Numerics.Vector2(entry.Position.X, entry.Position.Z));
+        RadarUnexploredMarks.Publish(UnexploredPositions, ExplorationBeacon.ExploreRadius * 2, now);
     }
 
     private static void Handle(ExplorationCommand command)
@@ -163,6 +176,8 @@ internal static class ExplorationAccessibility
         ExplorationProbe.Reset();
         Catalog.Reset();
         Entries.Clear();
+        UnexploredPositions.Clear();
+        RadarUnexploredMarks.Clear();
         _hasEntries = false;
         _lastTarget = null;
         _session = 0;

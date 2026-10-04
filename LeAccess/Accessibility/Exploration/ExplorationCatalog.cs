@@ -6,8 +6,8 @@ using LeAccess.Accessibility.Navigation.Guidance;
 
 namespace LeAccess.Accessibility.Exploration;
 
-// Scanner order: up/down on the right stick walks this list, skipping empty categories.
-internal enum ExplorationCategory { Objectives, Exits, Travel, Characters, Services, Enemies }
+// Values are saved in seen-place keys, so new categories are appended; Order sets the scanner order.
+internal enum ExplorationCategory { Objectives = 0, Exits = 1, Travel = 2, Characters = 3, Services = 4, Enemies = 5, Unexplored = 6 }
 
 internal readonly record struct ExplorationEntry(string Key, string Name, ExplorationCategory Category,
     Vector3 Position, float ArrivalRadius, bool Boss = false);
@@ -18,7 +18,13 @@ internal delegate string ExplorationText(string key, params object[] arguments);
 // like D2R, readouts never give a position in the list or walking steps.
 internal sealed class ExplorationCatalog
 {
-    private static readonly ExplorationCategory[] Order = Enum.GetValues<ExplorationCategory>();
+    // Up/down on the right stick walks this list, skipping empty categories; as in D2R, unexplored
+    // areas come right after the ways out.
+    internal static readonly ExplorationCategory[] Order =
+    {
+        ExplorationCategory.Objectives, ExplorationCategory.Exits, ExplorationCategory.Unexplored,
+        ExplorationCategory.Travel, ExplorationCategory.Characters, ExplorationCategory.Services, ExplorationCategory.Enemies
+    };
     private ExplorationCategory? _category;
     private string _selected;
 
@@ -93,6 +99,7 @@ internal sealed class ExplorationCatalog
         ExplorationCategory.Travel => "exploration.category.travel",
         ExplorationCategory.Characters => "exploration.category.characters",
         ExplorationCategory.Services => "exploration.category.services",
+        ExplorationCategory.Unexplored => "exploration.category.unexplored",
         _ => "exploration.category.enemies"
     };
 

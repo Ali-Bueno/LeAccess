@@ -20,10 +20,14 @@ public static class ReactiveRadar
     private static ConfigEntry<int> _volume;
     private static ConfigEntry<float> _openDepth;
     private static ConfigEntry<int> _audioBuffer;
+    private static ConfigEntry<bool> _unexploredMark;
     private static readonly RadarWorldProbe World = new();
     private static readonly RadarCueQueue Queue = new();
     private static readonly RadarDiagnostics Diagnostics = new();
-    private static readonly float[][] Cues = new float[RadarEngine.DirectionCount * 2][];
+    // Openings, walls, then marked (unexplored) openings, one per direction.
+    private static readonly float[][] Cues = new float[RadarEngine.DirectionCount * 3][];
+    private static System.Numerics.Vector2 _position;
+    private static System.Numerics.Vector2[] _axes;
     private static RadarEngine _engine;
     private static RadarAudioOutput _audio;
     private static double _nextAudioRetry;
@@ -47,6 +51,8 @@ public static class ReactiveRadar
         _audioBuffer = config.Bind(ConfigSection, "AudioBufferMilliseconds", DefaultAudioBufferMilliseconds,
             new ConfigDescription("Audio buffer duration. Larger values give playback more tolerance for scheduling delays. Restart the game after changing this.",
                 new AcceptableValueRange<int>(MinimumAudioBufferMilliseconds, MaximumAudioBufferMilliseconds)));
+        _unexploredMark = config.Bind(ConfigSection, "UnexploredMark", true,
+            "End an opening cue with a double pip when the exploration scanner lists an unexplored area that way.");
         Plugin.Log.LogInfo("Reactive radar configured (screen cardinals, NavMesh terrain)");
         _lastUnavailableReason = "initializing";
     }
@@ -91,8 +97,11 @@ public static class ReactiveRadar
                     if (_hasSnapshot) _audio?.Silence();
                     _nextCue = now;
                 }
+                _position = snapshot.Position;
+                _axes = snapshot.Axes;
                 Queue.Retain(_engine.States);
                 Queue.Enqueue(events);
+                Diagnostics.Pending(now, Queue.PendingCount > 0);
                 string status = Diagnostics.Report(now, snapshot, _engine, Queue.PendingCount,
                     static () => _audio == null ? "not initialized" : _audio.Diagnostics.ToString());
                 if (status != null) Plugin.Log.LogInfo(status);
@@ -112,13 +121,15 @@ public static class ReactiveRadar
                 return;
             }
             EnsureCues();
-            var cue = Cues[CueIndex(state, direction)];
+            bool marked = state == RadarState.Open && _unexploredMark.Value &&
+                RadarUnexploredMarks.Marked(direction, _position, _axes, now);
+            var cue = Cues[CueIndex(state, direction, marked)];
             double duration = (double)cue.Length / (RadarCueSynthesizer.SampleRate * RadarCueSynthesizer.Channels);
             if (!WorldAudioReservation.TryBegin(WorldAudioSource.Terrain, now, duration, _audioBuffer.Value)) return;
             Queue.TryTake(out _, out _);
             _audio.Play(cue);
-            Diagnostics.Submitted();
-            Plugin.Log.LogInfo($"Reactive radar cue: direction={direction} state={state}");
+            Diagnostics.Submitted(now, Queue.PendingCount > 0);
+            Plugin.Log.LogInfo($"Reactive radar cue: direction={direction} state={state}{(marked ? " unexplored" : "")}");
             _nextCue = now + (double)cue.Length / (RadarCueSynthesizer.SampleRate * RadarCueSynthesizer.Channels)
                 + RadarCueSynthesizer.CueGapSeconds;
         }
@@ -171,10 +182,13 @@ public static class ReactiveRadar
         foreach (var state in new[] { RadarState.Open, RadarState.Blocked })
             foreach (RadarDirection direction in Enum.GetValues(typeof(RadarDirection)))
                 Cues[CueIndex(state, direction)] = RadarCueSynthesizer.Synthesize(state, direction, _cueVolume / 100f);
+        foreach (RadarDirection direction in Enum.GetValues(typeof(RadarDirection)))
+            Cues[CueIndex(RadarState.Open, direction, true)] =
+                RadarCueSynthesizer.Synthesize(RadarState.Open, direction, _cueVolume / 100f, unexplored: true);
     }
 
-    private static int CueIndex(RadarState state, RadarDirection direction) =>
-        (state == RadarState.Blocked ? RadarEngine.DirectionCount : 0) + (int)direction;
+    private static int CueIndex(RadarState state, RadarDirection direction, bool marked = false) =>
+        (marked ? 2 * RadarEngine.DirectionCount : state == RadarState.Blocked ? RadarEngine.DirectionCount : 0) + (int)direction;
 
     private static void Suspend(string reason = null)
     {
@@ -208,6 +222,8 @@ public static class ReactiveRadar
         _lastFailure = null;
         _engine = null;
         _enabled = null;
+        _unexploredMark = null;
+        _axes = null;
         _cueVolume = -1;
         _nextProbe = 0;
         Diagnostics.Reset();

@@ -1,3 +1,25 @@
+# Handoff — 2026-10-04 night: unexplored areas and radar delivery
+
+User request (before sleeping): improve the radar's precision a bit, and add unexplored rooms
+like D2R; in the 00:46 log the Z62 objective stayed ~200 steps away, the beacon refused it
+(no explored route) and nothing pointed at new ground. Done host-side, not heard in game:
+
+- Scanner category *Zonas sin explorar* after the exits. Source: the game's minimap persistence
+  volumes (`MinimapVolumesManager`, 185 of 360 scenes; Z62 has 61); a room is listed when not
+  entered (game status or the mod's own memory) but some of its ground was seen. Scenes without
+  volumes use explored-ground edges. Create+Cross guides there; "Zona explorada" on arrival.
+  [Details](reference/exploration-mode.md#unexplored-areas-2026-10-04).
+- Radar: terrain cues no longer wait behind NPC taps, enemy growls, object cues or beacon pings
+  (the precision gap found against current D2R); openings toward a listed area end in D2R's
+  double pip (`[Reactive radar] UnexploredMark`). [Details](reference/navigation-radar.md#latency-and-the-unexplored-mark-2026-10-04).
+
+First live checks: in Z62 flick to *Zonas sin explorar*, lock one toward the objective and walk
+there; the `[Exploration]` status should show `source=rooms rooms=61`; check `visited_rooms`
+right after loading (does the game's saved status count?); a dungeon or Z12 should show
+`source=frontier`. Radar: walls near NPCs/enemies sound on time (`max_wait_ms` in the radar
+status); do the pips help or clutter? Tuning keys: `UnexploredMark`, `[Exploration beacon]
+ExploreRadius` (also sets the pip range, twice it).
+
 # Handoff — 2026-10-04 menu batch
 
 User report (2026-10-04): map quest press sometimes silent / some quests travel; passive
@@ -102,8 +124,8 @@ Re-check these five first; then the list below.
 - Exploration mode (scanner, Create menu, explored-route beacon) implemented 2026-10-03,
   not yet heard; first live checks and open items in
   [exploration-mode](reference/exploration-mode.md#implemented-first-version-2026-10-03-not-yet-heard).
-- Radar precision proposals (bump/scrape from stick intent, heading parking sensor,
-  terrain audio priority first), awaiting the user's choice:
+- Radar precision proposals: terrain audio priority done 2026-10-04; bump/scrape from stick
+  intent and the heading parking sensor still await the user's choice:
   [review](reference/navigation-radar.md#precision-review-and-proposals-2026-10-03).
 - Automatic orientation was silent for the user's whole last session, with no log
   reason; diagnose before tuning ([report](reference/automatic-orientation.md#live-report-silent-for-a-whole-session-2026-10-03-2118-log)).

@@ -28,12 +28,20 @@ public static class RadarCueSynthesizer
     private const double DownStartFrequency = 600;
     private const double DownEndFrequency = 220;
     private const double SideFrequency = 1200;
+    // D2R unexplored mark (radar.h, radar_synth.cpp): two pips after a short gap.
+    private const double MarkFrequency = 900;
+    private const double MarkGap = 0.030;
+    private const double PipDuration = 0.035;
+    private const double PipGap = 0.030;
+    private const double MarkDecay = 0.03;
+    private const double MarkHarmonic = 2.0;
     private const uint NoiseSeed = 1;
     private const uint NoiseMultiplier = 1664525;
     private const uint NoiseIncrement = 1013904223;
     private const double NoiseScale = 8388608.0;
 
-    public static float[] Synthesize(RadarState state, RadarDirection direction, float gain)
+    // An unexplored opening keeps its breath and ends in the mark, lowered for screen-down like the cue.
+    public static float[] Synthesize(RadarState state, RadarDirection direction, float gain, bool unexplored = false)
     {
         if (state != RadarState.Open && state != RadarState.Blocked)
             return Array.Empty<float>();
@@ -45,6 +53,7 @@ public static class RadarCueSynthesizer
         double right = Math.Sqrt((1 + pan) / 2);
         double[] mono = state == RadarState.Open ? Breath(direction, level * BreathPeak)
             : Wall(direction, level);
+        if (unexplored && state == RadarState.Open) mono = WithMark(mono, direction, level);
         var samples = new float[mono.Length * Channels];
         for (int frame = 0; frame < mono.Length; frame++)
         {
@@ -66,6 +75,25 @@ public static class RadarCueSynthesizer
             double envelope = Math.Min(1, time / Attack) * fade * Math.Exp(-time / WallDecay);
             samples[frame] = level * envelope
                 * (Math.Sin(phase) + HarmonicLevel * Math.Sin(phase * WallHarmonic));
+        }
+        return samples;
+    }
+
+    private static double[] WithMark(double[] cue, RadarDirection direction, double level)
+    {
+        int gap = (int)(MarkGap * SampleRate), pip = (int)(PipDuration * SampleRate), between = (int)(PipGap * SampleRate);
+        var samples = new double[cue.Length + gap + 2 * pip + between];
+        Array.Copy(cue, samples, cue.Length);
+        double frequency = MarkFrequency * (direction == RadarDirection.Down ? DownPitch : 1);
+        for (int frame = 0; frame < 2 * pip + between; frame++)
+        {
+            int pipFrame = frame % (pip + between);
+            if (pipFrame >= pip) continue;
+            double time = (double)pipFrame / SampleRate;
+            double phase = 2 * Math.PI * frequency * time;
+            double fade = Math.Min(1, (PipDuration - time) / Release);
+            double envelope = Math.Min(1, time / Attack) * fade * Math.Exp(-time / MarkDecay);
+            samples[cue.Length + gap + frame] = level * envelope * (Math.Sin(phase) + HarmonicLevel * Math.Sin(phase * MarkHarmonic));
         }
         return samples;
     }
