@@ -1,4 +1,5 @@
 using System;
+using LeAccess.Accessibility.Navigation;
 using Rewired;
 using UnityEngine;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
@@ -28,6 +29,8 @@ internal static class MenuDetailInput
     private static bool ReadStickRequested(bool up)
     {
         if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible) return false;
+        // In gameplay the right stick belongs to the exploration scanner.
+        if (GameplayInputState.OwnsInput()) return false;
         try
         {
             var manager = EpochInputManager.instance;

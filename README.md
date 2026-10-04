@@ -81,9 +81,18 @@ Settings announce the tab and each control's name/value, including sound sliders
 and visible challenge states when no button is available. Descriptions remain
 available with right-stick-up.
 
-During gameplay, the right stick is reserved for the upcoming exploration scanner
-([design](reference/exploration-mode.md)). The earlier F6 objective orientation, F7 enemy scan and
-automatic orientation were removed on 2026-10-03; the scanner replaces them. Without a button,
+During gameplay the right stick is the [exploration scanner](reference/exploration-mode.md):
+push it up or down to change category (objectives, exits, travel, characters, services,
+enemies) and left or right to step through that category's entries, nearest first. Each
+entry gives its name, distance in steps (one step is the character's width) and one of
+eight screen directions. Places are listed once you have seen them; quest markers and
+enemies as the game shows them. Keyboard: Ctrl+Numpad 8/2 and 4/6.
+Hold **Create** (Share) for the mod menu: **Square** reads life, mana and potions, **Cross**
+starts the beacon toward the selected entry (again cancels). While Create is held the
+game's button actions pause, so Square and Cross do not cast or interact. The beacon pings
+toward the route through ground you have already explored, faster when closer, and refuses
+when no explored route exists (keyboard: Ctrl+B). In menus the right stick keeps reading
+details. Without a button,
 [enemy cues](reference/enemy-cues.md) growl for up to three
 nearby enemies in sight (a deeper swoop for a boss), panned on screen and faster
 when closer; `[Enemy cues]` in the configuration turns them off or adjusts them.

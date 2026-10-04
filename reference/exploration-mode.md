@@ -154,3 +154,41 @@ Code lives in `LeAccess/Accessibility/Exploration/`.
   otherwise it refuses. A D2R-style ping (about 620 Hz, 80 ms) repeats 0.16-1.2 s
   by remaining route, panned toward a look-ahead point; arrival speaks and releases;
   a route lost for 3 s releases.
+
+## Implemented first version (2026-10-03, not yet heard)
+
+Files in `LeAccess/Accessibility/Exploration/`: `ExplorationInput` + `ExplorationInputLogic`
+(input and suppression ledger), `ExplorationCatalog`, `ExplorationProbe`,
+`ExplorationSeenMemory` (scanner), `ExploredMap` + `ExploredMapRouting` + `ExploredMemory`
+(explored cells, A*), `BeaconState`, `BeaconCueSynthesizer`, `BeaconAudio`,
+`NavMeshWalkability`, `ExplorationBeacon` (beacon), `ExplorationAccessibility` (service,
+run before vitals in `MenuAccessibility.LateUpdate`). Tests: `LeAccess.ExplorationCatalog.Tests`
+(30), `LeAccess.ExplorationInput.Tests` (27), `LeAccess.Exploration.Tests` (133),
+`LeAccess.VitalsInput.Tests` (28).
+
+- Categories: objectives (tracked quest markers read without requiring the minimap to be
+  shown, `GuidanceTargetReader.TryRead(..., requireMinimapVisible: false)`, plus the
+  Morditas return arrow), exits (zone/dungeon transitions), travel (waypoints, portals),
+  characters (NPCs, with service role), services (stash, forge, non-NPC merchants), enemies
+  (living hostiles within `ControllerTargetingParadigm._SkillTargetMaxDistance`). Chests,
+  loot and signposts are left to their own sounds.
+- Seen: a place enters the list once within `[Exploration] SeenRange` (20) with NavMesh
+  line of sight; off-mesh places (doors, exits) within half that. Remembered per
+  fixed-layout scene for the game session (not saved to disk yet).
+- Speech: category step "Salidas, 2. Salida hacia X, 12 pasos, arriba a la izquierda";
+  entry step "Name, N pasos, direction"; "aquí" within one step. 1 paso = body width.
+- Beacon tuning (from the beacon implementation): 2-unit cells, explore radius
+  `[Exploration beacon] ExploreRadius` default 20 (raised from 8 so places seen from
+  afar can be routed to), 0.4 s route refresh, reroute after 2 units off path or target
+  moved, 4-unit look-ahead, pings 0.16-1.2 s saturating at 30 units of route, first ping
+  0.6 s after locking, route lost after 3 s, minimum arrival 1.5, A* cap 6000 expansions.
+  Ping recipe 620 Hz / 80 ms / 0.15 peak / rear x0.94 from d2r-access `beacon_audio.cpp`.
+  Lock "Guiando hacia X, recto/rodeando", refusal "No hay una ruta por zonas exploradas
+  hacia X", arrival, route lost, target lost; same entry again cancels, another retargets
+  (a refused retarget keeps the old lock).
+- Live checks: Create+Square/Cross never cast or interact, and buttons always come back
+  (`[Exploration input] game button bindings paused/restored` log lines); quest markers
+  with the minimap hidden (`[Exploration] ... objectives=` status every 10 s); floor checks
+  on a bridge (`unverified_floors` in the beacon status); performance of the 20 Hz map ticks.
+- Not done yet: configurable modifier for pads without Create (8BitDo 2C, Xbox One), saving
+  explored ground and seen places to disk, "new place discovered" speech, shrines.

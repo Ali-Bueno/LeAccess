@@ -29,7 +29,7 @@ internal static class VitalsAccessibility
         _reportKey = config.Bind("Vitals", "ReportKey", KeyCode.R,
             "Read health and mana percentages during gameplay. Use None to disable the keyboard shortcut.");
         _controllerReport = config.Bind("Vitals", "ReportWithControllerView", true,
-            "Read health and mana with the controller Back/View button. Native game bindings remain active.");
+            "Read health and mana with the controller Create button held plus Square (the exploration menu). Disable to leave the controller unread.");
         _potionChanges = config.Bind("Vitals", "AnnouncePotionCharges", true,
             "Announce health potion charges when one is used or picked up. The report always includes them.");
         Reset();

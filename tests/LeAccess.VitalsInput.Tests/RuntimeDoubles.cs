@@ -59,3 +59,11 @@ namespace LeAccess
     internal sealed class Logger
     { internal readonly List<string> Warnings = new(); internal void LogWarning(string text) => Warnings.Add(text); }
 }
+namespace LeAccess.Accessibility.Exploration
+{
+    internal static class ExplorationInput { internal static ExplorationCommand Command; }
+}
+namespace LeAccess.Accessibility.Navigation
+{
+    internal static class GameplayInputState { internal static bool Owns; internal static bool OwnsInput() => Owns; }
+}

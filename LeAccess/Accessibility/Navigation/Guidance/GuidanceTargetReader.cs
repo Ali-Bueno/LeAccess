@@ -15,7 +15,9 @@ internal static class GuidanceTargetReader
 {
     internal static string LastFailure { get; private set; }
 
-    internal static bool TryRead(MapSectionWorldSnapshot world, List<GuidanceTarget> targets, bool includeExits = false)
+    // The exploration scanner passes requireMinimapVisible=false: a hidden minimap must not hide markers the game shows.
+    internal static bool TryRead(MapSectionWorldSnapshot world, List<GuidanceTarget> targets, bool includeExits = false,
+        bool requireMinimapVisible = true)
     {
         targets.Clear();
         LastFailure = null;
@@ -24,8 +26,8 @@ internal static class GuidanceTargetReader
             EncounterGuidanceTargets.Collect(world, targets);
             if (targets.Count > 0) return true;
             var manager = MinimapIconManager.Instance;
-            if (!IsAlive(manager) || !manager.isActiveAndEnabled || !IsAlive(manager.minimap) ||
-                !manager.minimap.isActiveAndEnabled) return targets.Count > 0;
+            if (!IsAlive(manager) || requireMinimapVisible && (!manager.isActiveAndEnabled || !IsAlive(manager.minimap) ||
+                !manager.minimap.isActiveAndEnabled)) return targets.Count > 0;
             var icons = manager.icons;
             if (icons is null || icons.WasCollected) return targets.Count > 0;
             var seen = new HashSet<int>();
@@ -37,7 +39,7 @@ internal static class GuidanceTargetReader
                     if (entry is null || entry.WasCollected) continue;
                     var icon = entry.icon;
                     if (!Available(icon, world) || !Finite(icon.transform.position) ||
-                        !GuidanceMarkerVisibility.IsVisible(entry.ui, manager)) continue;
+                        requireMinimapVisible && !GuidanceMarkerVisibility.IsVisible(entry.ui, manager)) continue;
                     if (TryQuest(icon, world, out var questTarget))
                     {
                         if (seen.Add(questTarget.Id)) targets.Add(questTarget);

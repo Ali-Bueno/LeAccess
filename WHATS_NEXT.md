@@ -85,8 +85,9 @@ Re-check these five first; then the list below.
 
 ## Next work
 
-- Exploration mode like D2R's (user request): research and open questions in
-  [exploration-mode](reference/exploration-mode.md).
+- Exploration mode (scanner, Create menu, explored-route beacon) implemented 2026-10-03,
+  not yet heard; first live checks and open items in
+  [exploration-mode](reference/exploration-mode.md#implemented-first-version-2026-10-03-not-yet-heard).
 - Radar precision proposals (bump/scrape from stick intent, heading parking sensor,
   terrain audio priority first), awaiting the user's choice:
   [review](reference/navigation-radar.md#precision-review-and-proposals-2026-10-03).

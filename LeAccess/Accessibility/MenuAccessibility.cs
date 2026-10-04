@@ -19,6 +19,7 @@ using LeAccess.Accessibility.Map;
 using LeAccess.Accessibility.Quests;
 using LeAccess.Accessibility.Vitals;
 using LeAccess.Accessibility.Diagnostics;
+using LeAccess.Accessibility.Exploration;
 using LeAccess.Accessibility.Landmarks;
 using LeAccess.Accessibility.MapSections;
 using LeAccess.Accessibility.Login;
@@ -71,6 +72,8 @@ public class MenuAccessibility : MonoBehaviour
         bool worldContentActive = ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
             InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
             SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent;
+        // Before VitalsAccessibility: it reads this frame's Create+Square command.
+        ExplorationAccessibility.Update(worldContentActive);
         VisibleSubtitleAnnouncer.Update(ScreenReader.SpokeThisFrame || ZoneAnnouncer.HasPendingContent ||
             InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
             SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent);

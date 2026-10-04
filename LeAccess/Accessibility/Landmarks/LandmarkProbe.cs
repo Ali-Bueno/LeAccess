@@ -106,6 +106,30 @@ internal static class LandmarkProbe
         return found;
     }
 
+    // Exploration scanner: the same hover-tag and portal resolution as TryRead, for one listener.
+    internal static string ReadLabel(WorldObjectClickListener listener, Scene scene, out bool portalLabel, out bool transition)
+    {
+        portalLabel = transition = false;
+        var tag = listener.hoverTagOnMouseOver;
+        if (tag is null) tag = listener.gameObject.GetComponent<HoverTagOnMouseOver>();
+        PortalVisualController portal = null;
+        if (tag is null || IsAlive(tag) &&
+            (tag.hoverTargetType == HoverTagOnMouseOver.HoverTargetType.OTHER ||
+             tag.hoverTargetType == HoverTagOnMouseOver.HoverTargetType.LOCALIZATION_KEY))
+        {
+            portal = listener.gameObject.GetComponentInParent<PortalVisualController>();
+            if (!Available(portal, scene) || !IsAlive(portal.mouseListenerObj) ||
+                portal.mouseListenerObj.Pointer != listener.gameObject.Pointer)
+                portal = null;
+            if (tag is null && IsAlive(portal)) tag = portal.hoverTag;
+        }
+        if (!Available(tag, scene)) return null;
+        string name = ReadName(tag, scene, portal, out string status);
+        portalLabel = status == "owned_portal_label";
+        transition = status.StartsWith("destination:", StringComparison.Ordinal);
+        return name;
+    }
+
     private static string ReadName(HoverTagOnMouseOver tag, Scene scene, PortalVisualController portal,
         out string status)
     {
