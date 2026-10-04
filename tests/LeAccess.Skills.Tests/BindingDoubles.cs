@@ -39,7 +39,14 @@ internal sealed class ComboAbilityList : AbilityList
     internal NativeArray<Ability> equippedAbilities;
     internal bool HasInitialised = true;
 }
-internal sealed class UnityDrivenGridNavigable : PrioritizedNavigable { }
+internal class ListNavigable : PrioritizedNavigable
+{
+    internal NativeArray<UnityEngine.UI.Selectable> _selectableChildren = new(Array.Empty<UnityEngine.UI.Selectable>());
+    internal void TrySelectElementWithIndex(int index) => ActiveSelectable = _selectableChildren[index];
+}
+internal sealed class UnityDrivenGridNavigable : ListNavigable { }
+internal enum SubmitType { A_EX, X_SQUARE, Y_TRIANGLE }
+internal enum NavigableID { NONE, ABILITY_PANEL, ABILITY_PANEL_FLYOUT }
 internal sealed class AbilityBarSelectorManager : UnityEngine.Component
 {
     internal static AbilityBarSelectorManager instance;

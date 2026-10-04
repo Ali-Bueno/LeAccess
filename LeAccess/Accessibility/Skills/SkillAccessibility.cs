@@ -34,6 +34,7 @@ internal static class SkillAccessibility
     {
         try
         {
+            SkillSwapCarry.Update();
             if (!SkillSelectionReader.TryRead(out var selection, includeDetails: false)) { ClearSelection(); return; }
             if (_selectionKey != selection.Key)
             {
@@ -107,7 +108,10 @@ internal static class SkillAccessibility
     /// <summary>Speaks the current selection again, as when a move cannot go further.</summary>
     internal static void RepeatCurrent() => _selectionKey = null;
 
-    internal static void Reset() { ClearSelection(); SkillTreeNavigation.Reset(); _lastFailure = null; _bindingStatus = null; }
+    internal static void Reset()
+    {
+        ClearSelection(); SkillTreeNavigation.Reset(); SkillSwapCarry.Clear(); _lastFailure = null; _bindingStatus = null;
+    }
 
     private static void ReportFailure(Exception ex)
     {

@@ -167,6 +167,7 @@
   "skill.assign_to": "Assign to: {0}",
   "skill.bar_slot": "Action bar: {0}",
   "skill.slot_number": "Slot {0}",
+  "skill.swap_carry": "Confirm twice to assign {0}",
   "skill.empty_slot": "Empty skill slot",
   "skill.assignment_help": "Choose a skill and confirm to assign it to this slot.",
   "skill.hotbar_help": "Confirm to open the list of skills for this slot.",

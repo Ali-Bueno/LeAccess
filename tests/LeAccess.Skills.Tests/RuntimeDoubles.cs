@@ -11,6 +11,8 @@ public class NativeObject
         if (WasCollected) throw new InvalidOperationException("Collected wrapper accessed");
     }
     internal T TryCast<T>() where T : class { Guard(); return this as T; }
+    internal NavigableID NavigableId;
+    internal NavigableID GetNavigableID() { Guard(); return NavigableId; }
 }
 
 namespace UnityEngine

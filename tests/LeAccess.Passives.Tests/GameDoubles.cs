@@ -181,9 +181,24 @@ namespace LeAccess.I18n
             ["passive.ability_unreachable"] = "Needs {0}, tree allows {1}",
             ["list.position"] = "{0} of {1}", ["passive.unspent"] = "{0} unspent",
             ["passive.tree_shown"] = "Shown tree",
+            ["skill.learned"] = "Learned", ["skill.not_learned"] = "Not learned",
         };
         internal static string Get(string key) => Text[key];
         internal static string Format(string key, params object[] args) => string.Format(Text[key], args);
+    }
+}
+namespace LeAccess.Accessibility.Skills
+{
+    internal static class SkillLearningReader
+    {
+        internal static readonly Dictionary<Ability, (bool Learned, string Level)> Known = new();
+        internal static bool TryReadKnown(Ability ability, out bool learned, out string requiredLevel)
+        {
+            bool found = Known.TryGetValue(ability, out var state);
+            learned = state.Learned;
+            requiredLevel = state.Level;
+            return found;
+        }
     }
 }
 namespace LeAccess.Accessibility.CharacterCreation

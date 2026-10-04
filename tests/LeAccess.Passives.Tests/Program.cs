@@ -383,6 +383,22 @@ Check(PassiveSelectionReader.TryRead(out read) && read.Summary == Join("Judgemen
 strip.SelectedIndex = 2;
 Check(PassiveSelectionReader.TryRead(out read) && read.Summary == Join("Far skill", T("passive.ability"), F("passive.ability_unreachable", 200, 113), F("list.position", 3, 3)),
     "A skill beyond the tree's maximum says it cannot be reached");
+var known = LeAccess.Accessibility.Skills.SkillLearningReader.Known;
+known[strip.ActiveAbilityTooltips[2].currentAbility] = (true, "Level 2");
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary == Join("Far skill", T("passive.ability"), T("skill.learned"), "Level 2",
+    F("list.position", 3, 3)), "A skill the character knows is learned whatever this tree's points say");
+known[strip.ActiveAbilityTooltips[2].currentAbility] = (false, "Level 10");
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary == Join("Far skill", T("passive.ability"), T("skill.not_learned"), "Level 10",
+    F("list.position", 3, 3)), "A level-gated class skill states its level instead of tree points");
+strip.SelectedIndex = 1;
+known[strip.ActiveAbilityTooltips[1].currentAbility] = (false, null);
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary == Join("Judgement", T("passive.mastery_ability"), T("skill.not_learned"),
+    F("passive.ability_unlockable", 20, 15), F("list.position", 2, 3)), "An unlearned tree skill keeps its point threshold");
+strip.SelectedIndex = 0;
+known[strip.ActiveAbilityTooltips[0].currentAbility] = (false, null);
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary == Join("Smite", T("passive.ability"), T("skill.not_learned"),
+    F("list.position", 1, 3)), "An unlearned skill never claims to be unlocked because the threshold is met");
+known.Clear();
 strip.SelectedIndex = 3;
 Check(!PassiveSelectionReader.TryRead(out _), "Out-of-range strip selection is rejected");
 strip.SelectedIndex = 0;

@@ -73,6 +73,8 @@ internal static class SkillSelectionReader
         string assignmentStatus = assignment == null ? null : ModText.Format(
             assignment.Stage == SkillAssignmentStage.AvailableSkills ? "skill.assign_to" : "skill.bar_slot",
             assignment.Binding ?? ModText.Format("skill.slot_number", assignment.SlotNumber));
+        if (assignment?.Stage == SkillAssignmentStage.Hotbar && SkillSwapCarry.PendingName is string carried)
+            assignmentStatus = ScreenContentTracker.Combine(new[] { assignmentStatus, ModText.Format("skill.swap_carry", carried) });
 
         var panelIcon = Find<AbilityPanelIcon>(root);
         if (IsAlive(panelIcon))

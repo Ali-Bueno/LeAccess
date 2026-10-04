@@ -136,3 +136,22 @@ Main build passes with `SkipPluginDeployment=true`. Runtime listening still need
 the user's check: Flurry in the class panel, available grid and action bar should
 agree on the assigned button; learned/locked skills should state their true
 requirements, and right-stick-up should remain the only description trigger.
+
+## Square carries the highlighted skill (2026-10-04)
+
+User report: "I press Square to assign the skill to a button, but on the button the assign screen
+opens again." Native flow, build 25690669: in the Skills panel Square is `SubmitType.X_SQUARE`,
+the game's "Cambiar habilidades de la barra de acción" (UI key `Controller_Menu_Prompt_SwampActions`).
+`SkillsPanelManager.HandleSubmitInput` @0x2491b30 calls `UIBase.closeSkills(true)` and selects the
+HUD action bar (`NavigableID.ABILITY_PANEL`, index 0) without reading the highlighted skill; no
+pending skill exists anywhere. Cross on a bar slot (`AbilityBarIcon.clicked` @0x23d39d0) always runs
+`AbilityBarSelectorManager.OpenMenu` @0x23e8fd0, which selects the flyout list
+(`ABILITY_PANEL_FLYOUT`, a `UnityDrivenGridNavigable`) on its first skill; Cross there assigns and
+returns to the slot. Square/Triangle do nothing on the bar or the list (`AbilitySelectionMap`).
+
+`SkillSwapCarry` (prefix on `SkillsPanelManager.HandleSubmitInput`, safe prologue) remembers the
+highlighted skill on Square. While the bar is selected its slots add "Confirma dos veces para
+asignar X". When the flyout is selected and its `_selectableChildren` are filled, it calls the
+list's own `TrySelectElementWithIndex` on the matching `AbilitySelectionIcon`, before the first
+entry is spoken, so Cross then assigns it. Any other selection drops the carried skill; a skill not
+in the list leaves the game's focus. Skills suite: 211 checks.

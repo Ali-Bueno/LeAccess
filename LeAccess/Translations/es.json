@@ -167,6 +167,7 @@
   "skill.assign_to": "Asignar a: {0}",
   "skill.bar_slot": "Barra de habilidades: {0}",
   "skill.slot_number": "Casilla {0}",
+  "skill.swap_carry": "Confirma dos veces para asignar {0}",
   "skill.empty_slot": "Casilla de habilidad vacía",
   "skill.assignment_help": "Elige una habilidad y confirma para asignarla a esta casilla.",
   "skill.hotbar_help": "Confirma para abrir la lista de habilidades de esta casilla.",

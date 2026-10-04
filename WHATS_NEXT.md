@@ -27,6 +27,14 @@ opening now focuses the tree's own root). Listen for: the backpack with a held d
 auto-repeat kept), Up from the top row to the equipment, a skill tree right after opening and after
 LB/RB, A on a node at the end of the list (it must spend the point, not click a slot).
 
+After the push (`b469c69`), from the user's next report: the passive skill strip took "not
+learned" from tree points although base-class skills unlock by level; it now uses the character's
+known skills ([strip](reference/passive-reading.md#strip-learned-state-2026-10-04)). Square in
+Skills is the game's "swap action bar skills" and keeps no skill; the mod now carries the
+highlighted skill so the chosen slot's list opens on it ([assignment](reference/skill-assignment.md#square-carries-the-highlighted-skill-2026-10-04)).
+Listen for: Square on Shurikens, Left/Right on the bar ("Confirma dos veces para asignar…"),
+Cross, Cross; the strip on Shurikens should say "Aprendida".
+
 # Handoff — 2026-10-04 morning: D2R scanner categories
 
 User (after the night batch): "I want the same categories as the D2R radar; I asked you to implement

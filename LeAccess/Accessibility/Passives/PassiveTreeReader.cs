@@ -3,6 +3,7 @@ using LE.UI.PanelSystem;
 using LeAccess.Accessibility.Announcements;
 using LeAccess.Accessibility.CharacterCreation;
 using LeAccess.Accessibility.ScreenContent;
+using LeAccess.Accessibility.Skills;
 using LeAccess.Accessibility.Utils;
 using LeAccess.I18n;
 using TMPro;
@@ -76,11 +77,17 @@ internal static class PassiveTreeReader
         string name = TextUtils.CleanText(localized.GetName(ability));
         if (string.IsNullOrWhiteSpace(name)) return false;
         string state = null;
-        if (IsAlive(icon) && icon.requirement > 0 && points is int have)
+        // The player's known skills decide learned skills; level-gated class skills ignore this tree's points.
+        bool knownState = SkillLearningReader.TryReadKnown(ability, out bool learned, out string requiredLevel);
+        if (knownState && (learned || requiredLevel != null))
+            state = ScreenContentTracker.Combine(new[] { ModText.Get(learned ? "skill.learned" : "skill.not_learned"), requiredLevel });
+        else if (IsAlive(icon) && icon.requirement > 0 && points is int have)
             // Native MasteryBarDisplay.ApplyUnlockedAbilityStates compares the requirement with these two values.
-            state = have >= icon.requirement ? ModText.Get("passive.ability_unlocked") :
+            state = ScreenContentTracker.Combine(new[] { knownState ? ModText.Get("skill.not_learned") : null,
+                have >= icon.requirement ? knownState ? null : ModText.Get("passive.ability_unlocked") :
                 maxPoints is int max && icon.requirement > max ? ModText.Format("passive.ability_unreachable", icon.requirement, max) :
-                ModText.Format("passive.ability_unlockable", icon.requirement, have);
+                ModText.Format("passive.ability_unlockable", icon.requirement, have) });
+        else if (knownState) state = ModText.Get("skill.not_learned");
         string summary = ScreenContentTracker.Combine(new[] { name,
             ModText.Get(IsAlive(icon) && icon.isMasteryAbility ? "passive.mastery_ability" : "passive.ability"), state,
             ModText.Format("list.position", index + 1, tooltips.Count) });

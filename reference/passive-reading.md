@@ -213,3 +213,15 @@ silence, controller strip, empty selection, reopen). Patch audit: 70 declaration
 Runtime unverified: one navigable per page, `levelTMP` being a bare number, lock-icon meaning,
 the top-buttons/strip previous-ID values seen by `OnSelected`, and how the fullscreen panel's own
 exits feel with the list order (its exits are left native).
+
+### Strip learned state (2026-10-04)
+
+User report: the strip called Shurikens not learned although the character has it. Native
+`PassiveTreeUnlockableAbilityIcon.SetState` @0x2458d80 (overlays `greoutOverlay`/`lockOverlay`/
+`requirementOverlay`, states Unlocked/Unlockable/CannotBeUnlocked/Hidden) is called only by
+`MasteryBarDisplay.ApplyUnlockedAbilityStates` and the fullscreen panel, never by the controller
+panel, and base-class skills unlock by character level, not tree points. The strip now takes
+learned/not learned and the base-class level from `SkillLearningReader.TryReadKnown` (the player's
+`KnownAbilityList`, as the Skills panel does); only an unlearned skill without a level requirement
+adds this tree's point threshold, and never "unlocked". Without known-skill data the old point
+comparison remains. Passive suite: 157 checks.

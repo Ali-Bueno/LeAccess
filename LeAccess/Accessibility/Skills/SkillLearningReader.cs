@@ -26,28 +26,36 @@ internal static class SkillLearningReader
         return ScreenContentTracker.Combine(new[] { state, requirement });
     }
 
-    internal static string ReadKnown(Ability ability, bool provenLearned = false)
+    internal static string ReadKnown(Ability ability, bool provenLearned = false) =>
+        TryReadKnown(ability, out bool learned, out string requiredLevel)
+            ? ScreenContentTracker.Combine(new[] { ModText.Get(learned || provenLearned ? "skill.learned" : "skill.not_learned"),
+                requiredLevel }) : null;
+
+    /// <summary>Whether the player's known skills include this one, with its base-class level requirement if any.</summary>
+    internal static bool TryReadKnown(Ability ability, out bool learned, out string requiredLevel)
     {
+        learned = false;
+        requiredLevel = null;
         try
         {
-            if (!SkillIdentity.TryReadPrimary(ability, out _)) return null;
+            if (!SkillIdentity.TryReadPrimary(ability, out _)) return false;
             var player = PlayerFinder.getPlayer();
-            if (!IsAlive(player)) return null;
+            if (!IsAlive(player)) return false;
             var known = player.GetComponent<KnownAbilityList>();
             if (!IsAlive(known) || !IsAlive(known.treeData) || known.abilities is null || known.abilities.WasCollected)
-                return null;
+                return false;
             bool any = false;
             foreach (var candidate in known.abilities)
             {
-                if (!SkillIdentity.TryReadPrimary(candidate, out _)) return null;
+                if (!SkillIdentity.TryReadPrimary(candidate, out _)) return false;
                 any = true;
-                if (SkillIdentity.Matches(candidate, ability))
-                    return ScreenContentTracker.Combine(new[] { ModText.Get("skill.learned"), ReadBaseLevel(known, ability) });
+                if (SkillIdentity.Matches(candidate, ability)) { learned = true; break; }
             }
-            return any ? ScreenContentTracker.Combine(new[] { ModText.Get(provenLearned ? "skill.learned" : "skill.not_learned"),
-                ReadBaseLevel(known, ability) }) : null;
+            if (!any) return false;
+            requiredLevel = ReadBaseLevel(known, ability);
+            return true;
         }
-        catch (Exception) { return null; }
+        catch (Exception) { return false; }
     }
 
     private static string ReadBaseLevel(KnownAbilityList known, Ability ability)

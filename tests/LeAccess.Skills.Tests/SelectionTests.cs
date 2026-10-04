@@ -291,6 +291,33 @@ internal static class SelectionTests
             "Available skill menu distinguishes the destination button from current assignment");
         SkillAccessibility.Update(readDetails: true);
         check(ScreenReader.Messages.Last().Text.Contains("confirm to assign"), "Manual candidate details explain confirmation");
+
+        // Square in the Skills panel leaves for the action bar; the highlighted skill is carried into the slot's list.
+        var first = choices.gameObject.Child().Add(new Selectable());
+        first.gameObject.Add(new AbilitySelectionIcon { ability = new Ability { abilityName = "Ataque" } });
+        choices._selectableChildren = new(new[] { first, choice });
+        choices.ActiveSelectable = choice;
+        SkillSwapCarry.BeforeSubmit(SubmitType.A_EX);
+        check(SkillSwapCarry.PendingName is null, "Only Square starts carrying a skill");
+        SkillSwapCarry.BeforeSubmit(SubmitType.X_SQUARE);
+        check(SkillSwapCarry.PendingName == Fireball, "Square remembers the highlighted skill before the game closes the panel");
+        hotbar.NavigableId = NavigableID.ABILITY_PANEL; NavigationManager.currentlySelected = hotbar;
+        BindingTests.Equip(1, null); Tick(); Tick();
+        check(ScreenReader.Messages.Last().Text == Speech.Join(Speech.T("skill.empty_slot"), Speech.F("skill.bar_slot", "Square"),
+            Speech.F("skill.swap_carry", Fireball)), "Action bar slots say how to assign the carried skill: " + ScreenReader.Messages.Last().Text);
+        choices.NavigableId = NavigableID.ABILITY_PANEL_FLYOUT; choices.ActiveSelectable = first;
+        var waiting = choices._selectableChildren;
+        choices._selectableChildren = new(Array.Empty<Selectable>());
+        NavigationManager.currentlySelected = choices; Tick();
+        check(SkillSwapCarry.PendingName == Fireball && choices.ActiveSelectable == first, "An empty list keeps the carried skill until it fills");
+        choices._selectableChildren = waiting; Tick();
+        check(choices.ActiveSelectable == choice && SkillSwapCarry.PendingName is null,
+            "The opened list starts on the carried skill instead of its first entry");
+        SkillSwapCarry.BeforeSubmit(SubmitType.X_SQUARE);
+        NavigationManager.currentlySelected = hotbar; Tick();
+        check(SkillSwapCarry.PendingName is not null, "The carried skill waits while the action bar is selected");
+        NavigationManager.currentlySelected = null; Tick();
+        check(SkillSwapCarry.PendingName is null, "Leaving the action bar drops the carried skill");
         fixture = Reset();
         fixture.Icon.UnlockReqTMP = Text(fixture.Control.gameObject, "8");
         fixture.Icon.UnlockReqTMP.gameObject.Active = false;
