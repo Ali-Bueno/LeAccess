@@ -16,7 +16,8 @@ internal static class EnemyCueSounds
     private const string ConfigSection = "Enemy cues";
     private const string ActiveStatus = "active";
     private const double AudioRetrySeconds = 5; // Match the other world outputs' recovery interval.
-    private const int AudioBufferMilliseconds = 50; // Match the NPC output, the other D2R entity-cue stream.
+    // 50 ms underran in play (159 stalls inside 174 cues); the 100 ms radar output logged none. Matches NPC cues.
+    private const int AudioBufferMilliseconds = 100;
     private const double DiagnosticIntervalSeconds = 5;
     private static readonly EnemyCueProbe World = new();
     private static readonly EnemyCueTracker Tracker = new();

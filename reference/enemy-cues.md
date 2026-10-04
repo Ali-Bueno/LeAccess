@@ -69,14 +69,17 @@ Bearings are direct, not routes.
   dropout (a ray flicker, a stepping enemy) therefore cannot jump the queue.
 - `WorldAudioReservation` source `Enemy` joins the FIFO shared by radar knocks and
   breaths, NPC taps, world-object sounds and automatic orientation. Each enemy cue
-  reserves its 90 ms plus the 50 ms device buffer; it waits rather than overlap,
+  reserves its 90 ms plus the 100 ms device buffer; it waits rather than overlap,
   and a repeating enemy cannot take the next turn from a waiting source.
-- Heard rates: an isolated enemy about every 150 ms nearby and 450 ms at the edge.
-  Three nearby enemies with nothing else playing take turns about every 150 ms
-  (reservation plus frame), so each repeats about every 450 ms. D2R quoted 200/500
+- Heard rates: an isolated enemy about every 190 ms nearby and 450 ms at the edge.
+  Three nearby enemies with nothing else playing take turns about every 190 ms
+  (reservation plus frame), so each repeats about every 570 ms. D2R quoted 200/500
   ms and 300 ms from its separate device and poll-quantized starts.
-- Output: its own `RadarAudioOutput("Enemy cues", 50 ms)`, as NPC and world cues
-  have, with the same 5 s event-confirmed recovery. Samples are synthesized on the
+- Output: its own `RadarAudioOutput("Enemy cues", 100 ms)`, as NPC and world cues
+  have, with the same 5 s event-confirmed recovery. It was 50 ms until a live log
+  showed 1721 callback stalls in 7740 reads, 159 of them inside the 174 cues played
+  (the user heard a "mini sputtering"); the 100 ms radar output logged none (max
+  callback gap 67 ms). NPC cues moved from 50 to 100 ms for the same reason. Samples are synthesized on the
   main thread at play time like the other cues; the NAudio callback reads only the
   float buffer, never Unity or IL2CPP objects.
 

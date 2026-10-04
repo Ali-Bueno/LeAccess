@@ -14,7 +14,8 @@ internal static class NpcSounds
 {
     private const string ConfigSection = "NPC sounds";
     private const double AudioRetrySeconds = 5; // Match the existing navigation output recovery interval.
-    private const int AudioBufferMilliseconds = 50;
+    // 50 ms (two 25 ms WaveOut blocks) underran in play; the 100 ms radar output logged no stalls.
+    private const int AudioBufferMilliseconds = 100;
     private static readonly NpcWorldProbe World = new();
     private static readonly NpcCueTiming Timing = new();
     private static readonly NpcNameAnnouncementState Names = new();

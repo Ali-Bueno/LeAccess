@@ -59,6 +59,14 @@ Installed `13fc9c9` with the game closed; previous plugin/config backed up to
   loudness against equipment, exits confused with the game's own waypoint hum. Installed
   with the game closed; backup `pre-le-sounds-20b4a8d-20261003`.
 
+- Loops stacked copies of themselves: the mixer's `Array.Clear` cleared only a quarter of
+  NAudio's byte-backed buffer, so old audio summed in (also behind the earlier D2R
+  "sputter"). Fixed and verified by a loopback recording; output is now WASAPI with
+  a D2R-like glide ([details](reference/world-object-sounds.md#loop-mixer-accumulation-live-reports-2026-10-03)).
+  User confirmed the loops now work. Enemy and NPC cues still "mini sputtered": their
+  50 ms buffers underran (159 stalls inside 174 enemy cues); both now use the radar's
+  stall-free 100 ms ([enemy cues](reference/enemy-cues.md)). Listening pending.
+
 Re-check these five first; then the list below.
 
 ## First live checks for the user
