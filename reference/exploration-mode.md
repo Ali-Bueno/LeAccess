@@ -215,13 +215,15 @@ run before vitals in `MenuAccessibility.LateUpdate`). Tests: `LeAccess.Explorati
 
 The user confirmed the scanner, Create menu and beacon work offline. Fixes:
 
-- Guardiana Leena was never listed although very close (`[NPC name]` had named her; the
-  scanner's status stayed `unseen=5`). The scanner accepted listeners only from the active
-  scene while the NPC probe accepts any loaded scene; quest NPCs can live in an additive
-  scene (most likely cause, unconfirmed). It now accepts any loaded scene, like the NPC probe,
-  and anything within 6 units counts as seen without NavMesh line of sight (NPCs behind
-  counters or off the mesh). The status line now names up to six places not yet seen
-  (`not_yet_seen=[...]`) for the next check.
+- Guardiana Leena was never listed although the user walked up and talked to her
+  (`[NPC name]` named her; the scanner's status stayed `unseen=5`). The landmark status
+  (`candidate=1566276`, `active=15`) proves her listener is in the active scene, so the
+  cause is the seen test: her position never passed the NavMesh line-of-sight check (on a
+  platform, behind a counter or off the mesh; exact geometry unknown). Places within the
+  game's own interaction range (capped at 10 units) or 6 units now count as seen without
+  line of sight. The scanner also accepts listeners from any loaded scene, like the NPC
+  probe (consistency, not the cause). The status line now names up to six places not yet
+  seen (`not_yet_seen=[...]`).
 - The stash ("Alijo", twice) was listed under characters: it passes the NPC test. Stash,
   forge and waypoints are now classified before the NPC test.
 - Exploration is saved per character (section above); `MenuAccessibility.OnApplicationQuit`

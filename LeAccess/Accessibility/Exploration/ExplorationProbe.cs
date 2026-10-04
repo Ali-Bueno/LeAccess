@@ -23,9 +23,12 @@ internal static class ExplorationProbe
     private static readonly List<string> Unseen = new();
     private const int UnseenLogged = 6;
     private const float MinimumArrival = 1.5f;
-    // Right beside the player a place counts as seen even without walkable line of sight
-    // (NPCs behind counters, on platforms or off the mesh).
+    // Right beside the player a place counts as seen even without walkable line of sight: the
+    // 2026-10-03 log shows Guardiana Leena, in the active scene and close enough to talk to, never
+    // passing the NavMesh line-of-sight test (NPCs behind counters, on platforms or off the mesh).
     private const float CloseSeenRange = 6f;
+    // A few objects have very long interaction ranges; those still need line of sight beyond this.
+    private const float MaxInteractionSeenRange = 10f;
 
     internal static ExplorationSeenMemory SeenMemory => Seen;
     internal static string LastFailure { get; private set; }
@@ -56,16 +59,16 @@ internal static class ExplorationProbe
                     var position = GuidanceRouteProbe.Convert(listener.transform.position);
                     if (listener.controllerTargetingUsePlayerY) position.Y = player.Y;
                     string memory = ExplorationSeenMemory.Key(category, name, position);
+                    float range = listener.interactionRange;
                     if (!Seen.Contains(memory))
                     {
-                        if (!CanSee(player, origin, hasOrigin, position, nav, seenRange))
+                        if (!CanSee(player, origin, hasOrigin, position, nav, seenRange, range))
                         {
                             if (unseen++ < UnseenLogged) Unseen.Add(name);
                             continue;
                         }
                         Seen.Add(memory);
                     }
-                    float range = listener.interactionRange;
                     entries.Add(new ExplorationEntry($"listener:{listener.GetInstanceID()}", name, category, position,
                         float.IsFinite(range) && range > MinimumArrival ? range : MinimumArrival));
                     places++;
@@ -154,12 +157,16 @@ internal static class ExplorationProbe
     // Seen = within range and in NavMesh line of sight, or right beside the player. Doors and exits may
     // stand off the walkable mesh, so those count only within half the range.
     private static bool CanSee(Vector3 player, Vector3 origin, bool hasOrigin, Vector3 target, IWalkability nav,
-        float range)
+        float range, float interactionRange)
     {
         float dx = target.X - player.X, dz = target.Z - player.Z;
         float squared = dx * dx + dz * dz;
-        if (!float.IsFinite(squared) || squared > range * range) return false;
-        if (squared <= CloseSeenRange * CloseSeenRange) return true;
+        // Within the game's own interaction range (where the NPC name is announced) it has been met.
+        float close = float.IsFinite(interactionRange) && interactionRange > CloseSeenRange
+            ? MathF.Min(interactionRange, MaxInteractionSeenRange) : CloseSeenRange;
+        if (!float.IsFinite(squared)) return false;
+        if (squared <= close * close) return true;
+        if (squared > range * range) return false;
         if (!hasOrigin) return false;
         if (nav.TrySample(target, out var onMesh)) return nav.Clear(origin, onMesh);
         return squared <= range * range / 4;
