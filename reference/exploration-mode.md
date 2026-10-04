@@ -119,3 +119,38 @@ errors and cleanup (restore only after the buttons are released, to avoid a cast
 Compile-checked against the installed interop: `ActionElementMap.enabled`,
 `ControllerMap.enabled` and `MapHelper.SetMapsEnabled` are settable; no hook needed.
 Not yet tried live.
+
+## Implementation design (2026-10-03)
+
+User answers: suppression while Create is held is accepted; the right stick drives
+the scanner only in gameplay (never with the controller wheel or any menu open,
+where it keeps reading tooltips); automatic orientation, F6 and F7 are removed
+(`5a494a4`); the beacon routes only through explored ground, as in D2R.
+Other pads (8BitDo Ultimate 2C, Xbox One) have only Start/Select, so the modifier
+must be configurable later; this first version targets the DualSense.
+
+Code lives in `LeAccess/Accessibility/Exploration/`.
+
+- `ExplorationInput` (input): one command per frame from the right stick
+  (edge-triggered flick from neutral, dominant axis: up/down = previous/next
+  category, left/right = previous/next entry), from keyboard Ctrl+Numpad 8/2/4/6 and
+  Ctrl+B, and from the held modifier (Rewired template `back`, Create on the
+  DualSense): Square = vitals, Cross = lock. While the modifier is held in gameplay,
+  every enabled Button-type `ActionElementMap` of the player's joysticks is
+  disabled; each one is re-enabled after the modifier is released and its own
+  button is up, and all of them immediately on leaving gameplay, errors or
+  cleanup. Only maps the mod disabled are re-enabled. Axes stay enabled, so the
+  player can keep moving.
+- `ExplorationCatalog` / `ExplorationProbe` (scanner): categories with entries,
+  nearest first; a category step speaks its name and nearest entry; an entry step
+  speaks name, distance in steps (1 step = the character's body width) and one of
+  eight screen directions (`GuidanceGeometry.Direction`). Places are listed once
+  seen (within a seen range with NavMesh line of sight, remembered per fixed-layout
+  scene); quest markers and the encounter return arrow are listed when the game
+  shows them (minimap visibility not required); enemies are live only.
+- `ExplorationBeacon` (beacon): Create+Cross locks the selected entry, again cancels,
+  another entry retargets. It keeps an explored-cell map (cells seen with NavMesh
+  line of sight) and routes only through it (A* with NavMesh-checked edges);
+  otherwise it refuses. A D2R-style ping (about 620 Hz, 80 ms) repeats 0.16-1.2 s
+  by remaining route, panned toward a look-ahead point; arrival speaks and releases;
+  a route lost for 3 s releases.
