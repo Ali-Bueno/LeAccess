@@ -87,6 +87,7 @@ internal static class ExplorationAccessibility
             Catalog.Reset();
         }
         _world = world;
+        ExplorationPersistence.Update(now, world);
         ExplorationBeacon.TryGetWalkability(out var nav);
         _hasEntries = ExplorationProbe.TryRefresh(world, nav, _seenRange.Value, Entries);
         if (ExplorationProbe.LastFailure != null) ReportFailure(ExplorationProbe.LastFailure);
@@ -157,6 +158,7 @@ internal static class ExplorationAccessibility
     internal static void Cleanup()
     {
         ExplorationInput.Cleanup();
+        ExplorationPersistence.Cleanup();
         ExplorationBeacon.Cleanup();
         ExplorationProbe.Reset();
         Catalog.Reset();

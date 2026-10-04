@@ -9,6 +9,7 @@ internal static class Program
             MapTests.Run();
             BeaconTests.Run();
             SynthTests.Run();
+            StoreTests.Run();
             Console.WriteLine($"Exploration tests passed: {_checks} checks.");
             return 0;
         }

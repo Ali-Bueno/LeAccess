@@ -74,6 +74,24 @@ internal sealed partial class ExploredMap
         return added;
     }
 
+    internal IReadOnlyList<Vector3> Points => _points;
+
+    // Restores saved cells without NavMesh queries; their links are proven lazily when a route needs them.
+    internal int Import(IEnumerable<Vector3> points)
+    {
+        int added = 0;
+        if (points is null) return 0;
+        foreach (var point in points)
+        {
+            if (_points.Count >= MaxCells) break;
+            var column = ColumnOf(point);
+            if (!Finite(point) || Find(column, point.Y) >= 0) continue;
+            AddCell(column, point);
+            added++;
+        }
+        return added;
+    }
+
     internal bool Explored(Vector3 point) => Finite(point) && Find(ColumnOf(point), point.Y) >= 0;
 
     private void Plan((int X, int Z) column, Vector3 origin, IWalkability nav)
@@ -107,14 +125,20 @@ internal sealed partial class ExploredMap
     private bool TryAdd((int X, int Z) column, Vector3 point, IWalkability nav)
     {
         if (_points.Count >= MaxCells) return false;
+        int index = AddCell(column, point);
+        // Proving the new cell's links now keeps later route searches free of native queries.
+        Link(index, nav, refresh: false);
+        return true;
+    }
+
+    private int AddCell((int X, int Z) column, Vector3 point)
+    {
         int index = _points.Count;
         _points.Add(point);
         _cellColumns.Add(column);
         if (!_columns.TryGetValue(column, out var cells)) _columns[column] = cells = new List<int>(1);
         cells.Add(index);
-        // Proving the new cell's links now keeps later route searches free of native queries.
-        Link(index, nav, refresh: false);
-        return true;
+        return index;
     }
 
     private void Link(int cell, IWalkability nav, bool refresh)

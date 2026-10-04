@@ -37,6 +37,16 @@ internal sealed class ExploredMemory
         return _procedural;
     }
 
+    internal IEnumerable<KeyValuePair<string, ExploredMap>> FixedScopes => _fixed;
+
+    // Saved fixed-layout ground; returns the cells added.
+    internal int ImportFixed(string scope, IEnumerable<System.Numerics.Vector3> points)
+    {
+        if (string.IsNullOrEmpty(scope)) return 0;
+        if (!_fixed.TryGetValue(scope, out var map)) _fixed[scope] = map = _create();
+        return map.Import(points);
+    }
+
     internal void Clear()
     {
         _fixed.Clear();

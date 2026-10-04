@@ -192,3 +192,40 @@ run before vitals in `MenuAccessibility.LateUpdate`). Tests: `LeAccess.Explorati
   on a bridge (`unverified_floors` in the beacon status); performance of the 20 Hz map ticks.
 - Not done yet: configurable modifier for pads without Create (8BitDo 2C, Xbox One), saving
   explored ground and seen places to disk, "new place discovered" speech, shrines.
+
+## Saved exploration
+
+- File: `<BepInEx config>/LeAccess/Exploration/<key>.bin`, key `offline-<name>-<classId>` (`online-` when
+  `GameplayEnvironment.IsOnlineClient`); the name keeps Unicode letters, invalid file-name characters and spaces become `_`.
+  No character name, no persistence.
+- Format (`ExplorationStore`, little endian): `LEXP`, int32 version (1); explored scopes: int32 count, each
+  ushort-prefixed UTF-8 scope (`scene|variant`), int32 point count, x/y/z float32; seen scopes: int32 count, each
+  scope (scene name), int32 key count, ushort-prefixed keys. Reading rejects the whole file on bad magic/version,
+  counts over the caps (4096 scopes, 100000 points, 50000 keys per scope), non-finite floats, truncation or trailing
+  bytes; a rejected file is renamed `.corrupt` and ignored.
+- Cadence (`ExplorationPersistence.Update`, from `ExplorationAccessibility.Refresh`): load on first sight of a
+  character or a switch (the previous one is saved first, memories cleared); save when dirty every 30 s, on a scene
+  session change and on `Cleanup`. Writes go to `.tmp`, then replace the file.
+- Imported cells carry no links: `ExploredMap.Import` makes no NavMesh calls and routing proves each uncached edge
+  when the search reaches it (bounded by `MaxExpansions` x 8 per search).
+- Not saved: procedural scopes (regenerated), the locked target, catalog selection. Plugin `Unload` is the only
+  `Cleanup` path, so a game exit relies on the 30 s save.
+
+## Live report fixes (2026-10-04, first listening session, 23:54 log)
+
+The user confirmed the scanner, Create menu and beacon work offline. Fixes:
+
+- Guardiana Leena was never listed although very close (`[NPC name]` had named her; the
+  scanner's status stayed `unseen=5`). The scanner accepted listeners only from the active
+  scene while the NPC probe accepts any loaded scene; quest NPCs can live in an additive
+  scene (most likely cause, unconfirmed). It now accepts any loaded scene, like the NPC probe,
+  and anything within 6 units counts as seen without NavMesh line of sight (NPCs behind
+  counters or off the mesh). The status line now names up to six places not yet seen
+  (`not_yet_seen=[...]`) for the next check.
+- The stash ("Alijo", twice) was listed under characters: it passes the NPC test. Stash,
+  forge and waypoints are now classified before the NPC test.
+- Exploration is saved per character (section above); `MenuAccessibility.OnApplicationQuit`
+  also flushes, since closing the game skips `Plugin.Unload`.
+- Online characters: the code paths use the online player visuals and the player's own
+  NavMesh agent like the radar, but nothing has been heard online yet. `origin=False` in the
+  `[Exploration]` status would mean no walkable mesh for line of sight and routing.

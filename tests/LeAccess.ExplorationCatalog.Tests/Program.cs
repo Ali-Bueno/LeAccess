@@ -110,4 +110,22 @@ memory.Enter(ExplorationSeenMemory.Scope("Z1", 99, fixedLayout: true));
 Equal(2, memory.Count, "fixed scene kept across sessions");
 Equal("PCG#5", ExplorationSeenMemory.Scope("PCG", 5, fixedLayout: false), "procedural scope uses session");
 
+// Seen memory export/import: only fixed scopes, a version bump on change.
+var saved = new ExplorationSeenMemory();
+saved.Enter("Town");
+int version = saved.Version;
+saved.Add("1|Salida|5|1");
+saved.Add("1|Salida|5|1");
+Equal(version + 1, saved.Version, "version bumps once per new key");
+saved.Enter("PCG#3");
+saved.Add("2|Cofre|0|0");
+Equal(1, saved.FixedScopes().Count(), "procedural scopes are not exported");
+var restored = new ExplorationSeenMemory();
+Equal(1, restored.ImportFixed("Town", saved.FixedScopes().First().Value), "import adds keys");
+Equal(0, restored.ImportFixed("Town", new[] { "1|Salida|5|1", "" }), "import dedupes and skips empty keys");
+Equal(0, restored.ImportFixed("PCG#3", new[] { "x" }), "procedural scope import refused");
+restored.Enter("Town");
+Equal(true, restored.Contains("1|Salida|5|1"), "imported key is remembered");
+Equal(1, restored.Count, "entering an imported scope reuses it");
+
 Console.WriteLine($"Exploration catalog tests passed: {checks} checks");

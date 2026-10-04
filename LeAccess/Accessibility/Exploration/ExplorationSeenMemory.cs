@@ -29,7 +29,31 @@ internal sealed class ExplorationSeenMemory
     }
 
     internal bool Contains(string key) => _current?.Contains(key) == true;
-    internal bool Add(string key) => _current?.Add(key) == true;
+    internal bool Add(string key)
+    {
+        bool added = _current?.Add(key) == true;
+        if (added) Version++;
+        return added;
+    }
+
+    // Bumped whenever a key is added, so persistence can tell when to save.
+    internal int Version { get; private set; }
+
+    internal IEnumerable<KeyValuePair<string, HashSet<string>>> FixedScopes()
+    {
+        foreach (var scope in _scopes)
+            if (scope.Key.IndexOf('#') < 0) yield return scope;
+    }
+
+    internal int ImportFixed(string scope, IEnumerable<string> keys)
+    {
+        if (string.IsNullOrEmpty(scope) || scope.IndexOf('#') >= 0 || keys is null) return 0;
+        if (!_scopes.TryGetValue(scope, out var set)) _scopes[scope] = set = new HashSet<string>(StringComparer.Ordinal);
+        int added = 0;
+        foreach (var key in keys)
+            if (!string.IsNullOrEmpty(key) && set.Add(key)) added++;
+        return added;
+    }
     internal int Count => _current?.Count ?? 0;
 
     internal void Clear()
@@ -37,5 +61,6 @@ internal sealed class ExplorationSeenMemory
         _scopes.Clear();
         _current = null;
         _scope = null;
+        Version++;
     }
 }

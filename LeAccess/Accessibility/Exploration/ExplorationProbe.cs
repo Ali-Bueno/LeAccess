@@ -20,8 +20,14 @@ internal static class ExplorationProbe
     private static readonly List<GuidanceTarget> Targets = new();
     private static readonly List<EnemyContact> Contacts = new();
     private static readonly ExplorationSeenMemory Seen = new();
+    private static readonly List<string> Unseen = new();
+    private const int UnseenLogged = 6;
     private const float MinimumArrival = 1.5f;
+    // Right beside the player a place counts as seen even without walkable line of sight
+    // (NPCs behind counters, on platforms or off the mesh).
+    private const float CloseSeenRange = 6f;
 
+    internal static ExplorationSeenMemory SeenMemory => Seen;
     internal static string LastFailure { get; private set; }
     internal static string LastStatus { get; private set; }
 
@@ -37,6 +43,7 @@ internal static class ExplorationProbe
         Vector3 origin = default;
         bool hasOrigin = nav is not null && nav.TrySample(player, out origin);
         int places = 0, unseen = 0;
+        Unseen.Clear();
         var listeners = WorldObjectClickListener.allListener;
         if (listeners is not null && !listeners.WasCollected)
         {
@@ -45,13 +52,17 @@ internal static class ExplorationProbe
                 try
                 {
                     var listener = listeners[index];
-                    if (!TryDescribe(listener, scene, out var category, out string name)) continue;
+                    if (!TryDescribe(listener, out var category, out string name)) continue;
                     var position = GuidanceRouteProbe.Convert(listener.transform.position);
                     if (listener.controllerTargetingUsePlayerY) position.Y = player.Y;
                     string memory = ExplorationSeenMemory.Key(category, name, position);
                     if (!Seen.Contains(memory))
                     {
-                        if (!CanSee(player, origin, hasOrigin, position, nav, seenRange)) { unseen++; continue; }
+                        if (!CanSee(player, origin, hasOrigin, position, nav, seenRange))
+                        {
+                            if (unseen++ < UnseenLogged) Unseen.Add(name);
+                            continue;
+                        }
                         Seen.Add(memory);
                     }
                     float range = listener.interactionRange;
@@ -100,32 +111,39 @@ internal static class ExplorationProbe
         catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
         finally { Contacts.Clear(); }
 
-        LastStatus = $"places={places} unseen={unseen} remembered={Seen.Count} objectives={objectives} enemies={enemies} origin={hasOrigin}";
+        LastStatus = $"places={places} unseen={unseen} remembered={Seen.Count} objectives={objectives} enemies={enemies} origin={hasOrigin} not_yet_seen=[{string.Join("; ", Unseen)}]";
         return true;
     }
 
     // Same identities as the NPC, landmark and service readers; chests and loot keep their own loops (D2R).
-    private static bool TryDescribe(WorldObjectClickListener listener, Scene scene, out ExplorationCategory category,
-        out string name)
+    // Like the NPC probe, any loaded scene counts: quest NPCs can live in an additive scene.
+    private static bool TryDescribe(WorldObjectClickListener listener, out ExplorationCategory category, out string name)
     {
         category = default;
         name = null;
         if (!IsAlive(listener) || !listener.isActiveAndEnabled || !IsAlive(listener.gameObject) ||
-            !listener.gameObject.activeInHierarchy || (int)listener.gameObject.scene.handle != (int)scene.handle ||
-            !listener.CanInteract()) return false;
-        if (WorldServiceReader.IsNpc(listener))
-        {
-            category = ExplorationCategory.Characters;
-            name = NpcNameReader.Read(listener, out _);
-        }
-        else if (WorldServiceReader.ReadServiceKey(listener) is { } service)
+            !listener.gameObject.activeInHierarchy || !listener.gameObject.scene.IsValid() ||
+            !listener.gameObject.scene.isLoaded || !listener.CanInteract()) return false;
+        string service = WorldServiceReader.ReadServiceKey(listener);
+        // The stash and waypoints also pass the NPC test; objects belong with services and travel.
+        if (service is "service.stash" or "service.forge" or "service.waypoint")
         {
             category = service == "service.waypoint" ? ExplorationCategory.Travel : ExplorationCategory.Services;
             name = ModText.Get(service);
         }
+        else if (WorldServiceReader.IsNpc(listener))
+        {
+            category = ExplorationCategory.Characters;
+            name = NpcNameReader.Read(listener, out _);
+        }
+        else if (service is not null)
+        {
+            category = ExplorationCategory.Services;
+            name = ModText.Get(service);
+        }
         else
         {
-            name = LandmarkProbe.ReadLabel(listener, scene, out bool portal, out bool transition);
+            name = LandmarkProbe.ReadLabel(listener, listener.gameObject.scene, out bool portal, out bool transition);
             if (transition) { category = ExplorationCategory.Exits; name = ModText.Format("guidance.exit_to", name); }
             else if (portal) category = ExplorationCategory.Travel;
             else return false;
@@ -133,14 +151,16 @@ internal static class ExplorationProbe
         return !string.IsNullOrWhiteSpace(name);
     }
 
-    // Seen = within range and in NavMesh line of sight. Doors and exits may stand off the walkable mesh,
-    // so those count only within half the range.
+    // Seen = within range and in NavMesh line of sight, or right beside the player. Doors and exits may
+    // stand off the walkable mesh, so those count only within half the range.
     private static bool CanSee(Vector3 player, Vector3 origin, bool hasOrigin, Vector3 target, IWalkability nav,
         float range)
     {
         float dx = target.X - player.X, dz = target.Z - player.Z;
         float squared = dx * dx + dz * dz;
-        if (!hasOrigin || !float.IsFinite(squared) || squared > range * range) return false;
+        if (!float.IsFinite(squared) || squared > range * range) return false;
+        if (squared <= CloseSeenRange * CloseSeenRange) return true;
+        if (!hasOrigin) return false;
         if (nav.TrySample(target, out var onMesh)) return nav.Clear(origin, onMesh);
         return squared <= range * range / 4;
     }

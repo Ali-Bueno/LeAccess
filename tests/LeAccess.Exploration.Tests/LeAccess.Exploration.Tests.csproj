@@ -11,6 +11,7 @@
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExploredMap.cs" Link="ExploredMap.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExploredMapRouting.cs" Link="ExploredMapRouting.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExploredMemory.cs" Link="ExploredMemory.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationStore.cs" Link="ExplorationStore.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/BeaconState.cs" Link="BeaconState.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/BeaconCueSynthesizer.cs" Link="BeaconCueSynthesizer.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/Guidance/GuidanceGeometry.cs" Link="GuidanceGeometry.cs" />

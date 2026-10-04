@@ -259,6 +259,15 @@ internal static class ExplorationBeacon
         Plugin.Log.LogWarning($"Exploration beacon unavailable: {ex}");
     }
 
+    internal static ExploredMemory ExploredGround => Memory;
+
+    // Drops the cached map so the next tick resolves it again after the memory was cleared or imported.
+    internal static void ForgetMap()
+    {
+        _map = null;
+        _mapSession = 0;
+    }
+
     internal static void Cleanup()
     {
         BeaconAudio.Cleanup();

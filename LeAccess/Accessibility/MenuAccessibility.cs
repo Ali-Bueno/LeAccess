@@ -145,6 +145,13 @@ public class MenuAccessibility : MonoBehaviour
         }
     }
 
+    // Closing the game skips Plugin.Unload; keep the last 30 s of exploration.
+    void OnApplicationQuit()
+    {
+        try { ExplorationPersistence.Flush(); }
+        catch (System.Exception ex) { Plugin.Log.LogWarning($"Exploration save on quit failed: {ex.Message}"); }
+    }
+
     void Update()
     {
         NavigationAudioState.Refresh();
