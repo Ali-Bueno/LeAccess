@@ -1,3 +1,17 @@
+# Handoff — 2026-10-04 morning: D2R scanner categories
+
+User (after the night batch): "I want the same categories as the D2R radar; I asked you to implement
+the exploration mode as it is there and you did it halfway." Now ported from d2r-access: the 15
+categories in D2R order with D2R names and speech, rooms "sala N"/"sala inexplorada N", the death place
+under *cadáver*, other players, chests, shrines, objects (notes no longer count as NPCs) and ground
+items, "El radar ha registrado una salida nueva / un lugar nuevo" with the discovery chime, the
+unexplored-room loop and entry cue (whole D2R recordings), and D2R's rule of what is saved.
+[Details](reference/exploration-mode.md#d2r-categories-2026-10-04). Host-tested only.
+
+First live checks: flick through every category in a town and in Z62; a new exit's announcement; the
+room hum getting louder toward an unentered room and the entry cue; die once and find *cadáver*;
+`[Exploration]` status fields `players items death source rooms visited_rooms`.
+
 # Handoff — 2026-10-04 night: unexplored areas and radar delivery
 
 User request (before sleeping): improve the radar's precision a bit, and add unexplored rooms

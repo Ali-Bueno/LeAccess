@@ -1,7 +1,7 @@
 # Exploration mode (proposal, 2026-10-03)
 
-Status: implemented 2026-10-03 (sections below); unexplored areas added 2026-10-04
-([unexplored areas](#unexplored-areas-2026-10-04)). Requested by the user after
+Status: implemented 2026-10-03 (sections below); unexplored areas added 2026-10-04 and
+replaced the same day by the full D2R category set ([D2R categories](#d2r-categories-2026-10-04)). Requested by the user after
 learning that Last Epoch gives sighted players no route line to quests (only the
 minimap icon and its edge arrow, see
 [automatic orientation](automatic-orientation.md#live-report-silent-for-a-whole-session-2026-10-03-2118-log)).
@@ -270,12 +270,11 @@ queries per beacon tick (a region search may add up to 48), only while the scene
 saved cells are checked again after loading. Links are grouped into 8x8-cell areas per floor,
 anchored at the edge nearest the group's middle; key `frontier:x,z,floor`, arrival 2 cells.
 
-**Scanner and beacon.** Category *Zonas sin explorar* right after the exits; entries are all
-"Zona sin explorar", nearest first. Category numbers are now explicit and the new one is
-appended, because seen-place keys store them. A locked area is released with "Zona explorada"
-and the arrival sound once it leaves the list (entered, or its edge seen) or is reached;
-the next flick right reads the nearest remaining area. The radar marks opening cues toward a
-listed area ([unexplored mark](navigation-radar.md#latency-and-the-unexplored-mark-2026-10-04)).
+**Scanner and beacon.** First shipped as *Zonas sin explorar* / "Zona explorada"; the same day these
+became D2R's *sala inexplorada N* and *sala N* ([D2R categories](#d2r-categories-2026-10-04)). A locked
+unexplored room is reached on entering it ("Has llegado a sala inexplorada N", with the room cue); a
+frontier area when its edge is seen or reached. The radar marks opening cues toward a listed area
+([unexplored mark](navigation-radar.md#latency-and-the-unexplored-mark-2026-10-04)).
 
 **Evidence and limits.** 338 exploration checks (corridor edge moving ahead, pillar pocket not
 listed, doorway, budget and backlog, saved maps, rooms visited/listed/layout change) and 45
@@ -284,3 +283,66 @@ catalog checks. Not heard in game. Live checks: the `[Exploration]` status line 
 `source=rooms rooms=61` in Z62 and `source=frontier` in Z12 or a dungeon; whether `Statuses`
 already marks rooms entered before this version (`visited_rooms` right after loading); that
 listed rooms point along real paths; the frontier's cost in a large saved map.
+
+## D2R categories (2026-10-04)
+
+The user, after the first version: "I want the same categories as the D2R radar; I asked you to
+implement the exploration mode as it is there and you did it halfway." Sources:
+`d2r-access src/entity_radar.h` (`Category`), `src/map_survey.cpp` (`CategoryOrder`),
+`src/map_survey_service.cpp` (speech), `src/native_entities.cpp` (`ObjectCategory`),
+`src/terrain_service.cpp` (`RememberPlaces`), `docs/entity-scan.md`, `docs/exploration.md`.
+
+**Order and Last Epoch sources** (`ExplorationClassifier`, `ExplorationProbe`):
+
+| D2R | Spoken | Last Epoch |
+|---|---|---|
+| Exit | salida | zone and dungeon transitions ("Salida hacia X"), same-scene transitions, echo continuations |
+| Portal | portal | portals (`PortalVisualController`) |
+| Waypoint | punto de viaje | `service.waypoint` |
+| UnexploredRoom | sala inexplorada | minimap rooms glimpsed, never entered, "sala inexplorada N"; frontier areas where a scene has no rooms |
+| Room | sala | minimap rooms entered or revealed by the game, "sala N" (N = volume index + 1) |
+| Quest | misión | quest markers and the encounter arrow the game shows |
+| Npc | PNJ | relay/`NPCInteraction`, or a name tooltip plus conversation on an actor body |
+| Player | jugador | every other player (`NearbyPlayerProbe.TryReadAll`), in sight or not, online only |
+| Corpse | cadáver | "donde moriste": where the player last stood alive before dying in this scene; Last Epoch leaves no corpse |
+| Stash | alijo | `service.stash` |
+| Enemy | enemigo | live hostiles in skill-targeting range |
+| Treasure | tesoro | chest identities of the world sounds (`WorldCueIdentityReader`), until opened |
+| Shrine | santuario | listeners under `ShrinesManager.GetAllShrineObjects()` (refreshed every 5 s) |
+| Interactable | mecanismo | everything else with a name: notes and journals (name tooltip and conversation, no actor), the forge and other non-NPC services, levers, signposts |
+| Item | objeto | ground items whose label the loot filter shows, in sight now |
+
+The catalogue's old numbers stay in the saved keys (exits 1, waypoints 2, NPCs 3, stash 4), so seen places
+survive the change; new categories are appended. Lore notes were listed as characters before.
+
+**Speech.** A category step says the category name, then its nearest entry ("salida. Salida hacia X, 12
+pasos, arriba y a la izquierda"); counts are not spoken. Empty category: "aquí no hay X"; nothing at all:
+"aquí no hay nada". Diagonals read "arriba y a la derecha" as in D2R.
+
+**What is remembered** (D2R `MapSurvey::Fixed`): exits, waypoints, the stash, NPC names, visited rooms and the
+death place are saved per character and scene; portals, chests, shrines, objects and items only for the game
+session (`ExplorationSeenMemory.Persistent`).
+
+**New places** (`TerrainService::RememberPlaces`): the first sighting of an exit says "El radar ha registrado
+una salida nueva: X" (destination name), a waypoint or the stash "... un lugar nuevo: X", queued, with the
+discovery chime once per refresh. The exit back to the scene the player came from is the way back, not a
+find. `[Exploration] Discoveries` turns both off.
+
+**Room sounds** (`docs/exploration.md` "Supplied exploration sounds"): the whole D2R recordings, re-imported
+with `tools/import_audio.py` settings (`Loops/unexplored_room.wav` 1.04 s, `inside_unexplored_room.wav`
+0.93 s, `discovery.wav` 2.85 s). The nearest unvisited room (not the one the player is in) loops from its
+nearest point within `[World object sounds] LoopRange`, with that volume, on its own output
+("Exploration rooms"); entering an unvisited room plays the entry cue once (never on the first pass after
+loading, never again on return), and is the beacon's arrival sound for such a room. Menus and dialogue
+silence both. `[Exploration] RoomSounds`.
+
+**Not ported:** D2R's full-assistance mode, the reach filter (Ctrl+U), quest-object finds (Last Epoch has no
+readable quest-source flag on interactables), following another player through unexplored ground, and
+corpses (none exist). Rooms come only from minimap volumes; frontier scenes have no room sounds, as D2R's open
+levels have none.
+
+**Evidence.** Exploration 357 and catalog 45 checks (order, speech composed from the test's own templates,
+category walk, key compatibility, room numbering/entry/baseline, nearest room point and pan, persistence
+filter, death replacement). Nothing heard in game. Status line fields: `quests players items death unexplored
+source rooms visited_rooms frontier_pending`; log lines `[Exploration] El radar ha registrado ...`,
+`entered unexplored room N`, `death place x,z`.

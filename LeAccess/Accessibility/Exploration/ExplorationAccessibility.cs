@@ -26,7 +26,7 @@ internal static class ExplorationAccessibility
     private static bool _hasEntries;
     private static long _session;
     private static double _nextRefresh, _nextStatus;
-    private static string _lastFailure;
+    private static string _lastFailure, _sceneName, _cameFrom;
     private static ExplorationTarget? _lastTarget;
 
     internal static void Initialize(ConfigFile config)
@@ -38,6 +38,7 @@ internal static class ExplorationAccessibility
             new AcceptableValueRange<float>(5f, 60f)));
         ExplorationInput.Initialize(config);
         ExplorationBeacon.Initialize(config);
+        ExplorationFeedback.Initialize(config);
     }
 
     // Runs before VitalsAccessibility.Update, which reads this frame's Create+Square command.
@@ -57,6 +58,7 @@ internal static class ExplorationAccessibility
         if (!_enabled.Value)
         {
             ExplorationBeacon.Update(false, null);
+            ExplorationFeedback.Silence();
             return;
         }
         try
@@ -72,6 +74,7 @@ internal static class ExplorationAccessibility
                 Refresh(now);
             }
             if (gameplay && scannerCommand) Handle(command);
+            ExplorationFeedback.Update(gameplay, now);
             string beaconText = ExplorationBeacon.Update(gameplay, LockedTarget());
             if (beaconText != null) Speak(beaconText, interrupt: false);
         }
@@ -88,11 +91,17 @@ internal static class ExplorationAccessibility
             Catalog.Reset();
         }
         _world = world;
+        if (world.SceneName != _sceneName)
+        {
+            _cameFrom = _sceneName;
+            _sceneName = world.SceneName;
+        }
         ExplorationPersistence.Update(now, world);
         ExplorationBeacon.TryGetWalkability(out var nav);
         _hasEntries = ExplorationProbe.TryRefresh(world, nav, ExplorationBeacon.CurrentMap(world.Session),
-            _seenRange.Value, now, Entries);
+            _seenRange.Value, now, _cameFrom, Entries);
         PublishUnexplored(now);
+        ExplorationFeedback.Refreshed();
         if (ExplorationProbe.LastFailure != null) ReportFailure(ExplorationProbe.LastFailure);
         if (now < _nextStatus) return;
         _nextStatus = now + StatusSeconds;
@@ -104,7 +113,7 @@ internal static class ExplorationAccessibility
     {
         UnexploredPositions.Clear();
         foreach (var entry in Entries)
-            if (entry.Category == ExplorationCategory.Unexplored)
+            if (entry.Category == ExplorationCategory.UnexploredRoom)
                 UnexploredPositions.Add(new System.Numerics.Vector2(entry.Position.X, entry.Position.Z));
         RadarUnexploredMarks.Publish(UnexploredPositions, ExplorationBeacon.ExploreRadius * 2, now);
     }
@@ -172,6 +181,7 @@ internal static class ExplorationAccessibility
     {
         ExplorationInput.Cleanup();
         ExplorationPersistence.Cleanup();
+        ExplorationFeedback.Cleanup();
         ExplorationBeacon.Cleanup();
         ExplorationProbe.Reset();
         Catalog.Reset();
@@ -182,7 +192,7 @@ internal static class ExplorationAccessibility
         _lastTarget = null;
         _session = 0;
         _nextRefresh = _nextStatus = 0;
-        _lastFailure = null;
+        _lastFailure = _sceneName = _cameFrom = null;
         _enabled = null;
         _seenRange = null;
     }

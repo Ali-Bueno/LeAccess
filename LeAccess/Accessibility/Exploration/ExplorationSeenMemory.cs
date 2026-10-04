@@ -18,7 +18,7 @@ internal sealed class ExplorationSeenMemory
 
     // Characters can walk about, so their name alone identifies them; places also keep a coarse position.
     internal static string Key(ExplorationCategory category, string name, Vector3 position) =>
-        category == ExplorationCategory.Characters ? $"{(int)category}|{name}"
+        category == ExplorationCategory.Npc ? $"{(int)category}|{name}"
             : $"{(int)category}|{name}|{(int)MathF.Round(position.X / PositionCell)}|{(int)MathF.Round(position.Z / PositionCell)}";
 
     internal void Enter(string scope)
@@ -29,6 +29,33 @@ internal sealed class ExplorationSeenMemory
     }
 
     internal bool Contains(string key) => _current?.Contains(key) == true;
+
+    // Keys of the current scope starting with prefix (the death place, visited rooms).
+    internal IEnumerable<string> WithPrefix(string prefix)
+    {
+        if (_current is null) yield break;
+        foreach (string key in _current)
+            if (key.StartsWith(prefix, StringComparison.Ordinal)) yield return key;
+    }
+
+    internal int RemovePrefix(string prefix)
+    {
+        int removed = _current?.RemoveWhere(key => key.StartsWith(prefix, StringComparison.Ordinal)) ?? 0;
+        if (removed > 0) Version++;
+        return removed;
+    }
+
+    // D2R keeps only fixed places on disk (exits, waypoints, the stash) with the rooms; NPC names were
+    // already kept here. Portals, shrines, chests and other objects change between games.
+    internal static bool Persistent(string key)
+    {
+        int bar = key?.IndexOf('|') ?? -1;
+        if (bar <= 0) return false;
+        string head = key.Substring(0, bar);
+        if (head is "room" or "death") return true;
+        return int.TryParse(head, out int category) && (ExplorationCategory)category is ExplorationCategory.Exit or
+            ExplorationCategory.Waypoint or ExplorationCategory.Stash or ExplorationCategory.Npc;
+    }
     internal bool Add(string key)
     {
         bool added = _current?.Add(key) == true;

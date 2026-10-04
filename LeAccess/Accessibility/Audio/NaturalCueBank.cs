@@ -23,6 +23,8 @@ internal static class NaturalCueBank
         "gold", "equipment", "chest", "stash", "portal", "zone_transition",
         "discovery", "unexplored_room", "inside_unexplored_room"
     };
+    // The longest one-shot, D2R's discovery chime, runs 2.85 s; this bounds a damaged resource.
+    private const int MaximumFrames = SampleRate * 3;
     private static readonly Lazy<float[]>[] Clips = CreateClips();
 
     internal static string LastFailure { get; private set; }
@@ -85,7 +87,7 @@ internal static class NaturalCueBank
         {
             using Stream stream = typeof(NaturalCueBank).Assembly
                 .GetManifestResourceStream($"LeAccess.Sounds.{name}.wav");
-            float[] samples = PcmWaveReader.ReadMono48(stream);
+            float[] samples = PcmWaveReader.ReadMono48(stream, MaximumFrames);
             float peak = 0;
             foreach (float sample in samples) peak = Math.Max(peak, Math.Abs(sample));
             if (peak == 0) throw new InvalidDataException("Cue contains only silence.");

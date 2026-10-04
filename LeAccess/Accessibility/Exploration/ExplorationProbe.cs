@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using EHG.Multiplayer;
+using ItemFiltering;
 using LeAccess.Accessibility.Combat;
-using LeAccess.Accessibility.Landmarks;
 using LeAccess.Accessibility.MapSections;
 using LeAccess.Accessibility.Navigation.Guidance;
-using LeAccess.Accessibility.Npcs;
+using LeAccess.Accessibility.Players;
+using LeAccess.Accessibility.Utils;
 using LeAccess.I18n;
 using UnityEngine.SceneManagement;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
@@ -13,17 +15,25 @@ using Vector3 = System.Numerics.Vector3;
 
 namespace LeAccess.Accessibility.Exploration;
 
-// Builds the scanner's entries: seen places from the click-listener registry, the quest markers and
-// encounter arrow the game shows, live enemies in skill-targeting range and unexplored areas.
+// A place logged for the first time: D2R "the radar has logged a new exit/place".
+internal readonly record struct ExplorationFind(ExplorationCategory Category, string Name);
+
+// Builds the scanner's entries in the D2R categories: seen places from the click-listener registry, the quest
+// markers the game shows, live enemies and other players, seen ground items, the death place and the rooms.
 internal static class ExplorationProbe
 {
+    private const string DeathPrefix = "death|";
     private static readonly List<GuidanceTarget> Targets = new();
     private static readonly List<EnemyContact> Contacts = new();
+    private static readonly List<OtherPlayer> Others = new();
     private static readonly ExplorationSeenMemory Seen = new();
     private static readonly List<string> Unseen = new();
     private static readonly List<MinimapRoom> Rooms = new();
+    private static readonly List<MinimapRoom> Unvisited = new();
+    private static readonly List<MinimapRoom> Entered = new();
     private static readonly List<FrontierArea> Frontier = new();
-    private static readonly RoomGlimpses Glimpses = new();
+    private static readonly List<ExplorationFind> Finds = new();
+    private static readonly RoomTracker Tracker = new();
     private const int UnseenLogged = 6;
     private const float MinimumArrival = 1.5f;
     // Right beside the player a place counts as seen even without walkable line of sight: the
@@ -36,11 +46,19 @@ internal static class ExplorationProbe
     internal static ExplorationSeenMemory SeenMemory => Seen;
     internal static string LastFailure { get; private set; }
     internal static string LastStatus { get; private set; }
+    // From the last refresh: rooms not yet visited (the room loop), rooms just entered and places just logged.
+    internal static IReadOnlyList<MinimapRoom> UnvisitedRooms => Unvisited;
+    internal static IReadOnlyList<MinimapRoom> EnteredRooms => Entered;
+    internal static IReadOnlyList<ExplorationFind> NewFinds => Finds;
 
+    // cameFrom is the scene the player arrived from: its exit is the way back, not a find (D2R).
     internal static bool TryRefresh(MapSectionWorldSnapshot world, IWalkability nav, ExploredMap explored,
-        float seenRange, double now, List<ExplorationEntry> entries)
+        float seenRange, double now, string cameFrom, List<ExplorationEntry> entries)
     {
         entries.Clear();
+        Finds.Clear();
+        Entered.Clear();
+        Unvisited.Clear();
         LastFailure = null;
         var scene = SceneManager.GetActiveScene();
         if (!scene.IsValid() || !scene.isLoaded || (int)scene.handle != world.SceneHandle) return false;
@@ -48,8 +66,13 @@ internal static class ExplorationProbe
         var player = new Vector3((float)world.X, (float)world.Y, (float)world.Z);
         Vector3 origin = default;
         bool hasOrigin = nav is not null && nav.TrySample(player, out origin);
+        bool CanSeeHere(Vector3 target, float interactionRange) =>
+            CanSee(player, origin, hasOrigin, target, nav, seenRange, interactionRange);
+
         int places = 0, unseen = 0;
         Unseen.Clear();
+        try { ExplorationClassifier.Refresh(scene, now); }
+        catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
         var listeners = WorldObjectClickListener.allListener;
         if (listeners is not null && !listeners.WasCollected)
         {
@@ -58,29 +81,30 @@ internal static class ExplorationProbe
                 try
                 {
                     var listener = listeners[index];
-                    if (!TryDescribe(listener, out var category, out string name)) continue;
+                    if (!ExplorationClassifier.TryDescribe(listener, out var place)) continue;
                     var position = GuidanceRouteProbe.Convert(listener.transform.position);
                     if (listener.controllerTargetingUsePlayerY) position.Y = player.Y;
-                    string memory = ExplorationSeenMemory.Key(category, name, position);
+                    string memory = ExplorationSeenMemory.Key(place.Category, place.Name, position);
                     float range = listener.interactionRange;
                     if (!Seen.Contains(memory))
                     {
-                        if (!CanSee(player, origin, hasOrigin, position, nav, seenRange, range))
+                        if (!CanSeeHere(position, range))
                         {
-                            if (unseen++ < UnseenLogged) Unseen.Add(name);
+                            if (unseen++ < UnseenLogged) Unseen.Add(place.Name);
                             continue;
                         }
                         Seen.Add(memory);
+                        if (IsFind(place, cameFrom)) Finds.Add(new ExplorationFind(place.Category, place.Found));
                     }
-                    entries.Add(new ExplorationEntry($"listener:{listener.GetInstanceID()}", name, category, position,
-                        float.IsFinite(range) && range > MinimumArrival ? range : MinimumArrival));
+                    entries.Add(new ExplorationEntry($"listener:{listener.GetInstanceID()}", place.Name, place.Category,
+                        position, float.IsFinite(range) && range > MinimumArrival ? range : MinimumArrival));
                     places++;
                 }
                 catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
             }
         }
 
-        int objectives = 0;
+        int quests = 0;
         try
         {
             Targets.Clear();
@@ -88,10 +112,10 @@ internal static class ExplorationProbe
             if (GuidanceTargetReader.LastFailure is { } failure) LastFailure ??= failure;
             foreach (var target in Targets)
             {
-                entries.Add(new ExplorationEntry($"objective:{target.Id}", target.Name, ExplorationCategory.Objectives,
+                entries.Add(new ExplorationEntry($"objective:{target.Id}", target.Name, ExplorationCategory.Quest,
                     GuidanceRouteProbe.Convert(target.Position),
                     target.ArrivalRadius > MinimumArrival ? target.ArrivalRadius : MinimumArrival));
-                objectives++;
+                quests++;
             }
         }
         catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
@@ -108,7 +132,7 @@ internal static class ExplorationProbe
                 foreach (var contact in Contacts)
                 {
                     string name = string.IsNullOrWhiteSpace(contact.Name) ? ModText.Get("enemy_scan.unnamed") : contact.Name;
-                    entries.Add(new ExplorationEntry($"enemy:{contact.Id}", name, ExplorationCategory.Enemies,
+                    entries.Add(new ExplorationEntry($"enemy:{contact.Id}", name, ExplorationCategory.Enemy,
                         contact.Position, MinimumArrival, contact.Boss));
                     enemies++;
                 }
@@ -116,6 +140,29 @@ internal static class ExplorationProbe
         }
         catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
         finally { Contacts.Clear(); }
+
+        // Other players are listed in sight or not: finding a teammate is the point (D2R).
+        int players = 0;
+        try
+        {
+            Others.Clear();
+            if (NearbyPlayerProbe.TryReadAll(Others))
+                foreach (var other in Others)
+                {
+                    entries.Add(new ExplorationEntry($"player:{other.InstanceId}", other.Name, ExplorationCategory.Player,
+                        GuidanceRouteProbe.Convert(other.Position), MinimumArrival));
+                    players++;
+                }
+            if (NearbyPlayerProbe.LastFailure is { } failure) LastFailure ??= failure;
+        }
+        catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
+        finally { Others.Clear(); }
+
+        int items = 0;
+        try { items = AddItems(CanSeeHere, entries); }
+        catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
+
+        bool death = AddDeathPlace(entries);
 
         int unexplored = 0, rooms = 0, visited = 0;
         string source = "none";
@@ -125,64 +172,89 @@ internal static class ExplorationProbe
         catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
         try
         {
-            string name = ModText.Get("exploration.unexplored_area");
             if (hasRooms)
             {
                 source = "rooms";
                 rooms = Rooms.Count;
-                unexplored = UnexploredAreas.AddRooms(Rooms, MinimapRoomReader.Layout, player, Seen, explored, name,
-                    entries, out visited, Glimpses);
+                unexplored = Tracker.AddRooms(Rooms, MinimapRoomReader.Layout, player, Seen, explored, RoomName,
+                    UnexploredRoomName, entries, Entered, out visited);
+                foreach (var room in Rooms)
+                    if (!room.Revealed && !Seen.Contains(RoomTracker.VisitKey(MinimapRoomReader.Layout, room.Index)))
+                        Unvisited.Add(room);
             }
             else if (explored is not null)
             {
                 source = "frontier";
-                unexplored = UnexploredAreas.AddFrontier(explored, Frontier, name, entries);
+                unexplored = Tracker.AddFrontier(explored, Frontier, UnexploredRoomName, entries);
             }
         }
         catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
         finally { Rooms.Clear(); }
 
-        LastStatus = $"places={places} unseen={unseen} remembered={Seen.Count} objectives={objectives} enemies={enemies} " +
-            $"unexplored={unexplored} source={source} rooms={rooms} visited_rooms={visited} " +
-            $"frontier_pending={explored?.FrontierPending ?? 0} origin={hasOrigin} not_yet_seen=[{string.Join("; ", Unseen)}]";
+        LastStatus = $"places={places} unseen={unseen} remembered={Seen.Count} quests={quests} enemies={enemies} " +
+            $"players={players} items={items} death={death} unexplored={unexplored} source={source} rooms={rooms} " +
+            $"visited_rooms={visited} frontier_pending={explored?.FrontierPending ?? 0} origin={hasOrigin} " +
+            $"not_yet_seen=[{string.Join("; ", Unseen)}]";
         return true;
     }
 
-    // Same identities as the NPC, landmark and service readers; chests and loot keep their own loops (D2R).
-    // Like the NPC probe, any loaded scene counts: quest NPCs can live in an additive scene.
-    private static bool TryDescribe(WorldObjectClickListener listener, out ExplorationCategory category, out string name)
+    // Kept per scene with the seen places until the next death there (D2R keeps the last death place per map).
+    internal static void RecordDeath(Vector3 position)
     {
-        category = default;
-        name = null;
-        if (!IsAlive(listener) || !listener.isActiveAndEnabled || !IsAlive(listener.gameObject) ||
-            !listener.gameObject.activeInHierarchy || !listener.gameObject.scene.IsValid() ||
-            !listener.gameObject.scene.isLoaded || !listener.CanInteract()) return false;
-        string service = WorldServiceReader.ReadServiceKey(listener);
-        // The stash and waypoints also pass the NPC test; objects belong with services and travel.
-        if (service is "service.stash" or "service.forge" or "service.waypoint")
-        {
-            category = service == "service.waypoint" ? ExplorationCategory.Travel : ExplorationCategory.Services;
-            name = ModText.Get(service);
-        }
-        else if (WorldServiceReader.IsNpc(listener))
-        {
-            category = ExplorationCategory.Characters;
-            name = NpcNameReader.Read(listener, out _);
-        }
-        else if (service is not null)
-        {
-            category = ExplorationCategory.Services;
-            name = ModText.Get(service);
-        }
-        else
-        {
-            name = LandmarkProbe.ReadLabel(listener, listener.gameObject.scene, out bool portal, out bool transition);
-            if (transition) { category = ExplorationCategory.Exits; name = ModText.Format("guidance.exit_to", name); }
-            else if (portal) category = ExplorationCategory.Travel;
-            else return false;
-        }
-        return !string.IsNullOrWhiteSpace(name);
+        if (!ExploredMap.Finite(position)) return;
+        Seen.RemovePrefix(DeathPrefix);
+        Seen.Add(string.Create(CultureInfo.InvariantCulture, $"{DeathPrefix}{position.X:F1}|{position.Y:F1}|{position.Z:F1}"));
     }
+
+    // Exits, waypoints and the stash are the D2R fixed places announced when first logged.
+    private static bool IsFind(ExplorationPlace place, string cameFrom) => place.Category switch
+    {
+        ExplorationCategory.Exit => place.Destination is null || place.Destination != cameFrom,
+        ExplorationCategory.Waypoint or ExplorationCategory.Stash => true,
+        _ => false
+    };
+
+    // Loot the game labels and the loot filter shows, in sight now; never remembered.
+    private static int AddItems(Func<Vector3, float, bool> canSee, List<ExplorationEntry> entries)
+    {
+        var all = GroundItemVisuals.all;
+        if (all is null || all.WasCollected) return 0;
+        int count = 0;
+        for (int index = 0; index < all.Count; index++)
+        {
+            var item = all[index];
+            if (!IsAlive(item) || !item.isActiveAndEnabled) continue;
+            var label = item.label;
+            if (!IsAlive(label) || label.lastFilterResult == Rule.RuleOutcome.HIDE) continue;
+            var text = label.itemText;
+            if (!IsAlive(text) || !text.isActiveAndEnabled || text.alpha <= 0) continue;
+            string name = TextUtils.CleanText(text.text);
+            if (string.IsNullOrWhiteSpace(name)) continue;
+            var position = GuidanceRouteProbe.Convert(item.transform.position);
+            if (!canSee(position, 0)) continue;
+            entries.Add(new ExplorationEntry($"item:{item.id}", name, ExplorationCategory.Item, position, MinimumArrival));
+            count++;
+        }
+        return count;
+    }
+
+    private static bool AddDeathPlace(List<ExplorationEntry> entries)
+    {
+        foreach (string key in Seen.WithPrefix(DeathPrefix))
+        {
+            var parts = key.Substring(DeathPrefix.Length).Split('|');
+            if (parts.Length != 3 || !float.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float x) ||
+                !float.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float y) ||
+                !float.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float z)) continue;
+            entries.Add(new ExplorationEntry("death", ModText.Get("exploration.death_place"), ExplorationCategory.Corpse,
+                new Vector3(x, y, z), MinimumArrival));
+            return true;
+        }
+        return false;
+    }
+
+    private static string RoomName(int number) => ModText.Format("exploration.room", number);
+    private static string UnexploredRoomName(int number) => ModText.Format("exploration.unexplored_room", number);
 
     // Seen = within range and in NavMesh line of sight, or right beside the player. Doors and exits may
     // stand off the walkable mesh, so those count only within half the range.
@@ -206,11 +278,16 @@ internal static class ExplorationProbe
     {
         Seen.Clear();
         Rooms.Clear();
+        Unvisited.Clear();
+        Entered.Clear();
+        Finds.Clear();
         Frontier.Clear();
-        Glimpses.Clear();
+        Tracker.Clear();
         MinimapRoomReader.Reset();
+        ExplorationClassifier.Reset();
         Targets.Clear();
         Contacts.Clear();
+        Others.Clear();
         LastFailure = LastStatus = null;
     }
 }

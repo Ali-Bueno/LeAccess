@@ -42,6 +42,7 @@ internal static class WorldLoopBank
         NaturalCueKind.ZoneTransition => "zone_transition",
         NaturalCueKind.Potion => "potion",
         NaturalCueKind.Tome => "tome",
+        NaturalCueKind.UnexploredRoom => "unexplored_room",
         _ => null
     };
 

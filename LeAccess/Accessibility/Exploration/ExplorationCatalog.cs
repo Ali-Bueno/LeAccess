@@ -6,24 +6,32 @@ using LeAccess.Accessibility.Navigation.Guidance;
 
 namespace LeAccess.Accessibility.Exploration;
 
-// Values are saved in seen-place keys, so new categories are appended; Order sets the scanner order.
-internal enum ExplorationCategory { Objectives = 0, Exits = 1, Travel = 2, Characters = 3, Services = 4, Enemies = 5, Unexplored = 6 }
+// The D2R scanner's categories (d2r-access src/entity_radar.h). Values are saved in seen-place keys,
+// so earlier numbers are kept (waypoints had 2, the stash 4) and new ones appended.
+internal enum ExplorationCategory
+{
+    Quest = 0, Exit = 1, Waypoint = 2, Npc = 3, Stash = 4, Enemy = 5, UnexploredRoom = 6, Portal = 7, Room = 8,
+    Player = 9, Corpse = 10, Treasure = 11, Shrine = 12, Interactable = 13, Item = 14
+}
 
 internal readonly record struct ExplorationEntry(string Key, string Name, ExplorationCategory Category,
     Vector3 Position, float ArrivalRadius, bool Boss = false);
 
 internal delegate string ExplorationText(string key, params object[] arguments);
 
-// Category/entry cursor of the right-stick scanner. Entries are nearest first and wrap;
-// like D2R, readouts never give a position in the list or walking steps.
+// Category/entry cursor of the right-stick scanner. Entries are nearest first and wrap; as in D2R a
+// category step says the category's name, never a count, and readouts give the straight line.
 internal sealed class ExplorationCatalog
 {
-    // Up/down on the right stick walks this list, skipping empty categories; as in D2R, unexplored
-    // areas come right after the ways out.
+    // D2R map_survey.cpp CategoryOrder: the ways out, where there is left to go, what the level is for,
+    // who is there, then its scenery. Up/down on the right stick walks it, skipping empty categories.
     internal static readonly ExplorationCategory[] Order =
     {
-        ExplorationCategory.Objectives, ExplorationCategory.Exits, ExplorationCategory.Unexplored,
-        ExplorationCategory.Travel, ExplorationCategory.Characters, ExplorationCategory.Services, ExplorationCategory.Enemies
+        ExplorationCategory.Exit, ExplorationCategory.Portal, ExplorationCategory.Waypoint,
+        ExplorationCategory.UnexploredRoom, ExplorationCategory.Room, ExplorationCategory.Quest,
+        ExplorationCategory.Npc, ExplorationCategory.Player, ExplorationCategory.Corpse, ExplorationCategory.Stash,
+        ExplorationCategory.Enemy, ExplorationCategory.Treasure, ExplorationCategory.Shrine,
+        ExplorationCategory.Interactable, ExplorationCategory.Item
     };
     private ExplorationCategory? _category;
     private string _selected;
@@ -58,8 +66,7 @@ internal sealed class ExplorationCatalog
         _category = present[NextCategory(present, Math.Sign(delta) >= 0 ? 1 : -1)];
         var sorted = Sorted(entries, _category.Value, player);
         _selected = sorted[0].Key;
-        return text("exploration.scanner.category", text(CategoryKey(_category.Value)), sorted.Count) + ". " +
-            Describe(sorted[0], player, forward, right, stepLength, text);
+        return text(CategoryKey(_category.Value)) + ". " + Describe(sorted[0], player, forward, right, stepLength, text);
     }
 
     internal string StepEntry(int delta, IReadOnlyList<ExplorationEntry> entries, Vector3 player,
@@ -94,13 +101,21 @@ internal sealed class ExplorationCatalog
 
     internal static string CategoryKey(ExplorationCategory category) => category switch
     {
-        ExplorationCategory.Objectives => "exploration.category.objectives",
-        ExplorationCategory.Exits => "exploration.category.exits",
-        ExplorationCategory.Travel => "exploration.category.travel",
-        ExplorationCategory.Characters => "exploration.category.characters",
-        ExplorationCategory.Services => "exploration.category.services",
-        ExplorationCategory.Unexplored => "exploration.category.unexplored",
-        _ => "exploration.category.enemies"
+        ExplorationCategory.Quest => "exploration.category.quest",
+        ExplorationCategory.Exit => "exploration.category.exit",
+        ExplorationCategory.Waypoint => "exploration.category.waypoint",
+        ExplorationCategory.Npc => "exploration.category.npc",
+        ExplorationCategory.Stash => "exploration.category.stash",
+        ExplorationCategory.Enemy => "exploration.category.enemy",
+        ExplorationCategory.UnexploredRoom => "exploration.category.unexplored_room",
+        ExplorationCategory.Portal => "exploration.category.portal",
+        ExplorationCategory.Room => "exploration.category.room",
+        ExplorationCategory.Player => "exploration.category.player",
+        ExplorationCategory.Corpse => "exploration.category.corpse",
+        ExplorationCategory.Treasure => "exploration.category.treasure",
+        ExplorationCategory.Shrine => "exploration.category.shrine",
+        ExplorationCategory.Interactable => "exploration.category.interactable",
+        _ => "exploration.category.item"
     };
 
     private int NextCategory(List<ExplorationCategory> present, int direction)

@@ -51,9 +51,9 @@
     "asset": "discovery.wav",
     "source": "sounds/one shot sounds/exploration/discovered.ogg",
     "source_sha256": "B717EE284EDB229830448C22A8797515DF21B1ABDF7200A1BE244D0650C7D100",
-    "asset_sha256": "565AF339D73B659031C809A85ECE5B389D6C5977B3F4D9CEB8650051010C22E1",
+    "asset_sha256": "56EC2375A29264F20378894239FB6D2A0BF6D9927573F929F0697E5580964AA6",
     "start_seconds": 0,
-    "duration_seconds": 0.45
+    "duration_seconds": "whole"
   },
   {
     "asset": "unexplored_room.wav",
@@ -67,9 +67,9 @@
     "asset": "inside_unexplored_room.wav",
     "source": "sounds/item loop sounds/exploration/inside unexplored room.ogg",
     "source_sha256": "7C3AEB12D7AD08728AE048A7084507C8E04CABA99B3637D3CDE204F9D44C77FD",
-    "asset_sha256": "596C0856E4A75632F3102215D148D39D198DCE92EBAFEC9CF19DB00D6431D40E",
+    "asset_sha256": "782C2FEB931BA0D8A54364159EBA4F856C07D8FFB3CEB4B4A711398B8860AD04",
     "start_seconds": 0,
-    "duration_seconds": 0.35
+    "duration_seconds": "whole"
   },
   {
     "asset": "Loops/gold.wav",
@@ -132,6 +132,14 @@
     "source": "Last Epoch_Data/StreamingAssets/UI.bank#sfx_ui_inventory_glyph",
     "source_sha256": "1DF036690B89F1E4EBCA0933DBFC1C856AEFF4FF19CE50356F0834485F843662",
     "asset_sha256": "431276C46F56938D4FFAF52848B5FAF25D86F7EA4A17E3A82ED507F31B38BB8F",
+    "start_seconds": 0,
+    "duration_seconds": "whole"
+  },
+  {
+    "asset": "Loops/unexplored_room.wav",
+    "source": "sounds/item loop sounds/exploration/unexplored room.ogg",
+    "source_sha256": "C7259BBD4BBB25B931D6E1450169F3F6D11DE18617A9571C1AE07070AD8E19A8",
+    "asset_sha256": "C1AB231C5F89A099F946D01DB5E61482844F67068D5B9A1DAD277EF3F870A397",
     "start_seconds": 0,
     "duration_seconds": "whole"
   }

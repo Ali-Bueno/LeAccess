@@ -1,8 +1,9 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-04 night (Claude session): unexplored areas in the scanner (the game's
-minimap rooms, frontier fallback), beacon to them, radar cues no longer wait behind other
-sounds and mark openings toward unexplored ground; see [WHATS_NEXT.md](WHATS_NEXT.md).
+**Updated:** 2026-10-04 (Claude session): the exploration scanner now has the D2R categories,
+speech, new-place announcements and room sounds; earlier that night, unexplored rooms from the
+game's minimap, radar cues no longer waiting behind other sounds and the opening mark; see
+[WHATS_NEXT.md](WHATS_NEXT.md).
 Earlier, 2026-10-04: menu fixes from the user's report — map travel
 speech, passive trees/mastery overview and skill strip, inventory focus after drops,
 equipment comparison, NPC lines no longer cut by the response menu. Earlier, 2026-10-03: Spam fixes (vitals, places/NPCs, generic
@@ -92,7 +93,7 @@ requested. No release or new ZIP has been requested.
 | Quest ping | Removed as requested. Optional continuous sonar now also mutes in non-pausing menus and after failed queries. 48 radar/audio checks. |
 | Nearest enemy | Owned visual display/ActorData; 156 checks. Latest log announces Reptador chamuscado and Ojo de Rahyeh offline. Audible results still need confirmation. |
 | Enemy cues | D2R port, on by default: ordinary enemies growl, nearest boss/miniboss swoops; max three streams in targeting range and walkable line of sight, faster when closer, camera-relative pan, shared audio queue with radar/NPC/world sounds; off-mesh bosses still sound, brief absences keep cadence. 141 checks; listening pending. [Details](reference/enemy-cues.md) |
-| Exploration scanner | New 2026-10-03, D2R port: right stick (gameplay only) steps categories/entries of seen places, shown quest markers and enemies; hold Create = mod menu (Square vitals, Cross beacon) with the game's button actions paused while held; beacon routes only through explored ground. Explored ground and seen places saved per character (online/offline keys) in `BepInEx/config/LeAccess/Exploration`. User confirmed it works offline (2026-10-04); additive-scene NPCs and stash classification fixed after. New category *Zonas sin explorar* (D2R unexplored rooms): minimap persistence volumes not entered but glimpsed, or explored-ground edges where a scene has none; the beacon leads there and says "Zona explorada". Catalog 45, input 27, map/beacon/store/unexplored 342, vitals input 28 checks. [Design](reference/exploration-mode.md), [unexplored areas](reference/exploration-mode.md#unexplored-areas-2026-10-04). Online, saved-exploration and unexplored-area listening pending. |
+| Exploration scanner | D2R port, right stick in gameplay; Create+Square vitals, Create+Cross beacon through explored ground. Since 2026-10-04 the D2R categories in D2R order (exit, portal, waypoint, unexplored room, room, quest, NPC, player, corpse/death place, stash, enemy, treasure, shrine, object, item), D2R speech, "the radar has logged a new exit/place" with chime, minimap rooms as "sala N"/"sala inexplorada N" with the D2R room loop and entry cue. Saved per character (`Exploration/*.bin`). Exploration 357, catalog 45, input 27 checks. [Design](reference/exploration-mode.md), [D2R categories](reference/exploration-mode.md#d2r-categories-2026-10-04). Offline scanner/beacon confirmed 2026-10-04; categories, sounds and online listening pending. |
 | Enemy scan | F7/right-stick trigger removed 2026-10-03; probe, report and hostile registry (20 checks) kept as the scanner's enemies category. [Details](reference/enemy-scan.md) |
 | Boss life | D2R port: bosses/minibosses read "Name, 74 percent" on band falls, death once as 0; on-screen bosses only, one step below 10 percent; first sighting silent, queued speech. 31 checks. Online bar scale (`IOverheadBar.HealthNormalized`) and live bosses unverified. [Details](reference/boss-life.md) |
 | Life/mana | Falls read the band; one-band rises (regeneration between casts) stay silent, ending the 62/75 mana spam; low mana never interrupts and below 10 percent speaks only its first step and empty. [Rules](reference/vitals-api.md). Potion charges speak on use/pickup and in the R / Create+Square report (D2R belt port; Create alone no longer reports); the report also lists HUD debuffs. 513 checks. Online hierarchy, controller mapping and listening pending. |
@@ -105,9 +106,9 @@ requested. No release or new ZIP has been requested.
 
 ## Validation and references
 
-- `dotnet build LeAccess/LeAccess.csproj --no-restore`: zero warnings/errors; deployed with the game stopped (2026-10-04 night).
-- All **58 test suites / 58,732 checks** pass (unexplored areas, radar mark and terrain priority included). Native safety unchanged: **66 declarations / 65 targets**; no new hooks.
-- Built and installed plugin SHA-256 match: `721C68A6CA994E68E24478D0765D96DE58065D4CA2D79A8BBCD4C3A272A45F70`. Previous plugin, config and exploration saves backed up to `C:\Users\ali-b\Documents\LeAccess backups\pre-unexplored-a921963-20261004`.
+- `dotnet build LeAccess/LeAccess.csproj --no-restore`: zero warnings/errors; deployed with the game stopped (2026-10-04, D2R categories).
+- All **58 test suites / 58,771 checks** pass. Native safety unchanged: **66 declarations / 65 targets**; no new hooks.
+- Built and installed plugin SHA-256 match: `B581321F8EF4A5D2DF96C9F0EBA8CD03B7581FE1E22A4F475207AFE8CC5835E3`. Previous plugin, config and exploration saves backed up to `C:\Users\ali-b\Documents\LeAccess backups\pre-d2r-categories-5c442bf-20261004`.
 - Both installed configuration files and both personal translation catalogs retain their original hashes. No game or audio device launched; host tests do not establish live UI visibility or audible output.
 
 Current-build regeneration and native audit: [Steam port notes](reference/steam-port.md).

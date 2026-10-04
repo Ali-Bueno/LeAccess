@@ -182,15 +182,17 @@ internal static class ExplorationBeacon
         if (State.LockedKey == null || !TryAxes(out var forward, out var right)) return null;
         _last = State.Tick(player, target, forward, right, now, Router);
         string name = _last.Target.Name;
-        // An unexplored area leaves the scanner once entered or seen: that is its arrival.
-        bool area = UnexploredAreas.IsUnexplored(_last.Target.Key);
+        // An unexplored room leaves the scanner once entered (D2R arrives on entry, its room cue the sound);
+        // a frontier edge once seen.
+        bool unexplored = RoomTracker.IsUnexplored(_last.Target.Key);
         switch (_last.Release)
         {
             case BeaconRelease.Arrived:
-            case BeaconRelease.TargetLost when area:
-                Released(area ? "explored" : "arrived", name);
-                BeaconAudio.Queue(BeaconSound.Arrived);
-                return area ? ModText.Get("exploration.beacon.area_explored") : ModText.Format("exploration.beacon.arrived", name);
+            case BeaconRelease.TargetLost when unexplored:
+                Released("arrived", name);
+                if (!_last.Target.Key.StartsWith(RoomTracker.UnexploredKeyPrefix, StringComparison.Ordinal))
+                    BeaconAudio.Queue(BeaconSound.Arrived);
+                return ModText.Format("exploration.beacon.arrived", name);
             case BeaconRelease.RouteLost:
                 _routeLosses++;
                 Released($"route-lost failure={_map.LastFailure ?? "none"}", name);

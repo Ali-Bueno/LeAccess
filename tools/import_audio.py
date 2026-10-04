@@ -35,9 +35,10 @@ CLIPS = (
     ("stash", d2r("item loop sounds/loot/stash.ogg"), 0.24),
     ("portal", PORTAL, 0.30),
     ("zone_transition", ZONE_TRANSITION, 0.30),
-    ("discovery", d2r("one shot sounds/exploration/discovered.ogg"), 0.45),
+    # Exploration (D2R docs/exploration.md): the discovery and room-entry cues play whole, once.
+    ("discovery", d2r("one shot sounds/exploration/discovered.ogg"), None),
     ("unexplored_room", d2r("item loop sounds/exploration/unexplored room.ogg"), 0.35),
-    ("inside_unexplored_room", d2r("item loop sounds/exploration/inside unexplored room.ogg"), 0.35),
+    ("inside_unexplored_room", d2r("item loop sounds/exploration/inside unexplored room.ogg"), None),
 )
 
 # Whole recordings for the continuous world loop mixer (D2RAccess item_audio.cpp loops each file).
@@ -50,6 +51,7 @@ LOOPS = (
     ("zone_transition", ZONE_TRANSITION),
     ("potion", le("Environmental", "sfx_ui_potion")),
     ("tome", le("UI", "sfx_ui_inventory_glyph")),
+    ("unexplored_room", d2r("item loop sounds/exploration/unexplored room.ogg")),
 )
 
 

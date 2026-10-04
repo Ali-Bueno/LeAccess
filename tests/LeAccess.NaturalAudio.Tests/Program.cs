@@ -46,7 +46,8 @@ if (args.Contains("--missing"))
 }
 else
 {
-    double[] durations = { .30, .30, .24, .24, .30, .30, .45, .35, .35 };
+    // Excerpts, except the D2R discovery and room-entry cues, which play whole (frames of the shipped WAVs).
+    double[] durations = { .30, .30, .24, .24, .30, .30, 136768 / 48000.0, .35, 44480 / 48000.0 };
     var signals = new List<float[]>();
     foreach (var loopOnly in new[] { NaturalCueKind.Potion, NaturalCueKind.Tome })
         Check(!NaturalCueBank.TryBuild(loopOnly, 0, 1, 1, out _), $"{loopOnly} has no excerpt; it only loops");

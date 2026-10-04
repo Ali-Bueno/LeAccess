@@ -139,7 +139,10 @@ internal static class ExplorationPersistence
         foreach (var scope in ExplorationBeacon.ExploredGround.FixedScopes)
             if (scope.Value.CellCount > 0) snapshot.Explored[scope.Key] = scope.Value.Points.ToList();
         foreach (var scope in ExplorationProbe.SeenMemory.FixedScopes())
-            if (scope.Value.Count > 0) snapshot.Seen[scope.Key] = scope.Value.ToList();
+        {
+            var keys = scope.Value.Where(ExplorationSeenMemory.Persistent).ToList();
+            if (keys.Count > 0) snapshot.Seen[scope.Key] = keys;
+        }
         string path = PathFor(_key), temp = path + ".tmp";
         Directory.CreateDirectory(Path.GetDirectoryName(path));
         long size;

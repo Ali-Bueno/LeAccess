@@ -81,15 +81,20 @@ Settings announce the tab and each control's name/value, including sound sliders
 and visible challenge states when no button is available. Descriptions remain
 available with right-stick-up.
 
-During gameplay the right stick is the [exploration scanner](reference/exploration-mode.md):
-push it up or down to change category (objectives, exits, unexplored areas, travel,
-characters, services, enemies) and left or right to step through that category's entries,
-nearest first. Each entry gives its name, distance in steps (one step is the character's
+During gameplay the right stick is the [exploration scanner](reference/exploration-mode.md),
+a port of the Diablo 2 mod's: push it up or down to change category and left or right to
+step through that category's entries, nearest first. The categories and their order are
+D2R's: exit, portal, waypoint, unexplored room, room, quest, NPC, player, corpse (where you
+last died), stash, enemy, treasure (chests), shrine, object (levers, notes, the forge and
+other interactables) and item (loot on the ground). A category step says its name and then
+its nearest entry; each entry gives its name, distance in steps (one step is the character's
 width) and one of eight screen directions. Places are listed once you have seen them; quest
-markers and enemies as the game shows them. Unexplored areas are the game's minimap rooms
-you have glimpsed but never entered (or, in maps without them, edges where unseen ground
-continues), so you can head for new ground; the beacon leads to one and says "area explored"
-when you reach it. Keyboard: Ctrl+Numpad 8/2 and 4/6.
+markers, enemies and other players as the game shows them. Rooms are the game's minimap
+rooms: "room N" once entered, "unexplored room N" when you have glimpsed it but never
+entered (in maps without them, edges where unseen ground continues). As in D2R, the first
+sighting of an exit, waypoint or the stash says "the radar has logged a new exit/place" with a
+chime, the nearest unentered room hums from its nearest point, and entering one plays a short
+cue. Keyboard: Ctrl+Numpad 8/2 and 4/6.
 Hold **Create** (Share) for the mod menu: **Square** reads life, mana and potions, **Cross**
 starts the beacon toward the selected entry (again cancels). While Create is held the
 game's button actions pause, so Square and Cross do not cast or interact. The beacon pings

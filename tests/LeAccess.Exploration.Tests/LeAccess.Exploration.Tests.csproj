@@ -12,7 +12,7 @@
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExploredMapRouting.cs" Link="ExploredMapRouting.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExploredMemory.cs" Link="ExploredMemory.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExploredFrontier.cs" Link="ExploredFrontier.cs" />
-    <Compile Include="../../LeAccess/Accessibility/Exploration/UnexploredAreas.cs" Link="UnexploredAreas.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Exploration/RoomTracker.cs" Link="RoomTracker.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationCatalog.cs" Link="ExplorationCatalog.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationSeenMemory.cs" Link="ExplorationSeenMemory.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationStore.cs" Link="ExplorationStore.cs" />

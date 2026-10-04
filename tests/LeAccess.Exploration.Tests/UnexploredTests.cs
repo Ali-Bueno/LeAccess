@@ -5,7 +5,10 @@ using static Program;
 internal static class UnexploredTests
 {
     private const float TestRadius = 8f;
-    private const string Name = "unexplored-area-name";
+
+    // The test's own names, built from the room number like the catalog's templates.
+    private static string RoomName(int number) => $"room-{number}";
+    private static string UnexploredName(int number) => $"unexplored-{number}";
 
     internal static void Run()
     {
@@ -14,7 +17,9 @@ internal static class UnexploredTests
         Doorway();
         Budget();
         Rooms();
+        Entering();
         Glimpses();
+        Nearest();
         Keys();
     }
 
@@ -37,12 +42,17 @@ internal static class UnexploredTests
         Check(areas[0].X != first.X, "the explored edge left its old area");
 
         var entries = new List<ExplorationEntry>();
-        Check(UnexploredAreas.AddFrontier(map, areas, Name, entries) == 1, "the frontier becomes one scanner entry");
+        var tracker = new RoomTracker();
+        Check(tracker.AddFrontier(map, areas, UnexploredName, entries) == 1, "the frontier becomes one scanner entry");
         var entry = entries[0];
-        Check(entry.Category == ExplorationCategory.Unexplored && entry.Name == Name, "frontier entries are unexplored areas");
-        Check(entry.Key == $"{UnexploredAreas.FrontierKeyPrefix}{areas[0].X},{areas[0].Z},{areas[0].Floor}", $"frontier key ({entry.Key})");
+        Check(entry.Category == ExplorationCategory.UnexploredRoom && entry.Name == UnexploredName(1),
+            $"frontier entries are numbered unexplored rooms ({entry.Name})");
+        Check(entry.Key == $"{RoomTracker.FrontierKeyPrefix}{areas[0].X},{areas[0].Z},{areas[0].Floor}", $"frontier key ({entry.Key})");
         Near(map.CellSize * ExploredMap.FrontierArrivalCells, entry.ArrivalRadius, 1e-6, "frontier arrival");
-        Check(UnexploredAreas.AddFrontier(null, areas, Name, entries) == 0, "no map, no frontier");
+        Check(tracker.AddFrontier(null, areas, UnexploredName, entries) == 0, "no map, no frontier");
+        entries.Clear();
+        tracker.AddFrontier(map, new List<FrontierArea>(), UnexploredName, entries);
+        Check(entries.Count == 1 && entries[0].Name == UnexploredName(1), "an area keeps its number on the same map");
 
         var route = MapTests.Router(map, grid);
         Check(route(new Vector3(30.5f, 0, 5f), entry.Position, entry.ArrivalRadius, out var path, out _) && path.Count >= 2,
@@ -110,33 +120,72 @@ internal static class UnexploredTests
             new(6, new Vector3(15, 20, 5), 6, false),
         };
         const string layout = "1.7";
+        var tracker = new RoomTracker();
         var entries = new List<ExplorationEntry>();
-        int listed = UnexploredAreas.AddRooms(rooms, layout, new Vector3(5, 0, 5), memory, map, Name, entries, out int visited);
-        Check(listed == 1 && entries.Count == 1, $"only the seen, unentered room is listed ({listed})");
-        Check(visited == 2, $"the room stood in and the game-revealed room count as visited ({visited})");
-        var entry = entries[0];
-        Check(entry.Key == UnexploredAreas.RoomKeyPrefix + 1 && entry.Category == ExplorationCategory.Unexplored &&
-            entry.Name == Name && entry.Position == rooms[1].Centre, $"room entry identity ({entry.Key})");
+        int Add(Vector3 player, string version, RoomTracker using_, out int seen)
+        {
+            entries.Clear();
+            return using_.AddRooms(rooms, version, player, memory, map, RoomName, UnexploredName, entries, null, out seen);
+        }
+        int listed = Add(new Vector3(5, 0, 5), layout, tracker, out int visited);
+        var unexplored = entries.Where(e => e.Category == ExplorationCategory.UnexploredRoom).ToList();
+        var known = entries.Where(e => e.Category == ExplorationCategory.Room).ToList();
+        Check(listed == 1 && unexplored.Count == 1, $"only the seen, unentered room is unexplored ({listed})");
+        Check(visited == 2 && known.Count == 2, $"the room stood in and the game-revealed room are rooms ({visited})");
+        var entry = unexplored[0];
+        Check(entry.Key == RoomTracker.UnexploredKeyPrefix + 1 && entry.Name == UnexploredName(2) &&
+            entry.Position == rooms[1].Centre, $"unexplored room identity and number ({entry.Key}, {entry.Name})");
         Near(6, entry.ArrivalRadius, 1e-6, "a room is reached on entering it");
-        Check(memory.Contains(UnexploredAreas.VisitKey(layout, 0)), "standing in a room remembers it");
+        Check(known.Any(e => e.Key == RoomTracker.RoomKeyPrefix + 0 && e.Name == RoomName(1)) &&
+            known.Any(e => e.Key == RoomTracker.RoomKeyPrefix + 3 && e.Name == RoomName(4)), "visited rooms are numbered from one");
+        Check(memory.Contains(RoomTracker.VisitKey(layout, 0)), "standing in a room remembers it");
 
+        Add(new Vector3(40, 0, 5), layout, tracker, out visited);
+        Check(entries.Count(e => e.Category == ExplorationCategory.UnexploredRoom) == 1 && visited == 2,
+            "a visited room stays explored after leaving it");
+        Add(new Vector3(16, 0, 6), layout, tracker, out visited);
+        Check(entries.All(e => e.Category == ExplorationCategory.Room) && visited == 3, "entering the listed room explores it");
+        Add(new Vector3(40, 0, 5), "2.7", tracker, out visited);
+        Check(entries.Count(e => e.Category == ExplorationCategory.UnexploredRoom) == 2 && visited == 1,
+            "a changed volume layout does not reuse old visits");
         entries.Clear();
-        UnexploredAreas.AddRooms(rooms, layout, new Vector3(40, 0, 5), memory, map, Name, entries, out visited);
-        Check(entries.Count == 1 && visited == 2, "a visited room stays explored after leaving it");
-        entries.Clear();
-        UnexploredAreas.AddRooms(rooms, layout, new Vector3(16, 0, 6), memory, map, Name, entries, out visited);
-        Check(entries.Count == 0 && visited == 3, "entering the listed room explores it");
-        entries.Clear();
-        UnexploredAreas.AddRooms(rooms, "2.7", new Vector3(40, 0, 5), memory, map, Name, entries, out visited);
-        Check(entries.Count == 2 && visited == 1, "a changed volume layout does not reuse old visits");
-        entries.Clear();
-        Check(UnexploredAreas.AddRooms(rooms, layout, new Vector3(40, 0, 5), memory, null, Name, entries, out _) == 0,
-            "no explored ground, no listed room");
-        Check(UnexploredAreas.AddRooms(null, layout, Vector3.Zero, memory, map, Name, entries, out visited) == 0 && visited == 0,
-            "no rooms read");
+        Check(new RoomTracker().AddRooms(rooms, layout, new Vector3(40, 0, 5), memory, null, RoomName, UnexploredName,
+            entries, null, out _) == 0, "no explored ground, no unexplored room");
+        Check(tracker.AddRooms(null, layout, Vector3.Zero, memory, map, RoomName, UnexploredName, entries, null, out visited) == 0 &&
+            visited == 0, "no rooms read");
         Check(map.AnyExploredWithin(new Vector3(16, 0, 5), 1.5f) && !map.AnyExploredWithin(new Vector3(16, 0, 5), 0.5f),
             "explored ground inside a sphere is found by distance");
         Check(!map.AnyExploredWithin(new Vector3(15, 0, 5), float.NaN), "an invalid radius finds nothing");
+    }
+
+    private static void Entering()
+    {
+        var map = new ExploredMap { ExploreRadius = TestRadius };
+        map.Import(new[] { new Vector3(15, 0, 5) });
+        var memory = new ExplorationSeenMemory();
+        memory.Enter("Z62");
+        var rooms = new List<MinimapRoom> { new(0, new Vector3(5, 0, 5), 6, false), new(1, new Vector3(15, 0, 5), 6, false) };
+        var tracker = new RoomTracker();
+        var entries = new List<ExplorationEntry>();
+        var entered = new List<MinimapRoom>();
+        void Pass(IReadOnlyList<MinimapRoom> list, string layout, Vector3 player)
+        {
+            entries.Clear();
+            tracker.AddRooms(list, layout, player, memory, map, RoomName, UnexploredName, entries, entered, out _);
+        }
+        Pass(rooms, "1.2", new Vector3(5, 0, 5));
+        Check(entered.Count == 0, "the room the player starts in is the silent baseline");
+        Pass(rooms, "1.2", new Vector3(16, 0, 5));
+        Check(entered.Count == 1 && entered[0].Index == 1, "stepping into an unvisited room is an entry");
+        entered.Clear();
+        Pass(rooms, "1.2", new Vector3(5, 0, 5));
+        Pass(rooms, "1.2", new Vector3(16, 0, 5));
+        Check(entered.Count == 0, "returning to a visited room is silent");
+        var revealed = new List<MinimapRoom> { rooms[0], rooms[1], new(2, new Vector3(25, 0, 5), 6, false) };
+        Pass(revealed, "1.3", new Vector3(16, 0, 5));
+        revealed[2] = revealed[2] with { Revealed = true };
+        Pass(revealed, "1.3", new Vector3(26, 0, 5));
+        Check(entered.Count == 1 && entered[0].Index == 2, "the game revealing the room as it is entered still counts");
     }
 
     private static void Glimpses()
@@ -144,30 +193,63 @@ internal static class UnexploredTests
         var map = new ExploredMap { ExploreRadius = TestRadius };
         map.Import(new[] { new Vector3(100, 0, 5), new Vector3(5, 0, 5) });
         var rooms = new List<MinimapRoom> { new(0, new Vector3(100, 0, 5), 6, false), new(1, new Vector3(140, 0, 5), 6, false) };
-        var glimpses = new RoomGlimpses();
+        var tracker = new RoomTracker();
         var entries = new List<ExplorationEntry>();
         var player = new Vector3(5, 0, 5);
-        UnexploredAreas.AddRooms(rooms, "1.2", player, null, map, Name, entries, out _, glimpses);
-        Check(entries.Count == 1 && entries[0].Key == UnexploredAreas.RoomKeyPrefix + 0,
+        int Unexplored(Vector3 at, ExploredMap ground)
+        {
+            entries.Clear();
+            return tracker.AddRooms(rooms, "1.2", at, null, ground, RoomName, UnexploredName, entries, null, out _);
+        }
+        Check(Unexplored(player, map) == 1 && entries.Any(e => e.Key == RoomTracker.UnexploredKeyPrefix + 0),
             "the first pass over a map finds saved ground in far rooms");
         map.Import(new[] { new Vector3(140, 0, 5) });
-        entries.Clear();
-        UnexploredAreas.AddRooms(rooms, "1.2", player, null, map, Name, entries, out _, glimpses);
-        Check(entries.Count == 1, "later passes search only rooms within reach of the player");
-        entries.Clear();
-        UnexploredAreas.AddRooms(rooms, "1.2", new Vector3(140, 0, 25), null, map, Name, entries, out _, glimpses);
-        Check(entries.Count == 2, "a room gains its glimpse once the player comes within reach");
-        var other = new ExploredMap { ExploreRadius = TestRadius };
-        entries.Clear();
-        UnexploredAreas.AddRooms(rooms, "1.2", player, null, other, Name, entries, out _, glimpses);
-        Check(entries.Count == 0, "another map starts its glimpses over");
+        Check(Unexplored(player, map) == 1, "later passes search only rooms within reach of the player");
+        Check(Unexplored(new Vector3(140, 0, 25), map) == 2, "a room gains its glimpse once the player comes within reach");
+        Check(Unexplored(player, new ExploredMap { ExploreRadius = TestRadius }) == 0, "another map starts its glimpses over");
+    }
+
+    private static void Nearest()
+    {
+        var forward = new Vector3(0, 0, 1);
+        var right = new Vector3(1, 0, 0);
+        var rooms = new List<MinimapRoom>
+        {
+            new(0, new Vector3(0, 0, 0), 5, false),
+            new(1, new Vector3(20, 0, 0), 5, false),
+            new(2, new Vector3(0, 0, -30), 5, false),
+        };
+        Check(RoomTracker.TryNearest(rooms, new Vector3(0, 0, 3), forward, right, out float distance, out float pan, out float front) &&
+            Math.Abs(distance - (MathF.Sqrt(409) - 5)) < 1e-3, $"the room the player stands in never sounds ({distance})");
+        Check(RoomTracker.TryNearest(rooms, new Vector3(9, 0, 0), forward, right, out distance, out pan, out front) &&
+            Math.Abs(distance - 4) < 1e-3 && pan < -0.99f, $"distance and pan go to the nearest point ({distance}, {pan})");
+        Check(RoomTracker.TryNearest(rooms, new Vector3(0, 0, -20), forward, right, out distance, out pan, out front) &&
+            front < 0 && Math.Abs(pan) < 1e-3, $"a room behind has negative front ({front})");
+        Check(!RoomTracker.TryNearest(new List<MinimapRoom>(), Vector3.Zero, forward, right, out _, out _, out _), "no rooms, no loop");
+        Check(!RoomTracker.TryNearest(rooms, new Vector3(float.NaN, 0, 0), forward, right, out _, out _, out _), "no player, no loop");
     }
 
     private static void Keys()
     {
-        Check(UnexploredAreas.IsUnexplored(UnexploredAreas.RoomKeyPrefix + 3), "room keys are unexplored areas");
-        Check(UnexploredAreas.IsUnexplored(UnexploredAreas.FrontierKeyPrefix + "1,2,0"), "frontier keys are unexplored areas");
-        Check(!UnexploredAreas.IsUnexplored("listener:5") && !UnexploredAreas.IsUnexplored(null), "places are not");
+        Check(RoomTracker.IsUnexplored(RoomTracker.UnexploredKeyPrefix + 3), "unexplored room keys are unexplored");
+        Check(RoomTracker.IsUnexplored(RoomTracker.FrontierKeyPrefix + "1,2,0"), "frontier keys are unexplored");
+        Check(!RoomTracker.IsUnexplored(RoomTracker.RoomKeyPrefix + 3), "a visited room is not");
+        Check(!RoomTracker.IsUnexplored("listener:5") && !RoomTracker.IsUnexplored(null), "places are not");
+        Check(ExplorationSeenMemory.Persistent("1|Salida hacia X|3|4") && ExplorationSeenMemory.Persistent("2|Punto|0|0") &&
+            ExplorationSeenMemory.Persistent("4|Alijo|0|0") && ExplorationSeenMemory.Persistent("3|Maeve") &&
+            ExplorationSeenMemory.Persistent("room|1.61|4") && ExplorationSeenMemory.Persistent("death|1.0|2.0|3.0"),
+            "exits, waypoints, the stash, NPCs, rooms and the death place are saved");
+        Check(!ExplorationSeenMemory.Persistent("7|Portal|0|0") && !ExplorationSeenMemory.Persistent("11|Cofre|0|0") &&
+            !ExplorationSeenMemory.Persistent("12|Santuario|0|0") && !ExplorationSeenMemory.Persistent("13|Nota|0|0") &&
+            !ExplorationSeenMemory.Persistent("x") && !ExplorationSeenMemory.Persistent(null),
+            "portals, chests, shrines and other objects are not saved (D2R)");
+        var memory = new ExplorationSeenMemory();
+        memory.Enter("Z62");
+        memory.Add("death|1.0|0.0|2.0");
+        memory.Add("room|1.61|3");
+        int version = memory.Version;
+        Check(memory.RemovePrefix("death|") == 1 && memory.Version == version + 1 && !memory.WithPrefix("death|").Any() &&
+            memory.Contains("room|1.61|3"), "a new death replaces only the old death place");
     }
 
     private static List<FrontierArea> Frontier(ExploredMap map, FakeGrid grid)

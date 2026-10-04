@@ -29,6 +29,10 @@ internal static class WorldCueSounds
     private static ConfigEntry<int> _loopRange;
     private static ConfigEntry<bool> _loops;
     private static LoopAudioOutput _loopAudio;
+
+    // Shared with the exploration room loop, which follows the world sounds' range and volume.
+    internal static float LoopRange => _loopRange == null ? DefaultLoopRangeMetres : Math.Clamp(_loopRange.Value, 0, MaxLoopRangeMetres);
+    internal static float Volume => _enabled?.Value == true && _volume != null ? _volume.Value / 100f : 0;
     private static double _nextLoopRetry;
     private static readonly List<LoopVoice> LoopVoices = new();
     private static readonly HashSet<int> LoggedLoops = new();
