@@ -69,7 +69,7 @@ internal static class WaypointReader
         return fragments;
     }
 
-    private static string ReadName(UIWaypoint waypoint)
+    internal static string ReadName(UIWaypoint waypoint)
     {
         if (waypoint.TryCast<UIWaypointStandard>() is { } standard) return ReadLabel(standard.locationLabel);
         return IsAlive(waypoint.label) ? TextUtils.GetTextFromHierarchy(waypoint.label) : null;

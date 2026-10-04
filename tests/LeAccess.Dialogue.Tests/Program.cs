@@ -418,6 +418,14 @@ internal static class Program
         Check(!DialogueAnnouncer.TakeLineFollower(), "A rejected line does not hold back the next focus");
         ScreenReader.OutputAccepted = true;
         Tick(); Tick();
+        Check(DialogueAnnouncer.TakeLineFollower(), "The continue button takes the recovered line's follower");
+        var responseRoot = ui.gameObject.Child();
+        ui.dialogue.responseMenu = new TextMeshProResponseMenuControls { panel = responseRoot.Add(new Graphic()) };
+        responseRoot.Child().Add(new TMP_Text { text = "Aceptar" });
+        DialogueAnnouncer.ShowResponses(ui);
+        Check(DialogueAnnouncer.TakeLineFollower(), "The response menu replacing the continue button queues its first focus");
+        DialogueAnnouncer.ShowResponses(ui); Tick();
+        Check(!DialogueAnnouncer.TakeLineFollower(), "Repeated response callbacks and polling do not re-arm the follower");
         DialogueAnnouncer.Reset();
         Check(!DialogueAnnouncer.TakeLineFollower(), "Closing the conversation drops a pending follower");
     }

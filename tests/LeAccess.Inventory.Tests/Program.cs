@@ -136,8 +136,12 @@ modern._prefixesSection = prefix;
 var suffix = Label("+8 fuerza", scrollRoot.transform);
 modern._suffixesSection = suffix;
 modern._requirements = Label("Requiere nivel 12", modern.transform);
-modern._combinedDifferencesSection = Label("Comparación: -50 daño", modern.transform);
-modern._prompts = Label("Más información. Equipar. Soltar", modern.transform);
+var differences = new LE.UI.Tooltips.ItemTooltipModifiersSection();
+differences.transform.parent = modern.transform;
+var differenceLabel = Label("Comparación: -50 daño", differences.transform);
+modern._combinedDifferencesSection = differences;
+var promptLabel = Label("Más información. Equipar. Soltar", modern.transform);
+modern._prompts = promptLabel;
 modern._info = new LE.UI.Tooltips.ItemTooltipInfo { _Item_k__BackingField = item };
 system._itemTooltip = modern;
 system._activeItemTooltipParameters = parameters;
@@ -147,7 +151,7 @@ system.ActiveItemTooltipRect = modern.RectTransform;
 Check(ItemTooltipReader.TryReadForItem(item, container.gameObject, out var modernText) &&
     modernText == "Espada del fuego. Espada de una mano. Raro. +20 daño cuerpo a cuerpo. +8 fuerza. Requiere nivel 12",
     "V2 reads typed primary sections including expanded stats clipped by its own scroll viewport");
-Check(!modernText.Contains("Comparación") && !modernText.Contains("Equipar"),
+Check(!modernText.Contains(differenceLabel.text) && !modernText.Contains(promptLabel.text),
     "Primary inventory details exclude comparison deltas and separately owned action prompts");
 suffix.gameObject.Visible = false;
 Check(ItemTooltipReader.TryReadForItem(item, container.gameObject, out var filtered) && !filtered.Contains("+8"),
@@ -196,6 +200,55 @@ Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last() == modern
 prefix.text = "+25 daño cuerpo a cuerpo";
 UpdateTwice();
 Check(ScreenReader.Messages.Count == 2, "Changed primary V2 stats remain silent automatically");
+
+LE.UI.Tooltips.ItemTooltipModifier Modifier(string text, UnityEngine.Transform parent,
+    LE.UI.Tooltips.ItemTooltipAssetList.ItemTooltipModifierIconSprite icon)
+{
+    var modifier = new LE.UI.Tooltips.ItemTooltipModifier { Info = new() { IconSprite = icon } };
+    modifier.transform.parent = parent;
+    modifier._modifierText = Label(text, modifier.transform);
+    return modifier;
+}
+var compared = new LE.UI.Tooltips.ItemTooltip
+{ _info = new LE.UI.Tooltips.ItemTooltipInfo { _Item_k__BackingField = new ItemDataUnpacked { Id = "equipped" } } };
+compared._name = Label("Espada vieja", compared.transform);
+Modifier("+5 daño", differences.transform, LE.UI.Tooltips.ItemTooltipAssetList.ItemTooltipModifierIconSprite.Compare_CombinedIncrease);
+Modifier("-3 fuerza", differences.transform, LE.UI.Tooltips.ItemTooltipAssetList.ItemTooltipModifierIconSprite.Compare_CombinedDecrease);
+var raised = Modifier("+8 fuerza", modern.transform, LE.UI.Tooltips.ItemTooltipAssetList.ItemTooltipModifierIconSprite.Plain);
+var lost = Modifier("+10 vida", compared.transform, LE.UI.Tooltips.ItemTooltipAssetList.ItemTooltipModifierIconSprite.Plain);
+var same = Modifier("+1 nivel", modern.transform, LE.UI.Tooltips.ItemTooltipAssetList.ItemTooltipModifierIconSprite.Plain);
+ItemComparisonIcons.Set(raised, LE.UI.Tooltips.ItemTooltipAssetList.ItemTooltipModifierIconSprite.Compare_Increase);
+ItemComparisonIcons.Set(lost, LE.UI.Tooltips.ItemTooltipAssetList.ItemTooltipModifierIconSprite.Compare_Removed);
+ItemComparisonIcons.Set(same, LE.UI.Tooltips.ItemTooltipAssetList.ItemTooltipModifierIconSprite.Compare_NoChange);
+system._itemTooltipComparison = compared;
+system._activeComparisonItemTooltipInfo = compared._info;
+string Text(string key, params object[] args) => LeAccess.I18n.ModText.Format(key, args);
+string brief = ScreenContentTracker.Combine(new[] { item.FullName, item.LocalisedBaseTypeName });
+string comparedWith = Text("item.comparison_with", compared._name.text);
+string comparisonSpeech = ScreenContentTracker.Combine(new[] { comparedWith,
+    Text("item.compare_differences", string.Join("; ", Text("item.compare_increase", "+5 daño"), Text("item.compare_decrease", "-3 fuerza"))),
+    Text("item.compare_changes", string.Join("; ", Text("item.compare_increase", raised._modifierText.text),
+        Text("item.compare_removed", lost._modifierText.text))) });
+UpdateTwice();
+Check(ScreenReader.Messages.Count == 3 && ScreenReader.Messages.Last() == comparisonSpeech,
+    "Holding compare reads the equipped item, combined differences and changed lines with their visual icons: " + ScreenReader.Messages.Last());
+UpdateTwice();
+Check(ScreenReader.Messages.Count == 3, "A held comparison speaks once");
+compared.gameObject.Visible = false; UpdateTwice(); compared.gameObject.Visible = true; UpdateTwice();
+Check(ScreenReader.Messages.Count == 4 && ScreenReader.Messages.Last() == comparisonSpeech, "Pressing compare again reads it again");
+ItemComparisonIcons.Clear(raised);
+compared.gameObject.Visible = false; UpdateTwice(); compared.gameObject.Visible = true; UpdateTwice();
+Check(!ScreenReader.Messages.Last().Contains(raised._modifierText.text), "Fresh line data drops a stale comparison icon");
+InventoryAccessibility.Reset(); ScreenReader.Messages.Clear(); UpdateTwice();
+Check(ScreenReader.Messages.Single().StartsWith(ScreenContentTracker.Combine(new[] { brief, comparedWith })),
+    "Reaching a new item with compare held names the item before its comparison");
+system._activeComparisonItemTooltipInfo = new LE.UI.Tooltips.ItemTooltipInfo();
+InventoryAccessibility.Reset(); ScreenReader.Messages.Clear(); UpdateTwice();
+Check(ScreenReader.Messages.Single() == brief, "A stale comparison widget is never read");
+system._itemTooltipComparison = null; system._activeComparisonItemTooltipInfo = null;
+ItemComparisonIcons.Reset();
+InventoryAccessibility.Reset(); ScreenReader.Messages.Clear(); UpdateTwice();
+InventoryAccessibility.Update(readDetails: true); UpdateTwice();
 LeAccess.Accessibility.ControllerMenus.ControllerMenuAccessibility.HasActiveContent = true;
 UpdateTwice();
 Check(!InventoryAccessibility.HasActiveContent && ScreenReader.Messages.Count == 2,
@@ -311,4 +364,5 @@ InventoryPromptTests.Run(Check);
 InventoryActionTests.Run(Check);
 EquippedItemTests.Run(Check);
 SpeechAcceptanceTests.Run(Check);
+DropFocusTests.Run(Check);
 Console.WriteLine($"Inventory tests passed: {checks} checks.");

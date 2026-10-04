@@ -351,3 +351,12 @@ line, preventing consecutive same-speaker prefix lines from reusing prior text.
 Retained NPC fallback text is not paired with a later player-response state.
 Tests include two-frame stable typewriter prefixes, consecutive shared prefixes,
 localized rendered text differing from raw English and retained response text.
+
+### Response menu after the continue button (live report, 2026-10-04)
+
+The user still heard an NPC line cut "sometimes" by the dialogue options. The single
+follower per line was taken by the continue button; when the subtitle's timer then
+replaced it with the response menu, the game's automatic focus on the first response
+interrupted. `DialogueAnnouncer` now arms the follower both for each accepted line and
+when the response menu becomes visible (hook or polling, once per appearance). Dialogue
+suite: 86 checks. Listening pending.

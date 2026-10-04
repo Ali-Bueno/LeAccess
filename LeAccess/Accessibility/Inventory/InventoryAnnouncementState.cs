@@ -32,5 +32,7 @@ internal sealed class InventoryAnnouncementState
         if (_selection == selection && _candidate == text) _spoken = text;
     }
 
+    internal bool HasSpoken(string selection, string text) => _selection == selection && _spoken == text;
+
     internal void Reset() { _selection = null; _candidate = null; _spoken = null; }
 }

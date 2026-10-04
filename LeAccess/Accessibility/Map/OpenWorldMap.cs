@@ -1,5 +1,6 @@
 using System;
 using LE.UI.PanelSystem;
+using LeAccess.Accessibility.Quests;
 using UnityEngine;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
@@ -11,9 +12,9 @@ internal static class OpenWorldMap
     private static string _lastFailure;
 
     /// <summary>Polls the open map's selection; a failure resets it so the rest of the frame still runs.</summary>
-    internal static void AnnounceSelection(bool questMoved)
+    internal static void AnnounceSelection()
     {
-        try { MapSelectionAnnouncer.Update(Find(), questMoved); }
+        try { if (MapSelectionAnnouncer.Update(Find(), QuestAccessibility.MapMovePending)) QuestAccessibility.TakeMapMove(); }
         catch (Exception ex)
         {
             MapSelectionAnnouncer.Reset();

@@ -1,3 +1,17 @@
+# Handoff — 2026-10-04 menu batch
+
+User report (2026-10-04): map quest press sometimes silent / some quests travel; passive
+tree unclear plus "Sprite"; inventory focus back to slot one after drops; NPC lines still
+sometimes cut by dialogue options; comparison text not read. All five fixed host-side
+([map](reference/waypoint-map.md#cross-on-the-map-travel-2026-10-04),
+[passives](reference/passive-reading.md#trees-mastery-and-the-skill-unlock-strip-2026-10-04),
+[drop focus](reference/inventory-drop-focus.md), [subtitles](reference/npc-subtitles.md),
+[comparison](reference/item-comparison.md)); 58 suites pass, six new native hooks.
+First live checks: Cross on a quest with/without waypoint; open Passives and switch trees;
+move up into the skill strip; drop three items in a row (log line `[Inventory drop]`
+identifies the reset source); hold compare on an item; an NPC with a continue line
+followed by responses.
+
 # Handoff — 2026-10-03 (Claude session after Codex)
 
 Codex reached its weekly usage limit at `8eae87e`; Claude continued the audit and
@@ -107,6 +121,10 @@ Re-check these five first; then the list below.
 - Do not launch the game without a new request; the user tests independently.
 - Keep everything in this repository: never write to Claude Code's auto-memory or any
   other agent memory (repeated 2026-10-03). Discoveries and preferences go here.
+- Tests must not compare against translated literals: build expected speech from
+  `ModText` keys and from the test's own data/labels, so catalogs can change or be
+  ported to another localization system (user, 2026-10-04). Older suites still contain
+  Spanish literals (19 set `es`); convert them when touched.
 - Navigation and combat aids should work passively, by sound and speech, without
   pressing keys; manual queries (F6/F7) are secondary extras.
 - Dev build: `dotnet build LeAccess/LeAccess.csproj --no-restore -p:SkipPluginDeployment=true`;

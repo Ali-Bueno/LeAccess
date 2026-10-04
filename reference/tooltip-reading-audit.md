@@ -114,11 +114,8 @@ passive tooltip and its owner before choosing a reader or hook.
 
 ## Intentional exclusions
 
-Equipment comparison is deliberately excluded by both primary item readers
-(`ItemTooltipV2Reader.cs:20`, `ItemTooltipReader.cs:141`). The game has a separate
-comparison tooltip (`TooltipSystem.cs:237`) and `ItemTooltip.ShowComparison`
-(`ItemTooltip.cs:1369`). This is an optional future comparison action, not a
-regression in selected-item reading. Action prompts are also intentionally
+Equipment comparison stays out of the primary item readers; since 2026-10-04 it has its
+own reader, see [item comparison](item-comparison.md). Action prompts are also intentionally
 excluded from the primary modern item section list; check their existing hint
 speech in listening tests before adding duplicate output.
 

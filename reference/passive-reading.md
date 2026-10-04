@@ -129,3 +129,28 @@ retries yield to accepted output in the current frame. The passive suite passes
 107 checks, including 12 acceptance/retry regressions. The
 [centralized contract](screen-reader-lifecycle.md) records the managed-only test
 boundary and native acceptance semantics.
+
+## Trees, mastery and the skill-unlock strip (2026-10-04)
+
+User report: no way to tell whether points follow the chosen mastery, and "Sprite" spoken.
+`PassiveTreeReader` adds, from the fullscreen panel's own fields:
+
+- **Opening the panel:** every tree with its points, base class / chosen mastery /
+  locked, and "Sin especialización elegida" when `_localTreeData.chosenMastery` is 0.
+  Points come from each tab's visible `TabButton._assignedPoints`, else
+  `_localTreeData.masteryLevels[i]`; locked from a visible `_lockedPoints`.
+- **Switching trees:** the visible `_masteryNameText`, `_pointsAllocatedText`, role and
+  `_pointsAvailableText` precede the first node. Native `UpdatePoints` (0x2024350) writes
+  `masteryLevels[_currentMasteryIndex]` into `_pointsAllocatedText`, and `GetActiveMastery`
+  returns `_currentMasteryIndex`, so tab index equals mastery index (0 = base class).
+- **Node threshold:** a node of the displayed page whose `masteryRequirement` exceeds the
+  tree's points adds "Requiere N puntos en este árbol, tienes M".
+- **Unlock strip** (`PassiveTreeUnlockPanelNavigable`, the old "Sprite" under
+  `PassiveMasterySkill`): `ActiveAbilityTooltips[SelectedIndex]` gives the skill name and
+  description. State mirrors `MasteryBarDisplay.ApplyUnlockedAbilityStates` (0x17C1B70):
+  `points >= requirement` unlocked, `requirement <= maxPoints` reachable, else beyond the
+  tree's maximum; points/max are the bar's `_lastFillPoints`/`_lastFillMaxPoints`.
+
+The overview speaks again only after the panel closes; modals inside it keep the tree
+context. Passive suite: 123 checks. Listening pending, in particular what
+`_lockedPoints` means to players and whether unsaved allocations change tab points.

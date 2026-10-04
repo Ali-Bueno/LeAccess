@@ -150,6 +150,17 @@ internal sealed class ItemContainerUI : UnityEngine.Component
     public ContainerID identifier;
     public ItemContainerEntry currentlySelectedItem;
     public UnityEngine.Vector2Int currentFocusSlot { get; set; }
+    public bool forceUpdate;
+    internal UnityEngine.Vector2Int NearestSlot;
+    internal readonly List<ItemContainerEntry> Focused = new();
+    internal void FocusNearestItem() => currentFocusSlot = NearestSlot;
+    internal void SetFocusItem(ItemContainerEntry item) { currentlySelectedItem = item; Focused.Add(item); }
+}
+internal sealed class OneSlotItemContainer : NativeObject { internal bool Holding; internal bool HasContent() => Holding; }
+internal sealed class ItemContainersManager : UnityEngine.Component
+{
+    internal static ItemContainersManager Instance;
+    internal OneSlotItemContainer cursor = new();
 }
 internal enum ContainerID { UNDEFINED, INVENTORY, EQ_HELMET, EQ_ARMOR, EQ_WEAPON, EQ_OFFHAND, EQ_GLOVES, EQ_BELT,
     EQ_BOOTS, EQ_RIGHTRING, EQ_LEFTRING, EQ_AMULET, EQ_RELIC }
@@ -161,7 +172,12 @@ internal sealed class IItemContainer : NativeObject
     internal ItemContainerEntry Entry;
     internal UnityEngine.Vector2Int LastReadPosition;
     internal ContainerID GetContainerID() => Id;
-    internal ItemContainerEntry GetEntryAt(UnityEngine.Vector2Int slot) { LastReadPosition = slot; return Entry; }
+    internal Dictionary<(int, int), ItemContainerEntry> Slots;
+    internal ItemContainerEntry GetEntryAt(UnityEngine.Vector2Int slot)
+    {
+        LastReadPosition = slot;
+        return Slots is null ? Entry : Slots.GetValueOrDefault((slot.x, slot.y));
+    }
 }
 internal sealed class EquippedItemsNavigable : UnityEngine.Component
 {
@@ -203,7 +219,8 @@ namespace LE.UI.Tooltips
     internal sealed class TooltipSystem : UnityEngine.Component
     {
         public TooltipItemManager _tooltipItemManager;
-        public ItemTooltip _itemTooltip;
+        public ItemTooltip _itemTooltip, _itemTooltipComparison;
+        public ItemTooltipInfo _activeComparisonItemTooltipInfo;
         public TooltipItemManager.ItemTooltipParameters _activeItemTooltipParameters;
         public ItemTooltipInfo _activeItemTooltipInfo;
         public ItemDataUnpacked ActiveItemTooltipItem;
@@ -218,10 +235,21 @@ namespace LE.UI.Tooltips
         public UnityEngine.Transform RectTransform => transform;
         public TooltipTemplate _tooltipTemplate;
         public TMPro.TMP_Text _name, _primaryType, _secondaryType, _unidentifiedText, _description, _requirements;
-        public UnityEngine.Component _topTag, _secondaryNameSection, _potential, _implicitsSection, _weaponRange,
+        public ItemTooltipModifier _secondaryNameSection;
+        public UnityEngine.Component _topTag, _potential, _implicitsSection, _weaponRange,
             _weaponSpeed, _prefixesSection, _suffixesSection, _sealedSection, _uniqueModifiersSection, _setItemsSection,
             _setBonusesSection, _addsAffixesSection, _canRollOnSection, _loreText, _priceList, _factionRankRequirement;
-        public UnityEngine.Component _combinedDifferencesSection, _prompts;
+        public ItemTooltipModifiersSection _combinedDifferencesSection;
+        public UnityEngine.Component _prompts;
+    }
+    internal sealed class ItemTooltipModifiersSection : UnityEngine.Component { }
+    internal sealed class ItemTooltipModifier : UnityEngine.Component
+    { public TMPro.TMP_Text _modifierText; public ItemTooltipModifierInfo Info; }
+    internal sealed class ItemTooltipModifierInfo : NativeObject { public ItemTooltipAssetList.ItemTooltipModifierIconSprite IconSprite; }
+    internal static class ItemTooltipAssetList
+    {
+        internal enum ItemTooltipModifierIconSprite { Plain, Compare_Added, Compare_Removed, Compare_NoChange, Compare_Increase,
+            Compare_Decrease, Compare_CombinedIncrease, Compare_CombinedDecrease }
     }
 }
 internal sealed class UITooltipItem : UnityEngine.Component
@@ -289,7 +317,15 @@ namespace LeAccess.Accessibility.ScreenContent
 }
 namespace LeAccess.Accessibility.Dialogue { internal static class DialogueAnnouncer { public static bool HasActiveContent { get; set; } } }
 namespace LeAccess.Accessibility.ControllerMenus { internal static class ControllerMenuAccessibility { public static bool HasActiveContent { get; set; } } }
-namespace LeAccess.Accessibility.Utils { internal static class TextUtils { public static string CleanText(string text) => text?.Trim(); } }
+namespace LeAccess.Accessibility.Utils
+{
+    internal static class TextUtils
+    {
+        public static string CleanText(string text) => text?.Trim();
+        public static bool IsVisibleLabel(TMPro.TMP_Text label) => label is not null && !label.WasCollected &&
+            label.alpha > 0 && LeAccess.Accessibility.Announcements.UiVisibility.IsVisible(label.gameObject);
+    }
+}
 namespace LeAccess.Accessibility
 {
     internal static class ScreenReader

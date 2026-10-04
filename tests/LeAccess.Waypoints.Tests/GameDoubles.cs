@@ -6,7 +6,7 @@ internal class WaypointQuestIndicators : Component
 internal class UIWaypoint : Component
 {
     internal GameObject label;
-    internal bool isActive = true, playerIsHere;
+    internal bool isActive = true, playerIsHere, noWaypointInScene;
     internal WaypointQuestIndicators questIndicators;
     internal string sceneName;
     internal bool GetIsActive() => isActive;
@@ -23,6 +23,7 @@ internal sealed class UIWaypointRegion : Component
 }
 internal sealed class WaypointDescriptionPopup : Component { internal TextMeshProUGUI description; }
 internal static class SceneList { internal enum Era { Ancient, Divine } }
+internal enum SubmitType { A_EX, X_SQUARE }
 internal sealed class UIWaypointController : Component
 {
     internal Il2CppSystem.Collections.Generic.List<UIWaypoint> waypointsInMenu = new();

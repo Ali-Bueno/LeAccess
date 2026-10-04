@@ -16,24 +16,27 @@ internal static class MapSelectionAnnouncer
     internal static void Reset() { _selectionKey = null; _era = null; }
 
     /// <summary>A quest change moves the location too; its brief speaks first, so the location queues after it.</summary>
-    internal static void Update(MapPanel map, bool questMoved)
+    /// <returns>True when the selected location itself changed.</returns>
+    internal static bool Update(MapPanel map, bool questMoved)
     {
-        if (!IsAlive(map) || !map.isActiveAndEnabled || !UiVisibility.IsVisible(map.gameObject)) { Reset(); return; }
+        if (!IsAlive(map) || !map.isActiveAndEnabled || !UiVisibility.IsVisible(map.gameObject)) { Reset(); return false; }
         string scene = map.GetFocusedSceneID(), region = map.GetFocusedRegionID();
         string label = WaypointReader.ReadLabel(map.selectedLocationLabel);
         string key = $"{scene}|{region}|{label}";
         bool eraChanged = _era != map.CurrentEra;
-        if (key == _selectionKey && !eraChanged) return;
+        bool moved = key != _selectionKey;
+        if (!moved && !eraChanged) return false;
         string title = eraChanged ? WaypointReader.ReadLabel(map.mapTitle) : null;
         bool first = _selectionKey is null;
         _selectionKey = key; _era = map.CurrentEra;
-        if (!questMoved && ScreenReader.SpokeThisFrame && !first) return;
+        if (!questMoved && ScreenReader.SpokeThisFrame && !first) return moved;
         string text = ScreenContentTracker.Combine(new List<string> { title }
             .Concat(Describe(map, scene, region, label)));
         if (!string.IsNullOrWhiteSpace(text)) ScreenReader.Speak(text, !questMoved);
+        return moved;
     }
 
-    private static IEnumerable<string> Describe(MapPanel map, string scene, string region, string label)
+    internal static IEnumerable<string> Describe(MapPanel map, string scene, string region, string label)
     {
         yield return label;
         yield return WaypointReader.ReadLabel(map.selectedLocationLevelLabel);

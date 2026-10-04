@@ -63,7 +63,7 @@ public class MenuAccessibility : MonoBehaviour
         if (SettingsFocusAnnouncer.Update()) _lastPolledSelection = 0;
         else PollSelectedControl();
         ElementAnnouncer.FlushPendingFocus();
-        OpenWorldMap.AnnounceSelection(QuestAccessibility.SelectionChangedRecently);
+        OpenWorldMap.AnnounceSelection();
         CharacterNameAccessibility.Update();
         InventoryAccessibility.Update(readDetails);
         if (readDetails && !SkillAccessibility.HasActiveContent && !InventoryAccessibility.HasActiveContent)

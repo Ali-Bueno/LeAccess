@@ -25,9 +25,9 @@ internal static class DialogueAnnouncer
     private static string _lastFailure;
     private static string _lastStatus;
     private static double _nextStatusSeconds;
-    // The game selects a response or the continue button as each line appears; that
-    // first focus speaks after the line instead of cutting it off.
-    private static long _linesSpoken, _linesFollowed;
+    // The game selects a response or the continue button as each line appears, and again
+    // when the response menu replaces the continue button; that focus queues behind the line.
+    private static bool _followerArmed;
 
     internal static bool HasPendingContent { get; private set; }
     internal static bool HasActiveContent
@@ -55,12 +55,12 @@ internal static class DialogueAnnouncer
         catch (Exception) { return false; }
     }
 
-    /// <summary>True once per spoken line: the focus announced next should queue behind it.</summary>
+    /// <summary>True once per spoken line or opened response menu: the next focus queues behind the line.</summary>
     internal static bool TakeLineFollower()
     {
-        if (_linesFollowed == _linesSpoken) return false;
-        _linesFollowed = _linesSpoken;
-        return true;
+        bool follow = _followerArmed;
+        _followerArmed = false;
+        return follow;
     }
 
     /// <summary>The icon-only button that advances a line without responses.</summary>
@@ -125,7 +125,7 @@ internal static class DialogueAnnouncer
         try
         {
             if (!Attach(ui)) return;
-            _responsesShown = true;
+            SetResponsesShown(true);
             SelectReminder();
         }
         catch (Exception ex) { ReportFailure(ex); }
@@ -171,7 +171,7 @@ internal static class DialogueAnnouncer
             if (announcement == null) return;
             if (!ScreenReader.TrySpeak(announcement, interrupt: true)) return;
             Tracker.Acknowledge(_ui.GetInstanceID(), announcement);
-            _linesSpoken++;
+            _followerArmed = true;
             HasPendingContent = false;
             Plugin.Log.LogInfo($"[Dialogue] {announcement}");
         }
@@ -191,8 +191,14 @@ internal static class DialogueAnnouncer
         _responsesShown = false;
         _usingReminder = false;
         HasPendingContent = false;
-        _linesFollowed = _linesSpoken;
+        _followerArmed = false;
         Tracker.Reset();
+    }
+
+    private static void SetResponsesShown(bool shown)
+    {
+        if (shown && !_responsesShown) _followerArmed = true;
+        _responsesShown = shown;
     }
 
     private static bool Attach(TextMeshProDialogueUI ui)
@@ -231,7 +237,7 @@ internal static class DialogueAnnouncer
         var dialogue = active.dialogue;
         if (dialogue is null || dialogue.WasCollected) return;
         var responses = dialogue.responseMenu;
-        _responsesShown = responses is not null && !responses.WasCollected && responses.isVisible;
+        SetResponsesShown(responses is not null && !responses.WasCollected && responses.isVisible);
         if (SelectReminder()) { RefreshNativeLine(manager, _subtitle, requireRenderedMatch: true); return; }
         if (!VisibleControls(controls)) controls = dialogue.npcSubtitle;
         SelectControls(controls, false);

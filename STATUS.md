@@ -1,6 +1,8 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-03 (Claude session). Spam fixes (vitals, places/NPCs, generic
+**Updated:** 2026-10-04 (Claude session): menu fixes from the user's report — map travel
+speech, passive trees/mastery overview and skill strip, inventory focus after drops,
+equipment comparison, NPC lines no longer cut by the response menu. Earlier, 2026-10-03: Spam fixes (vitals, places/NPCs, generic
 modals, settings), D2R ports (potions, effects, boss life), enemy scan and audio cues, world-map
 waypoints, character tiles and localized button names; see [WHATS_NEXT.md](WHATS_NEXT.md).
 All 54 host suites pass; the rebuilt plugin is installed for Steam **25690669**.
@@ -56,7 +58,7 @@ requested. No release or new ZIP has been requested.
 | Area | Current evidence / remaining work |
 |---|---|
 | Steam port | Earlier build 25672295 logged online creation, connection and InGame. Current hotfix compiles and passes native audit; startup/online listening pending. |
-| Native hook safety | 46 checks; fresh build 25690669, 60 declarations / 59 distinct native targets including the return-arrow callback. |
+| Native hook safety | 46 checks; build 25690669, 66 declarations / 65 distinct native targets (2026-10-04: map submit, waypoint travel, inventory drop/navigate, tooltip modifier icon/data). |
 | Reader recovery | Bounded reconnection; covered readers acknowledge accepted output and retry current content. 41 transport checks plus service regressions. [Scope/limits](reference/screen-reader-lifecycle.md); listening pending. |
 | Early online/offline selection | Empty native nullable no longer throws during readiness polling or erases the first click; observation failures retain intent, dispatch remains once-only. 56 checks; fresh startup listening pending. |
 | Menus/focus | Settings sliders/toggles speak only the new value while focus stays; headings no longer repeat after dropdowns; popups never speak raw object names; controller button names localized; zero-height labels that render (main-menu "Partida sin conexión") are read again. Native mediator callbacks follow FocusedPanel; typed forge/material selections and background/faded guards. 307 menu + 63 settings-source checks. [Audit and limits](reference/menu-visibility.md); listening pending. |
@@ -65,17 +67,17 @@ requested. No release or new ZIP has been requested.
 | Internal panel chatter | Removed; background Forge/Skill Tree opening or closing no longer speaks object names. |
 | Tutorials/popups/terms | Generic modals (loot-filter editor, pickers, stash setup) read title/message/static text once on open; scrolling and control captions stay silent; quick notices speak inside them. Hidden/faded modals release focus; tutorials yield to dialogue. Rejected output retains current content and modal priority. 232 screen-content + 118 notification checks. [Evidence](reference/announcement-lifecycle.md). |
 | Dungeon/encounter instructions | Native dungeon/modal and visible echo/Morditas text; dynamic recovery preserves pacing. 211 screen-content + 90 dynamic checks. [Windows](reference/dungeon-warning-reading.md), [sources/limits](reference/dynamic-objectives.md); listening pending. |
-| Visible subtitles | Distinct dialogue turns and current rendered/submitted lines recover after rejection; stale or expired content is discarded. The game's automatic response/continue focus now waits for the NPC line instead of cutting it, and the continue button reads "Continuar" ([details](reference/npc-subtitles.md)). 83 dialogue + 166 subtitle checks. Inspected Rogue opening narrative remains audio-only. |
+| Visible subtitles | Distinct dialogue turns and current rendered/submitted lines recover after rejection; stale or expired content is discarded. The game's automatic response/continue focus waits for the NPC line, also when the response menu replaces the continue button (2026-10-04); the continue button reads "Continuar" ([details](reference/npc-subtitles.md)). 86 dialogue + 166 subtitle checks. Inspected Rogue opening narrative remains audio-only. |
 | Hints/notifications | Button-first hints retained. Countdown reads once per restart with menu/typing priority; rejected batch output keeps current sources pending. 79 binding/prompt + 115 notification checks. [Evidence](reference/announcement-lifecycle.md). |
 | Controller menu/zones | Announces opening with neutral stick, then selected localized option; fully faded wheels/sectors cannot speak retained models. 40 checks. Listening pending. |
 | Classes/masteries/realm | Character-select tiles read name, level/mastery, cycle and hardcore tag; character-sheet stat lines read name and value ([sheet](reference/character-sheet.md)). Season/legacy labels; descriptions manual. Disabled retained carousel and background mastery rejected. 102 checks; listening pending. |
 | Skills/assigned buttons | Verified assignments and learned/unlock state; rejected briefs/details retry the current owned selection. 189 checks; listening pending. |
-| Passive nodes | Native name/description; empty names retry at a bounded rate, rejected details rebuild while selection remains owned. 107 checks; listening pending. |
-| World map/waypoints | Map selection (cursor, region or quest) reads location, level, "here", locked and quest markers; quest-driven moves queue after the brief. Waypoint/region focus uses the same typed reader. 26 checks; whether controller focus reaches waypoints needs a live check. [Details](reference/waypoint-map.md) |
+| Passive nodes | Native name/description; empty names retry at a bounded rate. Opening lists every tree's points, chosen mastery and locked trees; switching trees speaks name/points/unspent; nodes name unmet tree-point thresholds; the skill-unlock strip (old "Sprite") reads skill and unlock state ([trees](reference/passive-reading.md#trees-mastery-and-the-skill-unlock-strip-2026-10-04)). 123 checks; listening pending. |
+| World map/waypoints | Map selection reads location, level, "here", locked and quest markers; a quest's tweened location queues after its brief. Cross says "Viajando a X" or why travel is impossible instead of silence ([travel](reference/waypoint-map.md#cross-on-the-map-travel-2026-10-04)). 35 checks; listening pending. |
 | Quest journal | Current state/objectives and manual history retained; rejected briefs/details retry only while selection remains owned. 136 checks; listening pending. |
 | Automatic quest updates | Failed output preserves current pending changes, shared pacing and fair turns with dynamic objectives. 116 checks. [Evidence](reference/quest-updates.md). Listening pending. |
 | Character name editing | User confirms the latest typing/return fix works. Circle keeps the name; physical entry and owned device transitions retain focus. Eight hooks, 160 checks. |
-| Inventory/merchants | Current stash/shop/buyback and [equipped selections](reference/equipped-items.md); rejected briefs/details retry while owned. 219 service + 111 model checks. [Evidence](reference/merchant-reading.md); listening pending. |
+| Inventory/merchants | Current stash/shop/buyback and [equipped selections](reference/equipped-items.md); rejected briefs/details retry while owned. After a drop, focus moves to the nearest item instead of the first slot ([drop focus](reference/inventory-drop-focus.md)); holding compare reads the equipped item, differences and changed lines ([comparison](reference/item-comparison.md)). 236 service + 111 model checks. Listening pending. |
 | Forge/filter controls | Typed selections, filter-range labels and manual visible preview/potential/unavailable reason. 118 regressions within 296 menu checks. [Scope/limits](reference/crafting-reading.md); listening pending. |
 | Ground loot | New targeting API, brief current-item names; 67 checks. Listening pending. |
 | Radar | Initial/resumed wall memory prevents false openings on retreat; owned online visuals supply body radius. 447 navigation checks; sound/control vocabulary unchanged. Listening pending. |

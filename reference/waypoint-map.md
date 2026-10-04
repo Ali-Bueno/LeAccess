@@ -46,10 +46,11 @@ after `FlushPendingFocus`. `OpenWorldMap.Find()` resolves the map from the regis
   `regioniName` equals the focused region id.
 - `mapTitle` is spoken with the first selection after opening and whenever `CurrentEra`
   changes (the quest reader never reads it).
-- Quest-driven moves: when the selected quest changed in this or the previous frame
-  (`QuestAccessibility.SelectionChangedRecently`), the location is queued after the quest brief
-  instead of interrupting it. `HasActiveContent` cannot be used: the map always owns a selected
-  quest, so it stays true while the map is open.
+- Quest-driven moves: a quest selection change sets `QuestAccessibility.MapMovePending`; the
+  next change of the selected location (not an era switch alone) is queued after the quest brief
+  and consumes it. The map tweens to the quest location (`WorldMapZoom.ZoomToLocation`), so the
+  old one-frame window missed the move and the location was dropped or cut the brief.
+  `HasActiveContent` cannot be used: the map always owns a selected quest.
 - A selection already spoken by the focus path in the same frame is recorded, not doubled.
 - A closed or hidden map resets state, so reopening announces again.
 
@@ -65,4 +66,21 @@ after `FlushPendingFocus`. `OpenWorldMap.Find()` resolves the map from the regis
 - Whether quest flags are set while the indicators are hidden (`ShowIndicators(false)`).
 - Whether the description popup is open for the focused waypoint on controller.
 
-Tests: `tests/LeAccess.Waypoints.Tests` (26 checks, doubles only).
+## Cross on the map: travel (2026-10-04)
+
+Native evidence (build 25690669, disassembly of `MapPanel.HandleSubmitInput` 0x17617D0,
+`QuestButton.clicked` 0x17B6D20, `UIWaypointStandard.LoadWaypointScene` 0x181B4D0):
+selecting a quest only recenters the map (`ZoomToQuestLocation`, no travel); Cross
+(`SubmitType.A_EX`) with a focused scene presses `travelButton`, whose listener is the
+target waypoint's `LoadWaypointScene`. That travels at once, without a prompt, when
+`!noWaypointInScene && isActive && !playerIsHere`; otherwise nothing happens. This is why
+"some quests let you travel" and others "go silent". `openQuickTravelWindow` belongs only
+to `WorldMapPanel.OnOpenWithArgs` and is read by the generic modal reader.
+
+`MapTravelAnnouncer` mirrors that guard: "Viajando a X", "Bloqueado", "Estás aquí" or
+"Aquí no hay punto de viaje" (prefix on `UIWaypointStandard.LoadWaypointScene`). If Cross
+on a focused scene never reached the waypoint, a `MapPanel.HandleSubmitInput` postfix says
+"No se puede viajar" plus the focused location. Cross on a region zooms in and stays with
+the selection reader. Listening pending: whether online server rejections need speech.
+
+Tests: `tests/LeAccess.Waypoints.Tests` (35 checks, doubles only).

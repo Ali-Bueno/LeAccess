@@ -11,7 +11,8 @@ using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Passives;
 
-internal readonly record struct PassiveSelection(string Key, GameObject Root, string Summary, string Details)
+internal readonly record struct PassiveSelection(string Key, GameObject Root, string Summary, string Details,
+    string TreeKey = null, string Tree = null, LE.UI.PanelSystem.FullScreenPanelPassiveTree Panel = null)
 {
     internal string Text => ScreenContentTracker.Combine(new[] { Summary, Details });
 }
@@ -28,6 +29,8 @@ internal static class PassiveSelectionReader
     internal static string LastStatus { get; private set; }
     internal static bool HasPassiveContext { get; private set; }
     internal static bool HasPendingModel { get; private set; }
+    /// <summary>True when focus, loading or foreground content hid the panel from the last read.</summary>
+    internal static bool Blocked { get; private set; }
 
     internal static void Reset()
     {
@@ -45,8 +48,9 @@ internal static class PassiveSelectionReader
         HasPassiveContext = false;
         HasPendingModel = false;
         LastStatus = "blocked by focus, loading or foreground content";
-        if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible || ScreenContentAnnouncer.HasActiveContent ||
-            DialogueAnnouncer.HasActiveContent || ControllerMenuAccessibility.HasActiveContent) return false;
+        Blocked = !Application.isFocused || LE.UI.LoadingScreen.IsVisible || ScreenContentAnnouncer.HasActiveContent ||
+            DialogueAnnouncer.HasActiveContent || ControllerMenuAccessibility.HasActiveContent;
+        if (Blocked) return false;
         var current = NavigationManager.currentlySelected;
         if (current is null || current.WasCollected) return Fail("navigation missing or collected");
         var panel = current.TryCast<LE.UI.PanelSystem.FullScreenPanelPassiveTree>();
@@ -57,6 +61,14 @@ internal static class PassiveSelectionReader
             // The fullscreen panel forwards navigation to this exact active child.
             current = panel.ActiveChildNavigable;
             if (current is null || current.WasCollected) return Fail("fullscreen active child missing or collected");
+            var strip = current.TryCast<PassiveTreeUnlockPanelNavigable>();
+            if (IsAlive(strip))
+            {
+                if (!PassiveTreeReader.TryReadUnlock(panel, strip, out selection)) return Fail("unlock strip selection unavailable");
+                LastStatus = "ready; unlock strip";
+                selection = WithTree(selection, panel);
+                return true;
+            }
         }
         var owner = current.TryCast<PassiveTreeNavigable>();
         if (!IsAlive(owner))
@@ -150,7 +162,8 @@ internal static class PassiveSelectionReader
         }
         string summary = ScreenContentTracker.Combine(new[] { name,
             ModText.Format("node.points", info.PointsAllocated, info.MaxPoints),
-            ModText.Get(node.requirementsMet ? "node.available" : "node.locked") });
+            ModText.Get(node.requirementsMet ? "node.available" : "node.locked"),
+            IsAlive(panel) ? PassiveTreeReader.ReadNodeThreshold(panel, node) : null });
         var fragments = new List<string> { TextUtils.CleanText(info.Description) };
         if (info.Modifiers is not null && !info.Modifiers.WasCollected)
             foreach (var modifier in info.Modifiers)
@@ -167,9 +180,16 @@ internal static class PassiveSelectionReader
                     if (!string.IsNullOrWhiteSpace(text)) fragments.Add(ModText.Format(requirement.IsMet ?
                         "node.requirement_met" : "node.requirement_unmet", text));
                 }
-        selection = new PassiveSelection($"{node.tree.GetInstanceID()}:{node.GetInstanceID()}", root, summary,
-            ScreenContentTracker.Combine(fragments));
+        selection = WithTree(new PassiveSelection($"{node.tree.GetInstanceID()}:{node.GetInstanceID()}", root, summary,
+            ScreenContentTracker.Combine(fragments)), panel);
         return true;
+    }
+
+    private static PassiveSelection WithTree(PassiveSelection selection, LE.UI.PanelSystem.FullScreenPanelPassiveTree panel)
+    {
+        if (!IsAlive(panel)) return selection;
+        string tree = PassiveTreeReader.ReadTree(panel, out string key);
+        return selection with { TreeKey = key, Tree = tree, Panel = panel };
     }
 
     private static bool Fail(string status) { LastStatus = status; return false; }

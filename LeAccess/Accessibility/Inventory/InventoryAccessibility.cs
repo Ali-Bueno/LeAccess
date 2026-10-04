@@ -14,6 +14,7 @@ namespace LeAccess.Accessibility.Inventory;
 internal static class InventoryAccessibility
 {
     private static readonly InventoryAnnouncementState Announcements = new();
+    private static readonly ScreenContentTracker Comparison = new();
     private static string _lastFailure;
     private static string _contextKey, _context;
     private static float _nextContextRead;
@@ -42,6 +43,7 @@ internal static class InventoryAccessibility
         {
             var container = GetFocusedContainer();
             if (!IsAlive(container)) { Reset(); return; }
+            InventoryDropFocus.Guard(container);
             bool known = InventorySelectionReader.TryGetEntry(container, out var entry);
             string slotName = EquipmentSlotText.Read(container.identifier);
             string key, text;
@@ -125,6 +127,7 @@ internal static class InventoryAccessibility
             { Reset(); return; }
             if (requestDetails && hasTooltip && slotName != null)
                 requestedText = ScreenContentTracker.Combine(new[] { slotName, requestedText });
+            if (!requestDetails && AnnounceComparison(selectedData, key, text)) return;
             bool announced = Announcements.Observe(key, text,
                 ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame, out string announcement, acknowledge: false);
             if (requestDetails && !string.IsNullOrWhiteSpace(requestedText))
@@ -141,6 +144,23 @@ internal static class InventoryAccessibility
         catch (Exception ex) { Announcements.Reset(); _detailsKey = null; ReportFailure(ex); }
     }
 
+    // The comparison exists only while the game's compare action is held; it speaks once each time it appears,
+    // after the item's own brief when navigation reached a new item with the action still held.
+    private static bool AnnounceComparison(ItemData item, string key, string brief)
+    {
+        if (item is null || item.WasCollected || !ItemComparisonReader.TryRead(item, out _, out string comparison))
+        { Comparison.Reset(); return false; }
+        if (!Comparison.Observe(1, comparison, ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame,
+            out string announcement, acknowledge: false) || announcement is null) return true;
+        if (!Announcements.HasSpoken(key, brief)) announcement = ScreenContentTracker.Combine(new[] { brief, announcement });
+        if (!ScreenReader.TrySpeak(announcement, interrupt: true)) return true;
+        Comparison.Acknowledge(1, comparison);
+        Announcements.Observe(key, brief, false, out _, acknowledge: false);
+        Announcements.Acknowledge(key, brief);
+        Plugin.Log.LogInfo($"[Inventory comparison] {announcement}");
+        return true;
+    }
+
     private static ItemContainerUI GetFocusedContainer()
     {
         if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible ||
@@ -151,7 +171,7 @@ internal static class InventoryAccessibility
 
     internal static void Reset()
     {
-        Announcements.Reset(); _lastFailure = null;
+        Announcements.Reset(); Comparison.Reset(); _lastFailure = null;
         _contextKey = _context = null; _nextContextRead = 0;
         _detailsKey = null;
     }

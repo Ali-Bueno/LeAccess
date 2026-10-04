@@ -14,6 +14,8 @@ internal static class PassiveAccessibility
     private static double _nextStatusLog;
     private const double StatusLogIntervalSeconds = 2;
     private static bool _detailsRequested;
+    // Tree context speaks with the first node after opening the panel or switching trees.
+    private static string _announcedTree;
     internal static bool HasActiveContent { get; private set; }
     internal static bool HasPendingContent { get; private set; }
 
@@ -36,7 +38,12 @@ internal static class PassiveAccessibility
         {
             bool read = PassiveSelectionReader.TryRead(out var selection);
             ReportStatus();
-            if (!read) { ResetSelection(PassiveSelectionReader.HasPendingModel); return; }
+            if (!read)
+            {
+                if (!PassiveSelectionReader.Blocked && !PassiveSelectionReader.HasPassiveContext) _announcedTree = null;
+                ResetSelection(PassiveSelectionReader.HasPendingModel);
+                return;
+            }
             HasActiveContent = true;
             if (_key != selection.Key)
             {
@@ -56,8 +63,12 @@ internal static class PassiveAccessibility
             if (announcement is null) return;
             if (!PassiveSelectionReader.TryRead(out var current) || current.Key != selection.Key)
             { ResetSelection(PassiveSelectionReader.HasPendingModel); return; }
+            bool newTree = selection.TreeKey is not null && selection.TreeKey != _announcedTree;
+            if (newTree) announcement = ScreenContentTracker.Combine(new[] {
+                _announcedTree is null ? PassiveTreeReader.ReadOverview(selection.Panel) : null, selection.Tree, announcement });
             if (!ScreenReader.TrySpeak(announcement, interrupt: true))
             { HasPendingContent = true; return; }
+            if (newTree) _announcedTree = selection.TreeKey;
             Tracker.Acknowledge(1, selection.Summary);
             HasPendingContent = false;
             _detailsRequested = false;
@@ -104,6 +115,7 @@ internal static class PassiveAccessibility
     internal static void Reset()
     {
         ResetSelection();
+        _announcedTree = null;
         _lastFailure = null;
         _lastStatus = null;
         _nextStatusLog = 0;

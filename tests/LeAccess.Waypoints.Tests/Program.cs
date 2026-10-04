@@ -1,5 +1,6 @@
 using LeAccess.Accessibility;
 using LeAccess.Accessibility.Map;
+using LeAccess.Accessibility.ScreenContent;
 using LeAccess.I18n;
 using LE.UI.PanelSystem;
 using TMPro;
@@ -117,6 +118,37 @@ Check(ScreenReader.Messages[^1].Text.StartsWith("Era Divina."), "era change spea
 count = ScreenReader.Messages.Count;
 mapObject.Active = false; Frame(); mapObject.Active = true; Frame();
 Check(ScreenReader.Messages.Count == count + 1, "closing the map resets so reopening announces again");
+
+var target = Waypoint(mapObject.Child(), "Llanuras").Also(w => w.sceneName = "Plains");
+void Travel(UIWaypoint waypoint)
+{
+    MapTravelAnnouncer.BeginSubmit();
+    if (waypoint is not null) MapTravelAnnouncer.AnnounceTravel(waypoint);
+    MapTravelAnnouncer.EndSubmit(map, SubmitType.A_EX);
+}
+Reset(); Travel(target);
+Check(ScreenReader.Messages.Single() == (ModText.Format("waypoint.traveling_to", target.locationLabel.text), true),
+    "Cross on an unlocked waypoint says where it travels, once");
+Reset(); target.isActive = false; Travel(target);
+Check(ScreenReader.Messages.Single().Text == ModText.Get("waypoint.locked"), "A locked travel target says why nothing happens");
+Reset(); target.isActive = true; target.playerIsHere = true; Travel(target);
+Check(ScreenReader.Messages.Single().Text == ModText.Get("waypoint.here"), "Travelling to the current location says you are already there");
+Reset(); target.playerIsHere = false; target.noWaypointInScene = true; Travel(target);
+Check(ScreenReader.Messages.Single().Text == ModText.Get("waypoint.no_travel_point"), "A location without a waypoint says so");
+Reset(); map.focusedSceneID = "Port"; map.focusedRegionID = null; map.selectedLocationLabel.text = "Puerto"; Travel(null);
+Check(ScreenReader.Messages.Single().Text == ScreenContentTracker.Combine(new[] {
+        ModText.Get("map.travel_unavailable"), map.selectedLocationLabel.text, map.selectedLocationLevelLabel.text }),
+    "A travel button that does not respond reports the focused location instead of silence");
+Reset(); map.focusedSceneID = null; Travel(null);
+Check(ScreenReader.Messages.Count == 0, "Cross on a region zooms in; the selection reader speaks it");
+Reset(); map.focusedSceneID = "Port"; MapTravelAnnouncer.BeginSubmit(); MapTravelAnnouncer.EndSubmit(map, SubmitType.X_SQUARE);
+Check(ScreenReader.Messages.Count == 0, "Other map buttons keep their own behaviour");
+Reset(); Frame();
+map.CurrentEra = SceneList.Era.Ancient; map.mapTitle.text = "Era Antigua";
+Check(!MapSelectionAnnouncer.Update(map, true), "An era switch alone does not consume a pending quest move");
+map.selectedLocationLabel.text = "Destino de misión";
+Check(MapSelectionAnnouncer.Update(map, true) && !ScreenReader.Messages[^1].Interrupt,
+    "The quest's tweened location consumes the pending move and queues behind the brief");
 
 Console.WriteLine($"Waypoint tests passed: {checks} checks");
 
