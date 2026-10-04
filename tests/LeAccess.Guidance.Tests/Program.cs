@@ -7,7 +7,6 @@ internal static class Program
         {
             GeometryTests.Run();
             RouteTests.Run();
-            ServiceTests.Run();
             Console.WriteLine($"Guidance tests passed: {_checks} checks.");
             return 0;
         }

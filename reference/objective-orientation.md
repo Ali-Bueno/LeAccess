@@ -1,5 +1,7 @@
 # Objective orientation
 
+> Removed 2026-10-03: replaced by the right-stick exploration scanner ([design](exploration-mode.md)). Target, route and geometry classes are kept for reuse. The text below is historical.
+
 Current validation targets Steam build 25690669. Live listening remains pending;
 the game was not launched for development.
 

@@ -81,34 +81,12 @@ Settings announce the tab and each control's name/value, including sound sliders
 and visible challenge states when no button is available. Descriptions remain
 available with right-stick-up.
 
-During gameplay, push the **right stick down** from neutral, or press **F6**, for
-[orientation](reference/objective-orientation.md). It names a visible tracked
-quest marker, prioritizing pinned quests, then reports the next path direction
-and remaining distance when a complete navigation path is available. Otherwise
-it reports the marker's straight-line direction and explicitly says the route
-is unverified. Directions follow the screen/camera. Repeat after walking to hear
-whether the same destination is closer or farther. Named visible exits are a
-fallback and are not asserted to lead to the quest. No movement is automated.
-During an active Morditas gauntlet, a validated native return arrow temporarily
-takes priority and names the way back to the encounter. It uses the same route
-checks and manual bearing fallback, and stops when the native arrow hides.
-
-During gameplay, push the **right stick up** from neutral, or press **F7**, for the
-[enemy scan](reference/enemy-scan.md). It speaks how many living hostile enemies are
-within the game's skill-targeting range, then the three nearest with their direction
-(relative to the camera) and distance in units. Bosses and minibosses are tagged.
-Without a button, [enemy cues](reference/enemy-cues.md) growl for up to three
+During gameplay, the right stick is reserved for the upcoming exploration scanner
+([design](reference/exploration-mode.md)). The earlier F6 objective orientation, F7 enemy scan and
+automatic orientation were removed on 2026-10-03; the scanner replaces them. Without a button,
+[enemy cues](reference/enemy-cues.md) growl for up to three
 nearby enemies in sight (a deeper swoop for a boss), panned on screen and faster
 when closer; `[Enemy cues]` in the configuration turns them off or adjusts them.
-
-[Automatic orientation](reference/automatic-orientation.md) also works without a
-button. It names a stable visible destination with a verified walking route,
-then repeats a quiet directional sound toward the next path corner. The pulses
-speed up as the remaining route becomes shorter. Speech reports major turns and
-proximity to the marker. Nearby named exits provide orientation when no reachable
-tracked quest marker is available. The cue stops when the route cannot be verified
-or gameplay loses focus. Sound and speech can be disabled independently under
-`[Automatic orientation]` in the mod configuration.
 
 [Natural world sounds](reference/natural-world-sounds.md) reuse recordings from
 the D2R mod for loot and identified world interactions. Short repeating samples

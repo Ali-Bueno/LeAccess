@@ -1,5 +1,7 @@
 # Enemy scan
 
+> Removed 2026-10-03: the F7/right-stick trigger was replaced by the exploration scanner ([design](exploration-mode.md)). The probe, report and hostile registry are kept for its enemies category. The text below is historical.
+
 On-demand report of nearby hostiles during gameplay: F7 or right stick up from neutral.
 
 ## Output

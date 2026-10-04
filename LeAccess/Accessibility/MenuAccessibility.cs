@@ -71,13 +71,10 @@ public class MenuAccessibility : MonoBehaviour
         bool worldContentActive = ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
             InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
             SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent;
-        GuidanceAccessibility.Update(worldContentActive);
-        EnemyScanAccessibility.Update(worldContentActive, readDetails);
         VisibleSubtitleAnnouncer.Update(ScreenReader.SpokeThisFrame || ZoneAnnouncer.HasPendingContent ||
             InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
             SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent);
         NotificationAnnouncer.UpdateUrgent(worldContentActive || VisibleSubtitleAnnouncer.HasPendingContent);
-        PassiveGuidanceAccessibility.UpdateUrgent(worldContentActive || VisibleSubtitleAnnouncer.HasPendingContent);
         QuestUpdateAccessibility.Update(worldContentActive,
             ZoneAnnouncer.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent);
         DynamicObjectiveAccessibility.Update(worldContentActive,
@@ -106,10 +103,6 @@ public class MenuAccessibility : MonoBehaviour
         VitalsAccessibility.Update(worldContentActive);
         ControllerBindingLog.Update();
         BossLifeAccessibility.Update();
-        PassiveGuidanceAccessibility.Update(worldContentActive,
-            ZoneAnnouncer.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent ||
-            questUpdatesPending || GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName ||
-            NearbyPlayerAccessibility.HasPendingContent || LandmarkAccessibility.HasPendingContent);
     }
 
     private static void ReadSelectedDetails()

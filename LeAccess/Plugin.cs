@@ -57,11 +57,8 @@ public class Plugin : BasePlugin
         _continuousSonar = Config.Bind("Navigation audio", "ContinuousWallSonar", false,
             "Play the previous continuous wall tones alongside the reactive radar.");
         ReactiveRadar.Initialize(Config);
-        GuidanceAccessibility.Initialize(Config);
-        PassiveGuidanceAccessibility.Initialize(Config);
         QuestUpdateAccessibility.Initialize(Config);
         CombatAccessibility.Initialize(Config);
-        EnemyScanAccessibility.Initialize(Config);
         VitalsAccessibility.Initialize(Config);
         BossLifeAccessibility.Initialize(Config);
         LandmarkAccessibility.Initialize(Config);
@@ -99,14 +96,11 @@ public class Plugin : BasePlugin
         LeAccess.Accessibility.Quests.QuestAccessibility.Reset();
         QuestUpdateAccessibility.Cleanup();
         DynamicObjectiveAccessibility.Reset();
-        GuidanceAccessibility.Cleanup();
-        PassiveGuidanceAccessibility.Cleanup();
         EncounterGuidanceTargets.Reset();
         LeAccess.Accessibility.Zones.ZoneAnnouncer.Reset();
         NotificationAnnouncer.Reset();
         ButtonPromptAnnouncer.Reset();
         CombatAccessibility.Cleanup();
-        EnemyScanAccessibility.Cleanup();
         VitalsAccessibility.Cleanup();
         ControllerBindingLog.Cleanup();
         BossLifeAccessibility.Cleanup();

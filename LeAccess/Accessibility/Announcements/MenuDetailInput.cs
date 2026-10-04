@@ -24,7 +24,6 @@ internal static class MenuDetailInput
         !Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift) && Input.GetKeyDown(key);
 
     internal static bool ReadRequested() => ReadStickRequested(up: true);
-    internal static bool ReadGuidanceRequested() => ReadStickRequested(up: false);
 
     private static bool ReadStickRequested(bool up)
     {

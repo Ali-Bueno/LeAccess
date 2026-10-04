@@ -1,5 +1,7 @@
 # Automatic map orientation
 
+> Removed 2026-10-03: replaced by the right-stick exploration scanner ([design](exploration-mode.md)). The text below is historical.
+
 Requested after the manual F6/right-stick-down orientation feature. Enabled by
 default, with separate sound and speech settings. This is local information:
 the mod never changes movement, selects an interaction, or completes a quest.
