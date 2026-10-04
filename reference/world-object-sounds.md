@@ -137,3 +137,35 @@ sound after either condition. The source-linked `LeAccess.RadarAudio.Tests`
 suite passes **48 checks**, including both reproduced failures and recovery;
 its sonar cases inject channels without opening an audio device. Continuous
 sonar remains opt-in and its existing sounds are unchanged.
+
+## Loop mixer accumulation (live reports, 2026-10-03)
+
+Since the mixer port the user heard the loops "spotereado", then with the Last
+Epoch portal loop "como si el sonido se reprodujese varias veces encima del
+mismo", louder than the game and not clean like D2RAccess. The log always showed
+one steady voice and the same file sounded clean outside the game.
+
+Cause: `WorldLoopMixer.Read` zeroed its output with `Array.Clear`. NAudio's
+`SampleToWaveProvider` passes a byte array viewed as `float[]` (`WaveBuffer`);
+`Array.Clear` uses the runtime `byte[]` type and cleared only a quarter of the
+request, so each fill summed the loop onto the audio left in the reused device
+buffer. Copies stacked one buffer apart and grew until the full-scale clamp.
+`RadarAudioOutput` already documented this trap; the port missed it. A loopback
+recording of the real output on the user's PC showed RMS 0.17-0.48 rising for a
+voice that should give 0.019; after the fix a 2 s window matches the loop at
+exactly its 0.150 gain with -42 dB residual. The loop suite now drives the real
+NAudio adapter with a stale buffer (it fails on the old clear).
+
+Two changes made while chasing this were kept; both were verified in that
+recording and follow D2RAccess:
+
+- `LoopAudioOutput` opens event-driven shared-mode `WasapiOut` (NAudio.Wasapi,
+  already shipped; D2RAccess's XAudio2 also renders through WASAPI), falling back
+  to `WaveOutEvent`. The heartbeat reports `backend` and `max_read_gap_ms`
+  (about 11 ms on the user's PC).
+- Gains and pitch glide with a one-poll time constant (0.1 s) instead of 30 ms,
+  so they keep moving between the 0.1 s target updates instead of stepping at
+  10 Hz (D2RAccess updates every 20 ms with 0.25 smoothing).
+
+A detour that kept one stereo channel of the Last Epoch loops was reverted: the
+summed channels were never the cause.

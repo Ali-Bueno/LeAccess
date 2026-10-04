@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using NAudio.Wave;
 
 namespace LeAccess.Accessibility.Audio;
@@ -8,26 +9,28 @@ namespace LeAccess.Accessibility.Audio;
 internal sealed class WorldLoopMixer : ISampleProvider
 {
     internal const int Channels = 2;
-    // D2RAccess GainSmoothing 0.25 per 20 ms update: roughly 80 ms to settle; this time constant matches it.
-    internal const double SmoothingSeconds = 0.03;
     // Below this a voice whose target is silence is inaudible and is released.
     private const float ReleasedGain = 1e-4f;
     private readonly object _gate = new();
     private readonly List<Voice> _voices = new();
     private readonly Func<NaturalCueKind, float[]> _clips;
     private readonly double _smoothing;
-    private long _frames;
+    private long _frames, _lastRead, _maxReadGap;
 
     public WaveFormat WaveFormat { get; } = WaveFormat.CreateIeeeFloatWaveFormat(WorldLoopBank.SampleRate, Channels);
 
-    internal WorldLoopMixer(Func<NaturalCueKind, float[]> clips)
+    /// <summary>Gains and pitch glide toward each update with the given time constant.</summary>
+    internal WorldLoopMixer(Func<NaturalCueKind, float[]> clips, double smoothingSeconds)
     {
         _clips = clips ?? throw new ArgumentNullException(nameof(clips));
-        _smoothing = 1 - Math.Exp(-1 / (SmoothingSeconds * WorldLoopBank.SampleRate));
+        if (!(smoothingSeconds > 0)) throw new ArgumentOutOfRangeException(nameof(smoothingSeconds));
+        _smoothing = 1 - Math.Exp(-1 / (smoothingSeconds * WorldLoopBank.SampleRate));
     }
 
     internal int ActiveVoices { get { lock (_gate) return _voices.Count; } }
     internal long FramesMixed { get { lock (_gate) return _frames; } }
+    /// <summary>Longest time the output device went without requesting audio.</summary>
+    internal double MaxReadGapMilliseconds { get { lock (_gate) return 1000.0 * _maxReadGap / Stopwatch.Frequency; } }
 
     /// <summary>Main thread: the complete set that should sound; absent voices fade out.</summary>
     internal void SetVoices(IReadOnlyList<LoopVoice> targets)
@@ -60,10 +63,14 @@ internal sealed class WorldLoopMixer : ISampleProvider
 
     public int Read(float[] buffer, int offset, int count)
     {
-        Array.Clear(buffer, offset, count);
+        // NAudio may supply a byte-backed WaveBuffer view: Array.Clear would clear bytes, leaving old audio to sum into.
+        for (int index = offset; index < offset + count; index++) buffer[index] = 0;
         int frames = count / Channels;
         lock (_gate)
         {
+            long now = Stopwatch.GetTimestamp();
+            if (_lastRead != 0) _maxReadGap = Math.Max(_maxReadGap, now - _lastRead);
+            _lastRead = now;
             for (int index = _voices.Count - 1; index >= 0; index--)
             {
                 var voice = _voices[index];

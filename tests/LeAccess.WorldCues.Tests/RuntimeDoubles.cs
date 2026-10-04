@@ -217,7 +217,7 @@ namespace LeAccess.Accessibility.Audio
         internal int Silences;
         internal List<LoopVoice> Voices = new();
         internal string Diagnostics => $"voices={Voices.Count}";
-        internal LoopAudioOutput(string name, int latency) => Instances.Add(this);
+        internal LoopAudioOutput(string name, int latency, double glide) => Instances.Add(this);
         internal bool TryRecover(out string status) { status = null; IsRunning = true; return true; }
         internal void SetVoices(IReadOnlyList<LoopVoice> voices) => Voices = voices.ToList();
         internal void Silence() { Silences++; Voices.Clear(); }

@@ -13,6 +13,9 @@ internal static class WorldCueSounds
 {
     private const string ConfigSection = "World object sounds";
     private const double PollSeconds = 0.1; // Match the existing NPC world probe cadence.
+    // D2RAccess glides loop gains every 20 ms (GainSmoothing 0.25, about 70 ms); these targets arrive
+    // once per poll, so a one-poll time constant keeps them gliding between polls instead of stepping.
+    private const double LoopGlideSeconds = PollSeconds;
     private const double AudioRetrySeconds = 5;
     private const int AudioBufferMilliseconds = 100; // Match the existing terrain output buffer.
     private const double DiagnosticIntervalSeconds = 5;
@@ -149,7 +152,7 @@ internal static class WorldCueSounds
         _nextLoopRetry = now + AudioRetrySeconds;
         try
         {
-            if (_loopAudio == null) { _loopAudio = new LoopAudioOutput("World object loops", AudioBufferMilliseconds); return true; }
+            if (_loopAudio == null) { _loopAudio = new LoopAudioOutput("World object loops", AudioBufferMilliseconds, LoopGlideSeconds); return true; }
             bool recovered = _loopAudio.TryRecover(out string status);
             if (status != null) ReportFailure(status);
             return recovered;
