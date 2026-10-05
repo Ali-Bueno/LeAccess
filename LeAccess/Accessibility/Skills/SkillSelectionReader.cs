@@ -20,6 +20,17 @@ internal readonly record struct SkillSelection(string Key, GameObject Root, Abil
 /// <summary>Reads the game's current selection; never opens a tooltip or changes navigation.</summary>
 internal static class SkillSelectionReader
 {
+    /// <summary>The Skills panel when it owns navigation and nothing else is speaking over it.</summary>
+    internal static bool TryGetPanel(out SkillsPanelManager panel)
+    {
+        panel = null;
+        if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible || ScreenContentAnnouncer.HasActiveContent ||
+            DialogueAnnouncer.HasActiveContent || ControllerMenuAccessibility.HasActiveContent) return false;
+        var navigable = NavigationManager.currentlySelected;
+        panel = navigable is null || navigable.WasCollected ? null : navigable.TryCast<SkillsPanelManager>();
+        return IsAlive(panel) && panel.isActiveAndEnabled && UiVisibility.IsVisible(panel.gameObject);
+    }
+
     internal static bool TryRead(out SkillSelection selection, bool includeDetails = true)
     {
         selection = default;
@@ -46,7 +57,9 @@ internal static class SkillSelectionReader
             var cell = cells.GetValue(index.x, index.y);
             if (cell is null || cell.WasCollected) return false;
             var component = cell.TryCast<Component>();
-            if (!IsAlive(component) || !TryReadControl(component.gameObject, out selection, includeDetails)) return false;
+            if (!IsAlive(component)) return false;
+            if (!TryReadControl(component.gameObject, out selection, includeDetails, cells))
+                return panel.IsSkillTreeOpen && TryReadTreeButton(panel, component.gameObject, out selection);
             if (SkillPanelGrid.TryDescribe(panel, out string row, out int position, out int count))
                 selection = selection with
                 {
@@ -65,7 +78,20 @@ internal static class SkillSelectionReader
             TryReadControl(selected.gameObject, out selection, includeDetails);
     }
 
-    private static bool TryReadControl(GameObject root, out SkillSelection selection, bool includeDetails)
+    // After A on a free slot the game marks the skills it can specialise there (AbilityPanelIcon.SetSpecializationSelectReadyStatus).
+    private static bool ChoosingSpecialisation(Il2CppSystem.Array cells)
+    {
+        for (int y = 1; y < cells.GetLength(1); y++)
+            for (int x = 0; x < cells.GetLength(0); x++)
+            {
+                var icon = cells.GetValue(x, y)?.TryCast<Component>()?.GetComponent<AbilityPanelIcon>();
+                if (IsAlive(icon) && icon.specMode && icon.slotToSpec >= 0) return true;
+            }
+        return false;
+    }
+
+    private static bool TryReadControl(GameObject root, out SkillSelection selection, bool includeDetails,
+        Il2CppSystem.Array panelCells = null)
     {
         selection = default;
         if (!IsAlive(root) || !UiVisibility.IsVisible(root)) return false;
@@ -91,6 +117,11 @@ internal static class SkillSelectionReader
             owner = panelIcon.tooltipAbility;
             name = ReadLabel(panelIcon.skillName);
             learningStatus = SkillLearningReader.ReadPanel(panelIcon);
+            // In that mode A specialises an eligible skill at once; already specialised ones are marked with no slot.
+            if (panelIcon.specMode)
+                learningStatus = ScreenContentTracker.Combine(new[] { learningStatus, panelIcon.slotToSpec < 0
+                    ? ModText.Get("skill.already_specialised")
+                    : panelIcon.locked ? null : ModText.Get("skill.confirm_to_specialise") });
         }
         else
         {
@@ -127,7 +158,9 @@ internal static class SkillSelectionReader
                         {
                             selection = new SkillSelection($"specialization:{root.GetInstanceID()}", root, null, null,
                                 ModText.Get(specialised.locked ? "skill.specialization_locked" : "skill.specialization_empty"),
-                                null, Status: specialised.locked ? ReadLabel(specialised.levelLockedText) : null);
+                                null, Status: specialised.locked ? ReadLabel(specialised.levelLockedText)
+                                    : ModText.Get(panelCells != null && ChoosingSpecialisation(panelCells)
+                                        ? "skill.choose_to_specialise" : "skill.slot_help"));
                             return true;
                         }
                     }
@@ -184,6 +217,38 @@ internal static class SkillSelectionReader
         return true;
     }
 
+    // The row above an open tree: Back, the specialization slots, then respec, specialise and stop respeccing.
+    private static bool TryReadTreeButton(SkillsPanelManager panel, GameObject root, out SkillSelection selection)
+    {
+        selection = default;
+        if (!IsAlive(root) || !UiVisibility.IsVisible(root)) return false;
+        var specialisation = panel.SkillsSpecialisationUIManager;
+        string fallback = null, status = null;
+        if (Same(root, panel.backButton)) fallback = "skill.tree_back";
+        else if (Same(root, panel.specButton) || IsAlive(specialisation) && Same(root, specialisation.specialiseButton))
+            fallback = "skill.specialise";
+        else if (Same(root, panel.stopRespecButton) || IsAlive(specialisation) && Same(root, specialisation.stopRespeccingButton))
+            fallback = "skill.stop_respec";
+        else if (IsAlive(specialisation) && Same(root, specialisation.respecButton))
+        {
+            fallback = "skill.respec";
+            status = ReadLabel(specialisation.respecMinLevelText);
+        }
+        if (fallback == null) return false;
+        string name = TextUtils.GetTextFromHierarchy(root);
+        if (string.IsNullOrWhiteSpace(name)) name = ModText.Get(fallback);
+        string key = $"tree-button:{root.GetInstanceID()}";
+        var notice = SkillTreeState.TryRead(panel, out var state) ? SkillTreeState.Describe(key, state) : default;
+        selection = new SkillSelection(key, root, null, null, name, null,
+            Status: ScreenContentTracker.Combine(new[] { status, notice.After }), Context: notice.Before);
+        return true;
+    }
+
+    private static bool Same(GameObject root, Component component) =>
+        IsAlive(component) && component.gameObject.GetInstanceID() == root.GetInstanceID();
+
+    private static bool Same(GameObject root, GameObject other) => IsAlive(other) && other.GetInstanceID() == root.GetInstanceID();
+
     private static bool TryReadNode(SkillsPanelManager panel, out SkillSelection selection, bool includeDetails)
     {
         selection = default;
@@ -196,16 +261,22 @@ internal static class SkillSelectionReader
         string name = TextUtils.CleanText(localized.GetNodeName(tree.treeID, node.id, node.nodeName));
         string description = TextUtils.CleanText(localized.GetNodeDescription(tree.treeID, node.id, node.description));
         string points = null;
+        string key = $"node:{tree.GetInstanceID()}:{node.GetInstanceID()}";
         bool placed = SkillTreeNavigation.TryDescribe(panel, node, out string branch, out int place, out int count);
-        string status = ScreenContentTracker.Combine(new[] { ModText.Format("node.points", node.pointsAllocated, node.maxPoints),
-            placed ? ModText.Format("list.position", place, count) : null });
+        var notice = SkillTreeState.TryRead(panel, out var state) ? SkillTreeState.Describe(key, state) : default;
+        // The root is the skill itself and takes no points; in respec mode A refunds only where the game allows it.
+        string status = ScreenContentTracker.Combine(new[] {
+            node.maxPoints > 0 ? ModText.Format("node.points", node.pointsAllocated, node.maxPoints) : null,
+            state.Respeccing && node.pointsAllocated > 0 && !node.getCouldBeRespecced() ? ModText.Get("skill.cannot_refund") : null,
+            notice.After, placed ? ModText.Format("list.position", place, count) : null });
+        if (notice.Before != null) branch = ScreenContentTracker.Combine(new[] { notice.Before, branch });
         var detailsSource = SkillDetailsSource.Description;
         bool modernVisible = false;
         if (includeDetails && SkillTooltipDetailsReader.TryReadModernNode(node, out string modernName, out string modernDetails,
             out modernVisible))
         {
             if (!string.IsNullOrWhiteSpace(modernName)) name = modernName;
-            selection = new SkillSelection($"node:{tree.GetInstanceID()}:{node.GetInstanceID()}", node.gameObject,
+            selection = new SkillSelection(key, node.gameObject,
                 tree.ability, null, name, modernDetails, SkillDetailsSource.Tooltip, Status: status, IsNode: true, Context: branch);
             return !string.IsNullOrWhiteSpace(name);
         }
@@ -223,7 +294,7 @@ internal static class SkillSelectionReader
             points = SkillTooltipDetailsReader.ReadLegacyNode(tooltip);
         }
         if (string.IsNullOrWhiteSpace(name)) return false;
-        selection = new SkillSelection($"node:{tree.GetInstanceID()}:{node.GetInstanceID()}", node.gameObject,
+        selection = new SkillSelection(key, node.gameObject,
             tree.ability, null, name, ScreenContentTracker.Combine(new[] { description, points }), detailsSource,
             Status: status, IsNode: true, Context: branch);
         return true;

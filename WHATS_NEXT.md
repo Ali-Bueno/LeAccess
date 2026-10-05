@@ -1,3 +1,25 @@
+# Handoff — 2026-10-05: modifying skills through their trees
+
+User question: can the mod change skills ("variants" per ChatGPT)? Static analysis: no separate
+variant system; specialization nodes take points and change the skill. A adds a point (no
+confirmation), Respec offers "remove points" (A then refunds via "¿Seguro?", the skill loses a level)
+or "despecialise"; specialising is A on a free slot, then A on a skill, or the tree's Especializar.
+Four gaps fixed: Up from the root now reaches those buttons (our branch grid had trapped it);
+trees speak specialised state, unspent points and point removal mode; A on an ignored node says
+why; slot selection is announced. Modals were already covered by the generic reader.
+[Details](reference/skill-tree-navigation.md#modifying-a-skill-with-a-controller-2026-10-04-static-analysis).
+
+First live checks: on the overview, A on a free slot ("elige una habilidad…"), then a skill
+("Confirma para especializarla"); in its tree, the opening notice and unspent points, A on a node
+(points and points left), Up to the root and Up again (Especializar/Respec), Respec → quitar puntos
+(mode notice on the node, "No se puede quitar"), Terminar de quitar puntos, despecialise. Skills
+263, Localization 644, PatchSafety 46, Passives 160, MenuReading 307 pass; installed with the game
+closed.
+
+Result (same morning): the user confirms it works (log: specialising, spending, point removal with
+"¿Seguro?", "No se puede quitar"). Still unheard: Respec → "Olvidar especialización", which frees
+the slot (all points and the skill's experience are lost; a new skill starts at the minimum level).
+
 # Handoff — 2026-10-04 afternoon: grids and controller mode
 
 User report (15:05–15:18 log): the Skills panel d-pad "does not register well", acts outside the

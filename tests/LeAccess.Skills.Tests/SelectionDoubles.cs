@@ -19,6 +19,8 @@ internal sealed class SkillsPanelManager : UnityEngine.Component
     internal bool inTopArea;
     internal SkillTreeNode currentlySelectedNode;
     internal SkillTree CurrentlyOpenTree;
+    internal SkillsSpecialisationUIManager SkillsSpecialisationUIManager;
+    internal UnityEngine.UI.Button backButton, specButton, stopRespecButton;
     internal readonly List<SkillTreeNode> Focused = new();
     internal int Coroutines;
     internal void FocusTreeNode() { Focused.Add(currentlySelectedNode); currentlySelectedIdx.y = 1; }
@@ -30,6 +32,12 @@ internal sealed class SkillsPanelManager : UnityEngine.Component
     internal int HiddenTooltips;
     internal void HideIconTooltip() => HiddenTooltips++;
     internal void FocusSelectable() => FocusedCells.Add(currentlySelectedIdx);
+    internal readonly HashSet<UnityEngine.Vector2Int> EmptyCells = new();
+    internal bool ArraySlotIsEmpty() => EmptyCells.Contains(currentlySelectedIdx);
+    internal int RightMoves;
+    internal void MoveRight() { RightMoves++; currentlySelectedIdx.x++; FocusSelectable(); }
+    internal static int HiddenNodeTooltips;
+    internal static void HideTreeNodeTooltip() => HiddenNodeTooltips++;
     internal string ShowTreeNodeTooltip() => "tooltip";
     internal void StartCoroutine(string routine) => Coroutines++;
 }
@@ -44,12 +52,19 @@ internal sealed class AbilityPanelIcon : UnityEngine.Component
     internal enum AbilityUnlockType { BaseClass, MasteryPoints, Mastering }
     internal AbilityUnlockType ablityUnlockType;
     internal bool locked;
+    internal bool specMode;
+    internal int slotToSpec = -1;
     internal Ability ability;
     internal AbilityTooltip tooltipAbility;
     internal TMPro.TMP_Text skillName { get; set; }
     internal TMPro.TMP_Text UnlockReqTMP { get; set; }
 }
-internal sealed class LocalTreeData : UnityEngine.Component { internal CharacterClass characterClass; }
+internal sealed class LocalTreeData : UnityEngine.Component
+{
+    internal CharacterClass characterClass;
+    internal readonly HashSet<Ability> Specialised = new();
+    internal bool isSpecialised(Ability ability) { Guard(); return Specialised.Contains(ability); }
+}
 internal sealed class CharacterClass : UnityEngine.Object { internal NativeArray<AbilityAndLevel> unlockableAbilities; }
 internal sealed class AbilityAndLevel : NativeObject { internal Ability ability; internal int level; }
 internal sealed class KnownAbilityList : UnityEngine.Component
@@ -94,11 +109,22 @@ internal sealed class UITooltipAbility : UnityEngine.Component
     internal UnityEngine.GameObject moreInfoObj;
 }
 internal sealed class SkillTree : UnityEngine.Component
-{ internal int treeID; internal Ability ability; internal NativeArray<SkillTreeNode> nodeList; }
+{
+    internal int treeID; internal Ability ability; internal NativeArray<SkillTreeNode> nodeList;
+    internal int unspentPoints;
+}
+internal sealed class SkillsSpecialisationUIManager : UnityEngine.Component
+{
+    internal bool Respeccing;
+    internal UnityEngine.GameObject specialiseButton, respecButton, stopRespeccingButton;
+    internal TMPro.TextMeshProUGUI respecMinLevelText;
+}
 internal sealed class SkillTreeNode : UnityEngine.Component
 {
     internal int pointsAllocated;
     internal byte maxPoints = 5;
+    internal bool CouldBeRespecced = true;
+    internal bool getCouldBeRespecced() { Guard(); return CouldBeRespecced; }
     internal SkillTree tree;
     internal int id;
     internal string nodeName, description;

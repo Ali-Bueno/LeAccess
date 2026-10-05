@@ -100,7 +100,7 @@ namespace UnityEngine
     internal sealed class CanvasGroup : Component { internal float alpha = 1; internal bool ignoreParentGroups { get; set; } }
     internal sealed class CanvasRenderer : Object { internal bool cull { get; set; } }
     internal struct Color { internal float a; }
-    internal struct Vector2Int { internal int x, y; }
+    internal record struct Vector2Int { internal int x, y; internal Vector2Int(int x, int y) { this.x = x; this.y = y; } }
     internal static class Time { internal static int frameCount; internal static double unscaledTimeAsDouble; }
     internal static class Application { internal static bool isFocused = true; }
 }
@@ -128,6 +128,7 @@ namespace TMPro
 namespace UnityEngine.UI
 {
     internal class Selectable : UnityEngine.Component { }
+    internal sealed class Button : Selectable { }
     internal sealed class Text : UnityEngine.Component
     { internal string text { get; set; } internal UnityEngine.Color color = new() { a = 1 }; }
     internal sealed class InputField : UnityEngine.Component { }

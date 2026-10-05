@@ -6,7 +6,7 @@ namespace LeAccess.Accessibility.Skills;
 /// <summary>Orders a skill tree depth-first from its root, so each node follows the node it requires.</summary>
 internal static class SkillTreeOrder
 {
-    internal enum MoveKind { Select, Stay, Native }
+    internal enum MoveKind { Select, Stay, Native, Leave }
     internal readonly record struct Move(MoveKind Kind, int Position = -1);
     /// <summary>A node with the index of the node it requires (-1 for the root) and its screen position.</summary>
     internal readonly record struct Node(int Parent, float X, float Y);
@@ -47,7 +47,8 @@ internal static class SkillTreeOrder
         }
     }
 
-    /// <summary>Down/Up step inside the branch and stop at its ends; Right/Left go to the neighbouring branch at the same place.</summary>
+    /// <summary>Down/Up step inside the branch and Down stops at its end; Right/Left go to the neighbouring branch at the same
+    /// place. Up from a branch's first node reaches the root, and Up from the root leaves for the buttons above the tree.</summary>
     internal static Move Plan(IReadOnlyList<int> branch, int position, Direction direction)
     {
         if (branch.Count == 0) return new Move(MoveKind.Native);
@@ -64,8 +65,9 @@ internal static class SkillTreeOrder
         var sizes = BranchSizes(branch);
         int group = branch[position];
         var move = GroupedGridOrder.Plan(sizes, group, position - Start(branch, group), step.Value);
-        return move.Kind == GroupedGridOrder.MoveKind.Select
-            ? new Move(MoveKind.Select, Start(branch, move.Group) + move.Index) : new Move(MoveKind.Stay);
+        if (move.Kind == GroupedGridOrder.MoveKind.Select) return new Move(MoveKind.Select, Start(branch, move.Group) + move.Index);
+        if (direction != Direction.UP) return new Move(MoveKind.Stay);
+        return group > 0 ? new Move(MoveKind.Select, Start(branch, 0)) : new Move(MoveKind.Leave);
     }
 
     /// <summary>The 1-based place of a position inside its branch, and the branch's size.</summary>

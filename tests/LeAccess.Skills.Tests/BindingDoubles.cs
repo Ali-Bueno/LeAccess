@@ -22,6 +22,8 @@ internal static class PlayerFinder
 {
     internal static UnityEngine.GameObject player;
     internal static UnityEngine.GameObject getPlayer() => player;
+    internal static LocalTreeData treeData;
+    internal static LocalTreeData getLocalTreeData() => treeData;
     internal static Actor getPlayerActor() => player?.GetComponent<Actor>();
 }
 internal sealed class Actor : UnityEngine.Component

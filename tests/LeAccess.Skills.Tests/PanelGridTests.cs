@@ -92,6 +92,24 @@ internal static class PanelGridTests
         At(2, 0);
         check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && selection.Name == Speech.T("skill.specialization_locked") &&
             selection.Status == Speech.Join("Nivel 20", Speech.F("list.position", 2, 2)), "A locked slot reads its unlock text");
+        At(1, 0);
+        check(SkillSelectionReader.TryRead(out selection, includeDetails: false) &&
+            selection.Status.StartsWith(Speech.T("skill.slot_help")), "A free slot says confirming chooses a skill for it");
+        // After A on a free slot the game marks eligible skills with the slot and specialised ones without.
+        puncture.specMode = true; puncture.slotToSpec = 0;
+        flurry.specMode = true;
+        check(SkillSelectionReader.TryRead(out selection, includeDetails: false) &&
+            selection.Status.StartsWith(Speech.T("skill.choose_to_specialise")), "The free slot then asks for a skill: " + selection.Status);
+        At(1, 1);
+        check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && selection.Status.Contains(Speech.T("skill.confirm_to_specialise")),
+            "An eligible skill says confirming specialises it");
+        At(0, 1);
+        check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && selection.Status.Contains(Speech.T("skill.already_specialised")) &&
+            !selection.Status.Contains(Speech.T("skill.confirm_to_specialise")), "An already specialised skill says so");
+        puncture.locked = true; At(1, 1);
+        check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && !selection.Status.Contains(Speech.T("skill.confirm_to_specialise")),
+            "A locked skill is not offered");
+        puncture.specMode = flurry.specMode = puncture.locked = false; puncture.slotToSpec = -1;
         NavigationManager.currentlySelected = null;
         EventSystem.current = null;
         SkillAccessibility.Reset();

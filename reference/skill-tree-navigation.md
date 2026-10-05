@@ -74,3 +74,69 @@ Log evidence for the "outside the menu" part: during the session the radar and e
 [runtime feedback](runtime-feedback.md#controller-mode-lost-to-screen-reader-keys-2026-10-04).
 
 Skills suite: 233 checks. Runtime unverified: actual icon activity per class, labels' text.
+
+## Modifying a skill with a controller (2026-10-04, static analysis)
+
+User question: does the mod let a player change skills ("variants") through their trees? Native
+evidence, build 25711439 (RVAs via the regenerated `BepInEx\interop\MethodAddressToToken.db` +
+Capstone on `GameAssembly.dll`; bodies are split into chunks, so `.pdata` sizes cut them short).
+The game has no separate variant system on this path: specialization nodes take points up to
+`maxPoints` and change the skill.
+
+- **Top row (y=0):** [2] Back, [3..7] five specialization slots, [8] respec, [9] specialise,
+  [10] stop respeccing. Back → `CloseSkillTrees`/`ExitRespecMode`/`openSkillsOverview`.
+- **A** (`HandleSubmitInput` @0x24922d0, only A/X/Y handled): node focused → `SkillTreeNode.Clicked()`
+  @0x2488f70 → `TreeUIManager.skillTreeNodeClicked` @0x16e72e0, which does nothing unless the skill
+  is specialised. Normally `spendSkillPointCommand` @0x16e7b80 adds a point, no confirmation; in
+  respec mode (`SkillsSpecialisationUIManager.Respeccing`) and only if the node `couldBeRespecced`,
+  an "Are you sure?" `ConfirmAsync` (skill loses a level above its minimum) → `respecSkillPointCommand`.
+  No gold cost found. `LeftClicked`/`RightClicked` belong to the fullscreen passive tree only.
+- **X** closes the panel to the action bar; **Y** focuses search; **B** closes the tree (and respec
+  mode); **LB/RB** (`HandleContextNavigationInput` @0x2491720) cycle the specialised slots.
+- **Specialising:** A on an empty slot → `SelectSkillToSpec` @0x24949c0 marks eligible skills; the
+  next A on one specialises it at once (`specialiseInSlotCommand` @0x16e7830). From an open,
+  unspecialised tree the specialise button (shown with a free slot and an unlocked skill) does the
+  same (`specialiseButtonClicked` @0x16e7540). No confirmation, no cost.
+- **Respec button** → `SkillRespecChoiceModal` (None=0, RemovePoints=1, DespecializeSkill=2):
+  RemovePoints enters respec mode (`respeccingNodesText` shown); Despecialize confirms ("removes all
+  skill points and experience") → `LocalTreeData.Despecialise`. `respecMinLevelText` is display only.
+- **Points available:** `Tree.unspentPoints` on `CurrentlyOpenTree`, set to
+  `max(0, getMaxPointsForSkill − allocated)` by `updateOpenSkillTreeUIWithData` @0x16e7ed0.
+
+More native facts (follow-up analysis):
+
+- **Leaving the tree:** with nothing above, native Up does `EventSystem.SetSelectedGameObject(null)`,
+  `HideIconTooltip()`, `HideTreeNodeTooltip()`, `currentlySelectedIdx.y = 0` (x unchanged), `MoveRight()`
+  until a non-empty cell, `FocusSelectable()`; `currentlySelectedNode` stays, so Down
+  (`FocusTreeNode` + tooltip) returns to it. Top-row Left/Right wrap and skip empty cells
+  (`ArraySlotIsEmpty` = no rect or inactive object); Up goes to the search row (navigable 121).
+- **`inTopArea`** @0x2496310 is the controller cursor's centre above 900/1080 of the screen, updated
+  synchronously when `FocusSelectable`/`FocusTreeNode` show the cursor.
+- **Specialised:** `PlayerFinder.getLocalTreeData().isSpecialised(ability)`, the game's own test;
+  `SkillTree.specialised` is never written.
+- **Slot selection:** `AbilityPanelIcon.specMode`/`slotToSpec`/`locked`; eligible = `specMode &&
+  slotToSpec >= 0 && !locked`, already specialised = `specMode` with `slotToSpec = -1`. Reset by
+  `ResetAllAbilityPanelIcons` (tree opening, Back) and `OnEnable`. The game shows no text for it.
+- **Modals:** `SkillRespecChoiceModal` ("Respec Skill", minimum-level text) and `ConfirmationModal`
+  ("Are you sure?" + explanation) inherit `Modal<,>`, the only class declaring `IModal`, so the
+  [generic modal reader](announcement-lifecycle.md#generic-modal-windows) reads their title,
+  message and static text; their buttons are read through focus. Prefab button labels unread.
+
+Mod behaviour (2026-10-05, `SkillTreeState`, `SkillTreeNavigation`, `SkillSelectionReader`):
+
+- Up from a branch's first node goes to the root; Up from the root leaves the tree the native way,
+  on the button the tree needs now (Especializar, then Terminar de quitar puntos, then Respec, then
+  Back; the native step right if none is found). Top-row buttons read their own label, or the
+  mod's name when unlabelled, plus the respec minimum-level text.
+- A new tree says "Habilidad sin especializar" first, or its unspent points after the node; later
+  only changes are spoken (points left after a point, specialised/despecialised, point removal mode
+  started/ended). The root, which takes no points, no longer reads "0 de 0".
+- Cross on a node the game ignores says why: specialise first, or no points left. In point removal
+  mode a node with points the game will not refund says "No se puede quitar".
+- A free slot says confirming chooses a skill; after that it asks for one, eligible skills say
+  "Confirma para especializarla" and specialised ones "Ya especializada".
+- When point removal hides Respec under the cursor, the last node is focused again (native Down).
+
+Skills suite: 263 checks; no new hooks (the existing `HandleSubmitInput` prefix now also takes the
+panel). Runtime unverified: every button label, whether hidden buttons are inactive in the
+hierarchy, online point updates, and the modals as heard.

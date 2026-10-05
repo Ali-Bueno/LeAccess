@@ -223,7 +223,9 @@ internal static class SelectionTests
         check(ScreenReader.Messages.Count == 1, "Manual read before settled focus suppresses a following automatic duplicate");
         fixture = Reset();
         fixture.Panel.IsSkillTreeOpen = true;
-        tree = new GameObject().Add(new SkillTree { treeID = 3, ability = fixture.Ability });
+        tree = new GameObject().Add(new SkillTree { treeID = 3, ability = fixture.Ability, unspentPoints = 1 });
+        PlayerFinder.treeData = new GameObject().Add(new LocalTreeData());
+        PlayerFinder.treeData.Specialised.Add(fixture.Ability);
         node = tree.gameObject.Child().Add(new SkillTreeNode
         { tree = tree, id = 4, nodeName = "Nombre local", description = "Descripción local" });
         fixture.Panel.CurrentlyOpenTree = tree;
@@ -260,9 +262,11 @@ internal static class SelectionTests
         Tick(); Tick();
         check(ScreenReader.Messages.Count == afterNodeRead,
             "Differently worded tooltip title cannot cause a brief node reread after manual inspection");
-        node.pointsAllocated = 1; Tick(); Tick();
-        check(ScreenReader.Messages.Last().Text == Speech.Join("Nombre local", Speech.F("node.points", 1, 5)),
-            "Allocating a node updates points without its description or the parent ability binding");
+        node.pointsAllocated = 1; tree.unspentPoints = 0; Tick(); Tick();
+        check(ScreenReader.Messages.Last().Text == Speech.Join("Nombre local", Speech.F("node.points", 1, 5), Speech.F("skill.tree_unspent", 0)),
+            "Allocating a node updates points and the points left, without its description or the parent ability binding: " +
+            ScreenReader.Messages.Last().Text);
+        PlayerFinder.treeData = null;
 
         fixture = Reset();
         var hotbar = new GameObject().Add(new PrioritizedNavigable());

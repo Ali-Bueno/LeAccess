@@ -33,7 +33,10 @@ internal static class SkillTreeNavigation
                 case SkillTreeOrder.MoveKind.Select:
                     Focus(panel, Nodes[_order[move.Position]]);
                     return true;
+                case SkillTreeOrder.MoveKind.Leave when LeaveForButtons(panel):
+                    return true;
                 case SkillTreeOrder.MoveKind.Stay:
+                case SkillTreeOrder.MoveKind.Leave:
                     // Native d-pad input cleared the tree row before this call; refocusing restores it for A.
                     Focus(panel, Nodes[_order[position]]);
                     SkillAccessibility.RepeatCurrent();
@@ -55,6 +58,20 @@ internal static class SkillTreeNavigation
             var node = ResolveNode(panel);
             var selected = panel.currentlySelectedNode;
             if (IsAlive(node) && (!IsAlive(selected) || selected.Pointer != node.Pointer)) Focus(panel, node);
+        }
+        catch (Exception ex) { ReportFailure(ex); }
+    }
+
+    /// <summary>A top-row button the game hid under the cursor (Respec, once point removal starts) leaves the last node
+    /// focused again, as the game's own Down does; otherwise nothing could be read until the player moved.</summary>
+    internal static void RecoverHiddenButton(SkillsPanelManager panel)
+    {
+        try
+        {
+            if (!IsAlive(panel) || !panel.IsSkillTreeOpen || !panel.inTopArea || panel.currentlySelectedIdx.y != 0 ||
+                !panel.ArraySlotIsEmpty()) return;
+            var node = ResolveNode(panel);
+            if (IsAlive(node)) Focus(panel, node);
         }
         catch (Exception ex) { ReportFailure(ex); }
     }
@@ -143,6 +160,52 @@ internal static class SkillTreeNavigation
             if (index >= 0) return index;
         }
         return -1;
+    }
+
+    /// <summary>The game's own exit when nothing lies above, landing on the button the tree needs now.</summary>
+    /// <remarks>Native order: clear the selection and both tooltips, set the top row, focus the cell; the last node stays
+    /// stored, so Down returns to it. Without a known button, the game's step right from the old column picks the cell.</remarks>
+    private static bool LeaveForButtons(SkillsPanelManager panel)
+    {
+        var cells = panel.selectables?.TryCast<Il2CppSystem.Array>();
+        if (cells is null || cells.WasCollected || cells.Rank != 2 || cells.GetLength(1) == 0) return false;
+        var specialisation = panel.SkillsSpecialisationUIManager;
+        bool known = IsAlive(specialisation);
+        var targets = new[]
+        {
+            known ? specialisation.specialiseButton : null, IsAlive(panel.specButton) ? panel.specButton.gameObject : null,
+            known ? specialisation.stopRespeccingButton : null, IsAlive(panel.stopRespecButton) ? panel.stopRespecButton.gameObject : null,
+            known ? specialisation.respecButton : null, IsAlive(panel.backButton) ? panel.backButton.gameObject : null
+        };
+        var start = panel.currentlySelectedIdx;
+        int column = -1;
+        foreach (var target in targets)
+        {
+            if (!IsAlive(target)) continue;
+            for (int x = 0; x < cells.GetLength(0) && column < 0; x++)
+            {
+                var component = cells.GetValue(x, 0)?.TryCast<Component>();
+                if (!IsAlive(component) || component.gameObject.GetInstanceID() != target.GetInstanceID()) continue;
+                panel.currentlySelectedIdx = new Vector2Int(x, 0);
+                if (!panel.ArraySlotIsEmpty()) column = x;
+            }
+            if (column >= 0) break;
+        }
+        var events = UnityEngine.EventSystems.EventSystem.current;
+        if (IsAlive(events)) events.SetSelectedGameObject(null);
+        panel.HideIconTooltip();
+        SkillsPanelManager.HideTreeNodeTooltip();
+        if (column >= 0)
+        {
+            panel.currentlySelectedIdx = new Vector2Int(column, 0);
+            panel.FocusSelectable();
+        }
+        else
+        {
+            panel.currentlySelectedIdx = new Vector2Int(start.x, 0);
+            panel.MoveRight();
+        }
+        return true;
     }
 
     // The same steps as the native move: store the node, place the cursor (marking the tree row), show its tooltip.

@@ -37,6 +37,7 @@ internal static class SkillAccessibility
             SkillSwapCarry.Update();
             if (!SkillSelectionReader.TryRead(out var selection, includeDetails: false))
             {
+                if (SkillSelectionReader.TryGetPanel(out var panel)) SkillTreeNavigation.RecoverHiddenButton(panel);
                 ClearSelection();
                 ForgetGroups();
                 return;
@@ -122,7 +123,7 @@ internal static class SkillAccessibility
 
     internal static void Reset()
     {
-        ClearSelection(); ForgetGroups(); SkillTreeNavigation.Reset(); SkillSwapCarry.Clear(); _lastFailure = null; _bindingStatus = null;
+        ClearSelection(); ForgetGroups(); SkillTreeNavigation.Reset(); SkillTreeState.Reset(); SkillSwapCarry.Clear(); _lastFailure = null; _bindingStatus = null;
     }
 
     private static void ReportFailure(Exception ex)
