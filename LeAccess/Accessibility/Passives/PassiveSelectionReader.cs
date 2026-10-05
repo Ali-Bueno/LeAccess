@@ -190,15 +190,21 @@ internal static class PassiveSelectionReader
         var state = ReadTreeState(panel, PassivePanelReader.Owns(owner) ? manager : null, owner);
         string key = $"{node.tree.GetInstanceID()}:{node.GetInstanceID()}";
         string position = null, columnLabel = null;
-        if (PassiveTreeNavigation.TryGetPosition(owner, node, out int place, out int count, out int columnNumber))
+        int columnThreshold = 0;
+        if (PassiveTreeNavigation.TryGetPosition(owner, node, out int place, out int count, out int columnNumber, out columnThreshold))
         {
             position = ModText.Format("list.position", place, count);
-            if (Columns.Entered(key, $"{state.Key}:{columnNumber}")) columnLabel = ModText.Format("passive.column", columnNumber);
+            if (Columns.Entered(key, $"{state.Key}:{columnNumber}")) columnLabel = ColumnLabel(columnNumber, columnThreshold, state.Points);
         }
+        // Only what keeps Cross from adding a point is spoken; a locked column's label already gives its numbers.
+        string threshold = PassiveTreeReader.ReadNodeThreshold(node, state.Index, state.Points);
+        string locked = threshold == null ? node.requirementsMet ? null : ModText.Get("node.locked")
+            : node.masteryRequirement != columnThreshold ? threshold : columnLabel == null ? ModText.Get("passive.node_locked") : null;
+        var shown = state.Context?.TryCast<PassivePanelManager>();
+        string notice = IsAlive(shown) ? PassiveTreeState.Describe(key,
+            new PassiveTreeState.State(state.Key, state.Points, shown.activeTree.unspentPoints), PassiveTreeNavigation.ColumnThresholds()) : null;
         string summary = ScreenContentTracker.Combine(new[] { columnLabel, name,
-            ModText.Format("node.points", info.PointsAllocated, info.MaxPoints),
-            ModText.Get(node.requirementsMet ? "node.available" : "node.locked"),
-            PassiveTreeReader.ReadNodeThreshold(node, state.Index, state.Points), position });
+            ModText.Format("node.points", info.PointsAllocated, info.MaxPoints), locked, notice, position });
         var fragments = new List<string> { TextUtils.CleanText(info.Description) };
         if (info.Modifiers is not null && !info.Modifiers.WasCollected)
             foreach (var modifier in info.Modifiers)
@@ -254,6 +260,12 @@ internal static class PassiveSelectionReader
         return new($"{manager.GetInstanceID()}:{index}", manager, index,
             PassivePanelReader.Points(manager, index), PassivePanelReader.MaxPoints(manager, index));
     }
+
+    // A column opens at the fewest tree points its nodes need.
+    private static string ColumnLabel(int column, int threshold, int? points) =>
+        threshold <= 0 || points is null ? ModText.Format("passive.column", column)
+        : points >= threshold ? ModText.Format("passive.column_threshold", column, threshold)
+        : ModText.Format("passive.column_locked", column, threshold, points.Value);
 
     private static bool Fail(string status) { LastStatus = status; return false; }
 }

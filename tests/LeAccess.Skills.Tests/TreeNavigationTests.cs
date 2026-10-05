@@ -144,7 +144,7 @@ internal static class TreeNavigationTests
         check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && selection.Context == Speech.T("skill.now_specialised") &&
             selection.Status.Contains(Speech.F("skill.tree_unspent", 0)), "Specialising while a node is selected is spoken on it");
         SkillTreeState.BeforeSubmit(panel, SubmitType.A_EX);
-        check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && selection.Status.Contains(Speech.T("skill.no_points")),
+        check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && selection.Status.Contains(Speech.T("node.no_points")),
             "Cross without unspent points says none are left");
         SkillTreeState.BeforeSubmit(panel, SubmitType.Y_TRIANGLE);
         panel.SkillsSpecialisationUIManager = new GameObject().Add(new SkillsSpecialisationUIManager { Respeccing = true });

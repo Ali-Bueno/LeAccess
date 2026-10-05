@@ -126,6 +126,7 @@ internal static class PassiveAccessibility
     {
         ResetSelection();
         PassiveTreeNavigation.Reset();
+        PassiveTreeState.Reset();
         _announcedTree = null;
         PassiveSelectionReader.ForgetColumn();
         _lastFailure = null;

@@ -131,7 +131,8 @@ Mod behaviour (2026-10-05, `SkillTreeState`, `SkillTreeNavigation`, `SkillSelect
 - A new tree says "Habilidad sin especializar" first, or its unspent points after the node; later
   only changes are spoken (points left after a point, specialised/despecialised, point removal mode
   started/ended). The root, which takes no points, no longer reads "0 de 0".
-- Cross on a node the game ignores says why: specialise first, or no points left. In point removal
+- Cross on a node the game ignores says why: specialise first, node full (added 2026-10-05 with the
+  passive rework), or no points left. In point removal
   mode a node with points the game will not refund says "No se puede quitar".
 - A free slot says confirming chooses a skill; after that it asks for one, eligible skills say
   "Confirma para especializarla" and specialised ones "Ya especializada".

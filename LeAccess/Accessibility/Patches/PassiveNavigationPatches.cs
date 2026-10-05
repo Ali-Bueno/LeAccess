@@ -38,3 +38,16 @@ internal static class PassiveSelectedAtPatch
 {
     private static void Postfix(PassiveTreeNavigable __instance) => PassiveTreeNavigation.AfterSelected(__instance);
 }
+
+// Cross on a node the game will not raise (full, locked, no points) is otherwise silent. The native body opens with
+// short branches (a detoured original would crash, as HandleNavigateInput did), so the prefix replays it and skips it.
+[HarmonyPatch(typeof(PassiveTreeNavigable), nameof(PassiveTreeNavigable.HandleSubmitInput))]
+internal static class PassiveSubmitPatch
+{
+    private static bool Prefix(PassiveTreeNavigable __instance, SubmitType type)
+    {
+        PassiveTreeState.BeforeSubmit(__instance, type);
+        PassiveTreeNavigation.Submit(__instance, type);
+        return false;
+    }
+}

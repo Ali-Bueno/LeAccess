@@ -44,7 +44,8 @@ internal static class PassiveNavigationOrder
         return null;
     }
 
-    /// <summary>Down/Up stay inside the column, Right/Left go to the same place in the next/previous column.</summary>
+    /// <summary>Down/Up stay inside the column, Right/Left go to the same place in the next/previous column. Only the first
+    /// column leaves the grid (Up: buttons above, Down: skill strip, Left: banner); other ends repeat the node.</summary>
     internal static Move Plan(IReadOnlyList<(int Column, int Row)> order, int column, int row, Direction direction)
     {
         if (direction is not (Direction.DOWN or Direction.UP or Direction.RIGHT or Direction.LEFT)) return new Move(MoveKind.Native);
@@ -63,7 +64,8 @@ internal static class PassiveNavigationOrder
             _ => Step.PreviousGroup
         };
         var move = GroupedGridOrder.Plan(sizes, place.Group, place.Index, step);
-        if (move.Kind == GroupedGridOrder.MoveKind.Edge) return new Move(direction == Direction.RIGHT ? MoveKind.Stay : MoveKind.Exit);
+        if (move.Kind == GroupedGridOrder.MoveKind.Edge)
+            return new Move(direction != Direction.RIGHT && place.Group == 0 ? MoveKind.Exit : MoveKind.Stay);
         int start = 0;
         for (int group = 0; group < move.Group; group++) start += sizes[group];
         return Select(order[start + move.Index]);

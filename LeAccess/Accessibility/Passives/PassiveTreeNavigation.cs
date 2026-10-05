@@ -11,6 +11,7 @@ internal static class PassiveTreeNavigation
 {
     private static readonly List<(int Column, int Row)> Order = new();
     private static readonly List<IntPtr> Nodes = new();
+    private static readonly List<int> Thresholds = new();
     private static IntPtr _orderOwner;
     private static int _orderColumn = -1, _orderRow = -1;
     private static string _lastFailure;
@@ -59,6 +60,26 @@ internal static class PassiveTreeNavigation
         }
     }
 
+    /// <summary>Native HandleSubmitInput (0x105c9d0, build 25711439): only Cross acts, clicking the selected cell's node.</summary>
+    /// <remarks>Replayed because its prologue's short branches crash through a detour; an empty cell, where the game
+    /// would throw, does nothing.</remarks>
+    internal static void Submit(PassiveTreeNavigable owner, SubmitType type)
+    {
+        try
+        {
+            if (type != SubmitType.A_EX || !IsAlive(owner)) return;
+            var cells = owner._navigationElements?.TryCast<Il2CppSystem.Array>();
+            int column = owner._currentColumn, row = owner._currentRow;
+            if (cells is null || cells.WasCollected || cells.Rank != 2 || column < 0 || row < 0 ||
+                column >= cells.GetLength(0) || row >= cells.GetLength(1)) return;
+            var cell = cells.GetValue(column, row);
+            var node = cell is null || cell.WasCollected ? null : cell.TryCast<SkillTreeNode>();
+            if (!IsAlive(node)) node = NodeAt(cells, column, row);
+            if (IsAlive(node)) node.Clicked();
+        }
+        catch (Exception ex) { ReportFailure(ex); }
+    }
+
     // The same dispatch as native HandleNavigateInput, whose short-branch prologue crashes when called through
     // its detour; the hook therefore never runs the original (see reference/passive-reading.md).
     private static void NativeStep(PassiveTreeNavigable owner, Direction direction)
@@ -69,7 +90,8 @@ internal static class PassiveTreeNavigation
         else if (direction == Direction.RIGHT) owner.HorizontalMoveToClosestNode(1);
     }
 
-    /// <summary>Coming back from the buttons above or the skill strip below lands on the first or last node.</summary>
+    /// <summary>Coming back from the buttons above or the skill strip below lands on the top or bottom of the first column,
+    /// where the grid is left for them.</summary>
     internal static void AfterSelected(PassiveTreeNavigable owner)
     {
         try
@@ -80,18 +102,21 @@ internal static class PassiveTreeNavigation
             // Native OnSelected ignores selection without a controller; the fullscreen panel arranges these exits differently.
             if (!EpochInputManager.IsControllerActive || !PassivePanelReader.Owns(owner)) return;
             if (!TryReadOrder(owner, out var cells) || Order.Count == 0) return;
-            var target = fromTop ? Order[0] : Order[Order.Count - 1];
+            int last = 0;
+            while (last + 1 < Order.Count && Order[last + 1].Column == Order[0].Column) last++;
+            var target = Order[fromTop ? 0 : last];
             if (owner._currentColumn != target.Column || owner._currentRow != target.Row)
                 MoveTo(owner, cells, target.Column, target.Row);
         }
         catch (Exception ex) { ReportFailure(ex); }
     }
 
-    /// <summary>The node's place in its column and the column's ordinal, or false when it is not in the grid.</summary>
+    /// <summary>The node's place in its column, the column's ordinal and the tree points its nodes need at least,
+    /// or false when it is not in the grid.</summary>
     internal static bool TryGetPosition(PassiveTreeNavigable owner, SkillTreeNode node, out int position, out int count,
-        out int column)
+        out int column, out int threshold)
     {
-        position = count = column = 0;
+        position = count = column = threshold = 0;
         if (!IsAlive(node)) return false;
         if (!IsAlive(owner) || owner.Pointer != _orderOwner || owner._currentColumn != _orderColumn ||
             owner._currentRow != _orderRow)
@@ -105,7 +130,19 @@ internal static class PassiveTreeNavigation
         position = place.Index + 1;
         count = place.Size;
         column = place.Group + 1;
+        threshold = ColumnThresholds()[place.Group];
         return true;
+    }
+
+    /// <summary>Per column (in order), the fewest tree points any of its nodes needs; the game sets columns by these.</summary>
+    internal static List<int> ColumnThresholds()
+    {
+        var thresholds = new List<int>();
+        for (int i = 0; i < Order.Count; i++)
+            if (i > 0 && Order[i].Column == Order[i - 1].Column)
+                thresholds[thresholds.Count - 1] = Math.Min(thresholds[thresholds.Count - 1], Thresholds[i]);
+            else thresholds.Add(Thresholds[i]);
+        return thresholds;
     }
 
     /// <summary>The GameObject of a grid cell, which may hold a node component or its GameObject.</summary>
@@ -121,6 +158,7 @@ internal static class PassiveTreeNavigation
     {
         Order.Clear();
         Nodes.Clear();
+        Thresholds.Clear();
         _orderOwner = IntPtr.Zero;
         _orderColumn = _orderRow = -1;
     }
@@ -142,6 +180,7 @@ internal static class PassiveTreeNavigation
                     Nodes.Contains(node.Pointer)) continue;
                 Order.Add((column, row));
                 Nodes.Add(node.Pointer);
+                Thresholds.Add(node.masteryRequirement);
             }
         _orderOwner = owner.Pointer;
         _orderColumn = owner._currentColumn;

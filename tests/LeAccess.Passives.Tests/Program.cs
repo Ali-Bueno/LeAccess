@@ -129,8 +129,8 @@ Check(ScreenReader.Messages.Count == spoken + 1 && !ScreenReader.Messages.Last()
     "modern navigation speaks only brief");
 first.requirementsMet = true;
 Tick(); Tick();
-Check(ScreenReader.Messages.Count == spoken + 2 && ScreenReader.Messages.Last().Text.Contains(T("node.available")),
-    "requirements status update speaks brief once");
+Check(ScreenReader.Messages.Count == spoken + 2 && !ScreenReader.Messages.Last().Text.Contains(T("node.locked")),
+    "Meeting the requirements speaks the brief once, now without a lock");
 Check(PassiveAccessibility.ReadCurrentDetails() && ScreenReader.Messages.Last().Text.Contains("Game description") &&
     ScreenReader.Messages.Last().Text.Contains("Localized modifier"), "manual gesture speaks native details");
 spoken = ScreenReader.Messages.Count;
@@ -340,7 +340,8 @@ string paladin = fullscreen._masteryNameText.text;
 Check(opened.Contains(Join(Tree(paladin, 15, T("passive.tree_chosen")), fullscreen._pointsAvailableText.text)) &&
     opened.IndexOf(paladin, StringComparison.Ordinal) < opened.IndexOf(first.Name, StringComparison.Ordinal),
     "The displayed tree's visible name, points and unspent points precede the first node");
-Check(opened.Contains(F("passive.node_threshold", 20, 15)), "A node above the tree's points names its threshold");
+Check(opened.Contains(F("passive.column_locked", 1, 20, 15)) && !opened.Contains(F("passive.node_threshold", 20, 15)),
+    "Entering a column above the tree's points names its threshold once, in the column label: " + opened);
 cells.Cells[2, 1] = second;
 Tick(); Tick();
 Check(ScreenReader.Messages.Count == 2 && !ScreenReader.Messages.Last().Text.Contains(overviewPrefix) &&
@@ -442,11 +443,12 @@ var order = new List<(int Column, int Row)> { (1, 3), (1, 1), (3, 4), (3, 2), (5
 PassiveNavigationOrder.Move Plan(int column, int row, Direction direction) => PassiveNavigationOrder.Plan(order, column, row, direction);
 PassiveNavigationOrder.Move Select(int column, int row) => new(PassiveNavigationOrder.MoveKind.Select, column, row);
 var exit = new PassiveNavigationOrder.Move(PassiveNavigationOrder.MoveKind.Exit);
+var stay = new PassiveNavigationOrder.Move(PassiveNavigationOrder.MoveKind.Stay);
 Check(Plan(1, 3, Direction.DOWN) == Select(1, 1) && Plan(1, 1, Direction.DOWN) == exit &&
-    Plan(3, 2, Direction.DOWN) == exit && Plan(5, 1, Direction.DOWN) == exit,
-    "Down steps down its column only and the bottom of every column leaves the grid");
-Check(Plan(1, 1, Direction.UP) == Select(1, 3) && Plan(1, 3, Direction.UP) == exit && Plan(3, 4, Direction.UP) == exit,
-    "Up steps up its column only and the top of every column leaves the grid");
+    Plan(3, 2, Direction.DOWN) == stay && Plan(5, 1, Direction.DOWN) == stay,
+    "Down steps down its column only; only the first column's bottom leaves the grid, other bottoms stay");
+Check(Plan(1, 1, Direction.UP) == Select(1, 3) && Plan(1, 3, Direction.UP) == exit && Plan(3, 4, Direction.UP) == stay,
+    "Up steps up its column only; only the first column's top leaves the grid");
 Check(Plan(1, 3, Direction.RIGHT) == Select(3, 4) && Plan(1, 1, Direction.RIGHT) == Select(3, 2) &&
     Plan(3, 2, Direction.RIGHT) == Select(5, 1) && Plan(5, 1, Direction.LEFT) == Select(3, 4) &&
     Plan(3, 2, Direction.LEFT) == Select(1, 1) && Plan(1, 1, Direction.LEFT) == exit,
@@ -520,7 +522,11 @@ Tick(); Tick();
 Check(ScreenReader.Messages.Count == beforeStay + 1 && ScreenReader.Messages.Last().Text.Contains(nodeE.Name) &&
     ScreenReader.Messages.Last().Text.EndsWith(F("list.position", 1, 1)), "A move that cannot go further repeats the node and its place");
 PassiveTreeNavigation.Navigate(pageOwner, Direction.DOWN);
-Check(pageOwner.NativeSteps.Last() == "vertical -1 from 5,0", "Down from the last node takes the game's step from the bottom border");
+Check((pageOwner._currentColumn, pageOwner._currentRow) == (5, 1) && pageOwner.NativeSteps.Count == 0,
+    "Down from the bottom of a later column keeps the cursor instead of leaving the grid");
+pageOwner._currentColumn = 1; pageOwner._currentRow = 1;
+PassiveTreeNavigation.Navigate(pageOwner, Direction.DOWN);
+Check(pageOwner.NativeSteps.Last() == "vertical -1 from 1,0", "Down from the bottom of the first column takes the game's step to the strip");
 pageOwner._currentColumn = 1; pageOwner._currentRow = 3;
 PassiveTreeNavigation.Navigate(pageOwner, Direction.UP);
 Check(pageOwner.NativeSteps.Last() == "vertical 1 from 1,4", "Up from the first node takes the game's step from the top border");
@@ -540,7 +546,7 @@ PassiveTreeNavigation.AfterSelected(pageOwner);
 Check((pageOwner._currentColumn, pageOwner._currentRow) == (1, 3), "Coming down from the top buttons lands on the first node");
 NavigationManager.previousSelectedNavigableId = NavigableID.PASSIVE_TREE_UNLOCK_PANEL;
 PassiveTreeNavigation.AfterSelected(pageOwner);
-Check((pageOwner._currentColumn, pageOwner._currentRow) == (5, 1), "Coming up from the skill strip lands on the last node");
+Check((pageOwner._currentColumn, pageOwner._currentRow) == (1, 1), "Coming up from the skill strip lands on the bottom of the first column, where it was left");
 pageOwner._currentColumn = 3; pageOwner._currentRow = 2;
 NavigationManager.previousSelectedNavigableId = NavigableID.PASSIVE_TREE_BANNER;
 PassiveTreeNavigation.AfterSelected(pageOwner);
@@ -553,6 +559,79 @@ PassiveTreeNavigation.AfterSelected(owner);
 Check((pageOwner._currentColumn, pageOwner._currentRow) == (3, 2) && (owner._currentColumn, owner._currentRow) == (2, 1),
     "Other entries, mouse input and trees outside the controller panel keep the game's landing");
 NavigationManager.previousSelectedNavigableId = NavigableID.NONE;
+
+// Like the skill trees: column thresholds, quiet open nodes, points left after a point, and why Cross did nothing.
+PassiveAccessibility.Reset(); ScreenReader.Messages.Clear();
+foreach (var n in new[] { nodeA, nodeB, nodeC, nodeD, nodeE }) n.requirementsMet = true;
+nodeC.masteryRequirement = 5; nodeD.masteryRequirement = 10; nodeE.masteryRequirement = 10;
+NavigationManager.currentlySelected = pageOwner;
+pageOwner._currentColumn = 3; pageOwner._currentRow = 4;
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary.StartsWith(Join(F("passive.column_threshold", 2, 5), nodeC.Name)) &&
+    !read.Summary.Contains(T("node.locked")), "An open column names the points it needs; a node that can be raised has no status: " + read.Summary);
+pageOwner._currentRow = 2;
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary.Contains(F("passive.node_threshold", 10, 5)),
+    "A node needing more than its column names its own threshold");
+pageOwner._currentColumn = 5; pageOwner._currentRow = 1;
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary.StartsWith(Join(F("passive.column_locked", 3, 10, 5), nodeE.Name)) &&
+    !read.Summary.Contains(T("passive.node_locked")) && !read.Summary.Contains(F("passive.node_threshold", 10, 5)),
+    "Entering a locked column says so once, in its label: " + read.Summary);
+nodeA.masteryRequirement = nodeB.masteryRequirement = 10;
+pageOwner._currentColumn = 1; pageOwner._currentRow = 3;
+PassiveSelectionReader.TryRead(out _);
+pageOwner._currentRow = 1;
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary.Contains(T("passive.node_locked")) &&
+    !read.Summary.Contains(F("passive.node_threshold", 10, 5)), "Later nodes of a locked column say only that they are locked");
+nodeA.masteryRequirement = nodeB.masteryRequirement = 0;
+pageOwner._currentColumn = 3; pageOwner._currentRow = 4;
+PassiveSelectionReader.TryRead(out _);
+nodeC.pointsAllocated = 1; characterTree.unspentPoints = 3; diamonds[0].levelTMP.text = "10";
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary.Contains(Join(F("passive.unspent", 3), F("passive.column_unlocked", 3))),
+    "A point spent says the points left and the column it opened: " + read.Summary);
+Check(PassiveSelectionReader.TryRead(out var again) && again.Summary == read.Summary, "That notice stays while the node stays selected");
+pageOwner._currentRow = 2;
+Check(PassiveSelectionReader.TryRead(out read) && !read.Summary.Contains(F("passive.unspent", 3)) &&
+    !read.Summary.Contains(F("passive.node_threshold", 10, 10)), "The next node no longer repeats it and its threshold is met");
+var tree0 = new PassiveTreeState.State("tree", 5, 4);
+var thresholds = new List<int> { 0, 5, 10 };
+Check(PassiveTreeState.Changes(null, tree0, thresholds) is null && PassiveTreeState.Changes(tree0 with { Tree = "other" }, tree0, thresholds) is null &&
+    PassiveTreeState.Changes(tree0, tree0, thresholds) is null, "A new tree or no change adds nothing; the tree introduction covers a new tree");
+Check(PassiveTreeState.Changes(tree0, tree0 with { Points = 4, Unspent = 5 }, thresholds) ==
+    Join(F("passive.unspent", 5), F("passive.column_relocked", 2)), "Removing points says the points left and the column it closed");
+var probe = new GameObject().Add(new SkillTreeNode { requirementsMet = true, maxPoints = 5 });
+Check(PassiveTreeState.Refusal(probe, 5, 0, 4) is null, "A node that can be raised has no refusal");
+probe.pointsAllocated = 5;
+Check(PassiveTreeState.Refusal(probe, 5, 0, 4) == T("node.full"), "A full node says so");
+probe.pointsAllocated = 0; probe.masteryRequirement = 10;
+Check(PassiveTreeState.Refusal(probe, 5, 0, 4) == F("passive.node_threshold", 10, 5), "A node above the tree's points names its threshold");
+probe.masteryRequirement = 0; probe.requirementsMet = false;
+Check(PassiveTreeState.Refusal(probe, 5, 0, 4) == T("node.locked"), "Unmet requirements are named");
+probe.requirementsMet = true;
+Check(PassiveTreeState.Refusal(probe, 5, 0, 0) == T("node.no_points"), "Without unspent points Cross says none are left");
+probe.RespecMode = true;
+Check(PassiveTreeState.Refusal(probe, 5, 0, 0) is null, "While the game removes points Cross gives no refusal");
+characterTree.unspentPoints = 0;
+pageOwner._currentRow = 4;
+PassiveTreeState.BeforeSubmit(pageOwner, SubmitType.Y_TRIANGLE);
+Check(PassiveSelectionReader.TryRead(out read) && !read.Summary.Contains(T("node.no_points")), "Other buttons give no refusal");
+PassiveTreeState.BeforeSubmit(pageOwner, SubmitType.A_EX);
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary.Contains(T("node.no_points")), "Cross with no points left says so on the node");
+pageOwner._currentRow = 2;
+Check(PassiveSelectionReader.TryRead(out read) && !read.Summary.Contains(T("node.no_points")), "The refusal ends with the selection");
+// The native submit is replayed (its prologue cannot be detoured): only Cross clicks the selected cell's node.
+PassiveTreeNavigation.Submit(pageOwner, SubmitType.A_EX);
+PassiveTreeNavigation.Submit(pageOwner, SubmitType.X_SQUARE);
+Check(nodeD.Clicks == 1 && nodeC.Clicks == 0, "Cross clicks the selected node once; other buttons do nothing");
+pageOwner._currentColumn = 2; pageOwner._currentRow = 0;
+PassiveTreeNavigation.Submit(pageOwner, SubmitType.A_EX);
+pageOwner._currentColumn = 99;
+PassiveTreeNavigation.Submit(pageOwner, SubmitType.A_EX);
+Check(nodeD.Clicks == 1 && nodeC.Clicks == 0, "An empty or out-of-range cell clicks nothing instead of throwing");
+pageOwner._currentColumn = 3; pageOwner._currentRow = 2;
+foreach (var n in new[] { nodeA, nodeB, nodeC, nodeD, nodeE }) { n.requirementsMet = false; n.masteryRequirement = 0; n.pointsAllocated = 0; }
+characterTree.unspentPoints = 4; diamonds[0].levelTMP.text = "5";
+PassiveAccessibility.Reset();
+pageOwner._currentColumn = 1; pageOwner._currentRow = 3;
+Tick(); Tick();
 
 var bannerNavigable = mastered.Add(new PassiveTreeBannerNavigable());
 var shoulderFocus = diamonds[1].gameObject.Child();
@@ -573,8 +652,8 @@ NavigationManager.currentlySelected = masteryOwner;
 Tick(); Tick();
 string switched = ScreenReader.Messages.Last().Text;
 Check(ScreenReader.Messages.Count == beforeSwitch + 1 &&
-    switched.StartsWith(Join(Tree("Bladedancer", 3, T("passive.tree_chosen")), F("passive.unspent", 4), F("passive.column", 1), nodeG.Name)) &&
-    !switched.Contains(overviewPrefix) && switched.Contains(F("passive.node_threshold", 10, 3)),
+    switched.StartsWith(Join(Tree("Bladedancer", 3, T("passive.tree_chosen")), F("passive.unspent", 4),
+        F("passive.column_locked", 1, 10, 3), nodeG.Name)) && !switched.Contains(overviewPrefix),
     "The new tree's name and points lead its first node in one utterance: " + switched);
 bannerNavigable._currentButton = diamonds[2].GetComponent<UnityEngine.UI.Button>();
 NavigationManager.currentlySelected = bannerNavigable;

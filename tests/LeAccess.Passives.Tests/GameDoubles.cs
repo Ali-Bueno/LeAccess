@@ -61,7 +61,12 @@ internal sealed class SkillTreeNode : Component
     internal bool requirementsMet, Passive = true;
     internal string Name = "Localized passive", Description = "Game description";
     internal bool inPassiveTree() => Passive;
+    internal bool RespecMode;
+    internal bool relevantPanelIsInRespecMode() => RespecMode;
+    internal int Clicks;
+    internal void Clicked() { Guard(); Clicks++; }
 }
+internal enum SubmitType { A_EX, X_SQUARE, Y_TRIANGLE }
 internal static class Localization
 {
     internal static string Locale = "es";
@@ -169,7 +174,7 @@ namespace LeAccess.I18n
     {
         private static readonly Dictionary<string, string> Text = new()
         {
-            ["node.available"] = "Available", ["node.locked"] = "Locked",
+            ["node.locked"] = "Locked", ["node.full"] = "Full", ["node.no_points"] = "No points left",
             ["node.points"] = "{0} of {1} points allocated",
             ["node.requirement_met"] = "{0}, requirement met", ["node.requirement_unmet"] = "{0}, requirement not met",
             ["passive.tree"] = "{0}, {1} points", ["passive.tree_class"] = "Base class",
@@ -180,7 +185,9 @@ namespace LeAccess.I18n
             ["passive.ability_unlocked"] = "Unlocked", ["passive.ability_unlockable"] = "Unlocks at {0}, you have {1}",
             ["passive.ability_unreachable"] = "Needs {0}, tree allows {1}",
             ["list.position"] = "{0} of {1}", ["passive.column"] = "Column {0}", ["passive.unspent"] = "{0} unspent",
-            ["passive.tree_shown"] = "Shown tree",
+            ["passive.tree_shown"] = "Shown tree", ["passive.column_threshold"] = "Column {0}, needs {1}",
+            ["passive.column_locked"] = "Column {0} locked, needs {1}, you have {2}", ["passive.node_locked"] = "Locked node",
+            ["passive.column_unlocked"] = "Column {0} unlocked", ["passive.column_relocked"] = "Column {0} relocked",
             ["skill.learned"] = "Learned", ["skill.not_learned"] = "Not learned",
         };
         internal static string Get(string key) => Text[key];

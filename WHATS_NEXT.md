@@ -1,3 +1,18 @@
+# Handoff — 2026-10-05 later: passive trees like the skill trees
+
+User: despecialising works ("funciona"); the passive tree "still feels ultra confusing", make it like
+the skill tree. Passive trees have no root or branches (columns are gated by tree points), so
+columns stay, with the skill tree's rules: exits only from the first column (Up buttons, Down
+strip, Left banner), other ends repeat; column label with its threshold or lock; no "Requisitos
+cumplidos"; points left and opened columns after a point; Cross refusals (full, threshold,
+requirements, no points). Skill trees also gained "Nodo al máximo".
+[Details](reference/passive-reading.md#reading-like-the-skill-trees-2026-10-05).
+
+First live checks: open Passives, walk a column to both ends (repeats), Up/Down from the first
+column (buttons/strip) and back, Right into a locked column (label with "tienes N"), spend a point
+(points left, "Columna N desbloqueada" when crossing), Cross with no points or on a full node.
+Passives 181, Skills 263, Localization 654, PatchSafety 46 pass. The user confirms it works.
+
 # Handoff — 2026-10-05: modifying skills through their trees
 
 User question: can the mod change skills ("variants" per ChatGPT)? Static analysis: no separate

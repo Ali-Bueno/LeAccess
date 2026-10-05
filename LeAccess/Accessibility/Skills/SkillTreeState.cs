@@ -66,10 +66,12 @@ internal static class SkillTreeState
     {
         try
         {
-            if (type != SubmitType.A_EX || !IsAlive(panel) || panel.inTopArea || !IsAlive(SkillTreeNavigation.ResolveNode(panel)) ||
-                !TryRead(panel, out var state)) return;
+            var node = IsAlive(panel) && !panel.inTopArea ? SkillTreeNavigation.ResolveNode(panel) : null;
+            if (type != SubmitType.A_EX || !IsAlive(node) || !TryRead(panel, out var state)) return;
             string hint = !state.Specialised ? ModText.Get("skill.specialise_first")
-                : !state.Respeccing && state.Unspent == 0 ? ModText.Get("skill.no_points") : null;
+                : state.Respeccing ? null
+                : node.maxPoints > 0 && node.pointsAllocated >= node.maxPoints ? ModText.Get("node.full")
+                : state.Unspent == 0 ? ModText.Get("node.no_points") : null;
             if (hint == null) return;
             _hint = hint;
             SkillAccessibility.RepeatCurrent();

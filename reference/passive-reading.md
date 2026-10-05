@@ -231,3 +231,30 @@ learned/not learned and the base-class level from `SkillLearningReader.TryReadKn
 `KnownAbilityList`, as the Skills panel does); only an unlearned skill without a level requirement
 adds this tree's point threshold, and never "unlocked". Without known-skill data the old point
 comparison remains. Passive suite: 157 checks.
+
+## Reading like the skill trees (2026-10-05)
+
+User request after the skill-tree work: the passive tree "still feels ultra confusing"; make it work
+like the skill tree. Passive trees have no root or branches: the game gates its columns by tree points
+(`masteryRequirement`), so columns stay the groups, with the skill tree's rules:
+
+- **Exits only from the first column**, as the skill tree leaves only from its root: Up at its top →
+  buttons above, Down at its bottom → skill strip, Left → banner. Every other column end repeats the
+  node instead of leaving. Coming back from the strip lands on the first column's bottom.
+- **Column label on entry** names the points it needs, the fewest any of its nodes needs: "Columna 3,
+  requiere 10 puntos", or "Columna 3, bloqueada: requiere 10 puntos, tienes 9".
+- **Nodes speak only what stops Cross:** "Requisitos cumplidos" is gone; a later node of a locked
+  column says "Bloqueado"; a node needing more than its column, or with unmet node requirements,
+  keeps its own text.
+- **After a point** (controller panel, `PassiveTreeState`): the unspent points and any column the
+  tree's points opened ("Columna 3 desbloqueada") or closed, while that node stays selected.
+- **Cross the game ignores** (prefix on `PassiveTreeNavigable.HandleSubmitInput`): full node, the
+  node's threshold, unmet requirements or no unspent points; nothing in respec mode
+  (`relevantPanelIsInRespecMode`). The refusal tests are preconditions, not traced native checks.
+  The native body (0x105c9d0, 0x5b bytes, build 25711439) has short `jne`/`je` at +0x6/+0xf, so the
+  prefix replays it and skips the original: only Cross acts, calling `SkillTreeNode.Clicked()` on
+  `_navigationElements[_currentColumn, _currentRow]` (the game throws on an empty cell; the replay
+  does nothing).
+
+Passive suite: 181 checks. Runtime unverified: whether every column's nodes share one threshold,
+the refusal on real nodes, and respec-mode behaviour.
