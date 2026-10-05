@@ -367,4 +367,5 @@ EquippedItemTests.Run(Check);
 SpeechAcceptanceTests.Run(Check);
 DropFocusTests.Run(Check);
 NavigationTests.Run(Check);
+GoldNoticeTests.Run(Check);
 Console.WriteLine($"Inventory tests passed: {checks} checks.");

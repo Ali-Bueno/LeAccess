@@ -60,8 +60,19 @@ Create menu, game bindings paused) or **Ctrl+G** speaks "Oro: N" alone, interrup
 only, never while typing (same gate as the report). Source: `GoldTracker.value`, the tracker the
 game's `UIGoldText` counters display, from `ItemContainersManager.Instance.goldTracker`, else
 online `LocalPlayer.goldTracker`, else offline `Actor.goldTracker`; none readable → "Oro no
-disponible". Not announced automatically; menus such as merchants are not covered yet. Vitals
-service 89 + input 38 checks; listening pending (online value in particular).
+disponible". The user confirmed it works.
+
+Inventory and shops (same day, user request): opening the inventory (`UIBase.IsInventoryOpen`) or
+a shop (`IsShopOpen`, also over an open inventory) leads the first item read with "Oro: N"; while a
+shop is open, a gold change (purchase, sale, buyback) leads the next brief with the new amount.
+The notice waits until a brief carrying it is accepted, then ends when the selection moves
+(`InventoryGoldNotice`, tracked every frame so closing behind a modal resets it). Every vendor
+whose container tracks gold counts as a shop: `IsShopOpen`, `IsGamblingOpen`, `IsSoulGamblingOpen`,
+`IsDungeonKeysTraderPanelOpen`, `IsFactionGamblingCoFOpen`, `IsFactionGamblingMGOpen`,
+`IsFactionTheWeaverVendorPanelOpen`, `IsHunterVendorPanelOpen`, `IsTimeglassVendorPanelOpen`,
+`IsBazaarPanelOpen` (checked only while the inventory or shop is open; the notice still needs an
+item brief, so a vendor without item containers stays silent). Inventory suite 269 checks;
+listening pending.
 
 Settings are created on the next launch in `BepInEx/config/LeAccess.cfg`:
 

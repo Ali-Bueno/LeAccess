@@ -1,7 +1,8 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-05 night (Claude session): Create+Triangle / Ctrl+G reads the character's gold
-([details](reference/vitals-api.md#gold-2026-10-05)); **user confirms it works**.
+**Updated:** 2026-10-05 night (Claude session): the inventory and every gold vendor (shop, gambler, faction
+and other vendors) say the gold on opening and after a purchase or sale ([details](reference/vitals-api.md#gold-2026-10-05)); listening pending. Create+Triangle /
+Ctrl+G reads the gold in gameplay (**user confirms it works**).
 Earlier, 2026-10-05 evening: the passive mastery banner is a list (base class, then
 masteries, "N de M"), says which tree is shown or that Cross opens it, and no longer speaks twice
 ([details](reference/passive-reading.md#mastery-banner-as-a-list-2026-10-05)); **user confirms it works**.

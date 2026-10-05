@@ -1,3 +1,12 @@
+# Handoff — 2026-10-05 night: gold in the inventory and shops
+
+User: the gold command works; asked for it on opening the inventory or merchants. The first item
+read after the inventory or a shop opens is now led by "Oro: N", and a purchase/sale while a shop is
+open leads the next brief with the new amount ([details](reference/vitals-api.md#gold-2026-10-05)).
+First live checks: open the inventory (gold then item), a merchant (gold then item), buy and sell
+(new gold), close and reopen; also the gambler and faction vendors (all gold vendors count as shops).
+Inventory 269 pass; installed, not committed.
+
 # Handoff — 2026-10-05 night: gold
 
 User: the banner works; a friend asked for a way to hear the character's gold. Create+Triangle

@@ -15,6 +15,7 @@ internal static class InventoryAccessibility
 {
     private static readonly InventoryAnnouncementState Announcements = new();
     private static readonly ScreenContentTracker Comparison = new();
+    private static readonly InventoryGoldNotice Gold = new();
     private static string _lastFailure;
     private static string _contextKey, _context, _position;
     private static float _nextContextRead;
@@ -41,6 +42,7 @@ internal static class InventoryAccessibility
     {
         try
         {
+            ObserveGold();
             var container = GetFocusedContainer();
             if (!IsAlive(container)) { Reset(); return; }
             InventoryDropFocus.Guard(container);
@@ -106,6 +108,8 @@ internal static class InventoryAccessibility
                 text = ScreenContentTracker.Combine(new[] { text, _position, _context });
             }
             else { _contextKey = _context = _position = null; }
+            string gold = Gold.For(key);
+            if (gold != null) text = ScreenContentTracker.Combine(new[] { gold, text });
             string requestedText = text;
             if (requestDetails && selectedData is not null && !selectedData.WasCollected)
                 hasTooltip = ItemTooltipReader.TryReadForItem(selectedData, container.gameObject, out requestedText);
@@ -140,6 +144,7 @@ internal static class InventoryAccessibility
             else if (!announced) return;
             if (!ScreenReader.TrySpeak(announcement, interrupt: true)) return;
             Announcements.Acknowledge(key, text);
+            if (!requestDetails) Gold.Spoken(key);
             _detailsKey = null;
             Plugin.Log.LogInfo($"[{(requestDetails ? "Inventory details" : "Inventory")}] {announcement}");
         }
@@ -157,11 +162,33 @@ internal static class InventoryAccessibility
         if (!Announcements.HasSpoken(key, brief)) announcement = ScreenContentTracker.Combine(new[] { brief, announcement });
         if (!ScreenReader.TrySpeak(announcement, interrupt: true)) return true;
         Comparison.Acknowledge(1, comparison);
+        Gold.Spoken(key);
         Announcements.Observe(key, brief, false, out _, acknowledge: false);
         Announcements.Acknowledge(key, brief);
         Plugin.Log.LogInfo($"[Inventory comparison] {announcement}");
         return true;
     }
+
+    // Tracked every frame, so a panel closed while another window held focus still ends its notice.
+    // A failure here only loses the gold notice, never the item reading.
+    private static void ObserveGold()
+    {
+        try
+        {
+            var ui = UIBase.instance;
+            // Vendors open with the inventory; gameplay frames cost two checks.
+            bool open = IsAlive(ui) && (ui.IsInventoryOpen() || ui.IsShopOpen());
+            bool shop = open && VendorOpen(ui);
+            Gold.Observe(open, shop, open && Vitals.GoldReport.TryRead(out int amount) ? amount : null);
+        }
+        catch (Exception ex) { Gold.Reset(); ReportFailure(ex); }
+    }
+
+    // Every vendor the game trades through a gold-tracking container, plus the bazaar.
+    private static bool VendorOpen(UIBase ui) =>
+        ui.IsShopOpen() || ui.IsGamblingOpen() || ui.IsSoulGamblingOpen() || ui.IsDungeonKeysTraderPanelOpen() ||
+        ui.IsFactionGamblingCoFOpen() || ui.IsFactionGamblingMGOpen() || ui.IsFactionTheWeaverVendorPanelOpen() ||
+        ui.IsHunterVendorPanelOpen() || ui.IsTimeglassVendorPanelOpen() || ui.IsBazaarPanelOpen();
 
     private static ItemContainerUI GetFocusedContainer()
     {

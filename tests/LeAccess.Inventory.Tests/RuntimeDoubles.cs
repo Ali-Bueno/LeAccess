@@ -217,6 +217,26 @@ internal sealed class UIBase : UnityEngine.Component
 {
     public static UIBase instance;
     public LE.UI.Tooltips.TooltipSystem TooltipSystem;
+    internal bool InventoryOpen, ShopOpen, GamblingOpen;
+    internal bool IsInventoryOpen() => InventoryOpen;
+    internal bool IsShopOpen() => ShopOpen;
+    internal bool IsGamblingOpen() => GamblingOpen;
+    internal bool IsSoulGamblingOpen() => false;
+    internal bool IsDungeonKeysTraderPanelOpen() => false;
+    internal bool IsFactionGamblingCoFOpen() => false;
+    internal bool IsFactionGamblingMGOpen() => false;
+    internal bool IsFactionTheWeaverVendorPanelOpen() => false;
+    internal bool IsHunterVendorPanelOpen() => false;
+    internal bool IsTimeglassVendorPanelOpen() => false;
+    internal bool IsBazaarPanelOpen() => false;
+}
+namespace LeAccess.Accessibility.Vitals
+{
+    internal static class GoldReport
+    {
+        internal static int? Amount;
+        internal static bool TryRead(out int gold) { gold = Amount ?? 0; return Amount.HasValue; }
+    }
 }
 namespace LE.UI.Tooltips
 {
