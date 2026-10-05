@@ -101,8 +101,10 @@ internal static class PassivePanelReader
         string tree = Describe(manager, index);
         if (string.IsNullOrWhiteSpace(tree)) return false;
         var button = Button(manager, index);
+        // Moving over the diamonds never changes the shown tree; Cross opens the focused one.
         string summary = ScreenContentTracker.Combine(new[] { tree,
-            index == manager.activeMastery ? ModText.Get("passive.tree_shown") : null });
+            ModText.Get(index == manager.activeMastery ? "passive.tree_shown" : "passive.open_tree"),
+            ModText.Format("list.position", index + 1, ButtonCount(manager)) });
         selection = new PassiveSelection($"banner:{button.Pointer}:{manager.activeMastery}", button.gameObject, summary,
             MasteryReader.ReadDefinition(button));
         return true;
@@ -122,17 +124,19 @@ internal static class PassivePanelReader
     {
         if (!button.isMasteryClass) return ModText.Get("passive.tree_class");
         if (LocalTree() is { } tree && tree.chosenMastery == index) return ModText.Get("passive.tree_chosen");
+        // Before a mastery is chosen its trees can be viewed but take no points.
+        if (LocalTree() is { chosenMastery: 0 }) return ModText.Get("passive.tree_locked");
         return IsAlive(button.lockIcon) && UiVisibility.IsVisible(button.lockIcon) ? ModText.Get("passive.tree_locked") : null;
     }
 
-    private static int ButtonCount(PassivePanelManager manager)
+    internal static int ButtonCount(PassivePanelManager manager)
     {
         var banner = manager.openedBanner;
         var buttons = IsAlive(banner) ? banner.masteryButtons : null;
         return buttons is null || buttons.WasCollected ? 0 : buttons.Count;
     }
 
-    private static MasteryButton Button(PassivePanelManager manager, int index)
+    internal static MasteryButton Button(PassivePanelManager manager, int index)
     {
         var banner = manager.openedBanner;
         var buttons = IsAlive(banner) ? banner.masteryButtons : null;

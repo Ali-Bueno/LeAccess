@@ -68,6 +68,8 @@
   "passive.column_relocked": "Columna {0} bloqueada de nuevo",
   "passive.unspent": "{0} puntos sin gastar",
   "passive.tree_shown": "Árbol mostrado",
+  "passive.open_tree": "Confirma para abrir este árbol",
+  "passive.banner": "Árboles",
   "quest.completed": "Completada",
   "quest.pinned": "Fijada",
   "quest.unpinned": "Sin fijar",

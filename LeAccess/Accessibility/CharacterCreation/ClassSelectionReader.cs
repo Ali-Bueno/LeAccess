@@ -48,13 +48,15 @@ internal static class ClassSelectionReader
         }
         var banner = nav.TryCast<PassiveTreeBannerNavigable>();
         if (!IsAlive(banner) || !banner.isActiveAndEnabled) return false;
+        // The controller panel's banner belongs to the passive reader, which adds the tree's points and state.
+        var tree = owner.GetComponentInParent<FullScreenPanelPassiveTree>();
+        if (!IsAlive(tree)) return false;
         if (!banner.IsDescriptionSelected)
         {
             var button = banner.CurrentButton;
             return IsAlive(button) && button.isActiveAndEnabled && TryReadControl(button.gameObject, out selection);
         }
-        var tree = owner.GetComponentInParent<FullScreenPanelPassiveTree>();
-        return IsAlive(tree) && IsAlive(banner.descriptionContainer) &&
+        return IsAlive(banner.descriptionContainer) &&
             UiVisibility.IsVisible(banner.descriptionContainer.gameObject) &&
             TryReadTree(tree, tree._currentMasteryIndex, out selection);
     }

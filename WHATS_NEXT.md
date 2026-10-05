@@ -1,3 +1,16 @@
+# Handoff — 2026-10-05 evening: mastery banner
+
+User: the passive rework works; on the specialization tabs the focus "goes half crazy", the reader
+said "Tiradora, 0 puntos" then "Tiradora", and it must say when a tree is open or needs Cross. Fixed:
+the creation class reader no longer reads the controller banner (double speech); the banner's cross
+of diamonds is now a list (Up/Down, "N de M", Right back to the tree, entry on the shown tree); each
+diamond says "Árbol mostrado" or "Confirma para abrir este árbol"; masteries read "Bloqueado" until
+one is chosen. [Details](reference/passive-reading.md#mastery-banner-as-a-list-2026-10-05).
+
+First live checks: Left from the first column (lands on the shown tree, "Árboles"), Up/Down over all
+four, Cross on another tree (it opens with its first node), Left back and Right into the tree.
+Passives 193, Classes 113, Skills 263, Localization 658, PatchSafety 46 pass. The user confirms it works.
+
 # Handoff — 2026-10-05 later: passive trees like the skill trees
 
 User: despecialising works ("funciona"); the passive tree "still feels ultra confusing", make it like

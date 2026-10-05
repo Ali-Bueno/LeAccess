@@ -90,14 +90,16 @@ internal static class PassiveTreeNavigation
         else if (direction == Direction.RIGHT) owner.HorizontalMoveToClosestNode(1);
     }
 
-    /// <summary>Coming back from the buttons above or the skill strip below lands on the top or bottom of the first column,
-    /// where the grid is left for them.</summary>
+    /// <summary>Coming back from the buttons above, the banner or the skill strip below lands on the top (bottom for the
+    /// strip) of the first column, where the grid is left for them.</summary>
     internal static void AfterSelected(PassiveTreeNavigable owner)
     {
         try
         {
             var previous = NavigationManager.previousSelectedNavigableId;
-            bool fromTop = previous is NavigableID.PASSIVE_TREE_TOP_BUTTONS or NavigableID.PASSIVE_TREE_TOP_BUTTONS_LOWER;
+            // The banner, left of the first column, returns there too.
+            bool fromTop = previous is NavigableID.PASSIVE_TREE_TOP_BUTTONS or NavigableID.PASSIVE_TREE_TOP_BUTTONS_LOWER or
+                NavigableID.PASSIVE_TREE_BANNER;
             if (!fromTop && previous != NavigableID.PASSIVE_TREE_UNLOCK_PANEL) return;
             // Native OnSelected ignores selection without a controller; the fullscreen panel arranges these exits differently.
             if (!EpochInputManager.IsControllerActive || !PassivePanelReader.Owns(owner)) return;

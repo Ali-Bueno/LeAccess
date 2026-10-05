@@ -51,3 +51,19 @@ internal static class PassiveSubmitPatch
         return false;
     }
 }
+
+// The banner's diamonds form a cross (top, left, right, bottom) that is hard to follow by ear; the mod makes them a list.
+// The stick handler tail-jumps into this method, so both inputs arrive here; its prologue has no early short branch.
+[HarmonyPatch(typeof(PassiveTreeBannerNavigable), nameof(PassiveTreeBannerNavigable.HandleNavigateInput))]
+internal static class PassiveBannerNavigatePatch
+{
+    private static bool Prefix(PassiveTreeBannerNavigable __instance, Direction direction) =>
+        !PassiveBannerNavigation.TryNavigate(__instance, direction);
+}
+
+[HarmonyPatch(typeof(PassiveTreeBannerNavigable), nameof(PassiveTreeBannerNavigable.OnSelected), typeof(Vector2Int))]
+internal static class PassiveBannerEnteredPatch
+{
+    private static void Postfix(PassiveTreeBannerNavigable __instance, Vector2Int index) =>
+        PassiveBannerNavigation.AfterEntered(__instance, index);
+}

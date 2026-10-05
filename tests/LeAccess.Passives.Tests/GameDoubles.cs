@@ -15,6 +15,10 @@ internal static class DirectionExtensions
 }
 internal sealed class PassiveTreeNavigable : Component
 {
+    internal enum PassiveSkillTreeNodeSearchDirection { Up, Down, Left, Right }
+    internal readonly List<(Vector2Int Index, PassiveSkillTreeNodeSearchDirection Direction)> Entries = new();
+    internal void selectSkillTreeWithIndexAndDirection(Vector2Int index, PassiveSkillTreeNodeSearchDirection direction) =>
+        Entries.Add((index, direction));
     internal NativeObject _navigationElements;
     internal int _currentColumn, _currentRow;
     internal readonly List<(int Column, int Row)> Selected = new();
@@ -42,6 +46,7 @@ internal sealed class MasteryBanner : Component { internal NativeArray<MasteryBu
 internal sealed class MasteryButton : Component
 {
     internal TMPro.TextMeshProUGUI levelTMP;
+    internal UnityEngine.UI.Button button;
     internal bool isMasteryClass;
     internal GameObject lockIcon;
     internal MasteryBarDisplay masteryBarDisplay;
@@ -51,6 +56,10 @@ internal sealed class PassiveTreeBannerNavigable : Component
 {
     internal UnityEngine.UI.Button _currentButton;
     internal bool isDescriptionSelected;
+    internal UnityEngine.UI.Button CurrentButton { get => _currentButton; set { Guard(); _currentButton = value; Focused++; } }
+    internal int Focused;
+    internal PassiveTreeNavigable Tree;
+    internal PassiveTreeNavigable GetPassiveTreeNavigable() => Tree;
 }
 internal sealed class Actor : Component { internal LocalTreeData localTreeData; }
 internal static class PlayerFinder { internal static Actor Actor; internal static Actor getPlayerActor() => Actor; }
@@ -185,7 +194,7 @@ namespace LeAccess.I18n
             ["passive.ability_unlocked"] = "Unlocked", ["passive.ability_unlockable"] = "Unlocks at {0}, you have {1}",
             ["passive.ability_unreachable"] = "Needs {0}, tree allows {1}",
             ["list.position"] = "{0} of {1}", ["passive.column"] = "Column {0}", ["passive.unspent"] = "{0} unspent",
-            ["passive.tree_shown"] = "Shown tree", ["passive.column_threshold"] = "Column {0}, needs {1}",
+            ["passive.tree_shown"] = "Shown tree", ["passive.open_tree"] = "Confirm to open", ["passive.banner"] = "Banner", ["passive.column_threshold"] = "Column {0}, needs {1}",
             ["passive.column_locked"] = "Column {0} locked, needs {1}, you have {2}", ["passive.node_locked"] = "Locked node",
             ["passive.column_unlocked"] = "Column {0} unlocked", ["passive.column_relocked"] = "Column {0} relocked",
             ["skill.learned"] = "Learned", ["skill.not_learned"] = "Not learned",

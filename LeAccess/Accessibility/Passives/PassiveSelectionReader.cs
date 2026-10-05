@@ -83,6 +83,9 @@ internal static class PassiveSelectionReader
             {
                 if (PassivePanelReader.IsSwitching(manager)) return Fail("mastery page switching");
                 if (!PassivePanelReader.TryReadBanner(manager, banner, out selection)) return Fail("banner selection unavailable");
+                // Like a column, the banner names itself when the selection enters it.
+                if (Columns.Entered(selection.Key, "banner"))
+                    selection = selection with { Summary = ScreenContentTracker.Combine(new[] { ModText.Get("passive.banner"), selection.Summary }) };
                 LastStatus = "ready; mastery banner";
                 return true;
             }

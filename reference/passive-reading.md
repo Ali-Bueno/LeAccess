@@ -258,3 +258,32 @@ like the skill tree. Passive trees have no root or branches: the game gates its 
 
 Passive suite: 181 checks. Runtime unverified: whether every column's nodes share one threshold,
 the refusal on real nodes, and respec-mode behaviour.
+
+## Mastery banner as a list (2026-10-05)
+
+User report: on the specialization tabs "the focus goes half crazy"; the reader said "Tiradora, 0
+puntos" then "Tiradora", and there was no telling which tree is open or that Cross opens one.
+
+- **Double speech:** `ClassSelectionReader` (the creation/fullscreen class reader, logged `[Class]`)
+  also read the controller banner's `MasteryButton`. It now reads a banner only inside
+  `FullScreenPanelPassiveTree`; the controller banner is the passive reader's alone.
+- **Native banner** (build 25711439, static): `PassiveTreeBannerNavigable.HandleNavigateInput`
+  @0x105b320 treats `_leftMastery/_rightMastery/_topMastery/_bottomMastery` as a cross: from a side
+  diamond, Up → top, Down → bottom, Left/Right → that side; Up from top → the first active
+  `_masteryAbilities` button, then the description; Left from left / Right from right → the tree
+  (`selectSkillTreeWithIndexAndDirection((10,4),Left)` / `((0,4),Down)`). The tree enters it with
+  `(0,1)` → right diamond. Focus is `set_CurrentButton` (tooltip exit/enter, `ControllerFocusCursor.Show`).
+  `masteryButtons[i]`: 0 = base class, 1–3 = masteries. Cross clicks `_currentButton`; the shown
+  diamond's button is disabled. Prologues of `HandleNavigateInput`/`OnSelected(Vector2Int)` have no
+  early short branch (stick input tail-jumps into `HandleNavigateInput`).
+- **Mod:** prefix on `HandleNavigateInput` (controller panel, a diamond focused, description not
+  selected): Up/Down step through `masteryButtons` in order, ends and Left repeat, Right returns to the
+  tree the native way, landing on the first node (`AfterSelected`, previous = banner). Postfix on
+  `OnSelected(Vector2Int)`: entering from the tree starts on the shown tree's diamond. The mastery
+  skill button and the description keep native moves.
+- **Speech:** "Árboles" on entry; each diamond: tree, points, role, then "Árbol mostrado" or
+  "Confirma para abrir este árbol", then "N de M". Before a mastery is chosen, mastery trees read
+  "Bloqueado" (their nodes cannot take points; inferred from the game's unmet requirements).
+
+Passive suite: 193 checks; Classes 113. Runtime unverified: the diamond order heard and the landing
+after Right.

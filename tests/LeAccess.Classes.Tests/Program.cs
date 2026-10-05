@@ -122,6 +122,12 @@ var data1 = new PassivePanelData.MasteryData { name = "Paladin", isMastery = tru
 tree._masteryDataList = new(data0, data1); tree._masteryTabButtons = new(tab1, tab0);
 Localization.Texts["class:Sentinel"] = "Centinela"; Localization.Texts["mastery:Paladin"] = "Paladín";
 Localization.Texts["paladin"] = "Maestría sagrada"; Localization.Texts["a"] = "Bonus A"; Localization.Texts["b"] = "Bonus B";
+// The controller panel's banner lives outside the fullscreen panel; the passive reader speaks it, not this one.
+var controllerBanner = new GameObject().Child().Add(new PassiveTreeBannerNavigable());
+var controllerDiamond = controllerBanner.gameObject.Child().Add(new MasteryButton());
+controllerBanner.CurrentButton = controllerDiamond.gameObject.Add(new Button());
+NavigationManager.currentlySelected = controllerBanner;
+Check(!ClassSelectionReader.TryRead(out _), "A banner outside the fullscreen passive panel is left to the passive reader");
 NavigationManager.currentlySelected = tree; tree._currentMasteryIndex = 1;
 Check(ClassSelectionReader.TryRead(out s) && s.Root == tab1.gameObject && s.Name == "Paladín" && s.Description == "Maestría sagrada. Bonus A. Bonus B", "new passive panel uses exact data index, not tab list order");
 Frame(); Frame(); Check(ScreenReader.Messages.Count == 1 && ScreenReader.Messages[0].Interrupt, "passive tree initial mastery announced");

@@ -471,7 +471,7 @@ MasteryButton Diamond(string name, string points, bool mastery, bool locked = fa
     lockIcon.Active = locked;
     var button = go.Add(new MasteryButton { Name = name, Definition = name + " definition", isMasteryClass = mastery,
         levelTMP = go.Child().Add(new TMPro.TextMeshProUGUI { text = points }), lockIcon = lockIcon });
-    go.Add(new UnityEngine.UI.Button());
+    button.button = go.Add(new UnityEngine.UI.Button());
     return button;
 }
 var diamonds = new[] { Diamond("Rogue", "5", false), Diamond("Bladedancer", "3", true), Diamond("Falconer", "0", true, locked: true) };
@@ -550,6 +550,8 @@ Check((pageOwner._currentColumn, pageOwner._currentRow) == (1, 1), "Coming up fr
 pageOwner._currentColumn = 3; pageOwner._currentRow = 2;
 NavigationManager.previousSelectedNavigableId = NavigableID.PASSIVE_TREE_BANNER;
 PassiveTreeNavigation.AfterSelected(pageOwner);
+Check((pageOwner._currentColumn, pageOwner._currentRow) == (1, 3), "Coming back from the banner lands on the first node");
+pageOwner._currentColumn = 3; pageOwner._currentRow = 2;
 EpochInputManager.IsControllerActive = false;
 NavigationManager.previousSelectedNavigableId = NavigableID.PASSIVE_TREE_TOP_BUTTONS;
 PassiveTreeNavigation.AfterSelected(pageOwner);
@@ -658,17 +660,57 @@ Check(ScreenReader.Messages.Count == beforeSwitch + 1 &&
 bannerNavigable._currentButton = diamonds[2].GetComponent<UnityEngine.UI.Button>();
 NavigationManager.currentlySelected = bannerNavigable;
 Tick(); Tick();
-Check(ScreenReader.Messages.Last().Text == Tree("Falconer", 0, T("passive.tree_locked")),
-    "Browsing the banner reads each mastery's points and lock");
+Check(ScreenReader.Messages.Last().Text == Join(T("passive.banner"), Tree("Falconer", 0, T("passive.tree_locked")), T("passive.open_tree"),
+    F("list.position", 3, 3)),
+    "Browsing the banner reads each mastery's points and lock, and that Cross opens a tree not shown: " + ScreenReader.Messages.Last().Text);
 bannerNavigable._currentButton = diamonds[1].GetComponent<UnityEngine.UI.Button>();
 Tick(); Tick();
-Check(ScreenReader.Messages.Last().Text == Join(Tree("Bladedancer", 3, T("passive.tree_chosen")), T("passive.tree_shown")),
-    "The diamond of the shown tree says so");
+Check(ScreenReader.Messages.Last().Text == Join(Tree("Bladedancer", 3, T("passive.tree_chosen")), T("passive.tree_shown"),
+    F("list.position", 2, 3)),
+    "The diamond of the shown tree says so, with no open hint");
+PlayerFinder.Actor.localTreeData.chosenMastery = 0;
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary == Join(Tree("Bladedancer", 3, T("passive.tree_locked")), T("passive.tree_shown"), F("list.position", 2, 3)),
+    "Before a mastery is chosen, mastery trees are marked locked: " + read.Summary);
+bannerNavigable._currentButton = diamonds[0].GetComponent<UnityEngine.UI.Button>();
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary == Join(Tree("Rogue", 5, T("passive.tree_class")), T("passive.open_tree"), F("list.position", 1, 3)),
+    "The base class tree is never locked");
+PlayerFinder.Actor.localTreeData.chosenMastery = 1;
+bannerNavigable._currentButton = diamonds[1].GetComponent<UnityEngine.UI.Button>();
 Check(PassiveAccessibility.ReadCurrentDetails() && ScreenReader.Messages.Last().Text.EndsWith(diamonds[1].Definition),
     "Details on a diamond read the mastery's description");
 bannerNavigable.isDescriptionSelected = true;
 Check(!PassiveSelectionReader.TryRead(out _), "The scrolled description is left to the generic reader");
 bannerNavigable.isDescriptionSelected = false;
+// The banner as a list: Up/Down through the base class and masteries, ends stay, Right back to the tree, Left stays.
+bannerNavigable.Tree = pageOwner;
+bannerNavigable._currentButton = diamonds[0].button;
+Check(PassiveBannerNavigation.TryNavigate(bannerNavigable, Direction.DOWN) && bannerNavigable._currentButton == diamonds[1].button &&
+    PassiveBannerNavigation.TryNavigate(bannerNavigable, Direction.DOWN) && bannerNavigable._currentButton == diamonds[2].button,
+    "Down steps through the trees in the panel's order");
+int bannerFocus = bannerNavigable.Focused;
+Check(PassiveBannerNavigation.TryNavigate(bannerNavigable, Direction.DOWN) && bannerNavigable._currentButton == diamonds[2].button &&
+    bannerNavigable.Focused == bannerFocus, "The last tree stays instead of wrapping");
+Check(PassiveBannerNavigation.TryNavigate(bannerNavigable, Direction.UP) && bannerNavigable._currentButton == diamonds[1].button &&
+    PassiveBannerNavigation.TryNavigate(bannerNavigable, Direction.LEFT) && bannerNavigable._currentButton == diamonds[1].button,
+    "Up steps back; Left stays");
+Check(PassiveBannerNavigation.TryNavigate(bannerNavigable, Direction.RIGHT) &&
+    pageOwner.Entries.Last() == (new Vector2Int(0, 4), PassiveTreeNavigable.PassiveSkillTreeNodeSearchDirection.Down),
+    "Right returns to the tree the game's own way, from its top-left cell searching down");
+diamonds[2].gameObject.Active = false;
+Check(PassiveBannerNavigation.TryNavigate(bannerNavigable, Direction.DOWN) && bannerNavigable._currentButton == diamonds[1].button,
+    "A hidden diamond is not stepped onto");
+diamonds[2].gameObject.Active = true;
+bannerNavigable.isDescriptionSelected = true;
+Check(!PassiveBannerNavigation.TryNavigate(bannerNavigable, Direction.DOWN), "The scrolled description keeps the game's scrolling");
+bannerNavigable.isDescriptionSelected = false;
+bannerNavigable._currentButton = new GameObject().Add(new UnityEngine.UI.Button());
+Check(!PassiveBannerNavigation.TryNavigate(bannerNavigable, Direction.DOWN), "The mastery skill button keeps the game's moves");
+manager.activeMastery = 1;
+bannerNavigable._currentButton = diamonds[2].button;
+PassiveBannerNavigation.AfterEntered(bannerNavigable, new Vector2Int(1, 0));
+Check(bannerNavigable._currentButton == diamonds[2].button, "Other entries keep the game's landing");
+PassiveBannerNavigation.AfterEntered(bannerNavigable, new Vector2Int(0, 1));
+Check(bannerNavigable._currentButton == diamonds[1].button, "Entering from the tree starts on the shown tree's diamond");
 var controllerStrip = new GameObject().Add(new PassiveTreeUnlockPanelNavigable { ActiveAbilityTooltips = new(new[] { Unlock("Shift", 10) }) });
 NavigationManager.currentlySelected = controllerStrip;
 Check(PassiveSelectionReader.TryRead(out read) &&
