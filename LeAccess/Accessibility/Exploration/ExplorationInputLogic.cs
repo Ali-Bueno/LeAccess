@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace LeAccess.Accessibility.Exploration;
 
-internal enum ExplorationCommand { None, CategoryPrevious, CategoryNext, EntryPrevious, EntryNext, Lock, Vitals }
+internal enum ExplorationCommand { None, CategoryPrevious, CategoryNext, EntryPrevious, EntryNext, Lock, Vitals, Gold }
 
 // Pure stick logic: no Unity or Rewired types so it can be unit tested.
 internal static class StickFlick

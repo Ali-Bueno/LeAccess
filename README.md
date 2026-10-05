@@ -95,8 +95,8 @@ entered (in maps without them, edges where unseen ground continues). As in D2R, 
 sighting of an exit, waypoint or the stash says "the radar has logged a new exit/place" with a
 chime, the nearest unentered room hums from its nearest point, and entering one plays a short
 cue. Keyboard: Ctrl+Numpad 8/2 and 4/6.
-Hold **Create** (Share) for the mod menu: **Square** reads life, mana and potions, **Cross**
-starts the beacon toward the selected entry (again cancels). While Create is held the
+Hold **Create** (Share) for the mod menu: **Square** reads life, mana and potions, **Triangle**
+reads your gold (keyboard: Ctrl+G), **Cross** starts the beacon toward the selected entry (again cancels). While Create is held the
 game's button actions pause, so Square and Cross do not cast or interact. The beacon pings
 toward the route through ground you have already explored, faster when closer, and refuses
 when no explored route exists (keyboard: Ctrl+B). In menus the right stick keeps reading

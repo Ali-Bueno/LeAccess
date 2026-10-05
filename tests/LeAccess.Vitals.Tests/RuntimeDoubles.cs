@@ -71,7 +71,14 @@ namespace LeAccess.Accessibility.Vitals
             Calls++;
             return key != UnityEngine.KeyCode.None && KeyboardPressed || controller && ControllerPressed;
         }
-        internal static void Reset() { KeyboardPressed = ControllerPressed = false; }
+        internal static bool Gold;
+        internal static bool GoldPressed() => Gold;
+        internal static void Reset() { KeyboardPressed = ControllerPressed = Gold = false; }
+    }
+    internal static class GoldReport
+    {
+        internal static int? Amount = 1234;
+        internal static bool TryRead(out int gold) { gold = Amount ?? 0; return Amount.HasValue; }
     }
 }
 namespace LeAccess.Accessibility

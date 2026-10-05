@@ -1,3 +1,12 @@
+# Handoff — 2026-10-05 night: gold
+
+User: the banner works; a friend asked for a way to hear the character's gold. Create+Triangle
+(controller) or Ctrl+G (keyboard) now speaks "Oro: N" in gameplay, from the game's own gold
+tracker ([details](reference/vitals-api.md#gold-2026-10-05)). Merchants/menus not covered.
+First live checks: offline and online value matches the inventory counter; Triangle does not
+trigger the game's action while Create is held. Vitals 89, VitalsInput 38, ExplorationInput 27,
+Localization 662 pass. The user confirms it works.
+
 # Handoff — 2026-10-05 evening: mastery banner
 
 User: the passive rework works; on the specialization tabs the focus "goes half crazy", the reader

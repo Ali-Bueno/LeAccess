@@ -78,6 +78,8 @@
   "vitals.health": "Life {0} percent",
   "vitals.mana": "Mana {0} percent",
   "vitals.unavailable": "Life and mana unavailable",
+  "gold.amount": "Gold: {0}",
+  "gold.unavailable": "Gold unavailable",
   "vitals.health_unavailable": "Life unavailable",
   "vitals.mana_unavailable": "Mana unavailable",
   "vitals.mana_replaced": "Mana replaced by rage",

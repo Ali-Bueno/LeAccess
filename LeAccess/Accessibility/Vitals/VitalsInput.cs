@@ -20,6 +20,9 @@ internal static class VitalsInput
         return controllerEnabled && ExplorationInput.Command == ExplorationCommand.Vitals;
     }
 
+    // Create+Triangle or Ctrl+G, both read by ExplorationInput earlier this frame.
+    internal static bool GoldPressed() => ExplorationInput.Command == ExplorationCommand.Gold;
+
     private static void ReportFailure(string source, Exception exception, ref string previous)
     {
         string failure = $"{exception.GetType().Name}: {exception.Message}";

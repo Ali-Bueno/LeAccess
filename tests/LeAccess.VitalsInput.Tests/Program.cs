@@ -31,10 +31,13 @@ Check(!VitalsInput.ReportPressed(KeyCode.None, false) && Input.Reads == 0, "None
 ExplorationInput.Command = ExplorationCommand.Vitals;
 Check(VitalsInput.ReportPressed(KeyCode.None, true), "Create+Square command reports vitals");
 Check(!VitalsInput.ReportPressed(KeyCode.None, false), "Controller disabled ignores the Create+Square command");
-foreach (var other in new[] { ExplorationCommand.None, ExplorationCommand.Lock, ExplorationCommand.EntryNext, ExplorationCommand.CategoryPrevious })
+Check(!VitalsInput.GoldPressed(), "Create+Square does not read gold");
+foreach (var other in new[] { ExplorationCommand.None, ExplorationCommand.Lock, ExplorationCommand.EntryNext, ExplorationCommand.CategoryPrevious,
+    ExplorationCommand.Gold })
 {
     ExplorationInput.Command = other;
     Check(!VitalsInput.ReportPressed(KeyCode.None, true), $"{other} does not report vitals");
+    Check(VitalsInput.GoldPressed() == (other == ExplorationCommand.Gold), $"{other} reads gold only for the gold command");
 }
 ExplorationInput.Command = ExplorationCommand.None;
 device = Reset(); device.Template.back.justPressed = true;

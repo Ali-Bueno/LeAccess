@@ -252,6 +252,17 @@ try
     ModText.SetLanguage("es"); VitalsEffectsProbe.Effects.Add("Veneno"); Tick(.4,keyboard:true);
     Last(Join(T("vitals.health", 100), T("vitals.mana", 100), T("vitals.effects", "Veneno")),true,"Spanish effects label");
     ModText.SetLanguage("en"); VitalsEffectsProbe.Effects.Clear();
+    // Gold: Create+Triangle or Ctrl+G reads it at once, on its own.
+    Start(); Tick(0);
+    VitalsInput.Gold = true; Tick(.05);
+    Last(T("gold.amount", 1234), true, "The gold command reads the character's gold, interrupting");
+    Check(ScreenReader.Spoken.Count == 1, "Gold is spoken alone, without the vitals report");
+    GoldReport.Amount = null; VitalsInput.Gold = true; Tick(.06);
+    Last(ModText.Get("gold.unavailable"), true, "Missing gold data says so instead of staying silent");
+    GoldReport.Amount = 1234;
+    EpochInputManager.instance.isInputFieldActive = true; VitalsInput.Gold = true; int spokenGold = ScreenReader.Spoken.Count; Tick(.07);
+    Check(ScreenReader.Spoken.Count == spokenGold, "Typing never reads gold");
+    EpochInputManager.instance.isInputFieldActive = false;
     Start();
     VitalsAccessibility.Cleanup(); int reads = VitalsProbe.Reads;
     Tick(.4,keyboard:true,controller:true);

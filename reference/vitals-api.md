@@ -53,6 +53,16 @@ both online and offline clients. Effects are never announced automatically,
 since ailments start and stop constantly in combat (D2R only diff-gates poison).
 Live check pending: localized names for non-ailment debuffs.
 
+## Gold (2026-10-05)
+
+User request (for a friend): a way to hear the character's gold. **Create+Triangle** (in the
+Create menu, game bindings paused) or **Ctrl+G** speaks "Oro: N" alone, interrupting; gameplay
+only, never while typing (same gate as the report). Source: `GoldTracker.value`, the tracker the
+game's `UIGoldText` counters display, from `ItemContainersManager.Instance.goldTracker`, else
+online `LocalPlayer.goldTracker`, else offline `Actor.goldTracker`; none readable → "Oro no
+disponible". Not announced automatically; menus such as merchants are not covered yet. Vitals
+service 89 + input 38 checks; listening pending (online value in particular).
+
 Settings are created on the next launch in `BepInEx/config/LeAccess.cfg`:
 
 ```ini

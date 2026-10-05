@@ -78,6 +78,8 @@
   "vitals.health": "Vida {0} por ciento",
   "vitals.mana": "Maná {0} por ciento",
   "vitals.unavailable": "Vida y maná no disponibles",
+  "gold.amount": "Oro: {0}",
+  "gold.unavailable": "Oro no disponible",
   "vitals.health_unavailable": "Vida no disponible",
   "vitals.mana_unavailable": "Maná no disponible",
   "vitals.mana_replaced": "Maná sustituido por furia",

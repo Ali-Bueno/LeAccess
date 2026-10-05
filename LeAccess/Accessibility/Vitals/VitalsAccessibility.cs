@@ -52,6 +52,8 @@ internal static class VitalsAccessibility
             // that same edge if gameplay owned the preceding frame, never defer it.
             bool report = !typing && (gameplayInput || _previousGameplayInput) &&
                 VitalsInput.ReportPressed(gameplayInput ? _reportKey.Value : KeyCode.None, _controllerReport.Value);
+            if (!typing && (gameplayInput || _previousGameplayInput) && VitalsInput.GoldPressed())
+                Speak(GoldReport.TryRead(out int gold) ? ModText.Format("gold.amount", gold) : ModText.Get("gold.unavailable"), true);
             _previousGameplayInput = gameplayInput;
 
             if (!_automatic.Value && !report)
