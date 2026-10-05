@@ -5,7 +5,8 @@ read after the inventory or a shop opens is now led by "Oro: N", and a purchase/
 open leads the next brief with the new amount ([details](reference/vitals-api.md#gold-2026-10-05)).
 First live checks: open the inventory (gold then item), a merchant (gold then item), buy and sell
 (new gold), close and reopen; also the gambler and faction vendors (all gold vendors count as shops).
-Inventory 269 pass; installed, not committed.
+Inventory 269 pass. Committed and pushed at the user's request; new friend ZIP
+`LeAccess-Steam-1.5.1-prueba-20261005-134547.zip` built (readme lists the new features); listening pending.
 
 # Handoff — 2026-10-05 night: gold
 

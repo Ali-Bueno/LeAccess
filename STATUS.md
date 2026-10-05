@@ -126,8 +126,8 @@ requested. No release or new ZIP has been requested.
 
 ## Validation and references
 
-- 2026-10-04 17:04: plugin rebuilt against the regenerated interop and installed with the game closed; installed SHA-256 equals the friend ZIP's copy: `E092FC7716951249FDD40837BFA93CBCBB90B14544B21E2239DDCC99B77D9EC2`.
-- Friend ZIP `LeAccess-Steam-1.5.1-prueba-20261004-170437.zip` (repo root, ignored by git), SHA-256 `0D178801E5F71B3D8ACB37C1090A72D0058B157B4EC0808D2A7C3A57C8F29A58`, 264 files; readme/manifest name game 1.5.1.2, build 25711439. Package tests: 242 checks.
+- 2026-10-05 13:45: friend ZIP `LeAccess-Steam-1.5.1-prueba-20261005-134547.zip` (repo root, ignored by git), SHA-256 `EA128FC6D28E1FE20F12F9A01AF59B52E3261838FD160AFD341BC76B618453E5`, 264 files, game 1.5.1.2 / build 25711439; readme now lists skill modification, passive/banner rules and gold. Its `LeAccess.dll` (`3BDD2F412E0580F96ECE101923A4C31F1DED8B22FBBD31F5745B4EE49F6EB3BF`) is the installed copy. Package tests: 242 checks. Rebuilds of the same source can differ in bytes, so the package build's DLL was installed rather than the earlier one.
+- Previous friend ZIP: `LeAccess-Steam-1.5.1-prueba-20261004-170437.zip`.
 - All 60 test invocations pass, PatchSafety included (Skills 233, Passives 160, Localization 610, VitalsInput 31 checks among them).
 - User confirms in game: the grids and screen-reader keys work; the log shows `[Controller mode] kept ... (RightShift)`.
 
