@@ -7,6 +7,9 @@ have not been individually confirmed.
 
 ## Explicit screen-keyboard activation (2026-10-02)
 
+Since 2026-10-06 the same guard covers the Social panel's username fields
+([social](social-reading.md)); listening pending there.
+
 `CharacterNameKeyboard` now requires an explicit click or submit on the declared
 character-name field before the game's screen keyboard takes focus. Simply
 entering the name/mastery screen or navigating over the field leaves the screen

@@ -84,9 +84,13 @@ public static class ElementAnnouncer
 
         if (ControllerMenuAccessibility.TryHandleFocus(go) || InventoryAccessibility.TryHandleFocus(go) ||
             PassiveAccessibility.TryHandleFocus(go) || QuestAccessibility.TryHandleFocus(go) ||
-            SkillAccessibility.TryHandleFocus(go) || ClassCarouselHandler.TryHandleFocus(go)) return;
+            SkillAccessibility.TryHandleFocus(go) || ClassCarouselHandler.TryHandleFocus(go) ||
+            Forge.ForgeAccessibility.TryHandleFocus(go)) return;
 
         if (!UiFocusOwnership.Allows(go)) return;
+        go = Social.SocialReader.Canonical(go);
+        string lead = Social.SocialAccessibility.LeadFor(go);
+        if (lead != null) context = ScreenContentTracker.Combine(new[] { lead, context });
 
         var instanceId = go.GetInstanceID();
         var now = Time.unscaledTime;
@@ -111,10 +115,12 @@ public static class ElementAnnouncer
             _lastLabel = _builtLabel;
             _lastValue = _builtValue;
             var debugParent = go.transform.parent?.name ?? "no-parent";
-            Plugin.Log.LogDebug($"[Element] name={go.name}, parent={debugParent}");
+            string said = ScreenContentTracker.Combine(new[] { context, spoken });
+            Plugin.Log.LogDebug($"[Element] name={go.name}, parent={debugParent}, said={said}");
             _lastAnnouncementText = text;
             if (dialogueActive && DialogueAnnouncer.TakeLineFollower()) interrupt = false;
-            ScreenReader.Speak(ScreenContentTracker.Combine(new[] { context, spoken }), interrupt);
+            ScreenReader.Speak(said, interrupt);
+            if (lead != null) Social.SocialAccessibility.LeadSpoken(go);
         }
     }
 
@@ -177,7 +183,8 @@ public static class ElementAnnouncer
                 return;
 
             // Re-announce the state change
-            var stateText = ModText.Get(value ? "state.on" : "state.off");
+            var stateText = Social.SocialReader.TryReadToggleState(toggle, value, out string sectionState) ? sectionState :
+                ModText.Get(value ? "state.on" : "state.off");
             ScreenReader.Speak(stateText, true);
         }
         catch { }
@@ -263,6 +270,7 @@ public static class ElementAnnouncer
             return FormatSpecializedAnnouncement(go, craftingText, includeDetails, isDisabledOption || craftingUnavailable);
         if (FilterRangeControlReader.TryRead(go, out string filterRangeText, out bool filterRangeUnavailable))
             return FormatSpecializedAnnouncement(go, filterRangeText, includeDetails, isDisabledOption || filterRangeUnavailable);
+        if (Social.SocialReader.TryRead(go, out string socialText)) return socialText;
 
         // Layer 1: Try to get label from InfoForTooltip
         TextDetector.TryGetFromTooltipInfo(go, ref label, ref description);

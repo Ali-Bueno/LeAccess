@@ -106,7 +106,7 @@ internal static class CraftingSelectionTests
         var forgeButton = forge.gameObject.Child().Add(new UnityEngine.UI.Button());
         forgeButton.gameObject.Add(new UnityEngine.UI.Graphic());
         var forgeRect = forgeButton.gameObject.Add(new RectTransform());
-        forge.selectables = new Il2CppSystem.Array(new NativeObject[,] { { forgeRect } }); NavigationManager.currentlySelected = forge;
+        forge.activeNavigationElements = new Il2CppSystem.Array(new NativeObject[,] { { forgeRect } }); NavigationManager.currentlySelected = forge;
         Check(UiFocusOwnership.TryGetSelected(out selected) && selected.Pointer == forgeButton.gameObject.Pointer, "Forge focus uses the native x,y rectangle matrix");
         forge.currentlySelectedIdx = new(1, 0);
         Check(!UiFocusOwnership.Allows(forgeButton.gameObject), "Unready forge matrices cannot invent generic panel focus");
@@ -124,7 +124,7 @@ public class CraftingRunesAndGlyphsPanel : CustomNavigable
 { public Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase _selectables; public int _selectedRowIndex, _selectedColumnIndex; }
 public class CraftingSlotManager : CustomNavigable
 {
-    public Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase selectables;
+    public Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase activeNavigationElements;
     public Vector2Int currentlySelectedIdx;
     public bool canForge;
     public TextMeshProUGUI singleSuccessChanceString, glyphsPreviewText, cannotForgeText, modifierDetails, typeOfForgeText, currentForgingPotentialText;

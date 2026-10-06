@@ -9,6 +9,7 @@
     <Compile Include="../../LeAccess/Accessibility/Items/ItemTooltipReader.cs" Link="ItemTooltipReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Items/ItemTooltipV2Reader.cs" Link="ItemTooltipV2Reader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Items/ItemComparisonReader.cs" Link="ItemComparisonReader.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Items/LegacyItemComparisonReader.cs" Link="LegacyItemComparisonReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Items/ItemComparisonIcons.cs" Link="ItemComparisonIcons.cs" />
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentTracker.cs" Link="ScreenContentTracker.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />

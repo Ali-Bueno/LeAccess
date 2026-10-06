@@ -7,10 +7,9 @@ namespace LeAccess.Accessibility.Inventory;
 /// <remarks>See reference/vitals-api.md#gold-2026-10-05.</remarks>
 internal sealed class InventoryGoldNotice
 {
+    private readonly LeadingNotice _notice = new();
     private bool _open, _shop;
     private int? _seen;
-    private string _notice;
-    private object _spokenWith;
 
     /// <summary>Every frame: whether the inventory or a shop is open, and the current gold when it is.</summary>
     internal void Observe(bool open, bool shop, int? gold)
@@ -22,37 +21,19 @@ internal sealed class InventoryGoldNotice
         _open = true;
         _shop = shop;
         if (gold is not null) _seen = gold;
-        if (opened || changed) Raise(gold);
+        if (opened || changed) _notice.Raise(gold is int amount ? ModText.Format("gold.amount", amount) : null);
     }
 
     /// <summary>The notice to lead this selection's brief, or null.</summary>
-    internal string For(object selection)
-    {
-        if (_spokenWith != null && !Equals(selection, _spokenWith))
-        {
-            _notice = null;
-            _spokenWith = null;
-        }
-        return _notice;
-    }
+    internal string For(object selection) => _notice.For(selection);
 
     /// <summary>A brief carrying the notice was accepted for this selection.</summary>
-    internal void Spoken(object selection)
-    {
-        if (_notice != null) _spokenWith ??= selection;
-    }
+    internal void Spoken(object selection) => _notice.Spoken(selection);
 
     internal void Reset()
     {
         _open = _shop = false;
         _seen = null;
-        _notice = null;
-        _spokenWith = null;
-    }
-
-    private void Raise(int? gold)
-    {
-        _spokenWith = null;
-        _notice = gold is int amount ? ModText.Format("gold.amount", amount) : null;
+        _notice.Clear();
     }
 }

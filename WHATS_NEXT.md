@@ -1,3 +1,49 @@
+# Handoff — 2026-10-06: Social panel for online co-op
+
+User: wants to play online with a friend: share their own username, invite the friend to a party or
+add them as a friend, accept an invitation. A dedicated Social reader now speaks friend rows (name,
+character, location, section; "Cargando"), section headers (expanded/collapsed and player count),
+tabs, the status with "Tu nombre de usuario", the region with ping as one stop, party members
+(leader), username fields and window buttons; windows open with their title, explanation and the
+Nombre#1234 format; player options say "Opciones de …" and why an option is unavailable; the party
+invitation is spoken once; social chat results, the silent unknown-username error and typed
+characters are spoken ([details](reference/social-reading.md)). At the user's request the username
+fields use the character-name keyboard guard: the screen keyboard opens only on Cross.
+First live checks: open Social (status and username), walk friends and headers, toggle a section,
+party tab and region, Invitar jugador (introduction, field, keyboard, typing echo, a valid and an
+invalid name), Añadir amigo, Cross on a friend (options), receive an invitation and read the
+`[Social] Party invite prompt … focus:` log line. Social 58, MenuReading 307, Localization 792,
+PatchSafety 46 (79 declarations), ScreenContent 234, Notifications 118, CharacterName 166 pass;
+installed, not committed.
+
+# Handoff — 2026-10-05 latest: older tooltip and the forge from the inventory
+
+User: L3 still silent, L3+R3 silent, Square "Mover a Forja" did nothing; must one be at a forge?
+Native analysis: the game draws its older tooltip (`UITooltipItem`; the V2 one is behind a disabled
+feature switch), which the comparison reader ignored; it now reads it, and logs
+`[Inventory comparison state]` per tooltip source/mode ([details](reference/item-comparison.md#older-tooltip-2026-10-05)).
+The forge opens with focus on the inventory; L2 reaches the grid, R2 returns. The inventory now
+announces the forge and the L2 hint on opening, and Square's move ("X en la forja") or refusal
+("No se movió a la forja…"); the forge works anywhere once unlocked
+([details](reference/crafting-reading.md#forge-from-the-inventory-2026-10-05)).
+First live checks: hold L3 on an inventory item (compare), R3 (explanations), L3 then R3 (ranges),
+on an item with nothing equipped in its slot; read the comparison state lines in the log. Open the
+forge (lead + hint), Square on an item (moved), Square again with the forge full (refusal), L2 into
+the grid, R2 back. Inventory 311, Forge 51, MenuReading 307, Localization 742, PatchSafety 46 pass;
+installed, not committed.
+
+# Handoff — 2026-10-05 late: L3/R3 tooltip modes and the forge
+
+User: comparison text never read; the game uses L3/R3; review the forge entirely. L3 (compare),
+R3 (explanations) and both (ranges) are held tooltip modes; the reader now follows the tooltip mode
+instead of on-screen geometry ([details](reference/item-comparison.md#controller-modes-2026-10-05)).
+The forge was silent because its reader used the wrong grid; a polled forge reader now speaks every
+cell, the opening, details and each craft's result from the game's own result log line
+([forge](reference/crafting-reading.md#controller-forge-2026-10-05)).
+First live checks: hold L3, R3 and both on an inventory item; open the forge, walk the grid, add a
+shard to a free slot, upgrade an affix, forge (result), glyph and rune flyouts, Square to return the
+item. Forge 28, Inventory 274, MenuReading 307, Localization 726, PatchSafety 46 pass; installed, not committed.
+
 # Handoff — 2026-10-05 night: gold in the inventory and shops
 
 User: the gold command works; asked for it on opening the inventory or merchants. The first item

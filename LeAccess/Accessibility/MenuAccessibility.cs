@@ -65,8 +65,12 @@ public class MenuAccessibility : MonoBehaviour
         ElementAnnouncer.FlushPendingFocus();
         OpenWorldMap.AnnounceSelection();
         CharacterNameAccessibility.Update();
+        Social.SocialAccessibility.Update();
+        Forge.ForgeInventoryNotices.Observe();
         InventoryAccessibility.Update(readDetails);
-        if (readDetails && !SkillAccessibility.HasActiveContent && !InventoryAccessibility.HasActiveContent)
+        Forge.ForgeAccessibility.Update(readDetails);
+        if (readDetails && !SkillAccessibility.HasActiveContent && !InventoryAccessibility.HasActiveContent &&
+            !Forge.ForgeAccessibility.HasActiveContent)
             ReadSelectedDetails();
         ZoneAnnouncer.Update();
         bool worldContentActive = ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||

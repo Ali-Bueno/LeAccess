@@ -9,7 +9,8 @@ internal static class InventorySelectionReader
     internal static ItemContainerUI GetFocusedContainer()
     {
         var selected = NavigationManager.currentlySelected;
-        if (selected is null || selected.WasCollected) return null;
+        // The forge's item slot is a container too, but the forge reader speaks it.
+        if (selected is null || selected.WasCollected || selected.TryCast<CraftingMainUI>() is not null) return null;
         var container = selected.TryCast<ItemContainerUI>();
         if (!IsAlive(container))
         {

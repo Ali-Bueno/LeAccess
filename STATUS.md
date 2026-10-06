@@ -1,6 +1,12 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-05 night (Claude session): the inventory and every gold vendor (shop, gambler, faction
+**Updated:** 2026-10-05 latest (Claude session): L3/R3 were still silent: the game draws its older
+tooltip, now read too, with a log line per tooltip mode ([details](reference/item-comparison.md#older-tooltip-2026-10-05)).
+The forge opens with focus on the inventory: it is now announced there with "L2 entra en la forja", and
+Square's move or refusal is spoken ([details](reference/crafting-reading.md#forge-from-the-inventory-2026-10-05)); listening pending.
+Earlier, 2026-10-05 late: L3/R3/both tooltip modes ([details](reference/item-comparison.md#controller-modes-2026-10-05));
+forge grid reader ([forge](reference/crafting-reading.md#controller-forge-2026-10-05)).
+Earlier, 2026-10-05 night: the inventory and every gold vendor (shop, gambler, faction
 and other vendors) say the gold on opening and after a purchase or sale ([details](reference/vitals-api.md#gold-2026-10-05)); listening pending. Create+Triangle /
 Ctrl+G reads the gold in gameplay (**user confirms it works**).
 Earlier, 2026-10-05 evening: the passive mastery banner is a list (base class, then
@@ -100,6 +106,7 @@ requested. No release or new ZIP has been requested.
 | World map/waypoints | Map selection reads location, level, "here", locked and quest markers; a quest's tweened location queues after its brief. Cross says "Viajando a X" or why travel is impossible instead of silence ([travel](reference/waypoint-map.md#cross-on-the-map-travel-2026-10-04)). 35 checks; listening pending. |
 | Quest journal | Current state/objectives and manual history retained; rejected briefs/details retry only while selection remains owned. 136 checks; listening pending. |
 | Automatic quest updates | Failed output preserves current pending changes, shared pacing and fair turns with dynamic objectives. 116 checks. [Evidence](reference/quest-updates.md). Listening pending. |
+| Social panel | Dedicated reader (rows, sections with counts, tabs, own username, region, username windows, player options, invitation prompt), social chat results and typing echo; 58 checks. [Details](reference/social-reading.md); listening pending. |
 | Character name editing | User confirms the latest typing/return fix works. Circle keeps the name; physical entry and owned device transitions retain focus. Eight hooks, 160 checks. |
 | Inventory/merchants | Current stash/shop/buyback and [equipped selections](reference/equipped-items.md); rejected briefs/details retry while owned. After a drop, focus moves to the nearest item instead of the first slot ([drop focus](reference/inventory-drop-focus.md)); holding compare reads the equipped item, differences and changed lines ([comparison](reference/item-comparison.md)). 236 service + 111 model checks. Listening pending. Backpack and merchant stock/buyback move item by item with "N de M", rows by Down/Up, no wrap ([navigation](reference/inventory-drop-focus.md#controller-navigation-2026-10-04)). |
 | Forge/filter controls | Typed selections, filter-range labels and manual visible preview/potential/unavailable reason. 118 regressions within 296 menu checks. [Scope/limits](reference/crafting-reading.md); listening pending. |
@@ -126,6 +133,7 @@ requested. No release or new ZIP has been requested.
 
 ## Validation and references
 
+- 2026-10-06 15:30: friend ZIP `LeAccess-Steam-1.5.1-prueba-20261006-153055.zip` (repo root, ignored by git), SHA-256 `A4CD7F82736D30722B10405A277A9596105E0259957D2CE3F550073A00BB8A1D`, 264 files, game 1.5.1.2 / build 25711439; adds L3/R3 comparison (older tooltip), forge from the inventory and the Social reader; readme lists them.
 - 2026-10-05 13:45: friend ZIP `LeAccess-Steam-1.5.1-prueba-20261005-134547.zip` (repo root, ignored by git), SHA-256 `EA128FC6D28E1FE20F12F9A01AF59B52E3261838FD160AFD341BC76B618453E5`, 264 files, game 1.5.1.2 / build 25711439; readme now lists skill modification, passive/banner rules and gold. Its `LeAccess.dll` (`3BDD2F412E0580F96ECE101923A4C31F1DED8B22FBBD31F5745B4EE49F6EB3BF`) is the installed copy. Package tests: 242 checks. Rebuilds of the same source can differ in bytes, so the package build's DLL was installed rather than the earlier one.
 - Previous friend ZIP: `LeAccess-Steam-1.5.1-prueba-20261004-170437.zip`.
 - All 60 test invocations pass, PatchSafety included (Skills 233, Passives 160, Localization 610, VitalsInput 31 checks among them).

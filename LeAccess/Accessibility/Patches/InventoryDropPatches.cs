@@ -6,8 +6,17 @@ namespace LeAccess.Accessibility.Patches;
 [HarmonyPatch(typeof(ItemContainerUI), nameof(ItemContainerUI.ProcessDropSubmit))]
 internal static class InventoryDropPatch
 {
-    private static void Prefix(ItemContainerUI __instance) => InventoryDropFocus.BeforeDrop(__instance);
-    private static void Postfix(ItemContainerUI __instance) => InventoryDropFocus.AfterDrop(__instance);
+    private static void Prefix(ItemContainerUI __instance)
+    {
+        InventoryDropFocus.BeforeDrop(__instance);
+        Forge.ForgeInventoryNotices.BeforeDrop(__instance);
+    }
+
+    private static void Postfix(ItemContainerUI __instance)
+    {
+        InventoryDropFocus.AfterDrop(__instance);
+        Forge.ForgeInventoryNotices.AfterDrop(__instance);
+    }
 }
 
 // The native prologue has no relative branch, so the original may still run (reference/runtime-feedback.md).

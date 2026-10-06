@@ -70,6 +70,8 @@ public class Plugin : BasePlugin
         ControllerBindingLog.Initialize(Config);
         ExplorationAccessibility.Initialize(Config);
         WallSonar.Initialize();
+        LeAccess.Accessibility.Forge.ForgeResultLog.Install();
+        LeAccess.Accessibility.Social.SocialLog.Install();
 
         // Register UI component for menu accessibility
         AddComponent<MenuAccessibility>();
@@ -94,6 +96,10 @@ public class Plugin : BasePlugin
         LeAccess.Accessibility.Items.GroundLootAccessibility.Reset();
         LeAccess.Accessibility.ControllerMenus.ControllerMenuAccessibility.Reset();
         LeAccess.Accessibility.Skills.SkillAccessibility.Reset();
+        LeAccess.Accessibility.Forge.ForgeAccessibility.Reset();
+        LeAccess.Accessibility.Forge.ForgeResultLog.Uninstall();
+        LeAccess.Accessibility.Social.SocialAccessibility.Reset();
+        LeAccess.Accessibility.Social.SocialLog.Uninstall();
         LeAccess.Accessibility.Passives.PassiveAccessibility.Reset();
         LeAccess.Accessibility.Quests.QuestAccessibility.Reset();
         QuestUpdateAccessibility.Cleanup();

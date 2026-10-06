@@ -145,3 +145,17 @@ namespace HarmonyLib
     internal sealed class HarmonyPatch : Attribute
     { internal HarmonyPatch(Type type, string name, params object[] args) { } }
 }
+namespace LeAccess.Accessibility.Social
+{
+    internal enum SocialField { PartyInvite, AddFriend, Block }
+    internal static class SocialWindows
+    {
+        internal static TMPro.TMP_InputField Username;
+        internal static bool TryGetField(UnityEngine.GameObject element, out TMPro.TMP_InputField input, out SocialField field)
+        {
+            field = SocialField.PartyInvite;
+            input = Username;
+            return Username is not null && ReferenceEquals(element, Username.gameObject);
+        }
+    }
+}

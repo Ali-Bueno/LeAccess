@@ -69,6 +69,7 @@ namespace UnityEngine
         public Component() => gameObject = new();
         public Transform transform => gameObject.transform;
         public bool isActiveAndEnabled = true;
+        public T GetComponentInChildren<T>() where T : Component => gameObject.GetComponentsInChildren<T>(false).FirstOrDefault();
         public T GetComponentInParent<T>() where T : Component
         {
             for (var current = transform; current is not null; current = current.parent)
@@ -80,10 +81,12 @@ namespace UnityEngine
     {
         public readonly Transform transform;
         public bool Visible = true;
+        public bool activeInHierarchy => Visible && (transform.parent?.gameObject.activeInHierarchy ?? true);
         public string Text;
         public readonly List<Component> Components = new();
         public readonly List<GameObject> Children = new();
         public GameObject() => transform = new Transform(this);
+        public T GetComponentInChildren<T>() where T : Component => GetComponentsInChildren<T>(false).FirstOrDefault();
         public NativeList<T> GetComponentsInChildren<T>(bool includeInactive) where T : Component
         {
             var result = new NativeList<T>();
@@ -168,6 +171,8 @@ internal sealed class ItemContainersManager : UnityEngine.Component
 internal enum ContainerID { UNDEFINED, INVENTORY, EQ_HELMET, EQ_ARMOR, EQ_WEAPON, EQ_OFFHAND, EQ_GLOVES, EQ_BELT,
     EQ_BOOTS, EQ_RIGHTRING, EQ_LEFTRING, EQ_AMULET, EQ_RELIC, SHOP, SHOP_BUYBACK }
 namespace LE.Factions { internal sealed class ShopContainerUI : ItemContainerUI { } }
+// The forge's item slot is an inventory-style container the forge reader speaks.
+internal sealed class CraftingMainUI : ItemContainerUI { }
 internal enum ContainerType { INVENTORY, EQUIPPED, STASH, SHOP }
 internal sealed class IItemContainer : NativeObject
 {
@@ -206,8 +211,9 @@ internal sealed class TooltipItemManager : UnityEngine.Component
         public ItemDataUnpacked _Item_k__BackingField;
         public UnityEngine.GameObject _Opener_k__BackingField;
         public SlotType _SlotType_k__BackingField;
+        public TooltipMode _TooltipMode_k__BackingField = TooltipMode.None;
     }
-    public bool active = true;
+    public bool active = true, autoCompareEnabled;
     public TooltipInitializationStage activeInitializationStage = TooltipInitializationStage.Completed;
     public ItemTooltipParameters activeParameters;
     public UITooltipItem itemTooltip;
@@ -259,7 +265,8 @@ namespace LE.UI.Tooltips
         public UnityEngine.Transform ActiveItemTooltipRect;
         public bool IsItemTooltipReady = true;
     }
-    internal sealed class ItemTooltipInfo : NativeObject { public ItemDataUnpacked _Item_k__BackingField; }
+    internal sealed class ItemTooltipInfo : NativeObject
+    { public ItemDataUnpacked _Item_k__BackingField; public TooltipMode _TooltipMode_k__BackingField = TooltipMode.DefaultInfo; }
     internal sealed class TooltipTemplate : UnityEngine.Component { public UnityEngine.UI.ScrollRect _scrollRect; }
     internal sealed class ItemTooltip : UnityEngine.Component
     {
@@ -276,7 +283,7 @@ namespace LE.UI.Tooltips
     }
     internal sealed class ItemTooltipModifiersSection : UnityEngine.Component { }
     internal sealed class ItemTooltipModifier : UnityEngine.Component
-    { public TMPro.TMP_Text _modifierText; public ItemTooltipModifierInfo Info; }
+    { public TMPro.TMP_Text _modifierText, _explanationText, _rangeText; public ItemTooltipModifierInfo Info; }
     internal sealed class ItemTooltipModifierInfo : NativeObject { public ItemTooltipAssetList.ItemTooltipModifierIconSprite IconSprite; }
     internal static class ItemTooltipAssetList
     {
@@ -292,7 +299,16 @@ internal sealed class UITooltipItem : UnityEngine.Component
     public UnityEngine.GameObject requirementsFooter;
     public UnityEngine.GameObject compareContent = new();
     public TMPro.TMP_Text nameText = new(), typeText = new();
+    // The older tooltip's comparison column (compare*) and its own rows, which hold explanations and ranges.
+    public TMPro.TMP_Text compareNameText, compareTypeText, comparisonText, comparisonGainedText, comparisonLostText, compareImplicitText;
+    public UnityEngine.GameObject comparisonGainedHeader, comparisonLostHeader;
+    public Il2CppSystem.Collections.Generic.List<UITooltipItemAffix> compareUniqueAffixesText, comparePrefixes, compareSuffixes;
+    public UITooltipItemAffix compareSealedAffix, compareSealedPrimordialAffix, compareSealedCorruptedAffix;
+    public TMPro.TMP_Text implicitText, forgingPotentialAltText, legendaryPotentialAltText, weaversWillAltText, weaversTouchAltText;
+    public Il2CppSystem.Collections.Generic.List<UITooltipItemAffix> uniqueAffixesText, prefixesText, suffixesText;
+    public UITooltipItemAffix sealedAffix, sealedPrimordialAffix, sealedCorruptedAffix;
 }
+internal sealed class UITooltipItemAffix : UnityEngine.Component { public TMPro.TMP_Text _text; }
 
 internal sealed class NativeActions : NativeObject
 {
@@ -311,6 +327,16 @@ namespace Il2CppSystem
         internal Object GetValue(int x, int y) => Cells[x, y];
     }
     internal class IDisposable : NativeObject { internal void Dispose() { } }
+}
+namespace Il2CppSystem.Collections.Generic
+{
+    internal sealed class List<T> : Il2CppSystem.Object
+    {
+        private readonly System.Collections.Generic.List<T> _items = new();
+        internal int Count => _items.Count;
+        internal T this[int index] => _items[index];
+        internal void Add(T item) => _items.Add(item);
+    }
 }
 namespace Il2CppSystem.Collections
 {
@@ -380,8 +406,8 @@ namespace LeAccess
     internal static class Plugin { public static readonly Logger Log = new(); }
     internal sealed class Logger
     {
-        public readonly List<string> Warnings = new();
-        public void LogInfo(string text) { }
+        public readonly List<string> Warnings = new(), Information = new();
+        public void LogInfo(string text) => Information.Add(text);
         public void LogWarning(string text) => Warnings.Add(text);
     }
 }
@@ -427,3 +453,4 @@ namespace LeAccess.Accessibility.Announcements
         private static string Hold(string text, bool? hold) => hold == true && !string.IsNullOrWhiteSpace(text) ? LeAccess.I18n.ModText.Format("input.hold", text) : text;
     }
 }
+internal enum TooltipMode { None, DefaultInfo, DefaultModRanges, Explanation, CompareModRanges, CompareDefault }

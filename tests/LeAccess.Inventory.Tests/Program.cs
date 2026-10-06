@@ -121,26 +121,26 @@ var scrollRoot = new GameObject();
 scrollRoot.transform.parent = modern.transform;
 modern._tooltipTemplate = new LE.UI.Tooltips.TooltipTemplate
 { _scrollRect = new UnityEngine.UI.ScrollRect { content = scrollRoot.transform } };
-TMPro.TMP_Text Label(string text, UnityEngine.Transform parent)
+TMPro.TMP_Text MakeLabel(string text, UnityEngine.Transform parent)
 {
     var label = new TMPro.TMP_Text { text = text };
     label.transform.parent = parent;
     return label;
 }
-modern._name = Label("Espada del fuego", modern.transform);
-modern._primaryType = Label("Espada de una mano", modern.transform);
-modern._secondaryType = Label("Raro", modern.transform);
-var prefix = Label("+20 daño cuerpo a cuerpo", scrollRoot.transform);
+modern._name = MakeLabel("Espada del fuego", modern.transform);
+modern._primaryType = MakeLabel("Espada de una mano", modern.transform);
+modern._secondaryType = MakeLabel("Raro", modern.transform);
+var prefix = MakeLabel("+20 daño cuerpo a cuerpo", scrollRoot.transform);
 prefix.canvasRenderer.cull = true;
 modern._prefixesSection = prefix;
-var suffix = Label("+8 fuerza", scrollRoot.transform);
+var suffix = MakeLabel("+8 fuerza", scrollRoot.transform);
 modern._suffixesSection = suffix;
-modern._requirements = Label("Requiere nivel 12", modern.transform);
+modern._requirements = MakeLabel("Requiere nivel 12", modern.transform);
 var differences = new LE.UI.Tooltips.ItemTooltipModifiersSection();
 differences.transform.parent = modern.transform;
-var differenceLabel = Label("Comparación: -50 daño", differences.transform);
+var differenceLabel = MakeLabel("Comparación: -50 daño", differences.transform);
 modern._combinedDifferencesSection = differences;
-var promptLabel = Label("Más información. Equipar. Soltar", modern.transform);
+var promptLabel = MakeLabel("Más información. Equipar. Soltar", modern.transform);
 modern._prompts = promptLabel;
 modern._info = new LE.UI.Tooltips.ItemTooltipInfo { _Item_k__BackingField = item };
 system._itemTooltip = modern;
@@ -206,12 +206,12 @@ LE.UI.Tooltips.ItemTooltipModifier Modifier(string text, UnityEngine.Transform p
 {
     var modifier = new LE.UI.Tooltips.ItemTooltipModifier { Info = new() { IconSprite = icon } };
     modifier.transform.parent = parent;
-    modifier._modifierText = Label(text, modifier.transform);
+    modifier._modifierText = MakeLabel(text, modifier.transform);
     return modifier;
 }
 var compared = new LE.UI.Tooltips.ItemTooltip
 { _info = new LE.UI.Tooltips.ItemTooltipInfo { _Item_k__BackingField = new ItemDataUnpacked { Id = "equipped" } } };
-compared._name = Label("Espada vieja", compared.transform);
+compared._name = MakeLabel("Espada vieja", compared.transform);
 Modifier("+5 daño", differences.transform, LE.UI.Tooltips.ItemTooltipAssetList.ItemTooltipModifierIconSprite.Compare_CombinedIncrease);
 Modifier("-3 fuerza", differences.transform, LE.UI.Tooltips.ItemTooltipAssetList.ItemTooltipModifierIconSprite.Compare_CombinedDecrease);
 var raised = Modifier("+8 fuerza", modern.transform, LE.UI.Tooltips.ItemTooltipAssetList.ItemTooltipModifierIconSprite.Plain);
@@ -223,6 +223,9 @@ ItemComparisonIcons.Set(same, LE.UI.Tooltips.ItemTooltipAssetList.ItemTooltipMod
 system._itemTooltipComparison = compared;
 system._activeComparisonItemTooltipInfo = compared._info;
 string Text(string key, params object[] args) => LeAccess.I18n.ModText.Format(key, args);
+// Holding L3 (or Ctrl) switches the game's tooltip to its comparison mode; releasing it returns to the default.
+void Mode(TooltipMode mode) => modern._info._TooltipMode_k__BackingField = mode;
+Mode(TooltipMode.CompareDefault);
 string brief = ScreenContentTracker.Combine(new[] { item.FullName, item.LocalisedBaseTypeName });
 string comparedWith = Text("item.comparison_with", compared._name.text);
 string comparisonSpeech = ScreenContentTracker.Combine(new[] { comparedWith,
@@ -234,17 +237,53 @@ Check(ScreenReader.Messages.Count == 3 && ScreenReader.Messages.Last() == compar
     "Holding compare reads the equipped item, combined differences and changed lines with their visual icons: " + ScreenReader.Messages.Last());
 UpdateTwice();
 Check(ScreenReader.Messages.Count == 3, "A held comparison speaks once");
-compared.gameObject.Visible = false; UpdateTwice(); compared.gameObject.Visible = true; UpdateTwice();
+Mode(TooltipMode.DefaultInfo); UpdateTwice(); Mode(TooltipMode.CompareDefault); UpdateTwice();
 Check(ScreenReader.Messages.Count == 4 && ScreenReader.Messages.Last() == comparisonSpeech, "Pressing compare again reads it again");
 ItemComparisonIcons.Clear(raised);
-compared.gameObject.Visible = false; UpdateTwice(); compared.gameObject.Visible = true; UpdateTwice();
+Mode(TooltipMode.DefaultInfo); UpdateTwice(); Mode(TooltipMode.CompareDefault); UpdateTwice();
 Check(!ScreenReader.Messages.Last().Contains(raised._modifierText.text), "Fresh line data drops a stale comparison icon");
 InventoryAccessibility.Reset(); ScreenReader.Messages.Clear(); UpdateTwice();
 Check(ScreenReader.Messages.Single().StartsWith(ScreenContentTracker.Combine(new[] { brief, comparedWith })),
     "Reaching a new item with compare held names the item before its comparison");
 system._activeComparisonItemTooltipInfo = new LE.UI.Tooltips.ItemTooltipInfo();
 InventoryAccessibility.Reset(); ScreenReader.Messages.Clear(); UpdateTwice();
-Check(ScreenReader.Messages.Single() == brief, "A stale comparison widget is never read");
+Check(ScreenReader.Messages.Single() == ScreenContentTracker.Combine(new[] { brief, Text("item.compare_nothing") }),
+    "A stale comparison widget is never read; the held compare says nothing is equipped to compare: " + ScreenReader.Messages.Single());
+// The comparison state is logged once per change, so a live test shows why a held key stayed silent.
+string StateLines() => string.Join("|", LeAccess.Plugin.Log.Information.Where(x => x.StartsWith("[Inventory comparison state]")));
+Check(StateLines().Contains("v2 mode=CompareDefault"), "The comparison state names the tooltip mode: " + StateLines());
+LeAccess.Plugin.Log.Information.Clear();
+UpdateTwice(); UpdateTwice();
+Check(StateLines() == "", "An unchanged comparison state is not logged again");
+Mode(TooltipMode.DefaultInfo); UpdateTwice(); UpdateTwice();
+Check(LeAccess.Plugin.Log.Information.Count(x => x.StartsWith("[Inventory comparison state]")) == 1 && StateLines().Contains("mode=DefaultInfo"),
+    "A changed comparison state is logged once: " + StateLines());
+Mode(TooltipMode.CompareDefault);
+// Holding R3 (or Alt) shows each line's explanation; holding both shows the value ranges.
+system._activeComparisonItemTooltipInfo = compared._info;
+raised._explanationText = MakeLabel("Aumenta la fuerza", raised.transform);
+raised._rangeText = MakeLabel("5 a 10", raised.transform);
+InventoryAccessibility.Reset(); ScreenReader.Messages.Clear(); UpdateTwice();
+Mode(TooltipMode.Explanation); UpdateTwice();
+Check(ScreenReader.Messages.Last() == Text("item.explanations", Text("item.explained_line", "+8 fuerza", "Aumenta la fuerza")),
+    "Holding the explanation button reads each explained line: " + ScreenReader.Messages.Last());
+Mode(TooltipMode.DefaultModRanges); UpdateTwice();
+Check(ScreenReader.Messages.Last() == Text("item.ranges", Text("item.ranged_line", "+8 fuerza", "5 a 10")),
+    "Holding both buttons for ranges reads each line's range");
+int beforeRanges = ScreenReader.Messages.Count;
+UpdateTwice();
+Check(ScreenReader.Messages.Count == beforeRanges, "A held mode speaks once");
+Mode(TooltipMode.CompareModRanges); UpdateTwice();
+Check(ScreenReader.Messages.Last().StartsWith(comparedWith) &&
+    ScreenReader.Messages.Last().EndsWith(Text("item.ranges", Text("item.ranged_line", "+8 fuerza", "5 a 10"))),
+    "Comparison with ranges reads the comparison, then the ranges");
+modern._info = new LE.UI.Tooltips.ItemTooltipInfo { _Item_k__BackingField = item, _TooltipMode_k__BackingField = TooltipMode.CompareDefault };
+UpdateTwice();
+Check(ScreenReader.Messages.Last().EndsWith(Text("item.ranges", Text("item.ranged_line", "+8 fuerza", "5 a 10"))),
+    "A tooltip that is not the game's active one is never read");
+modern._info = system._activeItemTooltipInfo;
+Mode(TooltipMode.DefaultInfo);
+raised._explanationText = raised._rangeText = null;
 system._itemTooltipComparison = null; system._activeComparisonItemTooltipInfo = null;
 ItemComparisonIcons.Reset();
 InventoryAccessibility.Reset(); ScreenReader.Messages.Clear(); UpdateTwice();
@@ -368,4 +407,5 @@ SpeechAcceptanceTests.Run(Check);
 DropFocusTests.Run(Check);
 NavigationTests.Run(Check);
 GoldNoticeTests.Run(Check);
+ComparisonModeTests.Run(Check);
 Console.WriteLine($"Inventory tests passed: {checks} checks.");

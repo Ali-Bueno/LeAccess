@@ -16,10 +16,12 @@ internal static class InventoryAccessibility
     private static readonly InventoryAnnouncementState Announcements = new();
     private static readonly ScreenContentTracker Comparison = new();
     private static readonly InventoryGoldNotice Gold = new();
+    private static readonly LeadingNotice PanelLead = new();
     private static string _lastFailure;
     private static string _contextKey, _context, _position;
     private static float _nextContextRead;
     private static string _detailsKey;
+    private static string _comparisonState;
 
     internal static bool HasPendingContent => HasActiveContent && (Announcements.HasPendingContent || _detailsKey != null);
 
@@ -108,8 +110,8 @@ internal static class InventoryAccessibility
                 text = ScreenContentTracker.Combine(new[] { text, _position, _context });
             }
             else { _contextKey = _context = _position = null; }
-            string gold = Gold.For(key);
-            if (gold != null) text = ScreenContentTracker.Combine(new[] { gold, text });
+            string lead = ScreenContentTracker.Combine(new[] { PanelLead.For(key), Gold.For(key) });
+            if (!string.IsNullOrWhiteSpace(lead)) text = ScreenContentTracker.Combine(new[] { lead, text });
             string requestedText = text;
             if (requestDetails && selectedData is not null && !selectedData.WasCollected)
                 hasTooltip = ItemTooltipReader.TryReadForItem(selectedData, container.gameObject, out requestedText);
@@ -144,7 +146,7 @@ internal static class InventoryAccessibility
             else if (!announced) return;
             if (!ScreenReader.TrySpeak(announcement, interrupt: true)) return;
             Announcements.Acknowledge(key, text);
-            if (!requestDetails) Gold.Spoken(key);
+            if (!requestDetails) LeadSpoken(key);
             _detailsKey = null;
             Plugin.Log.LogInfo($"[{(requestDetails ? "Inventory details" : "Inventory")}] {announcement}");
         }
@@ -155,18 +157,38 @@ internal static class InventoryAccessibility
     // after the item's own brief when navigation reached a new item with the action still held.
     private static bool AnnounceComparison(ItemData item, string key, string brief)
     {
-        if (item is null || item.WasCollected || !ItemComparisonReader.TryRead(item, out _, out string comparison))
-        { Comparison.Reset(); return false; }
+        string comparison = null;
+        bool found = item is not null && !item.WasCollected && ItemComparisonReader.TryRead(item, out _, out comparison);
+        LogComparisonState();
+        if (!found) { Comparison.Reset(); return false; }
         if (!Comparison.Observe(1, comparison, ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame,
             out string announcement, acknowledge: false) || announcement is null) return true;
         if (!Announcements.HasSpoken(key, brief)) announcement = ScreenContentTracker.Combine(new[] { brief, announcement });
         if (!ScreenReader.TrySpeak(announcement, interrupt: true)) return true;
         Comparison.Acknowledge(1, comparison);
-        Gold.Spoken(key);
+        LeadSpoken(key);
         Announcements.Observe(key, brief, false, out _, acknowledge: false);
         Announcements.Acknowledge(key, brief);
         Plugin.Log.LogInfo($"[Inventory comparison] {announcement}");
         return true;
+    }
+
+    /// <summary>A notice from a panel beside the inventory (the forge) to lead the next item read; null drops it.</summary>
+    internal static void Lead(string notice) => PanelLead.Raise(notice);
+
+    private static void LeadSpoken(string key)
+    {
+        Gold.Spoken(key);
+        PanelLead.Spoken(key);
+    }
+
+    // One line per change of the tooltip's mode or source, so a live test shows why a held key stayed silent.
+    private static void LogComparisonState()
+    {
+        string state = ItemComparisonReader.LastState;
+        if (state == null || state == _comparisonState) return;
+        _comparisonState = state;
+        Plugin.Log.LogInfo($"[Inventory comparison state] {state}");
     }
 
     // Tracked every frame, so a panel closed while another window held focus still ends its notice.

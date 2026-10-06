@@ -45,8 +45,9 @@ internal static class CraftingSelectionReader
             }
             else
             {
+                // FocusSelectable focuses activeNavigationElements (RectTransforms); selectables holds the cells' components.
                 var index = forge.currentlySelectedIdx;
-                rect = ReadCell(forge.selectables, index.x, index.y)?.TryCast<RectTransform>();
+                rect = ReadCell(forge.activeNavigationElements, index.x, index.y)?.TryCast<RectTransform>();
             }
             if (!IsAlive(rect) || !Within(rect.gameObject, owner.gameObject)) return false;
             selected = rect.gameObject;

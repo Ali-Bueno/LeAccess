@@ -205,8 +205,8 @@ public static class HarmonyPatches
         {
             try
             {
-                // Get placeholder text if available
-                string placeholder = __instance?._substitutePlaceholderText?.text;
+                // Get placeholder text if available; a Social username field gives its label and format instead.
+                string placeholder = Social.SocialWindows.KeyboardLabel(__instance) ?? __instance?._substitutePlaceholderText?.text;
                 string announcement = ModText.Get("keyboard.open");
 
                 if (!string.IsNullOrEmpty(placeholder))

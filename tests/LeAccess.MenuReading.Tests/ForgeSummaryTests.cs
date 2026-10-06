@@ -20,7 +20,7 @@ internal static class ForgeSummaryTests
         row.addAffixButton = row.gameObject.Child().Add(new Button());
         row.addAffixButton.gameObject.Add(new Graphic());
         var rect = row.addAffixButton.gameObject.Add(new RectTransform());
-        forge.selectables = new Il2CppSystem.Array(new NativeObject[,] { { rect } });
+        forge.activeNavigationElements = new Il2CppSystem.Array(new NativeObject[,] { { rect } });
         forge.singleSuccessChanceString = Label(forge.gameObject, "Will add <color=#FFFFFF>3 random affixes</color>");
         forge.modifierDetails = Label(forge.gameObject, "Rerolls the values of all affixes.");
         forge.glyphsPreviewText = Label(forge.gameObject, "Glyph of Hope may prevent forging potential loss.");
@@ -47,7 +47,7 @@ internal static class ForgeSummaryTests
         Check(ElementAnnouncer.TryReadDetails(row.addAffixButton.gameObject, out details) && details.Contains("Este objeto ya tiene cuatro afijos."), "Unavailable reasons are read afresh in the game's language");
         forge.cannotForgeText.gameObject.Active = false;
         Check(!ElementAnnouncer.TryReadDetails(row.addAffixButton.gameObject, out _), "Hidden unavailable reasons do not replay old failure content"); forge.cannotForgeText.gameObject.Active = true;
-        var matrix = (Il2CppSystem.Array)forge.selectables;
+        var matrix = (Il2CppSystem.Array)forge.activeNavigationElements;
         var actionRect = forge.forgeButton.gameObject.Add(new RectTransform());
         matrix.Cells[0, 0] = actionRect;
         Check(!ElementAnnouncer.TryReadDetails(forge.forgeButton.gameObject, out _), "The native hidden forge action cannot be inspected through retained focus"); matrix.Cells[0, 0] = rect;

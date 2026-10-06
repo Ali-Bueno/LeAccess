@@ -59,6 +59,21 @@ internal static class KeyboardTests
         Check(Select(form.gameObject.Child()) && !Enabled(), "Moving to an ordinary control revokes name editing even if native editor pointer lingers");
         Check(Select(null) && !Select(input.gameObject), "Clearing native selection revokes editing");
 
+        // A Social username field follows the same rule as the character name.
+        var username = new GameObject().Add(new TMP_InputField());
+        LeAccess.Accessibility.Social.SocialWindows.Username = username;
+        CharacterNameKeyboard.Reset();
+        Check(!Select(username.gameObject), "Focusing a username field does not open the screen keyboard");
+        CharacterNameKeyboardPatches.Submit.Prefix(username);
+        Check(Select(username.gameObject), "Cross on a username field opens the screen keyboard");
+        keyboard._selectedInputField = new() { gameObject = username.gameObject };
+        Check(Enabled(), "The username editing session stays open while authorized");
+        CharacterNameKeyboardPatches.Close.Postfix(keyboard, null);
+        Check(!Select(username.gameObject), "Closing the keyboard requires Cross again for the username field");
+        LeAccess.Accessibility.Social.SocialWindows.Username = null;
+        keyboard._selectedInputField = new() { gameObject = input.gameObject };
+        CharacterNameKeyboard.Reset();
+
         foreach (string gate in new[] { "hidden", "disabled", "read-only", "non-interactable", "unfocused", "loading" })
         {
             CharacterNameKeyboard.Reset();

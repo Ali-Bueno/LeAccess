@@ -211,3 +211,64 @@ or model creation was added. Symbolic preview content, forging-cost ranges,
 additional critical-success presentation, advanced affix comparison/combined-tier fields, sealed-affix dropdown, and other
 filter condition types also remain outside these fixes. Full forging/filter
 workflows, gamepad focus updates and listening still require gameplay checks.
+
+## Controller forge (2026-10-05)
+
+User request: make the forge usable entirely. Static analysis, build 25711439, corrected the earlier
+notes: `CraftingSlotManager.selectables` holds the cells' *components*; the grid the game focuses is
+`activeNavigationElements` (RectTransform[7,5], [column,row]). The old reader cast `selectables` to
+`RectTransform`, always null, so the forge was silent. Most cells focus through
+`ShowCircleFromRect` @0x10295B0, which never calls `ControllerFocusCursor.Show`, so only polling hears them.
+
+- **Grid** (`.ctor` @0x117E170, prefab Odin data): y0 materials toggle (0), help (6); y1 prefix 1
+  upgrade (0), prefix 1 (1), item `CraftingMainUI` (3), suffix 1 (5), its upgrade (6); y2 the same for
+  prefix/suffix 2 with the glyph `CraftingSupportUI` at (3); y3 shard/modifier `CraftingModifierUI` (3)
+  and rune `CraftingRuneButton` (4); y4 forge button (3). Native moves (@0x116E570 etc.) step to the
+  next non-null cell, wrapping; they never leave the grid. `OnOpen` sets (3,3), but the grid only
+  gets focus through L2 (see below).
+- **Cross** (`HandleSubmitInput` @0x116D5F0): affix row → materials panel filtered to that slot
+  (only with `addAffixButton` active); item → pick up/place; glyph/rune → their flyout; shard slot →
+  materials panel; upgrade → that affix's shard into the shard slot, focus to Forge; Forge →
+  `Forge()` (only the Rune of Corruption asks to confirm). Square on the item returns it to the
+  inventory; in the inventory, Square sends an item to the forge. Circle closes everything.
+- **Result**: `OnCraftingAttempted` @0x116FA30 (offline and online) logs "[Forge Craft] Result" and
+  then fills `singlelineFractureChanceTMP`, `minorFractureChanceTMP`, `lostForgingPotentialTMP`,
+  `typeOfForgeTMP`, `criticalChanceOutcomeTMP` synchronously. Hooking it is avoided (structs by value),
+  so `ForgeResultLog` (a BepInEx log listener) notes that line and the labels are read next frame.
+
+Mod behaviour (`Forge/ForgeCellReader`, `ForgeAccessibility`): polled reading of the selected cell —
+slot and affix (name, tier, shards, "Mejora a la izquierda/derecha", what Cross does), upgrade, item
+with forging potential, glyph, shard/rune, runes, Forge with the game's wording and cost range or its
+refusal reason, materials, help. Opening says "Forja" and the item first; right stick up adds the
+forge summary; each craft speaks "Resultado: …", leading the new cell when the game moved focus.
+The generic announcer stays silent for the grid. The materials panel and flyouts keep their readers;
+`CraftingSelectionReader` now reads `activeNavigationElements`. Forge suite 28 checks, menu 307;
+listening pending (the whole flow, the result wording, the corruption confirm).
+
+## Forge from the inventory (2026-10-05)
+
+Live test: "Forja" from the radial menu opened the inventory; nothing about the forge was said, and
+Square on an item seemed to do nothing. Static analysis, build 25711439 (V = verified):
+
+- V Radial "Forja" (@0x1085810) and the keyboard both call `UIBase.CraftingKeyDown` @0x17F7300 →
+  `TogglePanel<ForgePanel>`. `ForgePanel.OnOpen` @0x2057040 initialises the grid and opens the
+  inventory. `PanelSystem.OnPanelOpen` focuses only a panel whose `ShouldFocusOnOpen` is true:
+  the forge only during the Forging Basics tutorial, otherwise the **inventory** keeps focus.
+- V **L2** (`leftShoulder2`, `InventoryMap.ProcessInput` @0x1037860, `TryFocusInDirection(-1)`)
+  moves focus to the forge panel; **R2** back to the inventory. `ForgePanel.OnSelected` @0x2057140
+  selects the `CraftingSlotManager` (grid, index (3,3)), or `_main` (`CraftingMainUI`, an
+  `ItemContainerUI`) when the cursor holds an item. The action bar shows "L2 Forja".
+- V Square in the inventory: `HandleSubmitInput(X_SQUARE)` → `ProcessDropSubmit` @0x1427900 →
+  `PanelSystem.TryQuickMove` into the forge's main, modifier or support slot. The prompt only checks
+  the item type (`CraftingMainItemContainer.CanReceiveItem` @0x13CAE40), not whether the slot is
+  occupied; a refused move changes nothing and the game says nothing. After a move, focus stays in
+  the inventory on the nearest item. Holding Square is the inventory's "transfer materials".
+- V Crafting works anywhere once unlocked (no town/NPC check): locked → "The Forge is not unlocked
+  yet"; during Forging Basics it opens only in the Osprix Warcamp.
+
+Mod behaviour (`Forge/ForgeInventoryNotices`): when the forge opens, the inventory's first brief is
+led by "Forja", its item (or "Sin objeto…") and "L2 entra en la forja; R2 vuelve al inventario".
+Square that fills a forge slot leads the next brief with "<item> en la forja"; Square that leaves
+the item in place with an empty cursor speaks "No se movió a la forja" (with the forge's item when
+it holds one). Focus on `CraftingMainUI` is read by the forge reader (item and "Confirma para dejar
+aquí el objeto que llevas"), not as an inventory slot. Listening pending.
