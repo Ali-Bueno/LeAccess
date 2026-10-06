@@ -15,5 +15,6 @@
     <EmbeddedResource Include="../../LeAccess/Sounds/*.wav" LogicalName="LeAccess.Sounds.%(Filename)%(Extension)" />
     <Compile Include="../../LeAccess/Accessibility/Audio/WorldAudioReservation.cs" Link="WorldAudioReservation.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Players/LocalPlayerSource.cs" Link="LocalPlayerSource.cs" />
   </ItemGroup>
 </Project>

@@ -143,7 +143,9 @@ namespace UnityEngine.AI
         { RayCalls++; Type = type; Mask = mask; hit = new() { position = b }; return Blocked; }
     }
 }
-internal class ActorVisuals : UnityEngine.Behaviour { internal bool dead; }
+internal class ActorVisuals : UnityEngine.Behaviour { internal bool dead; internal ActorSync actorSync; }
+internal class LocalPlayer : UnityEngine.Behaviour { internal static LocalPlayer instance; internal ActorSync actorSync; }
+namespace EHG.Multiplayer { internal static class GameplayEnvironment { internal static bool IsOnlineClient; } }
 internal class Actor : UnityEngine.Behaviour { internal ActorSync actorSync; }
 internal class ActorSync : UnityEngine.Behaviour { internal Actor gameplayActor; internal ActorVisuals actorVisuals; }
 internal static class PlayerFinder { internal static UnityEngine.GameObject player; internal static ActorVisuals playerActorVisuals; internal static Actor playerActorComponent; }

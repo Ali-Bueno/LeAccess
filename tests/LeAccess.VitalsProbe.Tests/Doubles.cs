@@ -53,10 +53,11 @@ internal sealed class Actor : UnityEngine.Behaviour
 internal class HealthPotionCharges : UnityEngine.Behaviour { internal int currentCharges = 3, maxCharges = 4; }
 internal sealed class HealthPotion : HealthPotionCharges { }
 internal sealed class ActorVisuals : UnityEngine.Behaviour { internal ActorSync actorSync; }
-internal class ActorSync : UnityEngine.Behaviour { }
+internal class ActorSync : UnityEngine.Behaviour { internal ActorVisuals actorVisuals; }
 internal sealed class PlayerActorSync : ActorSync { internal LocalPlayer localPlayer; }
 internal sealed class LocalPlayer : UnityEngine.Behaviour
 {
+    internal static LocalPlayer instance;
     internal ActorSync actorSync; internal BaseHealth playerHealth; internal BaseMana playerMana;
     internal HealthPotionCharges healthPotion;
 }
@@ -71,6 +72,7 @@ internal sealed class BaseMana : UnityEngine.Behaviour
 }
 internal static class PlayerFinder
 {
+    internal static UnityEngine.GameObject player;
     internal static Actor playerActorComponent;
     internal static ActorVisuals playerActorVisuals;
     internal static LocalPlayer Local;

@@ -6,6 +6,7 @@ namespace UnityEngine
         private readonly int _id = ++_nextId;
         public bool WasCollected { get; set; }
         public int GetInstanceID() { Guard(); return _id; }
+        public IntPtr Pointer { get { Guard(); return new(_id); } }
         protected void Guard()
         {
             if (WasCollected) throw new InvalidOperationException("Collected wrapper access");
@@ -157,7 +158,10 @@ internal sealed class NpcNameTooltip : UnityEngine.Component
     public string BottomText { get; set; }
     public string BottomTextKey { get; set; }
 }
-internal sealed class ActorVisuals : UnityEngine.Component { public bool dead; }
+internal sealed class ActorVisuals : UnityEngine.Component { public bool dead; public ActorSync actorSync; }
+internal sealed class ActorSync : UnityEngine.Component { public ActorVisuals actorVisuals; }
+internal sealed class LocalPlayer : UnityEngine.Component { public static LocalPlayer instance; public ActorSync actorSync; }
+namespace EHG.Multiplayer { internal static class GameplayEnvironment { internal static bool IsOnlineClient; } }
 internal sealed class BaseDisplayInformation : UnityEngine.Component
 {
     public string LocalizedName;

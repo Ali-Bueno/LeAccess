@@ -7,5 +7,6 @@
     <Compile Include="../../LeAccess/Accessibility/MapSections/MapSectionCatalog.cs" Link="MapSectionCatalog.cs" />
     <Compile Include="../../LeAccess/Accessibility/MapSections/MapSection.cs" Link="MapSection.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Players/LocalPlayerSource.cs" Link="LocalPlayerSource.cs" />
   </ItemGroup>
 </Project>

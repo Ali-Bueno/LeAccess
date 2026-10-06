@@ -3,5 +3,6 @@
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/Vitals/VitalsProbe.cs" Link="VitalsProbe.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Players/LocalPlayerSource.cs" Link="LocalPlayerSource.cs" />
   </ItemGroup>
 </Project>

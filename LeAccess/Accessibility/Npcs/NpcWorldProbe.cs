@@ -2,6 +2,7 @@ using System;
 using LeAccess.Accessibility.Navigation;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using LeAccess.Accessibility.Players;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Npcs;
@@ -24,11 +25,11 @@ internal sealed class NpcWorldProbe
         {
             if (!float.IsFinite(rangeMultiplier) || rangeMultiplier <= 0 ||
                 NavigationAudioState.IsSuspended || !GameplayInputState.OwnsInput()) return false;
-            var player = PlayerFinder.player;
+            var player = LocalPlayerSource.Player;
             var scene = SceneManager.GetActiveScene();
             if (!scene.IsValid() || !scene.isLoaded || !IsAlive(player) || !player.activeInHierarchy ||
                 !player.scene.IsValid() || !player.scene.isLoaded || !IsAlive(player.transform)) return false;
-            var visuals = PlayerFinder.playerActorVisuals;
+            var visuals = LocalPlayerSource.Visuals;
             if (visuals is not null && (!IsAlive(visuals) || !visuals.isActiveAndEnabled || visuals.dead)) return false;
 
             long session = ((long)(int)scene.handle << 32) | (uint)player.GetInstanceID();

@@ -94,7 +94,9 @@ namespace UnityEngine.SceneManagement
 internal sealed class Actor : UnityEngine.Behaviour
 { internal bool Dying; internal float Radius = 0.5f; internal bool isDying() => Dying; internal float getRadius() => Radius; }
 internal sealed class ActorVisuals : UnityEngine.Behaviour
-{ internal bool dead; internal float Radius = 0.5f; internal float getRadius() => Radius; }
+{ internal bool dead; internal float Radius = 0.5f; internal float getRadius() => Radius; internal ActorSync actorSync; }
+internal sealed class ActorSync : UnityEngine.Behaviour { internal ActorVisuals actorVisuals; }
+internal sealed class LocalPlayer : UnityEngine.Behaviour { internal static LocalPlayer instance; internal ActorSync actorSync; }
 internal static class PlayerFinder
 { internal static UnityEngine.GameObject player; internal static Actor playerActorComponent; internal static ActorVisuals playerActorVisuals; }
 internal static class SceneList

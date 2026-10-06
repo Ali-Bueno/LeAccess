@@ -85,10 +85,10 @@ namespace EHG.Multiplayer
 { internal static class GameplayEnvironment { internal static bool IsOnlineClient; } }
 internal sealed class Actor : UnityEngine.Behaviour { internal BaseHealth health; internal BaseMana mana; internal bool Dead; internal bool isDying()=>Dead; }
 internal sealed class ActorVisuals : UnityEngine.Behaviour { internal ActorSync actorSync; internal bool dead; }
-internal class ActorSync : UnityEngine.Behaviour { }
+internal class ActorSync : UnityEngine.Behaviour { internal ActorVisuals actorVisuals; }
 internal sealed class PlayerActorSync : ActorSync { internal LocalPlayer localPlayer; }
 internal sealed class LocalPlayer : UnityEngine.Behaviour
-{ internal ActorSync actorSync; internal BaseHealth playerHealth; internal BaseMana playerMana; }
+{ internal static LocalPlayer instance; internal ActorSync actorSync; internal BaseHealth playerHealth; internal BaseMana playerMana; }
 internal sealed class BaseHealth : UnityEngine.Behaviour
 { internal Actor actor; internal float currentHealth = 76.5f; internal int maxHealth = 100; }
 internal sealed class BaseMana : UnityEngine.Behaviour

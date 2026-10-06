@@ -182,6 +182,7 @@ internal class ActorSync : UnityEngine.Component
 }
 internal class ActorVisuals : UnityEngine.Component
 {
+    public ActorSync actorSync;
     public bool isActiveAndEnabled = true;
     public bool dead;
     public float Radius;
@@ -192,11 +193,13 @@ namespace LeAccess.Accessibility.MapSections
     internal static class MapPlaceDiagnostics
     { internal static void Report(string reason, string detail) { } }
 }
-internal class LocalPlayer : UnityEngine.Object
+internal class LocalPlayer : UnityEngine.Component
 {
     public static LocalPlayer instance = null;
     public UnityEngine.AI.NavMeshAgent navMeshAgent = null;
+    public ActorSync actorSync;
 }
+namespace EHG.Multiplayer { internal static class GameplayEnvironment { internal static bool IsOnlineClient; } }
 internal class DialogueSystemNavigable : UnityEngine.Object { public bool isActiveAndEnabled = true; }
 namespace LeAccess.Accessibility.Navigation
 {

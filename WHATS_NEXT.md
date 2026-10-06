@@ -1,3 +1,17 @@
+# Handoff — 2026-10-06 later: first co-op session
+
+User and a friend played online: friend request, party invite (by "canario69", no #number needed),
+the invite prompt (Aceptar reached) and Portal to player all worked. Two faults fixed: after the
+portal join the friend's mod lost his own character (PlayerFinder's online visuals cache is emptied
+on re-find; one shared `LocalPlayerSource` now uses `LocalPlayer.instance`, 13 call sites,
+[details](reference/multiplayer-local-player.md)); the radial "Grupo" party overview spoke raw names
+("Member 1", "Class", "Portal To Player") and now reads each member (name, class, leader, life,
+barrier, dead, zone) and "Portal a X, botón" ([details](reference/social-reading.md)). The username
+hint no longer demands "#1234".
+First live checks: in co-op after a portal join, the `[LocalPlayer]` log line (`source=LocalPlayer.instance`),
+radar `body_radius` about 0.45, scanner, landmarks and enemies back; the Grupo panel. Social 66,
+Navigation 508, Combat 157, Players 41 and the other affected suites pass; installed, not committed.
+
 # Handoff — 2026-10-06: Social panel for online co-op
 
 User: wants to play online with a friend: share their own username, invite the friend to a party or

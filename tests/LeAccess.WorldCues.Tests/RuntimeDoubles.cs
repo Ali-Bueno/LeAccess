@@ -67,7 +67,10 @@ internal static class PlayerFinder
     internal static UnityEngine.GameObject player = new();
     internal static ActorVisuals playerActorVisuals = new();
 }
-internal sealed class ActorVisuals : UnityEngine.MonoBehaviour { internal bool dead; }
+internal sealed class ActorVisuals : UnityEngine.MonoBehaviour { internal bool dead; internal ActorSync actorSync; }
+internal sealed class ActorSync : UnityEngine.MonoBehaviour { internal ActorVisuals actorVisuals; }
+internal sealed class LocalPlayer : UnityEngine.MonoBehaviour { internal static LocalPlayer instance; internal ActorSync actorSync; }
+namespace EHG.Multiplayer { internal static class GameplayEnvironment { internal static bool IsOnlineClient; } }
 internal sealed class TextLabel : UnityEngine.MonoBehaviour
 { internal float alpha = 1; internal UnityEngine.CanvasRenderer canvasRenderer = new(); }
 internal class PickupableGroundLabel : UnityEngine.MonoBehaviour { internal TextLabel itemText = new(); }

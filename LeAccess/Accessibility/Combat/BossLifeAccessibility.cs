@@ -4,6 +4,7 @@ using EHG.Multiplayer;
 using LeAccess.I18n;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using LeAccess.Accessibility.Players;
 
 namespace LeAccess.Accessibility.Combat;
 
@@ -42,7 +43,7 @@ internal static class BossLifeAccessibility
             if (scene.handle != _scene) { State.Reset(); _scene = scene.handle; }
             var camera = Camera.main;
             if (camera != null && !camera.isActiveAndEnabled) camera = null;
-            var samples = GameplayEnvironment.IsOnlineClient ? BossLifeProbe.Read(PlayerFinder.playerActorVisuals, camera)
+            var samples = GameplayEnvironment.IsOnlineClient ? BossLifeProbe.Read(LocalPlayerSource.Visuals, camera)
                 : BossLifeProbe.Read(PlayerFinder.playerActorComponent, camera);
             if (BossLifeProbe.LastFailure is not null) ReportFailure(BossLifeProbe.LastFailure);
             if (samples == null) return;

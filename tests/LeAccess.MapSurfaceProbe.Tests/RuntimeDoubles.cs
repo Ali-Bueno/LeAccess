@@ -84,7 +84,9 @@ namespace UnityEngine.SceneManagement
     internal struct Scene {internal int handle;internal string name,path;internal bool Valid,isLoaded;internal bool IsValid()=>Valid;}
     internal static class SceneManager {internal static Scene Scene;internal static Scene GetActiveScene()=>Scene;}
 }
-internal class ActorVisuals:UnityEngine.Behaviour {internal bool dead;}
+internal class ActorVisuals:UnityEngine.Behaviour {internal bool dead;internal ActorSync actorSync;}
+internal class LocalPlayer:UnityEngine.Behaviour {internal static LocalPlayer instance;internal ActorSync actorSync;}
+namespace EHG.Multiplayer {internal static class GameplayEnvironment {internal static bool IsOnlineClient;}}
 internal class Actor:UnityEngine.Behaviour {internal ActorSync actorSync;}
 internal class ActorSync:UnityEngine.Behaviour {internal Actor gameplayActor;internal ActorVisuals actorVisuals;}
 internal static class PlayerFinder {internal static UnityEngine.GameObject player;internal static ActorVisuals playerActorVisuals;internal static Actor playerActorComponent;}

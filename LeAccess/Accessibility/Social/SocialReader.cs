@@ -22,6 +22,7 @@ internal static class SocialReader
         {
             if (!IsAlive(element)) return false;
             if (IsAlive(element.GetComponentInParent<RightClickMenu>())) return TryReadOption(element, out text);
+            if (PartyOverviewReader.TryRead(element, out text)) return true;
             var social = element.GetComponentInParent<FriendPostRequestsUI>();
             if (!IsAlive(social)) return false;
             SocialAccessibility.Observe(social);
@@ -40,7 +41,8 @@ internal static class SocialReader
         try
         {
             if (!IsAlive(element) || IsAlive(element.GetComponent<Selectable>()) ||
-                !IsAlive(element.GetComponentInParent<FriendPostRequestsUI>())) return element;
+                !(IsAlive(element.GetComponentInParent<FriendPostRequestsUI>()) || PartyOverviewReader.Owns(element)))
+                return element;
             var owner = element.GetComponentInParent<Selectable>();
             return IsAlive(owner) ? owner.gameObject : element;
         }

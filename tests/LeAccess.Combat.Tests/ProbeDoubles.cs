@@ -91,6 +91,7 @@ internal sealed class BaseDisplayInformation : UnityEngine.Object
 
 internal sealed class ActorVisuals : UnityEngine.Behaviour
 {
+    public ActorSync actorSync;
     public UnityEngine.Transform transform = new();
     public Alignment Alignment;
     public bool dead;
@@ -142,6 +143,12 @@ internal sealed class ActorSync : UnityEngine.Object
 {
     public Actor gameplayActor;
     public ActorVisuals actorVisuals;
+}
+
+internal sealed class LocalPlayer : UnityEngine.Behaviour
+{
+    public static LocalPlayer instance;
+    public ActorSync actorSync;
 }
 
 internal sealed class ActorData : UnityEngine.Object

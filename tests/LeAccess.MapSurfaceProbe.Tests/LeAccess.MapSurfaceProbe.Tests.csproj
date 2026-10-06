@@ -4,6 +4,7 @@
     <Compile Include="../../LeAccess/Accessibility/MapSections/MapSurfaceProbe.cs" Link="MapSurfaceProbe.cs" />
     <Compile Include="../../LeAccess/Accessibility/MapSections/MapPlayerVisuals.cs" Link="MapPlayerVisuals.cs" />
     <Compile Include="../../LeAccess/Accessibility/MapSections/MapPlayerFloor.cs" Link="MapPlayerFloor.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Players/LocalPlayerSource.cs" Link="LocalPlayerSource.cs" />
   </ItemGroup>
   <ItemGroup><EmbeddedResource Include="SurfaceAssetEvidence.json" LogicalName="SurfaceAssetEvidence.json" /></ItemGroup>
 </Project>

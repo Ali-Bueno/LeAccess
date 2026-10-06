@@ -21,6 +21,7 @@ internal static class LifecycleTests
         GameplayOwnershipAndDeathSuspendRadar();
         PlayerReplacementRejectsForeignNavigationData();
         OnlineVisualRadiusSetsWarningReach();
+        CoopJoinClearedCacheKeepsLocalRig();
         StaleSceneAndInactiveCameraSuspendRadar();
         OwnedDetachedVisualsRemainPlayable();
     }
@@ -143,6 +144,7 @@ internal static class LifecycleTests
         PlayerFinder.playerActorVisuals = null;
         GameplayInputState.Owns = true;
         LocalPlayer.instance = null;
+        EHG.Multiplayer.GameplayEnvironment.IsOnlineClient = false;
         Camera.main = new Camera();
         NavMesh.Depth = 20;
         NavMesh.OriginAvailable = true;
@@ -328,6 +330,29 @@ internal static class LifecycleTests
         PlayerFinder.playerActorVisuals = new ActorVisuals { gameObject = new GameObject(), Radius = 5 };
         Program.Check(!probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _),
             "A foreign player's live visual object does not establish a playable local snapshot.");
+        ResetHost();
+    }
+
+    // A co-op join re-runs PlayerFinder.FindPlayer, which zeroes playerActorVisuals (reference/multiplayer-local-player.md).
+    private static void CoopJoinClearedCacheKeepsLocalRig()
+    {
+        ResetHost();
+        EHG.Multiplayer.GameplayEnvironment.IsOnlineClient = true;
+        PlayerFinder.Player.Agent.radius = 0.1f;
+        var rigRoot = new GameObject();
+        rigRoot.transform.parent = PlayerFinder.Player.transform;
+        var rig = new ActorVisuals { gameObject = rigRoot, Radius = 0.45f };
+        var sync = new ActorSync { gameObject = new GameObject(), actorVisuals = rig };
+        rig.actorSync = sync;
+        LocalPlayer.instance = new LocalPlayer { gameObject = PlayerFinder.Player, navMeshAgent = PlayerFinder.Player.Agent, actorSync = sync };
+        var probe = new RadarWorldProbe();
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out var snapshot),
+            "A cleared PlayerFinder rig cache keeps the online radar available.");
+        Program.Near(snapshot.BodyRadius, 0.45f, "LocalPlayer's own rig keeps the body radius instead of the helper agent's.");
+        PlayerFinder.playerActorVisuals = new ActorVisuals { gameObject = new GameObject(), Radius = 5 };
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out snapshot),
+            "Another player's rig left in the cache cannot suspend the local radar.");
+        Program.Near(snapshot.BodyRadius, 0.45f, "Another player's rig cannot resize local warning reach.");
         ResetHost();
     }
 

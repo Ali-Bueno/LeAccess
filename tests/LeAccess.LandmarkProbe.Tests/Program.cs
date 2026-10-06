@@ -183,5 +183,15 @@ visuals.WasCollected=true;Check(!LandmarkProbe.TryRead(out _),"online collected 
 var visualChild=new GameObject();visualChild.transform.parent=visuals.transform;PlayerFinder.player=visualChild;
 Check(LandmarkProbe.TryRead(out _),"online explicit hierarchy accepted");
 PlayerFinder.player=actor.gameObject;Check(!LandmarkProbe.TryRead(out _),"online stale owner excluded");
+// Co-op join: PlayerFinder.FindPlayer zeroes the rig cache; LocalPlayer's own sync still names the rig.
+var root=new GameObject();var rig=new ActorVisuals();rig.transform.parent=root.transform;
+var sync=new ActorSync{actorVisuals=rig};rig.actorSync=sync;
+LocalPlayer.instance=new LocalPlayer{actorSync=sync};LocalPlayer.instance.gameObject=root;
+PlayerFinder.player=root;PlayerFinder.playerActorVisuals=null;
+Check(LandmarkProbe.TryRead(out _),"co-op join with a cleared rig cache keeps landmarks");
+PlayerFinder.playerActorVisuals=new ActorVisuals();Check(LandmarkProbe.TryRead(out _),"another player's cached rig is ignored");
+PlayerFinder.player=new GameObject();Check(LandmarkProbe.TryRead(out _),"stale PlayerFinder root is ignored");
+rig.dead=true;Check(!LandmarkProbe.TryRead(out _),"local rig death still excluded");
+LocalPlayer.instance=null;
 checks += ServiceTests.Run();
 Console.WriteLine($"Passed {checks} landmark probe checks.");

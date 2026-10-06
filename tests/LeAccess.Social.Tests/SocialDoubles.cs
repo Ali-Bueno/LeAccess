@@ -35,8 +35,13 @@ internal sealed class UIBase : MonoBehaviour
     internal static UIBase instance;
     internal GameObject PartyOverviewController;
 }
+internal sealed class CommonLocalization : NativeObject
+{
+    internal string GetClass(string value) => Localization.GetText("class:" + value, value);
+}
 internal static class Localization
 {
+    internal static CommonLocalization Common = new();
     internal static readonly Dictionary<string, string> Texts = new();
     internal static string GetText(string key, string fallback = "") => Texts.TryGetValue(key, out string text) ? text : fallback;
     internal static bool TryGetText(string key, out string value) => Texts.TryGetValue(key, out value);
@@ -66,3 +71,30 @@ namespace LE.UI.Social.UnityUI
         internal GameObject leaderIcon;
     }
 }
+namespace LE.Services.Models
+{
+    internal sealed class UserIdentity { internal string Username; }
+    internal sealed class ClassSlot { internal bool HasValue; internal CharacterClassID Value; }
+    internal enum CharacterClassID : byte { Primalist, Mage, Sentinel, Acolyte, Rogue }
+    internal sealed class PartyMember_Full
+    {
+        internal UserIdentity Identity;
+        internal bool IsLeader;
+        internal ClassSlot characterClass;
+    }
+}
+namespace LE.UI.Party.UnityUI
+{
+    internal sealed class PartyOverviewSelectableAdapter : Selectable { }
+    internal sealed class PartyOverviewMemberPanel : MonoBehaviour
+    {
+        internal TMP_Text accountNameText;
+        internal GameObject leaderTransform;
+        internal Button requestPortalButton;
+        internal Image healthBar, wardBar;
+        internal bool isInDeadState;
+        internal LE.Services.Models.PartyMember_Full partyMember;
+        internal PlayerActorSync playerActorSync;
+    }
+}
+internal sealed class PlayerActorSync : MonoBehaviour { }

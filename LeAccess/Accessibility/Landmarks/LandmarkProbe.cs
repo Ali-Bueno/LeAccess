@@ -6,6 +6,7 @@ using LeAccess.I18n;
 using Networking.Multiplayer.Interactables.Portals;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using LeAccess.Accessibility.Players;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Landmarks;
@@ -23,12 +24,12 @@ internal static class LandmarkProbe
         LastFailure = null;
         LastStatus = "player_or_scene_unavailable";
         var scene = SceneManager.GetActiveScene();
-        var player = PlayerFinder.player;
+        var player = LocalPlayerSource.Player;
         if (!scene.isLoaded || !IsAlive(player) || !player.activeInHierarchy ||
             (int)player.scene.handle != (int)scene.handle) return false;
         if (GameplayEnvironment.IsOnlineClient)
         {
-            var visuals = PlayerFinder.playerActorVisuals;
+            var visuals = LocalPlayerSource.Visuals;
             if (!Available(visuals, scene) || visuals.dead || !SamePlayerHierarchy(visuals.gameObject, player)) return false;
         }
         else

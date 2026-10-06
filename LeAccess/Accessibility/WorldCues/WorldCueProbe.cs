@@ -5,6 +5,7 @@ using LeAccess.Accessibility.Audio;
 using LeAccess.Accessibility.Npcs;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using LeAccess.Accessibility.Players;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.WorldCues;
@@ -47,11 +48,11 @@ internal sealed class WorldCueProbe
         Loops.Clear();
         _coins = _equipment = _objects = _outOfRange = _filtered = _unavailable = 0;
         _missingItemData = _nonEquipment = _missingLabel = _pickups = 0;
-        var player = PlayerFinder.player;
+        var player = LocalPlayerSource.Player;
         if (!IsAlive(player) || !player.activeInHierarchy || !IsAlive(player.transform)) return false;
         var scene = SceneManager.GetActiveScene();
         if (!scene.IsValid() || !scene.isLoaded || player.scene.handle != scene.handle) return false;
-        var visuals = PlayerFinder.playerActorVisuals;
+        var visuals = LocalPlayerSource.Visuals;
         if (visuals is not null && (!IsAlive(visuals) || !visuals.isActiveAndEnabled || visuals.dead)) return false;
         long session = ((long)(int)SceneManager.GetActiveScene().handle << 32) | (uint)player.GetInstanceID();
         if (_session != session) { Reset(); _session = session; }

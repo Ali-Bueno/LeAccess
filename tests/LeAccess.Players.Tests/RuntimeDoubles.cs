@@ -18,6 +18,7 @@ namespace UnityEngine
     }
     internal class GameObject : Object
     {
+        internal string name = "Object";
         internal bool activeInHierarchy = true;
         internal SceneManagement.Scene scene = new(1);
         internal Transform transform;
@@ -45,7 +46,7 @@ namespace UnityEngine
 namespace UnityEngine.SceneManagement
 {
     internal readonly record struct Scene(int handle)
-    { internal bool IsValid() => handle != 0; internal bool isLoaded => handle != 0; }
+    { internal bool IsValid() => handle != 0; internal bool isLoaded => handle != 0; internal string name => $"Scene{handle}"; }
     internal static class SceneManager { internal static int Handle = 1; internal static Scene GetActiveScene() => new(Handle); }
 }
 namespace Il2CppInterop.Runtime.InteropTypes.Arrays
@@ -62,7 +63,7 @@ namespace LE.Networking
 namespace EHG.Multiplayer { internal static class GameplayEnvironment { internal static bool IsOnlineClient = true; } }
 internal class ActorSync : UnityEngine.MonoBehaviour { internal ActorVisuals actorVisuals; }
 internal sealed class PlayerActorSync : ActorSync { internal LocalPlayer localPlayer; }
-internal sealed class LocalPlayer : UnityEngine.MonoBehaviour { internal ActorSync actorSync; }
+internal sealed class LocalPlayer : UnityEngine.MonoBehaviour { internal static LocalPlayer instance; internal ActorSync actorSync; }
 internal sealed class UserIdentity : NativeObject { internal string Username, MasterAccountID = "SECRET_ACCOUNT_ID"; }
 internal sealed class ActorVisuals : UnityEngine.MonoBehaviour
 {
@@ -111,5 +112,10 @@ namespace LeAccess.Accessibility
 namespace LeAccess
 {
     internal static class Plugin { internal static Logger Log = new(); }
-    internal sealed class Logger { internal readonly List<string> Warnings = new(); internal void LogInfo(string text) { } internal void LogWarning(string text) => Warnings.Add(text); }
+    internal sealed class Logger
+    {
+        internal readonly List<string> Infos = new(), Warnings = new();
+        internal void LogInfo(string text) => Infos.Add(text);
+        internal void LogWarning(string text) => Warnings.Add(text);
+    }
 }

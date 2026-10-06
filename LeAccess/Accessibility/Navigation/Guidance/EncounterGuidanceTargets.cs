@@ -4,6 +4,7 @@ using EHG.Multiplayer;
 using LeAccess.Accessibility.MapSections;
 using LeAccess.I18n;
 using UnityEngine;
+using LeAccess.Accessibility.Players;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Navigation.Guidance;
@@ -77,13 +78,13 @@ internal static class EncounterGuidanceTargets
 
     private static bool OwnsPlayer(ActorSync sync, MapSectionWorldSnapshot world)
     {
-        var player = PlayerFinder.player;
+        var player = LocalPlayerSource.Player;
         if (!InWorld(player, world) || world.Session != ((long)world.SceneHandle << 32 | (uint)player.GetInstanceID())) return false;
         Behaviour owner;
         if (GameplayEnvironment.IsOnlineClient)
         {
             var visuals = sync.actorVisuals;
-            if (!Same(visuals, PlayerFinder.playerActorVisuals) || !Same(visuals.actorSync, sync) || visuals.dead) return false;
+            if (!Same(visuals, LocalPlayerSource.Visuals) || !Same(visuals.actorSync, sync) || visuals.dead) return false;
             owner = visuals;
         }
         else

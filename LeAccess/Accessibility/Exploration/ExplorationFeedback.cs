@@ -8,6 +8,7 @@ using LeAccess.Accessibility.Navigation.Guidance;
 using LeAccess.Accessibility.WorldCues;
 using LeAccess.I18n;
 using UnityEngine;
+using LeAccess.Accessibility.Players;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 using NVector3 = System.Numerics.Vector3;
 
@@ -110,7 +111,7 @@ internal static class ExplorationFeedback
     {
         if (GameplayEnvironment.IsOnlineClient)
         {
-            var visuals = PlayerFinder.playerActorVisuals;
+            var visuals = LocalPlayerSource.Visuals;
             return IsAlive(visuals) && visuals.dead;
         }
         var actor = PlayerFinder.playerActorComponent;

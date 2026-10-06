@@ -4,6 +4,7 @@ using EHG.Multiplayer;
 using LE.Services;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using LeAccess.Accessibility.Players;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.MapSections;
@@ -38,13 +39,13 @@ internal static class MapSectionWorld
         try
         {
             var scene = SceneManager.GetActiveScene();
-            var player = PlayerFinder.player;
+            var player = LocalPlayerSource.Player;
             if (!scene.IsValid() || !scene.isLoaded ||
                 !IsAlive(player) || !player.activeInHierarchy || (int)player.scene.handle != (int)scene.handle) return false;
             double radius = 0;
             if (GameplayEnvironment.IsOnlineClient)
             {
-                var visuals = PlayerFinder.playerActorVisuals;
+                var visuals = LocalPlayerSource.Visuals;
                 if (!Available(visuals, scene) || visuals.dead || !OwnsPlayer(visuals.gameObject, player)) return false;
                 float bodyRadius = visuals.getRadius();
                 if (float.IsFinite(bodyRadius) && bodyRadius > 0) radius = bodyRadius;

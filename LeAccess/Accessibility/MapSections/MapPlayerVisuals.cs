@@ -1,4 +1,5 @@
 using UnityEngine;
+using LeAccess.Accessibility.Players;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.MapSections;
@@ -25,7 +26,7 @@ internal static class MapPlayerVisuals
         }
         if (!linked)
         {
-            visuals = PlayerFinder.playerActorVisuals;
+            visuals = LocalPlayerSource.Visuals;
             if (!Available(visuals, scene) || !visuals.isActiveAndEnabled || !visuals.transform.IsChildOf(player.transform))
             { MapPlaceDiagnostics.Report("visual-owner-unavailable", "neither cached ActorSync ownership nor player-owned ActorVisuals is available"); return false; }
         }

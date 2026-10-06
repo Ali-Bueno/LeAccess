@@ -32,6 +32,7 @@ namespace UnityEngine.SceneManagement
 }
 internal static class PlayerFinder
 {
+    public static UnityEngine.GameObject player;
     public static Actor playerActorComponent;
     public static ActorVisuals playerActorVisuals;
 }

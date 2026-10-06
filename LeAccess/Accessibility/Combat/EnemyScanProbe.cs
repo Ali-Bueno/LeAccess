@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using LeAccess.Accessibility.Navigation.Guidance;
+using LeAccess.Accessibility.Players;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Combat;
@@ -16,7 +17,7 @@ internal static class EnemyScanProbe
         float rangeSquared = range * range;
         if (online)
         {
-            var player = PlayerFinder.playerActorVisuals;
+            var player = LocalPlayerSource.Visuals;
             if (!IsAlive(player)) return false;
             var position = player.transform.position;
             origin = GuidanceRouteProbe.Convert(position);

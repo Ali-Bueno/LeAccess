@@ -50,10 +50,10 @@ los rangos.
 Forja: se abre desde el menu radial en cualquier sitio. El foco empieza en el
 inventario: Cuadrado envia un objeto a la forja, L2 entra en la forja y R2
 vuelve al inventario.
-Social: el estado dice tu nombre de usuario (formato Nombre#1234), que tu amigo
-necesita para invitarte. En los campos de nombre de usuario, Cruz abre el
-teclado; para enviar, baja al boton y pulsa Cruz. Las invitaciones recibidas
-se leen.
+Social: el estado dice tu nombre de usuario, que tu amigo necesita para
+invitarte (si tiene numero, como Nombre#1234, incluyelo). En los campos de
+nombre de usuario, Cruz abre el teclado; para enviar, baja al boton y pulsa
+Cruz. Las invitaciones recibidas se leen.
 Para jugar juntos, elegid el modo online en el juego. Tambien puedes elegir
 Jugar sin conexion. El mod conserva la opcion que elijas; no cambia el modo.
 Es una version de prueba: algunas pantallas y elementos aun pueden no leerse.

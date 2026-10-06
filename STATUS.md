@@ -1,6 +1,9 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-05 latest (Claude session): L3/R3 were still silent: the game draws its older
+**Updated:** 2026-10-06 (Claude session): first co-op session worked (invite, accept, portal). Fixed: the
+joining player's mod losing its own character ([details](reference/multiplayer-local-player.md)) and the
+"Grupo" party overview reading raw names ([details](reference/social-reading.md)); listening pending.
+Earlier, 2026-10-05 latest: L3/R3 were still silent: the game draws its older
 tooltip, now read too, with a log line per tooltip mode ([details](reference/item-comparison.md#older-tooltip-2026-10-05)).
 The forge opens with focus on the inventory: it is now announced there with "L2 entra en la forja", and
 Square's move or refusal is spoken ([details](reference/crafting-reading.md#forge-from-the-inventory-2026-10-05)); listening pending.
@@ -133,6 +136,7 @@ requested. No release or new ZIP has been requested.
 
 ## Validation and references
 
+- 2026-10-06 16:08: friend ZIP `LeAccess-Steam-1.5.1-prueba-20261006-160806.zip` (repo root, ignored by git), SHA-256 `26C92028BBEED2032FFEF7850E572ED8394ABFF3964CC1F0E722ED11AC9F8333`, 264 files; adds the co-op local-player fix and the party overview reader.
 - 2026-10-06 15:30: friend ZIP `LeAccess-Steam-1.5.1-prueba-20261006-153055.zip` (repo root, ignored by git), SHA-256 `A4CD7F82736D30722B10405A277A9596105E0259957D2CE3F550073A00BB8A1D`, 264 files, game 1.5.1.2 / build 25711439; adds L3/R3 comparison (older tooltip), forge from the inventory and the Social reader; readme lists them.
 - 2026-10-05 13:45: friend ZIP `LeAccess-Steam-1.5.1-prueba-20261005-134547.zip` (repo root, ignored by git), SHA-256 `EA128FC6D28E1FE20F12F9A01AF59B52E3261838FD160AFD341BC76B618453E5`, 264 files, game 1.5.1.2 / build 25711439; readme now lists skill modification, passive/banner rules and gold. Its `LeAccess.dll` (`3BDD2F412E0580F96ECE101923A4C31F1DED8B22FBBD31F5745B4EE49F6EB3BF`) is the installed copy. Package tests: 242 checks. Rebuilds of the same source can differ in bytes, so the package build's DLL was installed rather than the earlier one.
 - Previous friend ZIP: `LeAccess-Steam-1.5.1-prueba-20261004-170437.zip`.

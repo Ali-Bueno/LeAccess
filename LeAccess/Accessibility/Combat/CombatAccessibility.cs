@@ -12,6 +12,7 @@ using LeAccess.Accessibility.Npcs;
 using LeAccess.Accessibility.Skills;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using LeAccess.Accessibility.Players;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Combat;
@@ -68,7 +69,7 @@ public static class CombatAccessibility
             }
 
             bool online = GameplayEnvironment.IsOnlineClient;
-            var visuals = online ? PlayerFinder.playerActorVisuals : null;
+            var visuals = online ? LocalPlayerSource.Visuals : null;
             var actor = online ? null : PlayerFinder.playerActorComponent;
             UnityEngine.Object player = online ? visuals : actor;
             var scene = SceneManager.GetActiveScene();

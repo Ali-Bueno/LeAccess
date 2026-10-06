@@ -117,6 +117,7 @@ namespace UnityEngine.UI
         internal bool IsInteractable() => interactable;
     }
     internal sealed class Button : Selectable { }
+    internal sealed class Image : Behaviour { internal float fillAmount; }
     internal sealed class Toggle : Selectable { internal bool isOn; }
     internal sealed class Text : Graphic
     { internal string text { get; set; } internal UnityEngine.Color color = new() { a = 1 }; }

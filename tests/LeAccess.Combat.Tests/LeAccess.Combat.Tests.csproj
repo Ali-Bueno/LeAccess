@@ -12,5 +12,6 @@
     <Compile Include="../../LeAccess/Accessibility/Combat/NearestEnemyProbe.cs" Link="NearestEnemyProbe.cs" />
     <Compile Include="../../LeAccess/Accessibility/Combat/NearestEnemySelection.cs" Link="NearestEnemySelection.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Players/LocalPlayerSource.cs" Link="LocalPlayerSource.cs" />
   </ItemGroup>
 </Project>

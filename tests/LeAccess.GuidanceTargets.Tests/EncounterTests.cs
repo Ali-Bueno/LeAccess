@@ -146,6 +146,7 @@ internal static class RageOfMorditasLogic { internal enum State { Gauntlet, Read
 internal class ActorSync : Behaviour { internal Actor gameplayActor; internal ActorVisuals actorVisuals; }
 internal class Actor : Behaviour { internal ActorSync actorSync; internal bool Dying; internal bool isDying() => Dying; }
 internal class ActorVisuals : Behaviour { internal ActorSync actorSync; internal bool dead; }
+internal class LocalPlayer : Behaviour { internal static LocalPlayer instance; internal ActorSync actorSync; }
 internal static class PlayerFinder
 {
     internal static GameObject player;

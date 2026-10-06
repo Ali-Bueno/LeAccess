@@ -39,7 +39,8 @@ configuration and shared audio scheduling.
 
 ## Data and behavior
 
-`RadarWorldProbe` uses `PlayerFinder.player`, the local player's
+`RadarWorldProbe` uses the shared local root and rig from `LocalPlayerSource`
+([multiplayer-local-player.md](multiplayer-local-player.md)), the local player's
 `NavMeshAgent.radius`, `agentTypeID` and `areaMask`, `Actor.getRadius()`, and the active gameplay camera.
 When the local Actor is absent or its radius is not ready, the owned live
 `ActorVisuals.getRadius()` supplies body size, including online clients. An online

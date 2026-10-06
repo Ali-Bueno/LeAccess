@@ -3,6 +3,7 @@ using LeAccess.Accessibility.MapSections;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SceneManagement;
+using LeAccess.Accessibility.Players;
 using NumericsVector2 = System.Numerics.Vector2;
 
 namespace LeAccess.Accessibility.Navigation;
@@ -58,11 +59,11 @@ internal sealed class RadarWorldProbe
     {
         snapshot = default;
         var scene = SceneManager.GetActiveScene();
-        var player = PlayerFinder.player;
+        var player = LocalPlayerSource.Player;
         if (!scene.IsValid() || !scene.isLoaded || !NavigationObjectLifetime.IsAlive(player)
             || !player.activeInHierarchy || (int)player.scene.handle != (int)scene.handle)
             return Unavailable("local player unavailable");
-        var visuals = PlayerFinder.playerActorVisuals;
+        var visuals = LocalPlayerSource.Visuals;
         var localActor = PlayerFinder.playerActorComponent;
         if ((visuals is not null || NavigationObjectLifetime.IsAlive(localActor) &&
             NavigationObjectLifetime.IsAlive(localActor.actorSync)) &&

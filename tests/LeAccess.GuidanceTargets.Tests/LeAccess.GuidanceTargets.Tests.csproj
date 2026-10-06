@@ -6,5 +6,6 @@
     <Compile Include="../../LeAccess/Accessibility/Navigation/Guidance/GuidanceTargetReader.cs" Link="GuidanceTargetReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/Guidance/GuidanceMarkerVisibility.cs" Link="GuidanceMarkerVisibility.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Players/LocalPlayerSource.cs" Link="LocalPlayerSource.cs" />
   </ItemGroup>
 </Project>

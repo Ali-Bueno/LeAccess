@@ -74,9 +74,9 @@ internal static class NearbyPlayerProbe
         localVisuals = null;
         localSync = null;
         if (!GameplayEnvironment.IsOnlineClient) return false;
-        local = PlayerFinder.player;
+        local = LocalPlayerSource.Player;
         var localPlayer = PlayerFinder.getLocalPlayerInMultiplayer();
-        localVisuals = PlayerFinder.playerActorVisuals;
+        localVisuals = LocalPlayerSource.Visuals;
         scene = SceneManager.GetActiveScene();
         if (!scene.IsValid() || !scene.isLoaded || !IsAlive(local) || !local.activeInHierarchy ||
             !local.scene.IsValid() || !local.scene.isLoaded || !IsAlive(local.transform) || !IsAlive(localVisuals) ||

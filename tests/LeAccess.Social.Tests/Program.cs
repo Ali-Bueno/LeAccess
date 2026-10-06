@@ -1,4 +1,6 @@
 using LE.UI.Generic.UnityUI;
+using LE.Services.Models;
+using LE.UI.Party.UnityUI;
 using LE.UI.Social.UnityUI;
 using LeAccess;
 using LeAccess.Accessibility;
@@ -166,6 +168,43 @@ Check(Read(memberGo) == Join("Ana#1234", "Pj - Nivel 90", "Ciudad", T("social.le
 leaderIcon.Active = false;
 Check(Read(memberGo) == Join("Ana#1234", "Pj - Nivel 90", "Ciudad"), "A member who is not the leader");
 Check(Read(leave) == null, "The member's own buttons keep the generic reading");
+
+// The party overview panel (radial menu "Grupo").
+Localization.Texts["class:Sentinel"] = "Centinela";
+var overview = new GameObject { name = "Party Members" };
+var pcard = overview.Child("Member 1");
+pcard.Add(new PartyOverviewSelectableAdapter());
+var cardClass = pcard.Child("Class");
+var portalGo = pcard.Child("PortalToPlayer");
+var portalButton = portalGo.Add(new Button());
+var cardLeader = pcard.Child("PartyLeader");
+var healthBar = pcard.Child("HealthBar").Add(new Image { fillAmount = 0.8f });
+var wardBar = pcard.Child("WardBar").Add(new Image());
+var partyCard = pcard.Add(new PartyOverviewMemberPanel
+{
+    accountNameText = AddLabel(pcard, "Bea#5678"), leaderTransform = cardLeader, requestPortalButton = portalButton,
+    healthBar = healthBar, wardBar = wardBar, playerActorSync = pcard.Add(new PlayerActorSync()),
+    partyMember = new() { Identity = new() { Username = "Bea#5678" }, characterClass = new() { HasValue = true, Value = CharacterClassID.Sentinel } }
+});
+Check(Read(pcard) == Join("Bea#5678", "Centinela", T("party.leader"),
+    F("party.health", 80), T("party.same_zone")) && Read(pcard) == "Bea#5678. Centinela. líder. vida 80 por ciento. en tu zona",
+    "A member in the same zone: name, class, leader, life, zone");
+Check(Read(cardClass) == Read(pcard) && SocialReader.Canonical(cardClass).Pointer == pcard.Pointer,
+    "The cursor's Class target is the member's own stop");
+wardBar.fillAmount = 0.25f;
+cardLeader.Active = false;
+Check(Read(pcard) == "Bea#5678. Centinela. vida 80 por ciento. barrera 25 por ciento. en tu zona", "Ward only when present, no leader mark");
+partyCard.isInDeadState = true;
+Check(Read(pcard) == "Bea#5678. Centinela. muerto", "A dead member");
+partyCard.isInDeadState = false;
+partyCard.playerActorSync.Destroyed = true;
+partyCard.accountNameText.text = "";
+Check(Read(pcard) == "Bea#5678. Centinela. en otra zona", "A member in another scene; the name falls back to the identity");
+Check(Read(portalGo) == "Portal a Bea#5678, botón", "The portal button names the member");
+portalButton.interactable = false;
+Check(Read(portalGo) == "Portal a Bea#5678 (No disponible)", "An unavailable portal says so");
+Check(PartyText.Percent(1.4f) == 100 && PartyText.Percent(-1f) == 0 && PartyText.Percent(0.495f) == 50 &&
+    PartyText.Portal(null, true) == "Portal al jugador, botón", "Percent clamps and rounds; a nameless portal");
 
 // The three username windows.
 (GameObject Window, TMP_InputField Field, GameObject Submit, GameObject Close) Window(string title, string button, string explanation = null)

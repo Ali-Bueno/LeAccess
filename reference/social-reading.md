@@ -76,13 +76,13 @@ reader), `SocialWindows`, `SocialText` (wording), `SocialAccessibility` (polled 
 | Tab | "amigos, pestaña seleccionada" / "grupo, pestaña" |
 | Status | "Estado: Ausente. Tu nombre de usuario: Ana#1234" |
 | Region | "Región de grupo: Sudamérica, ping 25ms" (the Textfield maps to the dropdown: one stop) |
-| Username field | "Nombre de usuario para invitar, formato Nombre#1234. Campo de texto. Vacío. Cruz para escribir" |
+| Username field | "Nombre de usuario para invitar. Campo de texto. Vacío. Cruz para escribir" |
 | Window buttons | "Enviar invitación, botón"; textless close: "Cerrar, botón"; request deny: "Rechazar solicitud, botón" |
 | Options | lead "Opciones de Bea#5678"; disabled: "Portal al jugador (No disponible). <game reason>" |
 | Invitation | "Bea#5678 te ha invitado a un grupo. Aceptar o Rechazar", once per opening |
 
 - Openings: the first announcement inside a newly visible window leads with its own labels
-  (title, explanation) and "El nombre de usuario tiene el formato Nombre#1234"; options lead with
+  (title, explanation) and the neutral username hint ("El nombre de usuario de la cuenta de Last Epoch; si tiene número, inclúyelo: Nombre#1234"; the number is optional, "canario69" worked for a friend request and a party invite); options lead with
   "Opciones de …". Introduced windows are forgotten when they hide.
 - Results: social chat lines are matched against the game's localized templates (37 keys from the
   UI/Common tables; suffix templates after a name, `{n}` templates by pattern), logged `[Social]`,
@@ -92,6 +92,34 @@ reader), `SocialWindows`, `SocialText` (wording), `SocialAccessibility` (polled 
   ("e borrado") or a replaced value are spoken. `CharacterNameAccessibility` only reads validation
   errors, so it was not reusable. The on-screen keyboard names the field with the mod label.
 - The invitation prompt logs `[Social] Party invite prompt: …; focus: navigable=…, selected=…`.
+
+## Party overview (radial menu "Grupo")
+
+Evidence (PersistentUI scene dump, build 25711439): `GUI/Canvas (animated)/Player Cards Panel/Party
+Members` is a `PartyOverviewPanel` (navigable `Party Members`) with children `Member 1..4`. Each is a
+`PartyOverviewMemberPanel` + `PartyOverviewSelectableAdapter` (the Selectable) whose
+`_controllerCursorTarget` is its `Class` child (portrait, no Selectable): the cursor highlights
+"Class", so "Member N" and "Class" are one stop (`SocialReader.Canonical` maps Class to the card).
+`PortalToPlayer` is a separate `Button` (`requestPortalButton`); `PortalToUnavailable` shows the
+game's "Portal unavailable". Fields: `PlayerName` (`accountNameText`, prefab text `EHG_PLAYERNAME`),
+`PartyLeader` (`leaderTransform`), `HealthBar`/`WardBar` (`Image` fill), `isInDeadState`,
+`playerActorSync` (set only while the member is in the same scene), `partyMember`
+(`Identity.Username`, `IsLeader`, `characterClass` as `CharacterClassID`). Logs showed the generic
+reader speaking "Member 1", "Class" and "Portal To Player".
+
+Behaviour (`PartyOverviewReader`, wording in `PartyText`, keys `party.*`):
+
+| Stop | Spanish |
+|---|---|
+| Card, same zone | "Bea#5678. Centinela. líder. vida 80 por ciento. barrera 20 por ciento. en tu zona" |
+| Card, dead | "Bea#5678. Centinela. muerto" (same zone); elsewhere: "Bea#5678. Centinela. en otra zona" |
+| Portal button | "Portal a Bea#5678, botón"; not interactable: "Portal a Bea#5678 (No disponible)" |
+
+Class names go through `Localization.Common.GetClass(enum name)`; the name falls back to
+`partyMember.Identity.Username` when the label still holds the placeholder. Ward is spoken only when non-zero.
+Unverified at runtime: what Cross does on a card (Member 2+ carry `SocialRightClickFunctions`, so
+possibly the player options), whether `fillAmount` drives the bars, and `IsInteractable` while the
+portal is unavailable.
 
 ## Limits and pending listening
 

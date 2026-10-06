@@ -2,6 +2,7 @@ using System;
 using EHG.Multiplayer;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using LeAccess.Accessibility.Players;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Vitals;
@@ -22,7 +23,7 @@ internal static class VitalsProbe
         UnityEngine.Object player;
         if (GameplayEnvironment.IsOnlineClient)
         {
-            var visuals = PlayerFinder.playerActorVisuals;
+            var visuals = LocalPlayerSource.Visuals;
             var local = PlayerFinder.getLocalPlayerInMultiplayer();
             if (!Available(visuals, scene) || !Available(local, scene)) return false;
             var sync = visuals.actorSync;

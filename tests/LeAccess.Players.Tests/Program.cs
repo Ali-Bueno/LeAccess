@@ -20,6 +20,7 @@ void Reset()
     PlayerFinder.player = new(); PlayerFinder.Local = new();
     var local = Add("Myself",0); local.localPlayer = PlayerFinder.Local;
     PlayerFinder.Local.actorSync = local; PlayerFinder.playerActorVisuals = local.actorVisuals;
+    LocalPlayer.instance = null; LocalPlayerDiagnostics.Reset(); LeAccess.Plugin.Log.Infos.Clear();
     EpochInputManager.instance = new(); EHG.Multiplayer.GameplayEnvironment.IsOnlineClient = true;
     UnityEngine.SceneManagement.SceneManager.Handle = 1; Time.unscaledTimeAsDouble = 0;
     LeAccess.Accessibility.Navigation.NavigationAudioState.IsSuspended = false;
@@ -91,4 +92,45 @@ remote.actorVisuals.Identity.Username = "Current"; Tick(.22,true); Tick(.33);
 Check(ScreenReader.Messages.Single().Text == "Current","Only the current name remains pending after native identity changes");
 LeAccess.Accessibility.Navigation.GameplayInputState.Owns = false; Tick(.34);
 Check(!NearbyPlayerAccessibility.HasPendingContent,"Menus clear pending player speech immediately");
+
+// Shared local-player source: PlayerFinder.FindPlayer zeroes the rig cache on re-find (co-op join).
+ActorVisuals JoinedHost()
+{
+    Reset(); remote = Add("Host");
+    PlayerFinder.Local.gameObject = PlayerFinder.player;
+    LocalPlayer.instance = PlayerFinder.Local; PlayerFinder.playerActorVisuals = null;
+    return PlayerFinder.Local.actorSync.actorVisuals;
+}
+var ownRig = JoinedHost();
+Check(LocalPlayerSource.Visuals == ownRig && LocalPlayerSource.Player == PlayerFinder.player && LocalPlayerSource.FromLocalPlayer,
+    "Cleared PlayerFinder rig cache resolves through LocalPlayer's own sync");
+Check(NearbyPlayerProbe.TryRead(out target) && target.Name == "Host","Nearby names survive the cleared rig cache");
+PlayerFinder.playerActorVisuals = remote.actorVisuals;
+Check(LocalPlayerSource.Visuals == ownRig && NearbyPlayerProbe.TryRead(out target) && target.Name == "Host",
+    "Another player's rig in the cache is never taken as the local rig");
+PlayerFinder.player.Destroyed = true; var spawned = new GameObject(); PlayerFinder.Local.gameObject = spawned;
+Check(LocalPlayerSource.Player == spawned,"Stale PlayerFinder root yields to the newly awakened local root");
+ownRig = JoinedHost(); ownRig.actorSync = remote;
+Check(LocalPlayerSource.Visuals is null,"A rig that links to another sync is rejected");
+JoinedHost(); PlayerFinder.Local.actorSync.WasCollected = true;
+Check(LocalPlayerSource.Visuals is null,"Collected local sync is never dereferenced");
+ownRig = JoinedHost(); PlayerFinder.Local.Destroyed = true; PlayerFinder.playerActorVisuals = ownRig;
+Check(!LocalPlayerSource.FromLocalPlayer && LocalPlayerSource.Visuals == ownRig && LocalPlayerSource.Player == PlayerFinder.player,
+    "Without a live LocalPlayer the PlayerFinder caches remain the source");
+JoinedHost(); EHG.Multiplayer.GameplayEnvironment.IsOnlineClient = false; PlayerFinder.playerActorVisuals = null;
+Check(!LocalPlayerSource.FromLocalPlayer && LocalPlayerSource.Visuals is null && LocalPlayerSource.Player == PlayerFinder.player,
+    "Offline resolution is unchanged PlayerFinder state");
+
+// One diagnostic line per scene/root/rig change.
+ownRig = JoinedHost(); PlayerFinder.player.name = "Local Player(Clone)"; ownRig.gameObject.name = "v_Rig";
+LocalPlayerDiagnostics.Update(); LocalPlayerDiagnostics.Update();
+var line = LeAccess.Plugin.Log.Infos.Single();
+Check(line.Contains("root=Local Player(Clone)#") && line.Contains("rig=v_Rig#") && line.Contains("source=LocalPlayer.instance") &&
+    line.Contains("finder_player=same") && line.Contains("finder_rig=missing"),"Diagnostics name the resolved root, rig and stale cache once");
+UnityEngine.SceneManagement.SceneManager.Handle = 2; LocalPlayerDiagnostics.Update();
+Check(LeAccess.Plugin.Log.Infos.Count == 2 && LeAccess.Plugin.Log.Infos[1].Contains("scene=Scene2"),"A scene load logs the new resolution");
+PlayerFinder.Local.actorSync.actorVisuals = null; LocalPlayerDiagnostics.Update();
+Check(LeAccess.Plugin.Log.Infos.Count == 3 && LeAccess.Plugin.Log.Infos[2].Contains("rig=none"),"A lost rig is reported as a change");
+JoinedHost(); PlayerFinder.Local.Destroyed = true; PlayerFinder.player = null; LocalPlayerDiagnostics.Update();
+Check(LeAccess.Plugin.Log.Infos.Count == 0,"No line while no local root exists");
 Console.WriteLine($"Nearby player tests passed: {checks} checks.");

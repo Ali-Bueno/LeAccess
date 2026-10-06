@@ -12,6 +12,7 @@ SectionMap Map(MapAnchor[] anchors = null, string scene = "Fixed", string path =
 GameObject Reset()
 {
     MapSectionWorld.Reset(); SceneList.Pcg = SceneList.Echo = GameplayEnvironment.IsOnlineClient = false;
+    LocalPlayer.instance = null;
     MapSectionSources.Reset();
     Time.unscaledTimeAsDouble = 0;
     SceneManager.Active = new Scene { handle = 10, name = "Fixed", path = "Assets/Fixed.unity", isLoaded = true, Valid = true };
@@ -87,6 +88,18 @@ Check(MapSectionWorld.TryCapture(out snapshot) && snapshot.BodyRadius == 1.25,
 PlayerFinder.playerActorVisuals.Radius = 0.75f;
 Check(MapSectionWorld.TryCapture(out snapshot) && snapshot.BodyRadius == 0.75,
     "Online form change updates body size without waiting for a new scene");
+// Co-op join: PlayerFinder.FindPlayer zeroes the rig cache; LocalPlayer's own sync still names the rig.
+Reset(); GameplayEnvironment.IsOnlineClient = true;
+var joinedRig = PlayerFinder.playerActorVisuals;
+var joinedSync = new ActorSync { actorVisuals = joinedRig }; joinedRig.actorSync = joinedSync;
+LocalPlayer.instance = PlayerFinder.player.Add(new LocalPlayer { actorSync = joinedSync });
+PlayerFinder.playerActorVisuals = null;
+Check(MapSectionWorld.TryCapture(out snapshot) && snapshot.BodyRadius == 0.5,
+    "Exploration keeps the local rig and body size after a co-op join clears the cache");
+PlayerFinder.playerActorVisuals = new GameObject { scene = SceneManager.Active }.Add(new ActorVisuals());
+Check(MapSectionWorld.TryCapture(out snapshot), "Another player's cached rig cannot block the local exploration origin");
+joinedRig.dead = true;
+Check(!MapSectionWorld.TryCapture(out _), "The local rig's death still suspends exploration");
 Reset(); ServiceProvider.SceneVariantService.HasVariant = true; ServiceProvider.SceneVariantService.Index = 2;
 Check(MapSectionWorld.TryCapture(out snapshot) && snapshot.Variant == 2, "Actual scene variant is captured");
 ServiceProvider.SceneVariantService.WasCollected = true;
