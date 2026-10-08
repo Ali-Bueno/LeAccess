@@ -359,6 +359,8 @@
   "exploration.unexplored_room": "sala inexplorada {0}",
   "exploration.chest": "cofre",
   "exploration.shrine": "santuario",
+  "exploration.time_rift": "fisura temporal",
+  "exploration.nemesis": "Némesis",
   "exploration.death_place": "donde moriste",
   "exploration.found_exit": "El radar ha registrado una salida nueva: {0}",
   "exploration.found_place": "El radar ha registrado un lugar nuevo: {0}",

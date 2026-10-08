@@ -26,23 +26,28 @@ GOLD = le("UI", "sfx_ui_general_goldsmall")
 PORTAL = le("Ingame_Events", "sfx_soundevent_timerift_loop1")
 ZONE_TRANSITION = le("Environmental", "sfx_enviro_waypoint_loop_v2")
 
-# Cue-length choices preserve short natural attacks without occupying the shared
-# navigation output for the source loops' 10–17 second recordings.
+# One-shots with no loop twin: exploration (D2R docs/exploration.md) plays them whole, once.
+# The short fallback cues are cut from LOOPS at load time (NaturalCueBank), not shipped twice.
 CLIPS = (
-    ("gold", GOLD, 0.30),
-    ("equipment", d2r("item loop sounds/loot/normal equipment.ogg"), 0.30),
-    ("chest", d2r("item loop sounds/loot/chest.ogg"), 0.24),
-    ("stash", d2r("item loop sounds/loot/stash.ogg"), 0.24),
-    ("portal", PORTAL, 0.30),
-    ("zone_transition", ZONE_TRANSITION, 0.30),
-    # Exploration (D2R docs/exploration.md): the discovery and room-entry cues play whole, once.
     ("discovery", d2r("one shot sounds/exploration/discovered.ogg"), None),
-    ("unexplored_room", d2r("item loop sounds/exploration/unexplored room.ogg"), 0.35),
     ("inside_unexplored_room", d2r("item loop sounds/exploration/inside unexplored room.ogg"), None),
 )
 
+# D2R loot rarity and type loops (D2RAccess ground_items.cpp); Last Epoch shrine and Nemesis loops
+# from the Environmental bank (reference/sound-design.md).
+LOOT = "item loop sounds/loot/"
+
 # Whole recordings for the continuous world loop mixer (D2RAccess item_audio.cpp loops each file).
 LOOPS = (
+    ("magic_equipment", d2r(LOOT + "magic equipment.ogg")),
+    ("rare_equipment", d2r(LOOT + "rare equipment.ogg")),
+    ("legendary_equipment", d2r(LOOT + "legendary equipment.ogg")),
+    ("rune", d2r(LOOT + "rune.ogg")),
+    ("gem", d2r(LOOT + "gem.ogg")),
+    ("scroll", d2r(LOOT + "scroll.ogg")),
+    ("quest_item", d2r(LOOT + "quest item.ogg")),
+    ("shrine", le("Environmental", "sfx_enviro_shrine_nature_main_loop")),
+    ("nemesis", le("Environmental", "sfx_ui_nemesis_corpse_loop")),
     ("gold", GOLD),
     ("equipment", d2r("item loop sounds/loot/normal equipment.ogg")),
     ("chest", d2r("item loop sounds/loot/chest.ogg")),

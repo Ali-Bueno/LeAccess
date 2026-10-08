@@ -94,7 +94,7 @@ Check(!probe.TryCapture(out _), "Collected visual and listener wrappers are safe
 
 Reset(); probe = new(); equipment = Equipment();
 equipment.itemData.Equipment = false;
-Check(!probe.TryCapture(out _), "Crafting material is not misclassified as equipment or interactable");
+Check(!probe.TryCapture(out _), "Crafting material is not misclassified as equipment or interactable (and has no cue without a loop)");
 equipment.itemData.Equipment = true; equipment.label.canvasGroup.alpha = 0;
 Check(probe.TryCapture(out _), "An unfiltered item is detected without rendering its label");
 equipment.label.canvasGroup.alpha = 1;
@@ -450,4 +450,5 @@ WorldCueSounds.Cleanup();
 Check(loopOutput.Disposed, "Cleanup releases the loop device");
 WorldLoopBank.Available = false; LoopAudioOutput.Instances.Clear();
 checks += NaturalIdentityTests.Run();
+checks += LootAndRoleTests.Run();
 Console.WriteLine($"World cue tests passed: {checks} checks.");

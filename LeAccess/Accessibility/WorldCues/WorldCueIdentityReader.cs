@@ -43,7 +43,16 @@ internal static class WorldCueIdentityReader
             Available(listener.GetComponent<TombRewardChestInteraction>()) ||
             Available(listener.GetComponent<CaveTreasureChest>())) return NaturalCueKind.Chest;
         var vault = listener.GetComponent<VaultsOfUncertainFateChest>();
-        return Available(vault) && !vault.hasBeenOpened ? NaturalCueKind.Chest : null;
+        if (Available(vault)) return vault.hasBeenOpened ? null : NaturalCueKind.Chest;
+        return InteractableRoles.Read(listener) switch
+        {
+            InteractableRole.Shrine => NaturalCueKind.Shrine,
+            // Last Epoch's own time-rift recording is the Portal loop.
+            InteractableRole.TimeRift => NaturalCueKind.Portal,
+            InteractableRole.Nemesis => NaturalCueKind.Nemesis,
+            InteractableRole.Cache => NaturalCueKind.Chest,
+            _ => null
+        };
     }
 
     private static bool Available(Behaviour component) => IsAlive(component) &&

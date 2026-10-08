@@ -7,7 +7,7 @@ internal enum NaturalCueKind
 {
     Gold, Equipment, Chest, Stash, Portal, ZoneTransition, Discovery, UnexploredRoom, InsideUnexploredRoom,
     // Loop-only kinds: no short excerpt exists for them.
-    Potion, Tome
+    Potion, Tome, MagicEquipment, RareEquipment, LegendaryEquipment, Rune, Gem, Scroll, QuestItem, Shrine, Nemesis
 }
 
 internal static class NaturalCueBank
@@ -18,13 +18,21 @@ internal static class NaturalCueBank
     private const float PeakLevel = 0.24f;
     private const double AttackSeconds = 0.004;
     private const double ReleaseSeconds = 0.015;
-    private static readonly string[] ResourceNames =
+    // Lengths of the short cues that used to ship as separate files (reference/natural-world-sounds.md).
+    internal const double GoldSeconds = 0.30, EquipmentSeconds = 0.30, ContainerSeconds = 0.24,
+        TransitionSeconds = 0.30, RouteSeconds = 0.35;
+    // A fallback cue is the first Seconds of the kind's loop; null plays the one-shot in Sounds/ whole.
+    private readonly record struct Excerpt(string Resource, double? Seconds);
+    private static readonly Excerpt[] Excerpts =
     {
-        "gold", "equipment", "chest", "stash", "portal", "zone_transition",
-        "discovery", "unexplored_room", "inside_unexplored_room"
+        new("gold", GoldSeconds), new("equipment", EquipmentSeconds), new("chest", ContainerSeconds),
+        new("stash", ContainerSeconds), new("portal", TransitionSeconds), new("zone_transition", TransitionSeconds),
+        new("discovery", null), new("unexplored_room", RouteSeconds), new("inside_unexplored_room", null)
     };
     // The longest one-shot, D2R's discovery chime, runs 2.85 s; this bounds a damaged resource.
     private const int MaximumFrames = SampleRate * 3;
+    // The longest supplied loop runs 28 s; this bounds a damaged loop resource.
+    internal const int MaximumLoopFrames = SampleRate * 30;
     private static readonly Lazy<float[]>[] Clips = CreateClips();
 
     internal static string LastFailure { get; private set; }
@@ -72,22 +80,25 @@ internal static class NaturalCueBank
 
     private static Lazy<float[]>[] CreateClips()
     {
-        var clips = new Lazy<float[]>[ResourceNames.Length];
+        var clips = new Lazy<float[]>[Excerpts.Length];
         for (int index = 0; index < clips.Length; index++)
         {
-            string name = ResourceNames[index];
-            clips[index] = new Lazy<float[]>(() => LoadClip(name));
+            var excerpt = Excerpts[index];
+            clips[index] = new Lazy<float[]>(() => LoadClip(excerpt));
         }
         return clips;
     }
 
-    private static float[] LoadClip(string name)
+    private static float[] LoadClip(Excerpt excerpt)
     {
+        string name = excerpt.Resource;
         try
         {
+            bool fromLoop = excerpt.Seconds.HasValue;
             using Stream stream = typeof(NaturalCueBank).Assembly
-                .GetManifestResourceStream($"LeAccess.Sounds.{name}.wav");
-            float[] samples = PcmWaveReader.ReadMono48(stream, MaximumFrames);
+                .GetManifestResourceStream($"LeAccess.Sounds.{(fromLoop ? "Loops." : "")}{name}.wav");
+            float[] samples = PcmWaveReader.ReadMono48(stream, fromLoop ? MaximumLoopFrames : MaximumFrames);
+            if (fromLoop) samples = samples[..Math.Min(samples.Length, (int)Math.Round(excerpt.Seconds.Value * SampleRate))];
             float peak = 0;
             foreach (float sample in samples) peak = Math.Max(peak, Math.Abs(sample));
             if (peak == 0) throw new InvalidDataException("Cue contains only silence.");

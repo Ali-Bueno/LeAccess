@@ -15,6 +15,10 @@ with sample names):
 | Portal or waypoint | `sfx_soundevent_timerift_loop1` | `Ingame_Events` | 17.0 s loop |
 | Zone/dungeon exit | `sfx_enviro_waypoint_loop_v2` | `Environmental` | 14.25 s loop |
 
+Shrines and the Nemesis altar (2026-10-08) use the game's own `Environmental` loops
+`sfx_enviro_shrine_nature_main_loop` and `sfx_ui_nemesis_corpse_loop` (not auditioned by the user yet; other shrine
+loops: `rainbow_main`, `phoenix`; `sfx_ui_nemesis_corpse_rift_loop`).
+
 None of the equipment-rarity or chest candidates convinced the user
 (`sfx_lootfilter_itemdrop_01`-`12`, `sfx_item_tier_*_drop`,
 `sfx_item_uniquedrop_v2`, `sfx_item_exalteddrop`, `vouf_chest_*`,

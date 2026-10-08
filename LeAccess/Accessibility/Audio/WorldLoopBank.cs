@@ -17,8 +17,7 @@ internal static class WorldLoopBank
     private static readonly float OneShotLevelDb = 20 * MathF.Log10(1 / (WorldLoopSelection.MixGainLimit * PeakLevel));
     // D2RAccess D2R_STASH_LOOP_SECONDS: recordings shorter than a second are padded to repeat once a second.
     private const double ShortLoopSeconds = 1;
-    // The longest supplied loop runs 17 s; this bounds a damaged resource.
-    private const int MaximumFrames = SampleRate * 20;
+    private const int MaximumFrames = NaturalCueBank.MaximumLoopFrames;
     private static readonly Lazy<float[]>[] Clips = CreateClips();
 
     internal static string LastFailure { get; private set; }
@@ -42,6 +41,15 @@ internal static class WorldLoopBank
         NaturalCueKind.ZoneTransition => "zone_transition",
         NaturalCueKind.Potion => "potion",
         NaturalCueKind.Tome => "tome",
+        NaturalCueKind.MagicEquipment => "magic_equipment",
+        NaturalCueKind.RareEquipment => "rare_equipment",
+        NaturalCueKind.LegendaryEquipment => "legendary_equipment",
+        NaturalCueKind.Rune => "rune",
+        NaturalCueKind.Gem => "gem",
+        NaturalCueKind.Scroll => "scroll",
+        NaturalCueKind.QuestItem => "quest_item",
+        NaturalCueKind.Shrine => "shrine",
+        NaturalCueKind.Nemesis => "nemesis",
         NaturalCueKind.UnexploredRoom => "unexplored_room",
         _ => null
     };

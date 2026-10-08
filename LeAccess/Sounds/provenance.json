@@ -1,53 +1,5 @@
 [
   {
-    "asset": "gold.wav",
-    "source": "Last Epoch_Data/StreamingAssets/UI.bank#sfx_ui_general_goldsmall",
-    "source_sha256": "1DF036690B89F1E4EBCA0933DBFC1C856AEFF4FF19CE50356F0834485F843662",
-    "asset_sha256": "EE97DE8CF39001504432C889653206FC0B0F8BC8180C746AE02B79D72C95A66B",
-    "start_seconds": 0,
-    "duration_seconds": 0.3
-  },
-  {
-    "asset": "equipment.wav",
-    "source": "sounds/item loop sounds/loot/normal equipment.ogg",
-    "source_sha256": "505ED2D37EA24269699424862D08E21460CBC4C1E2E582BD15393633A72F4B30",
-    "asset_sha256": "EEF03D78BCB1772731F91602CEA503A3D6F0775A3F6A9059F3102926CDBB3593",
-    "start_seconds": 0,
-    "duration_seconds": 0.3
-  },
-  {
-    "asset": "chest.wav",
-    "source": "sounds/item loop sounds/loot/chest.ogg",
-    "source_sha256": "038ACBF8BA303C8AFD16A667E46BF2D98E8E58BBC2BB715014A2EB97DEDF3917",
-    "asset_sha256": "8AE808F4580534CAB006944F6FC4F928A3476DD86828410A487C347C7715889C",
-    "start_seconds": 0,
-    "duration_seconds": 0.24
-  },
-  {
-    "asset": "stash.wav",
-    "source": "sounds/item loop sounds/loot/stash.ogg",
-    "source_sha256": "1354490AB4EED3019B203D080A6C68FCDBBAF5A81B3C38A29993583A35664FC5",
-    "asset_sha256": "DE36E6A153E92EA4F672038A608B6E17110F0D905D99A5105BBFA7574541F842",
-    "start_seconds": 0,
-    "duration_seconds": 0.24
-  },
-  {
-    "asset": "portal.wav",
-    "source": "Last Epoch_Data/StreamingAssets/Ingame_Events.bank#sfx_soundevent_timerift_loop1",
-    "source_sha256": "F3D9F0CDC0D7E5ECE8990BA813483523CF794B2453C934E2EF0019120006DC45",
-    "asset_sha256": "F346D6280B96049E2D896618C24580D92A04C917F8A35741507D91558C6CC749",
-    "start_seconds": 0,
-    "duration_seconds": 0.3
-  },
-  {
-    "asset": "zone_transition.wav",
-    "source": "Last Epoch_Data/StreamingAssets/Environmental.bank#sfx_enviro_waypoint_loop_v2",
-    "source_sha256": "7BC87D79AC106C1F0F39E7D2D4CB5BB4625177BB88FC8D2A8563C83AF66D2744",
-    "asset_sha256": "A7B050869B6EBE96217581D45B24C489837081B708ADB1F77447F26B515986C8",
-    "start_seconds": 0,
-    "duration_seconds": 0.3
-  },
-  {
     "asset": "discovery.wav",
     "source": "sounds/one shot sounds/exploration/discovered.ogg",
     "source_sha256": "B717EE284EDB229830448C22A8797515DF21B1ABDF7200A1BE244D0650C7D100",
@@ -56,18 +8,82 @@
     "duration_seconds": "whole"
   },
   {
-    "asset": "unexplored_room.wav",
-    "source": "sounds/item loop sounds/exploration/unexplored room.ogg",
-    "source_sha256": "C7259BBD4BBB25B931D6E1450169F3F6D11DE18617A9571C1AE07070AD8E19A8",
-    "asset_sha256": "717C9940127153B401F3CBFDE2B41336F83D3BA94C2E38400D44B643AB6880C0",
-    "start_seconds": 0,
-    "duration_seconds": 0.35
-  },
-  {
     "asset": "inside_unexplored_room.wav",
     "source": "sounds/item loop sounds/exploration/inside unexplored room.ogg",
     "source_sha256": "7C3AEB12D7AD08728AE048A7084507C8E04CABA99B3637D3CDE204F9D44C77FD",
     "asset_sha256": "782C2FEB931BA0D8A54364159EBA4F856C07D8FFB3CEB4B4A711398B8860AD04",
+    "start_seconds": 0,
+    "duration_seconds": "whole"
+  },
+  {
+    "asset": "Loops/magic_equipment.wav",
+    "source": "sounds/item loop sounds/loot/magic equipment.ogg",
+    "source_sha256": "0A92BDD7AB60C71AA60ECBEBEF9B63A7F0B52C1E7FA4E6F2497DCF366BB433B0",
+    "asset_sha256": "E2EA360001635308117796C1129AB88AF5B44F7325BC3DF6F21A909663FAE97C",
+    "start_seconds": 0,
+    "duration_seconds": "whole"
+  },
+  {
+    "asset": "Loops/rare_equipment.wav",
+    "source": "sounds/item loop sounds/loot/rare equipment.ogg",
+    "source_sha256": "25A049E3FCA12037D4D6501A7758AB9DBEE9E1630344E175517F52BB6B650CFE",
+    "asset_sha256": "3B3B83DD07E17EDAEAEF5584B2457FD3728A8AD8B6A8763A43CC58003C985079",
+    "start_seconds": 0,
+    "duration_seconds": "whole"
+  },
+  {
+    "asset": "Loops/legendary_equipment.wav",
+    "source": "sounds/item loop sounds/loot/legendary equipment.ogg",
+    "source_sha256": "428054733A62DB1D9EA9C14954ED7FD3BBDD4B65A2BFB977844A9641691D3906",
+    "asset_sha256": "ADFD0738C2736E96C7EB3F9F8A6FE629D884BD9759E69E9EEBE1132477A7D900",
+    "start_seconds": 0,
+    "duration_seconds": "whole"
+  },
+  {
+    "asset": "Loops/rune.wav",
+    "source": "sounds/item loop sounds/loot/rune.ogg",
+    "source_sha256": "41C145129110868BA99F1A82A6528DA9F6A6316A110F200EA8799F24EC39FB99",
+    "asset_sha256": "69B999CCF0FB2D4D9D4D06C8C390E369B67BE067E553F91B9ED5B61FECC78DAD",
+    "start_seconds": 0,
+    "duration_seconds": "whole"
+  },
+  {
+    "asset": "Loops/gem.wav",
+    "source": "sounds/item loop sounds/loot/gem.ogg",
+    "source_sha256": "CEA67D835696AFFDD375B6BBEBEE95C3E2C852D5992D08AF5E7873BF5AF036C9",
+    "asset_sha256": "36474349D9C129EAE33AA738AD6BCA2E70516F830919EE83ABD5C7DC2EE09708",
+    "start_seconds": 0,
+    "duration_seconds": "whole"
+  },
+  {
+    "asset": "Loops/scroll.wav",
+    "source": "sounds/item loop sounds/loot/scroll.ogg",
+    "source_sha256": "032E414D75232DEB2D64DDDCEC365F89B967B25FDDDD0652B52B0F1768BA2D58",
+    "asset_sha256": "2499D7C2E43B8AFF7C9333AE5A587689C533638E25B87E715A2D08EADC16B46B",
+    "start_seconds": 0,
+    "duration_seconds": "whole"
+  },
+  {
+    "asset": "Loops/quest_item.wav",
+    "source": "sounds/item loop sounds/loot/quest item.ogg",
+    "source_sha256": "35F6472D1D39224755A48F045E61CBE26B573B0B54757FA5FB7CEE6FDF419720",
+    "asset_sha256": "589D631922655FE7FA73F84FC7FB52025E1CE6C02904B257B51B7017CCBC6C50",
+    "start_seconds": 0,
+    "duration_seconds": "whole"
+  },
+  {
+    "asset": "Loops/shrine.wav",
+    "source": "Last Epoch_Data/StreamingAssets/Environmental.bank#sfx_enviro_shrine_nature_main_loop",
+    "source_sha256": "7BC87D79AC106C1F0F39E7D2D4CB5BB4625177BB88FC8D2A8563C83AF66D2744",
+    "asset_sha256": "D384224AB706F5CBB7F159EB55101C021A407DF26870E3649DC9D2944AA10A75",
+    "start_seconds": 0,
+    "duration_seconds": "whole"
+  },
+  {
+    "asset": "Loops/nemesis.wav",
+    "source": "Last Epoch_Data/StreamingAssets/Environmental.bank#sfx_ui_nemesis_corpse_loop",
+    "source_sha256": "7BC87D79AC106C1F0F39E7D2D4CB5BB4625177BB88FC8D2A8563C83AF66D2744",
+    "asset_sha256": "E61F14C47667A4A80A8459CD23FF0950B44738D6F7529F841BA0C334A4E06FDD",
     "start_seconds": 0,
     "duration_seconds": "whole"
   },

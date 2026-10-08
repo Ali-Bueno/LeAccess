@@ -79,6 +79,32 @@ internal static class ServiceTests
         listener.WasCollected = false;
         go.activeInHierarchy = false;
         Check(!LandmarkProbe.TryRead(out _), "Inactive service listener is rejected");
+
+        // Shrines, time rifts and the Nemesis altar: generic or key-only tags still yield a name.
+        WorldObjectClickListener.allListener = new();
+        var altar = Add(new GameObject(), new WorldObjectClickListener { interactionRange = 3 });
+        altar.transform.position = new Vector3 { x = 1 };
+        WorldObjectClickListener.allListener.Items.Add(altar);
+        Check(!LandmarkProbe.TryRead(out _), "A plain interactable without a tag stays unnamed");
+        var role = Add(altar.gameObject, new Shrine());
+        Check(LandmarkProbe.TryRead(out result) && result.Name == "santuario", "A shrine without a tag gets the mod name");
+        altar.hoverTagOnMouseOver = new HoverTagOnMouseOver { hoverTargetType = HoverTagOnMouseOver.HoverTargetType.LOCALIZATION_KEY,
+            localizationKey = "shrine_key" };
+        Check(LandmarkProbe.TryRead(out result) && result.Name == "santuario", "An unresolved key falls back to the mod name");
+        Localization.Texts["shrine_key"] = "Santuario de fuego";
+        Check(LandmarkProbe.TryRead(out result) && result.Name == "Santuario de fuego",
+            "A key-only tag resolves through the game's localization");
+        altar.gameObject.Components.Remove(role);
+        Check(!LandmarkProbe.TryRead(out _), "The same key-only tag without a recognized role stays unnamed");
+        Add(altar.gameObject, new TimeRiftInteraction());
+        Check(LandmarkProbe.TryRead(out result) && result.Name == "Santuario de fuego", "A time rift uses the game's text");
+        Localization.Texts.Clear();
+        Check(LandmarkProbe.TryRead(out result) && result.Name == "fisura temporal", "A time rift falls back to its mod name");
+        altar.gameObject.Components.Clear();
+        Add(altar.gameObject, new NemesisEncounterInteractableObject());
+        Check(LandmarkProbe.TryRead(out result) && result.Name == "Némesis", "The Nemesis altar falls back to its mod name");
+        altar.Allowed = false;
+        Check(!LandmarkProbe.TryRead(out _), "A role never bypasses native availability");
         return checks;
     }
 }

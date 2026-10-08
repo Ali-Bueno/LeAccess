@@ -49,8 +49,29 @@ else
     // Excerpts, except the D2R discovery and room-entry cues, which play whole (frames of the shipped WAVs).
     double[] durations = { .30, .30, .24, .24, .30, .30, 136768 / 48000.0, .35, 44480 / 48000.0 };
     var signals = new List<float[]>();
-    foreach (var loopOnly in new[] { NaturalCueKind.Potion, NaturalCueKind.Tome })
+    foreach (var loopOnly in Enum.GetValues<NaturalCueKind>().Where(k => k >= NaturalCueKind.Potion))
         Check(!NaturalCueBank.TryBuild(loopOnly, 0, 1, 1, out _), $"{loopOnly} has no excerpt; it only loops");
+    // The short fallback cues are cut from the loop recordings; only the two one-shots ship at the root.
+    var assembly = typeof(NaturalCueBank).Assembly;
+    Check(assembly.GetManifestResourceNames().Where(n => !n.Contains(".Loops.") && n.EndsWith(".wav")).OrderBy(n => n)
+        .SequenceEqual(new[] { "LeAccess.Sounds.discovery.wav", "LeAccess.Sounds.inside_unexplored_room.wav" }),
+        "No root recording duplicates a loop");
+    foreach (var (kind, name, seconds) in new[] { (NaturalCueKind.Gold, "gold", NaturalCueBank.GoldSeconds),
+        (NaturalCueKind.Equipment, "equipment", NaturalCueBank.EquipmentSeconds),
+        (NaturalCueKind.Chest, "chest", NaturalCueBank.ContainerSeconds),
+        (NaturalCueKind.Portal, "portal", NaturalCueBank.TransitionSeconds),
+        (NaturalCueKind.UnexploredRoom, "unexplored_room", NaturalCueBank.RouteSeconds) })
+    {
+        using var stream = assembly.GetManifestResourceStream($"LeAccess.Sounds.Loops.{name}.wav");
+        var loop = PcmWaveReader.ReadMono48(stream, NaturalCueBank.MaximumLoopFrames);
+        int frames = (int)Math.Round(seconds * NaturalCueBank.SampleRate);
+        Check(loop.Length > frames, $"The {name} loop is longer than its fallback cue");
+        float peak = loop.Take(frames).Max(Math.Abs);
+        var cue = NaturalCueBank.Build(kind, 0, 1, 1);
+        int middle = frames / 2;
+        float expected = loop[middle] * 0.24f / peak * (float)new CuePlacement(0, 1).Left;
+        Check(Math.Abs(cue[middle * 2] - expected) < 1e-5, $"The {kind} fallback is the first {seconds} s of the {name} loop");
+    }
     foreach (NaturalCueKind kind in Enum.GetValues<NaturalCueKind>().Where(k => k < NaturalCueKind.Potion))
     {
         Check(NaturalCueBank.TryBuild(kind, 0, 1, 1, out var center), $"{kind} loads from the embedded resource");
