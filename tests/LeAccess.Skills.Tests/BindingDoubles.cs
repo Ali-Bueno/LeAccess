@@ -12,6 +12,7 @@ internal sealed class AbilityRef : NativeObject
 internal sealed class AbilityBarIcon : UnityEngine.Component
 {
     internal static NativeArray<AbilityBarIcon> all = new(Array.Empty<AbilityBarIcon>());
+    internal static AbilityList playerAbilityList;
     internal int abilityNumber;
     internal Ability ability;
     internal Ability correspondingAbility;
@@ -24,7 +25,7 @@ internal static class PlayerFinder
     internal static UnityEngine.GameObject getPlayer() => player;
     internal static LocalTreeData treeData;
     internal static LocalTreeData getLocalTreeData() => treeData;
-    internal static Actor getPlayerActor() => player?.GetComponent<Actor>();
+    internal static Actor getPlayerActor() => player?.GetComponentInChildren<Actor>();
     internal static ActorVisuals playerActorVisuals;
 }
 internal sealed class Actor : UnityEngine.Component

@@ -11,6 +11,7 @@ namespace LeAccess.Accessibility.Skills;
 internal static class SkillBindingReader
 {
     internal static string LastStatus { get; private set; }
+    private static string _reportedSource;
 
     internal static string ReadAssignment(Ability ability)
     {
@@ -105,6 +106,7 @@ internal static class SkillBindingReader
         catch (Exception) { return null; }
     }
 
+    // Source order and native evidence: reference/skill-assignment.md, "Offline equipped slots".
     private static bool TryReadEquipped(out List<Ability> equipped)
     {
         equipped = null;
@@ -113,41 +115,65 @@ internal static class SkillBindingReader
         {
             // Online the local root carries LocalPlayer and its ClientAbilityList, not an Actor.
             var local = LocalPlayerSource.OnlineLocal();
-            if (local is not null) return TryReadHudSlots(local.abilityList, out equipped);
+            if (local is not null) return ReportSource("online LocalPlayer list", TryReadList(local.abilityList, out equipped));
             var player = PlayerFinder.getPlayer();
+            if (!NavigationObjectLifetime.IsAlive(player)) return ReportSource("none (player unavailable)", false);
+            // AbilityBarIcon.OnPlayerChanged stores player.GetComponent<AbilityList>() for the action bar.
+            string bar = ReadOwnedList(AbilityBarIcon.playerAbilityList, player, out equipped);
+            if (bar is null) return ReportSource("action bar list", true);
             var actor = PlayerFinder.getPlayerActor();
-            if (!NavigationObjectLifetime.IsAlive(player) || !NavigationObjectLifetime.IsAlive(actor)) return false;
-            LastStatus = "player actor owner mismatch";
-            if (actor.gameObject.Pointer != player.Pointer) return false;
-            var abilities = actor.GetAbilityList();
-            LastStatus = "ability list unavailable";
-            if (!NavigationObjectLifetime.IsAlive(abilities)) return false;
-            var combo = abilities.TryCast<ComboAbilityList>();
-            LastStatus = "combo initialization pending";
-            if (NavigationObjectLifetime.IsAlive(combo) && !combo.HasInitialised) return false;
-            // PlayerAbilityList.getEquippedAbilities also appends the inactive human-form bar.
-            var entries = NavigationObjectLifetime.IsAlive(combo) ? combo.equippedAbilities : abilities.getEquippedAbilities();
-            LastStatus = "equipped slots unavailable";
-            if (entries is null || entries.WasCollected) return false;
-            equipped = new List<Ability>();
-            foreach (var entry in entries) equipped.Add(entry);
-            LastStatus = equipped.Count > 0 ? "ready" : "equipped slots empty";
-            return equipped.Count > 0;
+            string own = ReadOwnedList(NavigationObjectLifetime.IsAlive(actor) ? actor.GetAbilityList() : null, player, out equipped);
+            return ReportSource(own is null ? $"player actor list (action bar list {bar})"
+                : $"none (action bar list {bar}; player actor list {own})", own is null);
         }
-        catch (Exception ex) { LastStatus = "equipped slots read failed: " + ex.GetType().Name; return false; }
+        catch (Exception ex) { LastStatus = "equipped slots read failed: " + ex.GetType().Name; return ReportSource("none (read failed)", false); }
     }
 
-    // The same reads AbilityBarIcon.UpdateIcon makes: getAbility(slot - 1) within getAbilityCount().
-    private static bool TryReadHudSlots(AbilityList abilities, out List<Ability> equipped)
+    // Null when the list belongs to the player root and supplied its slots; otherwise why it was rejected.
+    private static string ReadOwnedList(AbilityList abilities, UnityEngine.GameObject player, out List<Ability> equipped)
+    {
+        equipped = null;
+        LastStatus = "ability list unavailable";
+        if (!NavigationObjectLifetime.IsAlive(abilities)) return "unavailable";
+        LastStatus = "ability list owner mismatch";
+        if (abilities.gameObject.Pointer != player.Pointer) return "owned by another object";
+        return TryReadList(abilities, out equipped) ? null : LastStatus;
+    }
+
+    private static bool TryReadList(AbilityList abilities, out List<Ability> equipped)
     {
         equipped = null;
         LastStatus = "ability list unavailable";
         if (!NavigationObjectLifetime.IsAlive(abilities)) return false;
         equipped = new List<Ability>();
-        int count = abilities.getAbilityCount();
-        for (int index = 0; index < count; index++) equipped.Add(abilities.getAbility(index));
+        var combo = abilities.TryCast<ComboAbilityList>();
+        if (NavigationObjectLifetime.IsAlive(combo))
+        {
+            // setAbility keeps the assigned skill here (the bar shows the combo step); the lazily set
+            // HasInitialised flag does not guard these slots.
+            var entries = combo.equippedAbilities;
+            LastStatus = "equipped slots unavailable";
+            if (entries is null || entries.WasCollected) return false;
+            foreach (var entry in entries) equipped.Add(entry);
+        }
+        else
+        {
+            // The same reads AbilityBarIcon.UpdateIcon makes: getAbility(slot - 1) within getAbilityCount().
+            int count = abilities.getAbilityCount();
+            for (int index = 0; index < count; index++) equipped.Add(abilities.getAbility(index));
+        }
         LastStatus = equipped.Count > 0 ? "ready" : "equipped slots empty";
         return equipped.Count > 0;
+    }
+
+    private static bool ReportSource(string source, bool ready)
+    {
+        if (source != _reportedSource)
+        {
+            _reportedSource = source;
+            Plugin.Log.LogInfo($"[Skill binding] source: {source}");
+        }
+        return ready;
     }
 
     private static void ReadBindings(AbilityBarIcon icon, List<string> bindings)

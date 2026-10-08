@@ -400,13 +400,11 @@ internal static class SelectionTests
         var combo = (ComboAbilityList)PlayerFinder.getPlayerActor().abilities;
         combo.HasInitialised = false;
         Tick(); Tick();
-        check(ScreenReader.Messages.Single().Text == Speech.Join(Fireball, Speech.T("skill.learned")), "Pre-initialization menu never guesses equipped state");
+        check(ScreenReader.Messages.Single().Text == Speech.Join(Fireball, Speech.F("skill.equipped_binding", "Square"), Speech.T("skill.learned")),
+            "Offline first opening in town announces the assigned button before combos initialise");
         combo.HasInitialised = true;
         Tick(0.21); Tick();
-        check(ScreenReader.Messages.Last().Text == Speech.Join(Fireball, Speech.F("skill.equipped_binding", "Square"), Speech.T("skill.learned")) && ScreenReader.Messages.Count == 2,
-            "Combo initialization completes while first menu remains open and speech recovers");
-        check(LeAccess.Plugin.Log.Information.Contains("[Skill binding] combo initialization pending"),
-            "Initialization delay is distinguished from unresolved primary metadata");
+        check(ScreenReader.Messages.Count == 1, "Later combo initialization does not repeat the unchanged binding");
 
         fixture = Reset();
         pending = new Ability { overridePrimaryAbility = true, customPrimaryAbility = new AbilityRef() };

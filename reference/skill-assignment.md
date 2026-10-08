@@ -152,6 +152,46 @@ fell back to the object name "Ability Icon1". The online `Local Player` root has
 `SetTransformStateForClient` only stores a flag; the bar while transformed is unverified.
 Tests: Skills 268 (online list, unassigned, bar slot, empty slot, collected list).
 
+## Offline equipped slots (2026-10-08, build 25764382)
+
+Report (friend, offline, Spanish): the Skills panel stopped saying "Equipada: <botón>" /
+"No equipada", and action-bar slots in the assignment flow fell back to "Ability Icon1". Online works.
+No offline log exists; the cause below is the most likely one, from static analysis of the installed
+`GameAssembly.dll` (RVAs via `MethodAddressToToken.db` + current `LE.dll`, field offsets via Cpp2IL).
+
+- Offline object: `OfflineCharacterService` `StartPlay` (`0x1C8AB50`) spawns
+  `ActorDataList.offlinePlayerActorData` (+0x30, `MainPlayer`) through `InstantiatePlayerActor`
+  (`0x2813320`). The `MainPlayer` prefab (`assets_d7321f5c187fdc63.bundle`; the UInt16 after its soft
+  GUID in `Catalog.bin` is one-based into the bundle names) is tagged Player, with `Actor` and
+  `PlayerAbilityList` on its root and no `LocalPlayer`. `IsOnlineClient` (`0x19187F0`) is
+  `_isOnlinePlay && !IsServer`, false offline. `getPlayerActor` (`0x17AE2B0`) returns the cache (+0x38)
+  or `getPlayer().GetComponentInChildren<Actor>()`. The old owner checks therefore passed.
+- HUD: `AbilityBarIcon.TryInitialize` (`0x23D87D0`) subscribes `playerChangedEvent` and, when
+  `IsSingleplayerOrClient`, calls `OnPlayerChanged(getPlayer())`. `OnPlayerChanged` (`0x23D7360`) sets
+  `icon.player` (+0x88) and the static `playerAbilityList = newPlayer.GetComponent<AbilityList>()`.
+  `UpdateIcon` (`0x23D8ED0`) shows `playerAbilityList.getAbility(abilityNumber - 1)` (virtual, base
+  `0x23F60B0`) into `correspondingAbility` (+0xE8), within `getAbilityCount` (`0x23F6050`).
+- Cause: the reader required `ComboAbilityList.HasInitialised` (+0x68). Only `initialise` (`0x244C610`)
+  sets it. It is reached through vtable +0x248 from `ComboAbilityList.Start` (`0x244B850`), which
+  `PlayerAbilityList.Start` (`0x2461F70`) hides without calling, and from `incrementCombo` (`0x244C0D0`)
+  and `resetCombo` (`0x244CDD0`), which run after an ability is used. A call scan found no other
+  caller. On a freshly loaded offline character (in town, nothing cast yet), every skill and bar slot
+  stayed at `combo initialization pending`. `ClientAbilityList` online is not a combo list.
+- The flag never guarded the slots. `initialise` writes only the flag, the mutator manager (+0x78) and
+  calls `initialiseComboInfo` (an empty stub for `PlayerAbilityList`). `PlayerAbilityList.initialise`
+  (`0x2462D60`) itself reads `equippedAbilities` (+0x88) to save the bar, which `setAbility`
+  (`0x24635A0` → `0x244D2E0`) keeps. These methods are the same size as in build 25690669, so the gate
+  predates the update. It also explains the 10-02 first-opening omission above.
+
+Source order now (no hook): online `LocalPlayer.instance.abilityList` (unchanged); offline the action
+bar's own `AbilityBarIcon.playerAbilityList`, then `getPlayerActor().GetAbilityList()`. Both must
+belong to the `getPlayer()` root, so a party member's, stale or child-object list is rejected. Combo
+lists give `equippedAbilities` without the flag; other lists use the HUD reads. No owned list means
+silence, never "No equipada". `[Skill binding] source: …` is logged once per change, for example
+`action bar list`, `player actor list (action bar list unavailable)` or
+`none (action bar list owned by another object; player actor list …)`. Skills: 274 checks.
+Runtime check: offline, open Skills in town before casting. Expect `source: action bar list` and `ready`.
+
 ## Square carries the highlighted skill (2026-10-04)
 
 User report: "I press Square to assign the skill to a button, but on the button the assign screen

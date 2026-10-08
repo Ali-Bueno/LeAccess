@@ -13,6 +13,7 @@ internal static class BindingTests
         PlayerFinder.player = new GameObject();
         var abilities = PlayerFinder.player.Add(new ComboAbilityList { equippedAbilities = new NativeArray<Ability>(new Ability[5]) });
         PlayerFinder.player.Add(new Actor { abilities = abilities });
+        AbilityBarIcon.playerAbilityList = abilities;
         AbilityBarSelectorManager.instance = null;
     }
 
@@ -119,7 +120,7 @@ internal static class BindingTests
                 case "buttons": PromptsInfoProvider.Instance.Buttons["cast"].WasCollected = true; break;
                 case "action": ReInput.mapping.Actions["cast"].WasCollected = true; break;
                 case "equipped": ((ComboAbilityList)PlayerFinder.getPlayerActor().abilities).equippedAbilities.WasCollected = true; break;
-                case "actor": PlayerFinder.getPlayerActor().WasCollected = true; break;
+                case "actor": PlayerFinder.getPlayerActor().WasCollected = true; AbilityBarIcon.playerAbilityList = null; break;
                 case "ability": candidate.WasCollected = true; break;
             }
             check(SkillBindingReader.Read(candidate) is null, $"Unavailable or collected {unavailable} produces unknown binding safely");
@@ -141,6 +142,52 @@ internal static class BindingTests
         CheckAuthoritativeAssignment(check);
         CheckPartialAssignmentReadiness(check);
         CheckAssignmentContext(check);
+        CheckOfflineSources(check);
+        Reset();
+    }
+
+    // Offline the tagged MainPlayer root carries Actor and PlayerAbilityList; the HUD caches that list.
+    private static void CheckOfflineSources(Action<bool, string> check)
+    {
+        var log = LeAccess.Plugin.Log.Information;
+        Reset();
+        var skill = new Ability { abilityName = "Ráfaga" };
+        var other = new Ability { abilityName = "Escudo" };
+        var combo = (ComboAbilityList)PlayerFinder.getPlayerActor().abilities;
+        combo.HasInitialised = false;
+        Equip(2, skill);
+        Bind("slot-two", EpochInputManager.InputActions.Ability2, "Triangle");
+        var bar = new GameObject().Add(new AbilityBarIcon { abilityNumber = 2, player = PlayerFinder.player, ability = other });
+        log.Clear();
+        check(SkillBindingReader.ReadAssignment(skill) == Speech.F("skill.equipped_binding", "Triangle") &&
+            SkillBindingReader.ReadAssignment(other) == Speech.T("skill.not_equipped"),
+            "Offline skills panel reads equipped and unassigned skills before any ability use initialises combos");
+        check(SkillBindingReader.TryReadSlot(bar, out var slotted) && slotted == skill &&
+            SkillAssignmentReader.TryReadContext(bar.gameObject, out var context) && context.CurrentAbility == skill && context.Binding == "Triangle",
+            "Offline action bar slot reads its skill and button instead of falling back to the object name");
+        check(log.Count(line => line == "[Skill binding] source: action bar list") == 1,
+            "The action bar's own list answers offline and is logged once across repeated reads");
+
+        AbilityBarIcon.playerAbilityList = null;
+        check(SkillBindingReader.ReadAssignment(skill) == Speech.F("skill.equipped_binding", "Triangle") &&
+            log.Contains("[Skill binding] source: player actor list (action bar list unavailable)"),
+            "Without the HUD list the player actor's list answers and the log names the fallback");
+
+        var party = new GameObject();
+        AbilityBarIcon.playerAbilityList = party.Add(new ComboAbilityList { equippedAbilities = new NativeArray<Ability>(new[] { other, null, null, null, null }) });
+        check(SkillBindingReader.ReadAssignment(other) == Speech.T("skill.not_equipped") &&
+            log.Contains("[Skill binding] source: player actor list (action bar list owned by another object)"),
+            "A list owned by another player or stale object cannot claim the local assignment");
+
+        var body = PlayerFinder.player.Child();
+        var foreign = body.Add(new ComboAbilityList { equippedAbilities = new NativeArray<Ability>(new[] { other, null, null, null, null }) });
+        PlayerFinder.player.Components.Remove(PlayerFinder.getPlayerActor());
+        body.Add(new Actor { abilities = foreign });
+        check(SkillBindingReader.ReadAssignment(skill) is null && SkillBindingReader.ReadAssignment(other) is null &&
+            !SkillBindingReader.TryReadSlot(bar, out _) && SkillBindingReader.LastStatus == "ability list owner mismatch",
+            "With no list owned by the player root the reader stays silent instead of guessing");
+        check(log.Contains("[Skill binding] source: none (action bar list owned by another object; player actor list owned by another object)"),
+            "The log says why every offline source was rejected");
         Reset();
     }
 
@@ -166,7 +213,9 @@ internal static class BindingTests
         Equip(2, flurry);
         var comboList = (ComboAbilityList)PlayerFinder.getPlayerActor().abilities;
         comboList.HasInitialised = false;
-        check(SkillBindingReader.ReadAssignment(flurry) is null, "Uninitialized combo list cannot claim a skill is not equipped");
+        check(SkillBindingReader.ReadAssignment(flurry) == Speech.F("skill.equipped_binding", "Square") &&
+            SkillBindingReader.ReadAssignment(hit) == Speech.T("skill.not_equipped"),
+            "Lazy combo initialization flag neither hides nor invents the slots setAbility wrote");
         comboList.HasInitialised = true;
         AbilityBarIcon.all.WasCollected = true;
         check(SkillBindingReader.ReadAssignment(flurry) == Speech.F("skill.equipped_binding", "Square"), "Collected HUD does not erase player equipped state");
@@ -227,10 +276,9 @@ internal static class BindingTests
         check(SkillBindingReader.ReadAssignment(absent) is null, "Collected unrelated slot does not become evidence of absence");
         var combo = (ComboAbilityList)PlayerFinder.getPlayerActor().abilities;
         combo.HasInitialised = false;
-        check(SkillBindingReader.ReadAssignment(selected) is null && SkillBindingReader.LastStatus == "combo initialization pending",
-            "Uninitialized list remains unknown and reports its distinct readiness gate");
+        check(SkillBindingReader.ReadAssignment(selected) == Speech.F("skill.equipped_binding", "Triangle") && SkillBindingReader.LastStatus == "ready",
+            "Uninitialized combo list still reads its equipped slots and reports ready");
         combo.HasInitialised = true;
-        check(SkillBindingReader.ReadAssignment(selected) == Speech.F("skill.equipped_binding", "Triangle"), "Same list recovers after initialization without menu reopen");
     }
 
     private static void CheckAssignmentContext(Action<bool, string> check)
@@ -286,6 +334,10 @@ internal static class BindingTests
         var icon = new GameObject().Add(new AbilityBarIcon { abilityNumber = 2, player = PlayerFinder.player });
         check(SkillBindingReader.TryReadSlot(icon, out var slotted) && slotted == wolf, "Online action bar slot reads its skill");
         check(SkillBindingReader.TryReadSlot(1, out var empty) && empty is null, "Online empty slot is known empty");
+        AbilityBarIcon.playerAbilityList = PlayerFinder.player.Add(new ComboAbilityList { equippedAbilities = new NativeArray<Ability>(new[] { swipe, null, null, null, null }) });
+        check(SkillBindingReader.ReadAssignment(swipe) == Speech.T("skill.not_equipped") &&
+            LeAccess.Plugin.Log.Information.Contains("[Skill binding] source: online LocalPlayer list"),
+            "Online keeps LocalPlayer's list ahead of the cached action bar list");
         list.WasCollected = true;
         check(SkillBindingReader.ReadAssignment(wolf) == null && SkillBindingReader.LastStatus == "ability list unavailable",
             "A collected online list stays silent");
