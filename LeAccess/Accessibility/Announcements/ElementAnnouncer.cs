@@ -85,7 +85,8 @@ public static class ElementAnnouncer
         if (ControllerMenuAccessibility.TryHandleFocus(go) || InventoryAccessibility.TryHandleFocus(go) ||
             PassiveAccessibility.TryHandleFocus(go) || QuestAccessibility.TryHandleFocus(go) ||
             SkillAccessibility.TryHandleFocus(go) || ClassCarouselHandler.TryHandleFocus(go) ||
-            Forge.ForgeAccessibility.TryHandleFocus(go) || Gifting.GiftAccessibility.TryHandleFocus(go)) return;
+            Forge.ForgeAccessibility.TryHandleFocus(go) || Gifting.GiftAccessibility.TryHandleFocus(go) ||
+            Endgame.EndgameAccessibility.TryHandleFocus(go)) return;
 
         if (!UiFocusOwnership.Allows(go)) return;
         go = Social.SocialReader.Canonical(go);

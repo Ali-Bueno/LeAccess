@@ -16,9 +16,10 @@ internal static class NativeWindowDiscovery
         if (ScreenContentAnnouncer.HasWindowOwner(id)) return;
         var panel = foreground.TryCast<Panel>();
         var modal = IsAlive(panel) && !IsExplicitPanel(panel) ? new GenericModalText(root) : null;
+        var endgame = IsAlive(panel) ? Endgame.EndgameWindows.Reader(panel) : null;
         ScreenContentAnnouncer.Track(root, retainWhenHidden: true, separateWindow: true,
-            readText: modal is null ? null : modal.ReadOpening, ownsWindow: () => OwnsWindow(foreground),
-            readUpdate: modal is null ? null : modal.ReadHeader);
+            readText: endgame ?? (modal is null ? null : modal.ReadOpening), ownsWindow: () => OwnsWindow(foreground),
+            readUpdate: endgame ?? (modal is null ? null : modal.ReadHeader));
     }
 
     private static Behaviour ReadForeground()
@@ -80,7 +81,7 @@ internal static class NativeWindowDiscovery
         IsAlive(panel.TryCast<WarningConfirmationModal>()) || IsAlive(panel.TryCast<AlertModal>()) ||
         IsAlive(panel.TryCast<LightlessArborEntrancePanel>()) || IsAlive(panel.TryCast<SoulfireBastionEntrancePanel>()) ||
         IsAlive(panel.TryCast<TemporalSanctumEntrancePanel>()) || IsAlive(panel.TryCast<DungeonFloorExitPanel>()) ||
-        IsAlive(panel.TryCast<BossConfirmationPanel>());
+        IsAlive(panel.TryCast<BossConfirmationPanel>()) || Endgame.EndgameWindows.Covers(panel);
 
     private static bool IsVisibleOwner(Behaviour owner) =>
         IsAlive(owner) && owner.isActiveAndEnabled && UiVisibility.IsVisible(owner.gameObject);

@@ -214,10 +214,12 @@ internal static class InventoryAccessibility
 
     private static ItemContainerUI GetFocusedContainer()
     {
-        if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible ||
-            ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
+        if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible || DialogueAnnouncer.HasActiveContent ||
             ControllerMenuAccessibility.HasActiveContent) return null;
-        return InventorySelectionReader.GetFocusedContainer();
+        var container = InventorySelectionReader.GetFocusedContainer();
+        // Endgame windows read as screen content let their item slots speak like inventory slots, after the window text.
+        return ScreenContentAnnouncer.HasActiveContent && (ScreenContentAnnouncer.HasPendingContent ||
+            !(IsAlive(container) && Endgame.EndgameWindows.AllowsItemReading(container.gameObject))) ? null : container;
     }
 
     /// <summary>Speaks the current selection again, as when a move cannot go further.</summary>

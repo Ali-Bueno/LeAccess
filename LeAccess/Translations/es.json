@@ -400,5 +400,22 @@
   "stash.priority": "con prioridad",
   "stash.folder": "carpeta",
   "stash.folder_expanded": "desplegada",
-  "stash.folder_collapsed": "plegada"
+  "stash.folder_collapsed": "plegada",
+  "endgame.vote_roster": "{0}: {1}",
+  "endgame.state_accepted": "ha aceptado",
+  "endgame.state_declined": "ha rechazado",
+  "endgame.state_pending": "sin votar",
+  "endgame.vote_accepted": "{0} ha aceptado",
+  "endgame.vote_declined": "{0} ha rechazado",
+  "endgame.vote_pending_again": "{0} no ha votado",
+  "endgame.chosen": "elegida",
+  "endgame.island_completed": "Completado",
+  "endgame.island_unreachable": "Fuera de alcance",
+  "endgame.island_reward": "Recompensa pendiente",
+  "endgame.blessing_current": "Bendición actual",
+  "endgame.blessing_new": "Bendición nueva",
+  "endgame.locked": "Bloqueado",
+  "endgame.selected": "seleccionado",
+  "endgame.slot_empty": "Ranura vacía",
+  "endgame.tier": "Grado {0}"
 }
