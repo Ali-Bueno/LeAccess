@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
+using LeAccess.Accessibility.CharacterCreation;
 using Rewired;
 using UnityEngine;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Navigation;
 
-/// <summary>Keeps controller mode while only screen-reader keys are pressed, so menus keep their focus.</summary>
+/// <summary>Keeps controller mode while only screen-reader keys are pressed, or keys typed into the open screen
+/// keyboard, so menus keep their focus.</summary>
 /// <remarks>See reference/runtime-feedback.md#controller-mode-lost-to-screen-reader-keys-2026-10-04.</remarks>
 internal static class ControllerModeGuard
 {
@@ -17,7 +19,7 @@ internal static class ControllerModeGuard
     /// <summary>Turns the game's "leave controller mode" verdict back when the keyboard activity was only screen-reader keys.</summary>
     internal static void Review(EpochInputManager manager, ref bool shouldBeActive)
     {
-        if (shouldBeActive) return;
+        if (shouldBeActive) { ScreenKeyboardTyping.KeyboardIdle(); return; }
         try
         {
             // The game's other conditions still apply: a connected, assigned gamepad and no mouse activity this frame.
@@ -32,6 +34,8 @@ internal static class ControllerModeGuard
             double now = ReInput.time.unscaledTime;
             if (mouse.GetAnyButton() || mouse.GetAnyButtonUp() || mouse.GetLastTimeAnyAxisActive() == now ||
                 mouse.GetLastTimeAnyAxisChanged() == now) return;
+            // Keys typed into the open screen keyboard belong to its field (ScreenKeyboardTyping).
+            if (ScreenKeyboardTyping.OwnsKeyboard) { shouldBeActive = true; return; }
 
             ActiveKeys.Clear();
             // A released key still counts on its release frame, so released screen-reader keys are kept too.

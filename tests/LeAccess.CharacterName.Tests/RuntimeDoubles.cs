@@ -100,6 +100,15 @@ namespace UnityEngine
     internal struct Vector2Int { internal int x, y; }
     internal static class Time { internal static int frameCount; internal static double unscaledTimeAsDouble; }
     internal static class Application { internal static bool isFocused = true; }
+    internal enum KeyCode { None, Backspace, Escape }
+    internal enum EventType { MouseDown, KeyDown }
+    internal sealed class Event { internal EventType type; internal char character; internal KeyCode keyCode; }
+    internal static class Input
+    {
+        internal static string inputString = "";
+        internal static readonly HashSet<KeyCode> Down = new();
+        internal static bool GetKeyDown(KeyCode key) => Down.Contains(key);
+    }
 }
 internal sealed class NativeArray<T> : NativeObject, IEnumerable<T>
 {

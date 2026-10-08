@@ -141,6 +141,45 @@ The existing login/email device-transition issue is outside this name-only scope
 `Private=false`; no new runtime DLL is distributed. Diagnostics report focus
 transfers without logging entered names.
 
+## Physical keys on the open screen keyboard (2026-10-08)
+
+User report: after Cross opens the keyboard, the first physical key is lost and only
+later keys type; leaving the field should work with the controller or with Enter.
+
+Cause (build 25764382, static analysis): `EpochInputManager.ControllerShouldBeActive`
+(`0x10C0A20`) fails on any keyboard key, so the setter (`0x10C9500`) clears navigation and
+`ScreenKeyboardManager.OnInputDeviceChange` (`0x10836C0`) calls `Disable`. While the
+keyboard is open, EventSystem focus is a keyboard key button, not the TMP field, so that
+frame's key event has no text receiver; the old device-mode postfix activated the field
+only afterwards (inferred, frame order not traced live). After the switch no navigation is
+left for the controller.
+
+Fix (`ScreenKeyboardTyping`, polled from `MenuAccessibility.LateUpdate`): while the keyboard
+is open over a field opened with Cross and owns navigation in controller mode,
+`ControllerModeGuard` keeps controller mode for any key (real mouse input still switches).
+`Input.inputString` is fed through the keyboard's own path: characters and `\b` become
+`Event`s for `SubmitEvent` (`0x1083DA0`, as `OnKeyPress` `0x1083A20` does); Enter calls
+`OnFunctionPress(Submit)` and Escape `OnFunctionPress(Cancel)` (`0x1083460`), which
+`BackAction` turns into Submit, so Escape keeps the text like Circle. The close restores
+focus to the field (`CompleteClose`). Controller mode stays until the closing key is
+released, then the game owns the keyboard again. Control characters (Ctrl shortcuts),
+Shift, Insert and CapsLock never type. A natively focused field is left to TMP.
+
+The session raises the game's own typing flag `EpochInputManager.isInputFieldActive`
+(+0x48, written by `InputFieldActive` `0x10C4A40`): `Update` skips gameplay input at
+`0x10C6F1A` and `UIBase.ChatKeyDown` (`0x17F9450`) returns at `0x17F950D`. It is restored
+before the keyboard closes, and only while a field still has focus, so it cannot be
+stranded. `ButtonInputListener.CanBePressed` (`0x16FB350`) only checks EventSystem focus
+(`IsInputFieldFocused` `0x16FB3A0`), a key button here, so a new postfix blocks button
+hotkeys during the session (prologue: rel32 call at +0xB, no short branch).
+
+Covered: both character-name fields and the three Social username fields; other editors
+keep native behaviour. Nine hooks in `CharacterNameKeyboardPatches` pass the audit (all
+production: 81 declarations / 80 targets). Name suite: 198 checks (32 new typing/key
+checks). Unverified live: whether Rewired maps Enter, Space or Escape to the controller's
+own submit/cancel in controller mode (an extra letter from the highlighted key, or a closed
+window, would show it), and the whole sequence with NVDA.
+
 ## Validation-error speech
 
 Implemented for Steam 1.5.0.1 on 2026-10-02, without starting the game. The

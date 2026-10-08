@@ -172,8 +172,18 @@ internal static class CharacterNameKeyboard
         internal int Caret, StringPosition;
     }
 
+    /// <summary>The explicitly opened field while its screen keyboard is open and owns navigation in controller mode.</summary>
+    internal static TMP_InputField TypingTarget(ScreenKeyboardManager keyboard)
+    {
+        if (!IsAlive(keyboard) || !keyboard._enabled || !EpochInputManager.IsControllerActive || !OwnsNavigation(keyboard))
+            return null;
+        var input = GetNameEditor(keyboard);
+        return Requested(input) ? input : null;
+    }
+
     internal static TMP_InputField BeginClose(ScreenKeyboardManager keyboard)
     {
+        ScreenKeyboardTyping.End();
         Reset();
         try
         {

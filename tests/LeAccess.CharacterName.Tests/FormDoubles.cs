@@ -21,7 +21,13 @@ internal class Navigable : UnityEngine.Behaviour
 internal sealed class PrioritizedNavigable : Navigable
 { internal UnityEngine.UI.Selectable ActiveSelectable; }
 internal sealed class ScreenKeyboardNavigable : Navigable { }
-internal static class EpochInputManager { internal static bool IsControllerActive = true; }
+internal sealed class EpochInputManager : UnityEngine.Behaviour
+{
+    internal static bool IsControllerActive = true;
+    internal static EpochInputManager instance;
+    internal bool isInputFieldActive;
+}
+internal sealed class ButtonInputListener : UnityEngine.Behaviour { internal bool CanBePressed() => true; }
 internal sealed class CharacterSelect : UnityEngine.Behaviour
 {
     internal static CharacterSelect instance;
@@ -107,6 +113,18 @@ internal sealed class ScreenKeyboardManager : UnityEngine.Behaviour
         input.text += letter;
         _substituteInputField.text = input.text;
         return true;
+    }
+    internal readonly List<UnityEngine.Event> Submitted = new();
+    // Installed non-deferred SubmitEvent: the original editor processes the key, then the substitute copies its text.
+    internal void SubmitEvent(UnityEngine.Event key)
+    {
+        Submitted.Add(key);
+        var input = _selectedInputField?.gameObject.GetComponent<TMPro.TMP_InputField>();
+        if (input is null) return;
+        input.text ??= "";
+        if (key.keyCode == UnityEngine.KeyCode.Backspace) { if (input.text.Length > 0) input.text = input.text[..^1]; }
+        else if (key.type == UnityEngine.EventType.KeyDown && key.character != '\0') input.text += key.character;
+        _substituteInputField.text = input.text;
     }
     internal void ResumePendingCursor(int position)
     {
