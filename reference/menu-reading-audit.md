@@ -15,6 +15,10 @@ Affixes Holder" names (forge shard list, crafting area); non-modal endgame panel
 (Monolith, Factions, Observatory, Nemesis, Circle of Fortune, character stats) have no dedicated
 reader and no log evidence yet; the stash tab/folder wording needs a listening check.
 
+## Endgame panels (2026-10-08)
+
+Monolith, blessings, echo rewards, Sanctuary of Eterra, entrances, boss votes, Nemesis, Observatory, Ladder and Morditas panels were not discovered as windows or lacked state; see [endgame-panels](endgame-panels.md). Listening pending.
+
 ## Native/prefab follow-up (2026-10-02)
 
 The latest user report led to verified fixes for [creation tabs and class

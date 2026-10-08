@@ -31,6 +31,7 @@
     <Compile Include="../../LeAccess/Accessibility/Utils/TextUtils.cs" Link="TextUtils.cs" />
     <Compile Include="../../LeAccess/Accessibility/Guide/GuideArticleText.cs" Link="GuideArticleText.cs" />
     <Compile Include="../../LeAccess/Accessibility/Items/StashTabText.cs" Link="StashTabText.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Endgame/EndgameText.cs" Link="EndgameText.cs" />
   </ItemGroup>
   <Import Project="../LocalizationSources.props" />
 </Project>

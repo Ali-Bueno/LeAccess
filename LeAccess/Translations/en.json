@@ -400,5 +400,22 @@
   "stash.priority": "has priority",
   "stash.folder": "folder",
   "stash.folder_expanded": "expanded",
-  "stash.folder_collapsed": "collapsed"
+  "stash.folder_collapsed": "collapsed",
+  "endgame.vote_roster": "{0}: {1}",
+  "endgame.state_accepted": "accepted",
+  "endgame.state_declined": "declined",
+  "endgame.state_pending": "has not voted",
+  "endgame.vote_accepted": "{0} accepted",
+  "endgame.vote_declined": "{0} declined",
+  "endgame.vote_pending_again": "{0} has not voted",
+  "endgame.chosen": "chosen",
+  "endgame.island_completed": "Completed",
+  "endgame.island_unreachable": "Out of reach",
+  "endgame.island_reward": "Reward waiting",
+  "endgame.blessing_current": "Current blessing",
+  "endgame.blessing_new": "New blessing",
+  "endgame.locked": "Locked",
+  "endgame.selected": "selected",
+  "endgame.slot_empty": "Empty slot",
+  "endgame.tier": "Tier {0}"
 }

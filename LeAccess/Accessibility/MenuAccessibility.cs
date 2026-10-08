@@ -73,8 +73,10 @@ public class MenuAccessibility : MonoBehaviour
         InventoryAccessibility.Update(readDetails);
         Forge.ForgeAccessibility.Update(readDetails);
         Gifting.GiftAccessibility.Update(readDetails);
+        Endgame.EndgameAccessibility.Update(readDetails);
         if (readDetails && !SkillAccessibility.HasActiveContent && !InventoryAccessibility.HasActiveContent &&
-            !Forge.ForgeAccessibility.HasActiveContent && !Gifting.GiftAccessibility.HasActiveContent)
+            !Forge.ForgeAccessibility.HasActiveContent && !Gifting.GiftAccessibility.HasActiveContent &&
+            !Endgame.EndgameAccessibility.HasActiveContent)
             ReadSelectedDetails();
         ZoneAnnouncer.Update();
         bool worldContentActive = ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||

@@ -37,3 +37,13 @@ namespace UnityEngine.UI
     internal sealed class Button : Selectable { }
     internal sealed class ScrollRect : UnityEngine.Component { }
 }
+
+namespace LeAccess.Accessibility.Endgame
+{
+    // The endgame readers are tested with the menu reading suite; window discovery only needs them to cover nothing.
+    internal static class EndgameWindows
+    {
+        internal static bool Covers(LE.UI.PanelSystem.Panel panel) => false;
+        internal static System.Func<string> Reader(LE.UI.PanelSystem.Panel panel) => null;
+    }
+}
