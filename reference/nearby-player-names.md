@@ -53,3 +53,19 @@ unloaded scenes, dead remote players, stale/destroyed/inactive entities, current
 range, nearest/tie selection, per-candidate failures, deferred speech and reentry.
 The main no-deploy build passes with zero warnings/errors. The game remained
 closed; online proximity/listening has not been tested in a live multiplayer scene.
+
+## Character name and level (2026-10-08, static, not yet tested live)
+
+Spoken as `username, character name, Nivel N` (parts omitted when unknown) by the approach announcement and
+the scanner Player entries (`PlayerIdentityText`; the level reuses `progression.level`).
+- Username: `ActorVisuals.UserIdentity.Username` (proven above).
+- Level: `ActorVisuals.clientCharacterInfoProvider.level` (`ClientCharacterInfoProvider.cs:43`), filled by
+  `PlayerActorSync.ReceiveSyncCharacterInfoProvider(classID, level, subClassID)`; 0 = not received, so omitted.
+  The class (`classID`) is there too but is not spoken.
+- Character name: no field on the remote sync or visuals keeps it (`MessageSyncLocalPlayerInfo.CharacterName`
+  is consumed by `ReceiveSyncLocalPlayerInfo`, not stored). Only friends have one:
+  `SocialManager._friendStatusCache[MasterAccountID].CharacterSummary.CharacterName` (`FriendCharacterNames`;
+  the account ID is only a lookup key, never spoken). Non-friends stay username + level. Unverified: that the
+  cache key is the master account ID.
+- Anti-repeat: character and level are remembered per target, so a flickering read does not repeat; a real
+  change (level up, name arriving) re-announces once.

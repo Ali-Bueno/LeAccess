@@ -71,6 +71,7 @@ internal sealed class ActorVisuals : UnityEngine.MonoBehaviour
     internal ActorSync actorSync;
     internal FloatingPlayerName floatingPlayerName;
     internal UserIdentity Identity;
+    internal ClientCharacterInfoProvider clientCharacterInfoProvider;
     internal UserIdentity UserIdentity => ThrowIdentity ? throw new InvalidOperationException("Bad player") : Identity;
     internal UnityEngine.Vector3 position() => transform.position;
 }
@@ -119,3 +120,6 @@ namespace LeAccess
         internal void LogWarning(string text) => Warnings.Add(text);
     }
 }
+internal sealed class ClientCharacterInfoProvider : UnityEngine.MonoBehaviour { internal int level; }
+namespace LeAccess.Accessibility.Social
+{ internal static class FriendCharacterNames { internal static readonly Dictionary<string,string> ByUsername = new(); internal static string Read(UserIdentity identity) => ByUsername.GetValueOrDefault(identity.Username); } }

@@ -12,6 +12,9 @@ internal static class NearbyPlayerAccessibility
     private static readonly NpcNameAnnouncementState Names = new();
     private static double _nextPoll;
     private static string _lastFailure;
+    private static long _knownSession;
+    private static int _knownTarget, _knownLevel;
+    private static string _knownCharacter;
     internal static bool HasPendingContent => Names.HasPendingContent;
 
     internal static void Update(bool otherSpeechPending = false)
@@ -28,13 +31,23 @@ internal static class NearbyPlayerAccessibility
             bool found = NearbyPlayerProbe.TryRead(out var target);
             ReportFailure(NearbyPlayerProbe.LastFailure);
             if (!found) { Names.Reset(); return; }
-            if (!Names.Observe(target.Session, target.InstanceId, target.Name,
+            if (!Names.Observe(target.Session, target.InstanceId, Describe(target),
                 ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame && !otherSpeechPending,
                 now, out string announcement)) return;
             ScreenReader.Speak(announcement, interrupt: false);
             Plugin.Log.LogInfo($"[Nearby player] {announcement}");
         }
         catch (Exception ex) { Reset(); ReportFailure(ex.Message); }
+    }
+
+    // Known character name and level are kept per target so a flickering read never re-announces.
+    private static string Describe(NearbyPlayerTarget target)
+    {
+        if (target.Session != _knownSession || target.InstanceId != _knownTarget)
+        { _knownSession = target.Session; _knownTarget = target.InstanceId; _knownCharacter = null; _knownLevel = 0; }
+        if (!string.IsNullOrWhiteSpace(target.Character)) _knownCharacter = target.Character;
+        if (target.Level > 0) _knownLevel = target.Level;
+        return PlayerIdentityText.Compose(target.Name, _knownCharacter, _knownLevel);
     }
 
     private static void ReportFailure(string failure)
@@ -44,5 +57,5 @@ internal static class NearbyPlayerAccessibility
         Plugin.Log.LogWarning($"Nearby player names: {failure}");
     }
 
-    internal static void Reset() { Names.Reset(); _nextPoll = 0; }
+    internal static void Reset() { Names.Reset(); _nextPoll = 0; _knownTarget = 0; _knownCharacter = null; _knownLevel = 0; }
 }
