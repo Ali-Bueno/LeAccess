@@ -1,3 +1,29 @@
+# Handoff — 2026-10-08: quality batch while the user was away
+
+User request: make every unread menu accessible; physical keyboard typing as soon as the screen keyboard
+opens, leaving with Enter or the controller; enemies in the radar, no corpse semantics for the last death;
+other QoL. Mid-session: gold pickups said aloud (a friend's request); emotes — Last Epoch has none (no
+emote/ping/quick-chat class in the interop; only an audio `WeightedClip.emoteIndex`). Four branches merged,
+61 host suites pass, installed, committed and pushed, friend ZIP built. Nothing heard in game.
+- Keyboard: the first key used to switch the game to keyboard mode, close the screen keyboard and be lost.
+  Now controller mode is kept and keys go through the keyboard's own `SubmitEvent`; Enter submits,
+  Escape keeps the text; one new hook (`ButtonInputListener.CanBePressed`) stops game shortcuts while
+  typing ([details](reference/character-name-reading.md)). Check: Cross on the name field, type at
+  once (first letter, Backspace, @, accents), Enter (focus back, d-pad works), Escape, Ctrl/Shift alone;
+  Social invite field (letters must not trigger skills/panels). Unverified: whether Enter/Space also
+  press the highlighted on-screen key (would add a letter).
+- Menus: [endgame](reference/endgame-panels.md) and [faction/vendor/service](reference/faction-vendor-panels.md)
+  readers; their docs list the first checks (tier tabs, blessings, Monolith echo tooltip, votes,
+  vendor intro/prices, rank rewards, loot-filter rules). Not covered: Weaver tree, prophecies,
+  Forgotten Knights timelines, Bazaar market, Ladder rows, Ritual/Claim buttons.
+- Scanner: enemies on screen (not only skill reach); "última muerte" replaces "cadáver"
+  ([details](reference/exploration-mode.md)).
+- Gold pickups "N de oro" ([details](reference/vitals-api.md#gold-pickups-2026-10-08)); progression:
+  "Nivel N", points, skills that can level, Create+Circle / Ctrl+L status ([details](reference/progression.md)).
+  Check the XP percent against the bar (log `[Progression]`), and online.
+- Next QoL proposal (not started): D2R attack-reach ping (sound when an enemy in sight enters the main
+  skill's reach; d2r-access `docs/attack-reach.md`).
+
 # Handoff — 2026-10-07 evening: exploration saving, inventory jump, materials, gifting, guide
 
 Game build now 25764382 (Steam updated 14:16; the server had updated first). Three parallel fixes, all
