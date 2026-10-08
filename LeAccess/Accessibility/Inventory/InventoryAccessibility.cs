@@ -17,6 +17,8 @@ internal static class InventoryAccessibility
     private static readonly ScreenContentTracker Comparison = new();
     private static readonly InventoryGoldNotice Gold = new();
     private static readonly LeadingNotice PanelLead = new();
+    private static readonly LeadingNotice GridLead = new();
+    private static IntPtr _container;
     private static string _lastFailure;
     private static string _contextKey, _context, _position;
     private static float _nextContextRead;
@@ -46,12 +48,15 @@ internal static class InventoryAccessibility
         {
             ObserveGold();
             var container = GetFocusedContainer();
-            if (!IsAlive(container)) { Reset(); return; }
+            if (!IsAlive(container)) { Reset(); _container = IntPtr.Zero; GridLead.Clear(); return; }
             InventoryDropFocus.Guard(container);
             bool known = InventorySelectionReader.TryGetEntry(container, out var entry);
-            string slotName = EquipmentSlotText.Read(container.identifier) ?? Panels.ServiceSlotReader.Read(container);
+            string slotName = EquipmentSlotText.Read(container.identifier) ?? IdolGrid.SlotName(container) ??
+                Panels.ServiceSlotReader.Read(container);
             // A vendor or item-service panel's introduction leads the first item read inside it.
             if (Panels.PanelIntro.LeadFor(container.gameObject) is { Length: > 0 } introduction) PanelLead.Raise(introduction);
+            // Entering the idol grid names it, with its idols and free slots, before its first cell.
+            if (container.Pointer != _container) { _container = container.Pointer; GridLead.Raise(IdolGrid.Summary(container)); }
             string key, text;
             ItemData selectedData = null;
             bool hasTooltip = false;
@@ -64,7 +69,7 @@ internal static class InventoryAccessibility
             {
                 var slot = container.currentFocusSlot;
                 key = $"{container.GetInstanceID()}:empty:{slot.x}:{slot.y}";
-                text = ModText.Get("inventory.empty_slot");
+                text = IdolGrid.EmptyCell(container, slot) ?? ModText.Get("inventory.empty_slot");
             }
             else
             {
@@ -83,7 +88,7 @@ internal static class InventoryAccessibility
                             TextUtils.CleanText(unpacked.FullName), TextUtils.CleanText(unpacked.LocalisedBaseTypeName)
                         });
                         if (!string.IsNullOrWhiteSpace(identity))
-                            text = ScreenContentTracker.Combine(new[] { identity,
+                            text = ScreenContentTracker.Combine(new[] { identity, IdolGrid.Describe(container, entry),
                                 InventorySelectionReader.IsEquipmentSlot(container.identifier) ? ModText.Get("inventory.equipped") : null });
                     }
                 }
@@ -114,7 +119,12 @@ internal static class InventoryAccessibility
                 text = ScreenContentTracker.Combine(new[] { text, _position, _context });
             }
             else { _contextKey = _context = _position = null; }
-            string lead = ScreenContentTracker.Combine(new[] { PanelLead.For(key), Gold.For(key) });
+            if (InventorySelectionReader.IsEquipmentSlot(container.identifier) && IdolRoute.Hint() is { } route)
+            {
+                text = ScreenContentTracker.Combine(new[] { text, route });
+                spokenIdentity = ScreenContentTracker.Combine(new[] { spokenIdentity, route });
+            }
+            string lead = ScreenContentTracker.Combine(new[] { PanelLead.For(key), Gold.For(key), GridLead.For(key) });
             if (!string.IsNullOrWhiteSpace(lead))
             {
                 text = ScreenContentTracker.Combine(new[] { lead, text });
@@ -199,6 +209,7 @@ internal static class InventoryAccessibility
     {
         Gold.Spoken(key);
         PanelLead.Spoken(key);
+        GridLead.Spoken(key);
     }
 
     // One line per change of the tooltip's mode or source, so a live test shows why a held key stayed silent.

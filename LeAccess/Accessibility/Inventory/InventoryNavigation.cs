@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 using Anchor = LeAccess.Accessibility.Inventory.InventoryNavigationOrder.Anchor;
+using Edges = LeAccess.Accessibility.Inventory.InventoryNavigationOrder.Edges;
 
 namespace LeAccess.Accessibility.Inventory;
 
-/// <summary>Moves the backpack and merchant cursors item by item instead of the native cell steps that wrap around.</summary>
-/// <remarks>See reference/inventory-drop-focus.md#controller-navigation-2026-10-04.</remarks>
+/// <summary>Moves the backpack, merchant and idol cursors item by item instead of the native cell steps.</summary>
+/// <remarks>See reference/inventory-drop-focus.md#controller-navigation-2026-10-04 and reference/idols.md.</remarks>
 internal static class InventoryNavigation
 {
     private static readonly List<(Anchor Item, ItemContainerEntry Entry)> Items = new();
@@ -20,11 +21,12 @@ internal static class InventoryNavigation
         try
         {
             // A held item moves its anchor through the game's own placement navigation.
-            if (!IsItemList(container) || container.singleSlotControllerNavigation || HoldsItem() ||
+            var exits = ListExits(container);
+            if (exits == Edges.None || container.singleSlotControllerNavigation || HoldsItem() ||
                 !TryReadItems(container, out var size)) return false;
             int current = CurrentIndex(container);
             var slot = container.currentFocusSlot;
-            var move = InventoryNavigationOrder.Plan(Order, current, slot.x, slot.y, direction);
+            var move = InventoryNavigationOrder.Plan(Order, current, slot.x, slot.y, direction, exits);
             switch (move.Kind)
             {
                 case InventoryNavigationOrder.MoveKind.Select:
@@ -36,9 +38,15 @@ internal static class InventoryNavigation
                     InventoryAccessibility.RepeatCurrent();
                     return true;
                 case InventoryNavigationOrder.MoveKind.Exit:
-                    // From the top row the game's Up leaves upward from this column: equipment, crafting buttons or shop tabs.
-                    int column = current >= 0 ? Items[current].Item.Column : slot.x;
-                    container.currentFocusSlot = new Vector2Int { x = column, y = size.y - 1 };
+                    // From the border cell on that side the game's own step leaves the grid, as from this item's row or column.
+                    var from = current >= 0 ? Items[current].Item : new Anchor(slot.x, slot.y);
+                    container.currentFocusSlot = direction switch
+                    {
+                        Direction.UP => new Vector2Int { x = from.Column, y = size.y - 1 },
+                        Direction.DOWN => new Vector2Int { x = from.Column, y = 0 },
+                        Direction.LEFT => new Vector2Int { x = 0, y = from.Top },
+                        _ => new Vector2Int { x = size.x - 1, y = from.Top }
+                    };
                     return false;
                 default:
                     return false;
@@ -51,7 +59,8 @@ internal static class InventoryNavigation
     internal static bool TryGetPosition(ItemContainerUI container, ItemContainerEntry entry, out int position, out int count)
     {
         position = count = 0;
-        if (entry is null || entry.WasCollected || !IsItemList(container) || !TryReadItems(container, out _)) return false;
+        if (entry is null || entry.WasCollected || ListExits(container) == Edges.None || !TryReadItems(container, out _))
+            return false;
         int index = IndexOf(entry);
         if (index < 0) return false;
         position = index + 1;
@@ -59,15 +68,18 @@ internal static class InventoryNavigation
         return true;
     }
 
-    // Grids whose native edges exit only upward: the backpack and the ordinary merchant's stock and buyback.
-    private static bool IsItemList(ItemContainerUI container)
+    // Grids read as item lists, with the sides where the game's step leaves them; their other edges wrap.
+    private static Edges ListExits(ItemContainerUI container)
     {
         var items = IsAlive(container) ? container.Container : null;
-        if (items is null || items.WasCollected) return false;
+        if (items is null || items.WasCollected) return Edges.None;
         var id = items.GetContainerID();
-        if (id == ContainerID.INVENTORY) return true;
-        // Faction shops override the merchant's edge handling.
-        return id is ContainerID.SHOP or ContainerID.SHOP_BUYBACK && container.TryCast<LE.Factions.ShopContainerUI>() is null;
+        // The backpack and the ordinary merchant's stock and buyback exit only upward; faction shops override the edges.
+        if (id == ContainerID.INVENTORY ||
+            id is ContainerID.SHOP or ContainerID.SHOP_BUYBACK && container.TryCast<LE.Factions.ShopContainerUI>() is null)
+            return Edges.Up;
+        // IdolsContainerUI.DpadContextChange: left to the equipment, up to the altar, down to the crafting buttons.
+        return id == ContainerID.IDOLS && IdolGrid.Is(container) ? Edges.Left | Edges.Up | Edges.Down : Edges.None;
     }
 
     private static bool HoldsItem()

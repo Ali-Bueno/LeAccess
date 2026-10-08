@@ -89,3 +89,5 @@ controller behavior. Listening should confirm each worn slot, both rings, a
 swap/removal without leaving the slot, manual properties, and closing inventory
 or opening a dialog while a selection is pending. Native navigation order is
 preserved; the mod follows the same selected cell and highlight as the game.
+
+Idols beside the equipment (route, idol grid and altar reading): see [idols.md](idols.md).

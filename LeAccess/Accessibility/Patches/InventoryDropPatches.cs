@@ -39,3 +39,14 @@ internal static class InventoryNavigatePatch
         return !InventoryNavigation.TryNavigate(__instance, d);
     }
 }
+
+// Same prologue as the base method above, first relative branch at +0x13 (reference/idols.md).
+[HarmonyPatch(typeof(IdolsContainerUI), nameof(IdolsContainerUI.HandleNavigateInput))]
+internal static class IdolNavigatePatch
+{
+    private static bool Prefix(IdolsContainerUI __instance, Direction d)
+    {
+        InventoryDropFocus.CancelGuard();
+        return !InventoryNavigation.TryNavigate(__instance, d);
+    }
+}
