@@ -367,3 +367,17 @@ category walk, key compatibility, room numbering/entry/baseline, nearest room po
 filter, death replacement). Nothing heard in game. Status line fields: `quests players items death unexplored
 source rooms visited_rooms frontier_pending`; log lines `[Exploration] El radar ha registrado ...`,
 `entered unexplored room N`, `death place x,z`.
+
+## Elevation blind spot (2026-10-08, End of Time report)
+
+Scanner distance and direction are horizontal only (`ExplorationCatalog.Describe`), so a target on
+another floor sounds close. Fin de los Tiempos: Elder Gaspar stands at Y 16.89 (`EoT.unity`
+`SceneObjects/Gameplay/0.9.1 Mastery Adjustments/Elder Gaspar`, x -22.66 z 67.58) on the central hex
+platform, right above the Forgotten Knight (Y 1.2, x -24.84 z 58.46). The scanner said "Anciano Gaspar,
+7 pasos, arriba" while the user stood under him, and the beacon correctly refused (upper floor unexplored).
+The default-agent NavMesh (`sceneassets_EoT_unity.bundle`, 9 tiles, 407 polygons, decoded with the
+`tools/map_section_navmesh.py` layout plus neighbour links) is one connected component: the way up is the
+east stairs north from about x -18 z 78, a ramp west along z ~101 to x -38, south to the upper island
+(x -43 z 87, Y 16.7), then east and south across to Gaspar. The user had climbed the first flight and
+turned back because the marker was behind; found Gaspar later the same day. Open: say when a target is on another floor
+(|dY| >= `ExploredMap.LevelHeight`); awaiting the user.
