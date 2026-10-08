@@ -434,5 +434,16 @@
   "panels.rule_off": "desactivada",
   "panels.key_slot": "Ranura de llave {0} de {1}",
   "panels.cost": "Coste: {0}",
-  "panels.merchant_tokens": "{0} fichas del Gremio de Mercaderes"
+  "panels.merchant_tokens": "{0} fichas del Gremio de Mercaderes",
+  "progression.level_up": "Nivel {0}",
+  "progression.level": "Nivel {0}",
+  "progression.max_level": "Nivel máximo",
+  "progression.experience": "{0} por ciento de la experiencia para el siguiente nivel",
+  "progression.passive_point": "Punto de pasiva disponible",
+  "progression.passive_points": "{0} puntos de pasiva disponibles",
+  "progression.skill_can_level": "{0} puede subir de nivel",
+  "progression.skills_can_level": "{0} pueden subir de nivel",
+  "progression.new_skill": "Nueva habilidad disponible",
+  "progression.zone": "Zona: {0}",
+  "progression.unavailable": "Progreso no disponible"
 }

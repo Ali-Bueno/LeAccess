@@ -116,6 +116,7 @@ public class MenuAccessibility : MonoBehaviour
         CombatAccessibility.Update(PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent || VisibleSubtitleAnnouncer.HasPendingContent);
         VitalsAccessibility.Update(worldContentActive);
         GoldPickupAnnouncer.Update();
+        LeAccess.Accessibility.Progression.ProgressionAccessibility.Update(worldContentActive);
         ControllerBindingLog.Update();
         BossLifeAccessibility.Update();
     }

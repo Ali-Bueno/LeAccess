@@ -62,6 +62,7 @@ public class Plugin : BasePlugin
         CombatAccessibility.Initialize(Config);
         VitalsAccessibility.Initialize(Config);
         GoldPickupAnnouncer.Initialize(Config);
+        LeAccess.Accessibility.Progression.ProgressionAccessibility.Initialize(Config);
         BossLifeAccessibility.Initialize(Config);
         LandmarkAccessibility.Initialize(Config);
         MapSectionAccessibility.Initialize(Config);
@@ -116,6 +117,7 @@ public class Plugin : BasePlugin
         CombatAccessibility.Cleanup();
         VitalsAccessibility.Cleanup();
         GoldPickupAnnouncer.Cleanup();
+        LeAccess.Accessibility.Progression.ProgressionAccessibility.Cleanup();
         ControllerBindingLog.Cleanup();
         ExplorationAccessibility.Cleanup();
         BossLifeAccessibility.Cleanup();
