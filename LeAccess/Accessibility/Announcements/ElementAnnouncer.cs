@@ -262,7 +262,7 @@ public static class ElementAnnouncer
             return string.IsNullOrWhiteSpace(classSelection.Name) ? null :
                 ScreenContentTracker.Combine(new[] { classSelection.Name, includeDetails ? classSelection.Description : null });
         // Special case: Check if we're inside an expanded dropdown list
-        var dropdownItemText = TextDetector.TryGetDropdownItemText(go);
+        var dropdownItemText = DropdownReader.ReadOption(go);
         if (dropdownItemText != null)
             return dropdownItemText;
 
@@ -364,6 +364,7 @@ public static class ElementAnnouncer
         {
             if (TextUtils.IsVisibleLabel(dropdown.captionText))
                 value = TextUtils.CleanText(dropdown.captionText.text);
+            DropdownReader.NoteSpoken(dropdown);
         }
         else if (toggle != null)
         {

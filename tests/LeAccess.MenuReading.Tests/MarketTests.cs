@@ -1,3 +1,4 @@
+using LeAccess.Accessibility.Announcements;
 using LeAccess.Accessibility.Market;
 using LeAccess.I18n;
 
@@ -34,8 +35,10 @@ internal static class MarketTests
                 "Drops gold", Speech.F("market.prophecy_favor", 90), Speech.F("list.position", 1, 4)), "A picker reward with price and place");
             Check(MarketText.RewardOption("Gold", "Drops gold", 90, "Needs rank 3", true, false, 2, 4) == Speech.Join("Gold", Speech.T("market.locked"),
                 "Needs rank 3", Speech.F("list.position", 2, 4)), "A locked picker reward gives the reason, not the price");
-            Check(MarketText.LensOption(null, false, 1, 3) == Speech.Join(Speech.T("market.prophecy_lens_none"), Speech.F("list.position", 1, 3)),
+            Check(MarketText.LensOption(null, null, false, 1, 3) == Speech.Join(Speech.T("market.prophecy_lens_none"), Speech.F("list.position", 1, 3)),
                 "The empty lens option has a name");
+            Check(MarketText.LensOption("Celerity", "+50% charge rate", true, 2, 3) == Speech.Join("Celerity", Speech.T("market.current"),
+                "+50% charge rate", Speech.F("list.position", 2, 3)), "A lens option reads its name, equipped state, effect and place");
 
             var members = new[] { new LadderMember("Ana", "Rogue", "92", false), new LadderMember("Luis", "Mage", "Lvl 80", true) };
             Check(MarketText.LadderRow("3", "12,500", members, true, 0, 0) == Speech.Join(Speech.F("market.ladder_rank", "3"), Speech.T("market.ladder_own"),
@@ -59,6 +62,56 @@ internal static class MarketTests
             Check(MarketText.Results(0, 0, 0) == Speech.T("market.no_results") &&
                 MarketText.Results(37, 2, 4) == Speech.F("market.results", 37, 2, 4), "Search outcome");
             Check(MarketText.LadderEmpty() == Speech.T("market.ladder_empty"), "Empty ladder notice");
+
+            var own = card with { State = MarketText.ListingStatus(ListingState.Sold), Action = MarketText.ListingAction("Redeem"), Position = 1, Count = 1 };
+            Check(MarketText.Listing(own, null) == Speech.Join("Ring of Doom", "Ring", "Level 50",
+                Speech.Join(Speech.F("market.price_gold", "1,200"), Speech.F("market.price_favor", "30")), Speech.T("market.listing_sold"),
+                Speech.F("market.listing_action", "Redeem")), "An own listing adds its state and the action of its button");
+            Check(MarketText.ListingStatus(ListingState.Active) == Speech.T("market.listing_active") &&
+                MarketText.ListingStatus(ListingState.Redeemed) == Speech.T("market.listing_redeemed") &&
+                MarketText.ListingStatus(ListingState.Cancelled) == Speech.T("market.listing_cancelled"), "Listing states");
+            Check(MarketText.StallView(false, 3, 1, 1) == Speech.Join(Speech.T("market.stall_listed"), Speech.F("market.results", 3, 1, 1)) &&
+                MarketText.StallView(true, 0, 0, 0) == Speech.Join(Speech.T("market.stall_sold"), Speech.T("market.stall_empty")),
+                "The stall view says which list it is and how many entries, or that it is empty");
+            Check(MarketText.InputField("Level", "5", "lvl") == Speech.F("control.field_value", "Level", "5 lvl") &&
+                MarketText.InputField("Level", " ") == Speech.F("control.empty_field", "Level") &&
+                MarketText.InputField("Price", "900", gold: true) == Speech.F("control.field_value", "Price", Speech.F("market.price_gold", "900")),
+                "Fields read title and value, empty fields say so, prices get the currency");
+            Check(MarketText.RangeField("Level", true, "9") == Speech.F("control.field_value", Speech.F("market.range_max", "Level"), "9") &&
+                MarketText.RangeField("Level", false, null) == Speech.F("control.empty_field", Speech.F("market.range_min", "Level")), "Min and max fields");
+            Check(MarketText.Checkbox("Lower price", true) == Speech.F("control.field_value", "Lower price", Speech.T("state.on")), "Checkbox state");
+            Check(MarketText.ListItem("Ring", "+10 life", "500") == Speech.Join(Speech.F("market.list_item", "Ring"), "+10 life",
+                Speech.F("market.list_suggested", "500")) && MarketText.ListItem(null, null, "500") == Speech.F("market.list_suggested", "500"),
+                "The chosen item, then its suggested price");
+            Check(MarketText.ListEmpty(null) == Speech.T("market.list_empty") && MarketText.ListEmpty("Place an item") == "Place an item", "Empty form");
+            Check(MarketText.ListButton("List", "12", "Fee 5%", null) == Speech.Join("List", Speech.F("market.list_favor_cost", "12"), "Fee 5%") &&
+                MarketText.ListButton(null, null, null, null) == Speech.T("market.list_action"), "The confirm button names its cost and fees");
+            Check(MarketText.SourceButton(true, null) == Speech.T("market.list_stash") && MarketText.SourceButton(false, "Bag") == "Bag", "Source buttons");
+
+            Check(DropdownReader.Option("Mage", true, 2, 5) == Speech.Join("Mage", Speech.T("market.dropdown_selected"), Speech.F("list.position", 2, 5)) &&
+                DropdownReader.Option("Any", false, 1, 1) == "Any", "Expanded options give state and place");
+            Check(DropdownReader.Control("Class", "Mage") == Speech.F("control.field_value", "Class", "Mage") && DropdownReader.Control(null, "Mage") == "Mage",
+                "A dropdown reads title and value");
+            var list = new UnityEngine.GameObject().Child("Dropdown List").Child("Content");
+            
+            foreach (string name in new[] { "Any", "Mage", "Rogue" })
+            { var item = list.Child("Item"); item.Add(new UnityEngine.UI.Toggle { isOn = name == "Mage" }); item.Child().Add(new TMPro.TextMeshProUGUI { text = name }); }
+            list.Child("Item").Active = false;
+            list.Children[0].Add(new UnityEngine.UI.Toggle());
+            Check(DropdownReader.ReadOption(list.Children[1]) == Speech.Join("Mage", Speech.T("market.dropdown_selected"), Speech.F("list.position", 2, 3)),
+                "An expanded option reads text, selected state and place among the active options");
+            Check(DropdownReader.ReadOption(list.Children[2]) == Speech.Join("Rogue", Speech.F("list.position", 3, 3)), "An unselected option");
+            var row = new UnityEngine.GameObject();
+            var field = row.Child("Dropdown"); var dd = field.Add(new TMPro.TMP_Dropdown { value = 1 });
+            row.Child("FilterTitle").Add(new TMPro.TextMeshProUGUI { text = "Rarity" });
+            Check(DropdownReader.Title(dd) == "Rarity", "The title is the visible label beside the control");
+            DropdownReader.NoteSpoken(dd);
+            Check(!DropdownReader.ChangeSettled(dd, 10f), "A dropdown whose value was announced has no change to say");
+            dd.value = 2;
+            Check(!DropdownReader.ChangeSettled(dd, 10f) && !DropdownReader.ChangeSettled(dd, 10f + DropdownReader.ChangeSettleSeconds / 2) &&
+                DropdownReader.ChangeSettled(dd, 10f + DropdownReader.ChangeSettleSeconds), "A new value is said once it has settled");
+            DropdownReader.NoteSpoken(dd);
+            Check(!DropdownReader.ChangeSettled(dd, 20f), "Once said it is not said again");
         }
         ModText.SetLanguage("en");
         return checks;

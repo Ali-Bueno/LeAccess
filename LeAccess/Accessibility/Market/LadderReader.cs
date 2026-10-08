@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using LeAccess.Accessibility.Announcements;
 using LeAccess.Accessibility.Endgame;
 using LeAccess.Accessibility.Panels;
 using LeAccess.Accessibility.Utils;
+using LeAccess.I18n;
 using LE.UI.PanelSystem;
 using TMPro;
 using UnityEngine;
@@ -15,11 +17,13 @@ namespace LeAccess.Accessibility.Market;
 internal static class LadderReader
 {
     internal static bool Owns(GameObject element) => IsAlive(element) &&
-        (Row(element) != null || TopPlace(element) != null || IsAlive(element.GetComponentInParent<TabUIElement>()));
+        (Row(element) != null || TopPlace(element) != null || IsAlive(element.GetComponentInParent<TabUIElement>()) || Dropdown(element) != null);
 
     internal static bool TryRead(GameObject element, out EndgameStop stop)
     {
         stop = default;
+        var dropdown = Dropdown(element);
+        if (dropdown != null) return Make(element, DropdownText(dropdown), out stop);
         var row = Row(element);
         if (row != null) return Make(element, RowText(row), out stop);
         var top = TopPlace(element);
@@ -41,6 +45,26 @@ internal static class LadderReader
         stop = string.IsNullOrWhiteSpace(text) ? default : new EndgameStop($"{element.GetInstanceID()}:{text}", text);
         return stop.Text != null;
     }
+
+    // The class and mode filters; the options of an expanded list are read by the generic dropdown reader.
+    private static TMP_Dropdown Dropdown(GameObject element)
+    {
+        if (!IsAlive(element) || IsAlive(element.GetComponentInParent<Toggle>())) return null;
+        var dropdown = element.GetComponent<TMP_Dropdown>() ?? element.GetComponentInParent<TMP_Dropdown>();
+        return IsAlive(dropdown) ? dropdown : null;
+    }
+
+    // Title and value; the stop key includes the value, so a new choice is spoken once when the list closes.
+    private static string DropdownText(TMP_Dropdown dropdown)
+    {
+        var filter = dropdown.GetComponentInParent<LadderPanel>()?.GetComponentInChildren<LadderUIFilterPanel>();
+        string fallback = !IsAlive(filter) ? null : Same(filter.classDropdown, dropdown) ? ModText.Get("market.ladder_class") :
+            Same(filter.modeDropdown, dropdown) ? ModText.Get("market.ladder_mode") : null;
+        DropdownReader.NoteSpoken(dropdown);
+        return DropdownReader.Control(DropdownReader.Title(dropdown) ?? fallback, DropdownReader.Caption(dropdown));
+    }
+
+    private static bool Same(Component a, Component b) => IsAlive(a) && a.Pointer == b.Pointer;
 
     // Skill icons inside a row keep their own tooltip reading.
     private static LadderRowPlayerElement Row(GameObject element)

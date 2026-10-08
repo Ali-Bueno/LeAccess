@@ -48,7 +48,9 @@ Previous/Next Region buttons; `ObservatoryUI` is the navigable, so the slot is r
 - **Region buttons**: "Región siguiente: Sur" (neighbour from `Increment`/`Decrement`; verify they match the buttons).
 - **Pickers** (reward and lens `ModalPickerInput` options, event path in `ElementAnnouncer`): name, effect, favor price,
   lock reason (`GetRewardMessageIfLocked`), "actual" from the socket's active indicator, place among sibling sockets. Lens
-  options have the name only (the effect text exists only in the slot).
+  options add the effect: the slot's effect label builds it from the common string table key
+  `CircleOfFortune_Lens_<LensType index>_Effect` ("+50% velocidad de carga" style), read with `Localization.GetText` (index
+  matches the enum order for the first three lenses; verify the others in game).
 - Unverified: the percent scale, whether the picker items are the focused objects, and `Increment` direction.
 
 ## Ladder
@@ -62,7 +64,9 @@ with level, name, class, dead icon and five skill selectables), `LadderUITopPlac
 - **Top placements**: rank, account name (`_playerName`), party members or `_characterName`, score.
 - **Tabs** (mode and ladder type): caption, selected from `TabUIController.ActiveTabId`, place among visible tabs.
 - **Empty list**: "Sin entradas en la clasificación" once when `noEntriesElement` is shown (offline or a filter without entries).
-- Class and mode dropdowns use the generic reading. Online data: any missing field reads nothing.
+- **Class and mode dropdowns** are `TMP_LocalizedDropdown`s owned by the stop reader: "Clase: Todas" (title from the sibling label,
+  else `market.ladder_class` / `market.ladder_mode`); the stop key holds the value, so a new choice is spoken once when the list
+  closes. Expanded options use the generic reader (selected, N de M). Online data: any missing field reads nothing.
 
 ## Rage of Morditas reward
 
@@ -81,4 +85,4 @@ buttons say so.
 5. Boss vote and Pinnacle voting: roster once, then one short line per change; no repeats from the countdown.
 6. Item slots (key, nemesis, rage reward) speak after the window text, not over it.
 7. Observatory: slot summary on opening and after switching region, picker options, region buttons; Ladder rows and tabs
-   (class/mode dropdown values are still generic); Morditas buttons name and tooltip text.
+   (class/mode dropdown title, value, list and new value); Morditas buttons name and tooltip text.

@@ -25,9 +25,10 @@ internal static class BazaarReader
             var listing = element.GetComponentInParent<ListingUI>();
             if (IsAlive(listing)) { text = Listing(listing, details); return text != null; }
             var button = element.GetComponentInParent<PaginationButton>();
-            if (!IsAlive(button)) return false;
-            text = Page(button);
-            return text != null;
+            if (IsAlive(button)) { text = Page(button); return text != null; }
+            var ui = element.GetComponentInParent<BazaarUI>();
+            return IsAlive(ui) && (BazaarStallReader.TryRead(element, ui, out text) || BazaarListReader.TryRead(element, ui, out text) ||
+                BazaarControlReader.TryRead(element, ui, out text));
         }
         catch (Exception ex) { Report(ex); return false; }
     }
@@ -37,9 +38,15 @@ internal static class BazaarReader
     {
         if (!UiFocusOwnership.TryGetSelected(out var focused)) return;
         string text = ResultsNotice(focused, out string id);
-        if (text == null || !ScreenReader.TrySpeak(text, interrupt: false)) return;
-        _drawn = id;
-        Plugin.Log.LogInfo($"[Bazaar] {text}");
+        if (text != null && ScreenReader.TrySpeak(text, interrupt: false))
+        {
+            _drawn = id;
+            Plugin.Log.LogInfo($"[Bazaar] {text}");
+            return;
+        }
+        var ui = IsAlive(focused) ? focused.GetComponentInParent<BazaarUI>() : null;
+        string listed = IsAlive(ui) ? BazaarListReader.Notice(ui) : null;
+        if (listed != null && ScreenReader.TrySpeak(listed, interrupt: false)) Plugin.Log.LogInfo($"[Bazaar] {listed}");
     }
 
     private static string ResultsNotice(GameObject focused, out string id)
@@ -49,28 +56,34 @@ internal static class BazaarReader
         {
             var ui = IsAlive(focused) ? focused.GetComponentInParent<BazaarUI>() : null;
             if (!IsAlive(ui)) return null;
-            if (ui.CurrentUIState != BazaarUI.UI_STATE.BROWSING) { _drawn = null; return null; }
+            bool stall = ui.CurrentUIState != BazaarUI.UI_STATE.BROWSING;
             bool block = ui.CurrentListingsView == BazaarUI.LISTINGS_VIEW.BLOCK;
             bool loading = block ? Alive(ui.listingsBlockView)?.IsLoadingIndicatorActive == true : Alive(ui.listingsListView)?.IsLoadingIndicatorActive == true;
             if (loading) { _drawn = null; return null; }
             bool empty = block ? Alive(ui.listingsBlockView)?.IsNoResultPanelActive == true : Alive(ui.listingsListView)?.IsNoResultPanelActive == true;
+            empty |= stall && (ui.IsEmptyStallPanelActive || IsAlive(ui.myStallNoResults) && ui.myStallNoResults.activeInHierarchy);
             var response = block ? Alive(ui.listingsBlockView)?.CurrentQueryItemsResponseDrawn : Alive(ui.listingsListView)?.CurrentQueryItemsResponseDrawn;
             id = empty ? "none" : response is { WasCollected: false } ? $"{response.Pointer}:{response.currentPage}:{response.totalListings}" : null;
-            if (id == null || id == _drawn) return null;
-            return empty ? MarketText.Results(0, 0, 0) : MarketText.Results(response.totalListings, response.currentPage, response.totalPages);
+            if (id == null) return null;
+            id = $"{ui.CurrentUIState}:{id}";
+            if (id == _drawn) return null;
+            int total = empty ? 0 : response.totalListings, page = empty ? 0 : response.currentPage, pages = empty ? 0 : response.totalPages;
+            return stall ? MarketText.StallView(ui.CurrentUIState == BazaarUI.UI_STATE.MY_STALL_SOLD, total, page, pages) :
+                MarketText.Results(total, page, pages);
         }
         catch (Exception ex) { Report(ex); return null; }
     }
 
-    internal static void Reset() => _drawn = null;
+    internal static void Reset() { _drawn = null; BazaarListReader.Reset(); }
 
     private static string Listing(ListingUI listing, bool details)
     {
         string gold = IsAlive(listing.goldValueHolder) && listing.goldValueHolder.activeInHierarchy ? Visible(listing.goldValueText) : null;
         string favor = IsAlive(listing.favorValueHolder) && listing.favorValueHolder.activeInHierarchy ? Visible(listing.favorValueText) : null;
         Place(listing, out int position, out int count);
+        BazaarStallReader.OwnListing(listing, out string state, out string action);
         var summary = new ListingSummary(Visible(listing.nameText), Visible(listing.typeText), Visible(listing.levelText), gold, favor,
-            position, count);
+            position, count, state, action);
         return summary.Name == null ? null : MarketText.Listing(summary, details ? Details(listing) : null);
     }
 

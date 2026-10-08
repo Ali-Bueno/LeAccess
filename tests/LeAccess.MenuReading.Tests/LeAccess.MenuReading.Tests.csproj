@@ -9,6 +9,7 @@
     <Compile Include="../../LeAccess/Accessibility/Announcements/ElementAnnouncer.cs" Link="ElementAnnouncer.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/TextDetector.cs" Link="TextDetector.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/TextClassifier.cs" Link="TextClassifier.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Announcements/DropdownReader.cs" Link="DropdownReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/CraftingControlReader.cs" Link="CraftingControlReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/CraftingSelectionReader.cs" Link="CraftingSelectionReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/CraftingMaterialReader.cs" Link="CraftingMaterialReader.cs" />
