@@ -134,12 +134,13 @@ namespace UnityEngine.UI { internal sealed class ScrollRect : UnityEngine.Compon
 internal class ItemData : NativeObject
 {
     public string Id;
-    public NativeItemBytes id => Id is null ? null : new() { Length = Id.Length };
+    public NativeItemBytes id => Id is null ? null : new() { Length = Id.Length, Source = Id };
     public ItemDataUnpacked Unpacked { get; set; }
     public bool IdEquals(ItemData other) => Id == other.Id;
     public ItemDataUnpacked getAsUnpacked() => Unpacked ?? this as ItemDataUnpacked;
 }
-internal sealed class NativeItemBytes : NativeObject { public int Length; }
+internal sealed class NativeItemBytes : NativeObject
+{ public int Length; public string Source; public byte this[int index] => (byte)Source[index]; }
 internal sealed class ItemDataUnpacked : ItemData
 {
     public string FullName;

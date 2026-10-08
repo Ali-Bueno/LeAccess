@@ -28,6 +28,9 @@ internal static class InventoryActionTests
         for (int i = 0; i < 10; i++) InventoryAccessibility.Update();
         check(ScreenReader.Messages.Count == 1 && ItemTooltipPromptHelper.Reads == reads,
             "Steady focus neither repeats speech nor rebuilds presentation every frame");
+        container.currentlySelectedItem = new() { data = new ItemDataUnpacked { Id = "test-actions", FullName = "Lanza", LocalisedBaseTypeName = "Lanza a dos manos" } };
+        InventoryAccessibility.Update(); InventoryAccessibility.Update();
+        check(ScreenReader.Messages.Count == 1, "An online sync replacing the focused item's wrappers does not read it again");
         container.currentlySelectedItem = new() { data = new ItemDataUnpacked { Id = "next", FullName = "Escudo" } };
         InventoryAccessibility.Update(); InventoryAccessibility.Update();
         check(ScreenReader.Messages.Last() == "Escudo. Triángulo, Equipar. Cuadrado, Tirar",

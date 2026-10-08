@@ -70,8 +70,7 @@ internal static class InventoryAccessibility
             {
                 var data = entry.data;
                 selectedData = data;
-                var itemPointer = data is not null && !data.WasCollected ? data.Pointer : IntPtr.Zero;
-                key = $"{container.GetInstanceID()}:item:{entry.Pointer}:{itemPointer}";
+                key = $"{container.GetInstanceID()}:item:{ItemIdentity(entry, data)}";
                 text = null;
                 if (data is not null && !data.WasCollected)
                 {
@@ -91,6 +90,8 @@ internal static class InventoryAccessibility
                 if (string.IsNullOrWhiteSpace(text)) text = ModText.Get("inventory.selection_unavailable");
             }
             text = ScreenContentTracker.Combine(new[] { slotName, text });
+            // Everything but "N de M": a drop or pickup elsewhere changes only the count of the focused item.
+            string spokenIdentity = text;
             if (_detailsKey != key) _detailsKey = null;
             if (readDetails) _detailsKey = key;
             bool requestDetails = _detailsKey == key && ScreenReader.IsAvailable() &&
@@ -109,11 +110,16 @@ internal static class InventoryAccessibility
                     _position = InventoryNavigation.TryGetPosition(container, entry, out int place, out int count)
                         ? ModText.Format("list.position", place, count) : null;
                 }
+                spokenIdentity = ScreenContentTracker.Combine(new[] { text, _context });
                 text = ScreenContentTracker.Combine(new[] { text, _position, _context });
             }
             else { _contextKey = _context = _position = null; }
             string lead = ScreenContentTracker.Combine(new[] { PanelLead.For(key), Gold.For(key) });
-            if (!string.IsNullOrWhiteSpace(lead)) text = ScreenContentTracker.Combine(new[] { lead, text });
+            if (!string.IsNullOrWhiteSpace(lead))
+            {
+                text = ScreenContentTracker.Combine(new[] { lead, text });
+                spokenIdentity = ScreenContentTracker.Combine(new[] { lead, spokenIdentity });
+            }
             string requestedText = text;
             if (requestDetails && selectedData is not null && !selectedData.WasCollected)
                 hasTooltip = ItemTooltipReader.TryReadForItem(selectedData, container.gameObject, out requestedText);
@@ -137,12 +143,12 @@ internal static class InventoryAccessibility
             { Reset(); return; }
             if (requestDetails && hasTooltip && slotName != null)
                 requestedText = ScreenContentTracker.Combine(new[] { slotName, requestedText });
-            if (!requestDetails && AnnounceComparison(selectedData, key, text)) return;
+            if (!requestDetails && AnnounceComparison(selectedData, key, text, spokenIdentity)) return;
             bool announced = Announcements.Observe(key, text,
-                ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame, out string announcement, acknowledge: false);
+                ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame, out string announcement, acknowledge: false, spokenIdentity);
             if (requestDetails && !string.IsNullOrWhiteSpace(requestedText))
             {
-                Announcements.Observe(key, text, false, out _, acknowledge: false);
+                Announcements.Observe(key, text, false, out _, acknowledge: false, spokenIdentity);
                 announcement = requestedText;
             }
             else if (!announced) return;
@@ -157,7 +163,7 @@ internal static class InventoryAccessibility
 
     // The comparison exists only while the game's compare action is held; it speaks once each time it appears,
     // after the item's own brief when navigation reached a new item with the action still held.
-    private static bool AnnounceComparison(ItemData item, string key, string brief)
+    private static bool AnnounceComparison(ItemData item, string key, string brief, string identity)
     {
         string comparison = null;
         bool found = item is not null && !item.WasCollected && ItemComparisonReader.TryRead(item, out _, out comparison);
@@ -169,10 +175,21 @@ internal static class InventoryAccessibility
         if (!ScreenReader.TrySpeak(announcement, interrupt: true)) return true;
         Comparison.Acknowledge(1, comparison);
         LeadSpoken(key);
-        Announcements.Observe(key, brief, false, out _, acknowledge: false);
+        Announcements.Observe(key, brief, false, out _, acknowledge: false, identity);
         Announcements.Acknowledge(key, brief);
         Plugin.Log.LogInfo($"[Inventory comparison] {announcement}");
         return true;
+    }
+
+    // Online inventory syncs replace the entry and data wrappers of unchanged items; the item id survives them.
+    private static string ItemIdentity(ItemContainerEntry entry, ItemData data)
+    {
+        if (data is null || data.WasCollected) return $"entry:{entry.Pointer}";
+        var id = data.id;
+        if (id is null || id.WasCollected || id.Length == 0) return $"data:{data.Pointer}";
+        var hex = new System.Text.StringBuilder("id:", 3 + id.Length * 2);
+        for (int i = 0; i < id.Length; i++) hex.Append(id[i].ToString("x2"));
+        return hex.ToString();
     }
 
     /// <summary>A notice from a panel beside the inventory (the forge) to lead the next item read; null drops it.</summary>

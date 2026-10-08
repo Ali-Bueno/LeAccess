@@ -103,3 +103,18 @@ game's hover. Blocking a new hover logs `[Inventory hover] pointer hover ignored
 INVENTORY`. The prologue's first relative branch is at +0x17. The drop guard above stays as a fallback.
 Tests: 6 checks in `tests/LeAccess.Inventory.Tests` (`PointerHoverTests`). Listening pending: no jump after
 equips, drops and pickups; reopening keeps the last item; `[Inventory drop] focus moved` no longer logged.
+
+## Re-reading after an online sync (2026-10-08)
+
+User report (online): after a drop or an equip the controller rumbles and, a few seconds later, the focused
+item is read again, cutting off the details (R3) the user had started on another item. The rumble is the
+game's own haptics (`HapticsId.InventoryItemDropped`/`InventoryItemEquipped`/`ItemMoved`; the game's haptics
+settings control it). Today's log has 76 consecutive repeats of the same `[Inventory]` line.
+
+Cause: the announcement key was `entry.Pointer` + `data.Pointer`; the server's inventory sync replaces the
+wrappers of unchanged items, so the same item looked like a new selection and was read again. The key now
+uses the item's own id bytes (`ItemData.id`, falling back to the pointer when empty, as offline items may be).
+Also, a change of only "N de M" on the same item (a drop or pickup elsewhere) is taken silently
+(`InventoryAnnouncementState.Observe(..., identity)`); a changed name, slot, actions or price still speaks,
+and the deliberate repeat at a list end (`RepeatCurrent`) is unchanged. Tests: Inventory 322. Listening
+pending: drop/equip online, then R3 on another item must not be interrupted.

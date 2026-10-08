@@ -23,6 +23,18 @@ Check(state.Observe("b", "Updated stats", true, out speech) && speech == "Update
 Check(!state.Observe("empty", Text("inventory.empty_slot"), true, out _), "Moving off item clears old candidate");
 Check(state.Observe("empty", Text("inventory.empty_slot"), true, out speech) && speech == Text("inventory.empty_slot"), "Empty slot cannot repeat the previous item");
 Check(!state.Observe("missing", null, true, out _) && !state.HasPendingContent, "Missing item text cannot hold pending speech forever");
+var quiet = new InventoryAnnouncementState();
+quiet.Observe("ring", "Anillo. 3 de 5", true, out _, identity: "Anillo");
+Check(quiet.Observe("ring", "Anillo. 3 de 5", true, out speech, identity: "Anillo") && speech == "Anillo. 3 de 5", "Item speaks once with its position");
+quiet.Observe("ring", "Anillo. 3 de 4", true, out _, identity: "Anillo");
+Check(!quiet.Observe("ring", "Anillo. 3 de 4", true, out _, identity: "Anillo") && !quiet.HasPendingContent,
+    "A drop elsewhere changing only the count never re-reads the focused item");
+quiet.Observe("ring", "Anillo forjado. 3 de 4", true, out _, identity: "Anillo forjado");
+Check(quiet.Observe("ring", "Anillo forjado. 3 de 4", true, out speech, identity: "Anillo forjado") && speech == "Anillo forjado. 3 de 4",
+    "A changed name on the same item is still spoken");
+quiet.Reset();
+quiet.Observe("ring", "Anillo forjado. 3 de 4", true, out _, identity: "Anillo forjado");
+Check(quiet.Observe("ring", "Anillo forjado. 3 de 4", true, out _, identity: "Anillo forjado"), "A deliberate repeat after reset still speaks");
 
 var container = new ItemContainerUI();
 var item = new ItemDataUnpacked { Id = "selected", FullName = "Espada", LocalisedBaseTypeName = "Espada de una mano" };
