@@ -27,6 +27,10 @@ emote/ping/quick-chat class in the interop; only an audio `WeightedClip.emoteInd
   log `[Skill binding] source: action bar list`. Also read now: Weaver tree, Forgotten Knights timelines
   ([factions](reference/faction-vendor-panels.md)), Observatory prophecies, Ladder rows, Morditas rituals
   ([endgame](reference/endgame-panels.md)) and Bazaar listings; still generic: Bazaar/Ladder dropdowns, my stall.
+- Afternoon (user playing, not installed): generic dropdowns read "N de M" and selected state and say a new value
+  once (check settings dropdowns do not speak twice); Bazaar my stall, listing form and filters; Observatory lens
+  effects; other players' level and friend character name in the scanner and on approach — if the character
+  name never appears for the friend, check the friends-cache key ([details](reference/nearby-player-names.md)).
 - Next QoL proposal (not started): D2R attack-reach ping (sound when an enemy in sight enters the main
   skill's reach; d2r-access `docs/attack-reach.md`).
 

@@ -51,6 +51,8 @@ dice la cantidad, por ejemplo "50 de oro".
 Radar (stick derecho en el juego): arriba y abajo cambian de categoria,
 izquierda y derecha recorren sus elementos. Enemigo lista todos los enemigos
 en pantalla; ultima muerte lleva a donde moriste (no hay cuerpo que recoger).
+Jugador dice el nombre de usuario y el nivel (y el personaje si es tu amigo);
+al acercarte a otro jugador se dicen esos mismos datos.
 En el inventario, manten L3 sobre un objeto para compararlo con el equipado,
 R3 para las explicaciones de sus modificadores, y L3 y luego R3 para ver
 los rangos.
