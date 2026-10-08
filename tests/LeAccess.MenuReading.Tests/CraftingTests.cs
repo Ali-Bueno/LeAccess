@@ -164,4 +164,3 @@ public class CraftingMaterialsPanelUI : UnityEngine.Behaviour
     public PooledVerticalLayoutGroup _availableAffixesGroup, _appliedAffixesGroup, _incompatibleAffixesGroup;
     public Transform unusedAffixesHeader, appliedAffixesHeader, incompatibleAffixesHeader;
 }
-public class TooltipItemManager { public enum SlotType { INVENTORY, EQUIPPED, GROUND, CRAFTING, STASH, SHOP, AFFIX, MATERIAL } }

@@ -368,7 +368,7 @@ namespace LeAccess.Accessibility.Announcements
 }
 namespace LeAccess.Accessibility.ScreenContent
 {
-    internal static class ScreenContentAnnouncer { public static bool HasActiveContent; }
+    internal static class ScreenContentAnnouncer { public static bool HasActiveContent, HasPendingContent; }
     internal static class ScreenContentReader
     {
         internal static string Read(UnityEngine.GameObject root, TMPro.TMP_Text header, TMPro.TMP_Text body) =>
@@ -456,3 +456,13 @@ namespace LeAccess.Accessibility.Announcements
     }
 }
 internal enum TooltipMode { None, DefaultInfo, DefaultModRanges, Explanation, CompareModRanges, CompareDefault }
+// Endgame and service panels are tested with the menu reading suite; here they add nothing to inventory reading.
+namespace LeAccess.Accessibility.Endgame
+{
+    internal static class EndgameWindows { internal static bool AllowsItemReading(UnityEngine.GameObject slot) => false; }
+}
+namespace LeAccess.Accessibility.Panels
+{
+    internal static class ServiceSlotReader { internal static string Read(ItemContainerUI container) => null; }
+    internal static class PanelIntro { internal static string LeadFor(UnityEngine.GameObject element) => null; }
+}

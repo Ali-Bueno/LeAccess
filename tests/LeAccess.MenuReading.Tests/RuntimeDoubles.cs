@@ -372,3 +372,5 @@ namespace LeAccess
         public void LogError(string message) { }
     }
 }
+// Shared with the InputBindings suite, which links this file but not the crafting tests.
+public class TooltipItemManager { public enum SlotType { INVENTORY, EQUIPPED, GROUND, CRAFTING, STASH, SHOP, AFFIX, MATERIAL } }
