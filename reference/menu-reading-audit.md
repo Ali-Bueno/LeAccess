@@ -26,6 +26,8 @@ events](npc-subtitles.md). These follow-ups supersede the earlier audit's affect
 gaps below. Native and host tests establish the sources and guards; controller
 listening remains pending. No game was launched during this investigation.
 
+Factions, rank panels, gamblers, vendors, Woven Echo panels, time beast, loot filter rules, mastery choice and the bazaar purchase confirmation now have readers; per-panel verdicts and limits are in [faction-vendor-panels.md](faction-vendor-panels.md) (listening pending).
+
 ## Listening follow-up: repeated HUD controls (2026-10-02)
 
 The later session (log last written 09:46:33) repeatedly spoke the persistent

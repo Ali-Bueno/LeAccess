@@ -91,6 +91,7 @@ public static class ElementAnnouncer
         go = Social.SocialReader.Canonical(go);
         string lead = Social.SocialAccessibility.LeadFor(go);
         if (lead != null) context = ScreenContentTracker.Combine(new[] { lead, context });
+        context = ScreenContentTracker.Combine(new[] { Panels.PanelIntro.LeadFor(go), context });
 
         var instanceId = go.GetInstanceID();
         var now = Time.unscaledTime;
@@ -276,6 +277,7 @@ public static class ElementAnnouncer
             return FormatSpecializedAnnouncement(go, filterRangeText, includeDetails, isDisabledOption || filterRangeUnavailable);
         if (Social.SocialReader.TryRead(go, out string socialText)) return socialText;
         if (Gifting.GiftPanelReader.TryReadResonanceRow(go, out string resonanceText)) return resonanceText;
+        if (Panels.PanelControlReader.TryRead(go, out string panelText)) return panelText;
 
         // Layer 1: Try to get label from InfoForTooltip
         TextDetector.TryGetFromTooltipInfo(go, ref label, ref description);

@@ -400,5 +400,21 @@
   "stash.priority": "has priority",
   "stash.folder": "folder",
   "stash.folder_expanded": "expanded",
-  "stash.folder_collapsed": "collapsed"
+  "stash.folder_collapsed": "collapsed",
+  "panels.tab": "tab",
+  "panels.tab_selected": "selected tab",
+  "panels.you_have": "You have {0}",
+  "panels.standing": "Rank {0}, favor {1}",
+  "panels.faction_banner": "Faction banner",
+  "panels.rank_of": "Rank {0} of {1}",
+  "panels.rank_current": "current rank",
+  "panels.reward_unlocked": "unlocked",
+  "panels.reward_locked": "locked",
+  "panels.chosen": "chosen",
+  "panels.rule": "Rule {0} of {1}",
+  "panels.rule_on": "on",
+  "panels.rule_off": "off",
+  "panels.key_slot": "Key slot {0} of {1}",
+  "panels.cost": "Cost: {0}",
+  "panels.merchant_tokens": "{0} Merchant's Guild tokens"
 }

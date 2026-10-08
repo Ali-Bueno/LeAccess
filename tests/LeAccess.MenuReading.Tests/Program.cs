@@ -371,4 +371,5 @@ checks += FilterRangeTests.Run(Reset);
 checks += CraftingSelectionTests.Run(Reset);
 checks += ForgeSummaryTests.Run(Reset);
 checks += GuideArticleTests.Run();
+checks += PanelTextTests.Run();
 Console.WriteLine($"Menu reading tests passed: {checks} checks.");

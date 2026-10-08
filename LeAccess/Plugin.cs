@@ -99,6 +99,7 @@ public class Plugin : BasePlugin
         LeAccess.Accessibility.Skills.SkillAccessibility.Reset();
         LeAccess.Accessibility.Forge.ForgeAccessibility.Reset();
         LeAccess.Accessibility.Gifting.GiftAccessibility.Reset();
+        LeAccess.Accessibility.Panels.PanelIntro.Reset();
         LeAccess.Accessibility.Forge.ForgeResultLog.Uninstall();
         LeAccess.Accessibility.Social.SocialAccessibility.Reset();
         LeAccess.Accessibility.Social.SocialLog.Uninstall();

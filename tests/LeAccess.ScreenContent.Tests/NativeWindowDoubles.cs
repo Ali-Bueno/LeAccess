@@ -37,3 +37,12 @@ namespace UnityEngine.UI
     internal sealed class Button : Selectable { }
     internal sealed class ScrollRect : UnityEngine.Component { }
 }
+
+namespace LeAccess.Accessibility.Panels
+{
+    internal static class CostModalReader
+    {
+        internal static bool TryCreate(LE.UI.PanelSystem.Panel panel, out System.Func<UnityEngine.Component, bool> skip, out System.Func<string> extra)
+        { skip = null; extra = null; return false; }
+    }
+}

@@ -400,5 +400,21 @@
   "stash.priority": "con prioridad",
   "stash.folder": "carpeta",
   "stash.folder_expanded": "desplegada",
-  "stash.folder_collapsed": "plegada"
+  "stash.folder_collapsed": "plegada",
+  "panels.tab": "pestaña",
+  "panels.tab_selected": "pestaña seleccionada",
+  "panels.you_have": "Tienes {0}",
+  "panels.standing": "Rango {0}, favor {1}",
+  "panels.faction_banner": "Estandarte de la facción",
+  "panels.rank_of": "Rango {0} de {1}",
+  "panels.rank_current": "rango actual",
+  "panels.reward_unlocked": "desbloqueado",
+  "panels.reward_locked": "bloqueado",
+  "panels.chosen": "elegida",
+  "panels.rule": "Regla {0} de {1}",
+  "panels.rule_on": "activada",
+  "panels.rule_off": "desactivada",
+  "panels.key_slot": "Ranura de llave {0} de {1}",
+  "panels.cost": "Coste: {0}",
+  "panels.merchant_tokens": "{0} fichas del Gremio de Mercaderes"
 }

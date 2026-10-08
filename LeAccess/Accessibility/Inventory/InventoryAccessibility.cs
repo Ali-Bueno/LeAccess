@@ -49,7 +49,9 @@ internal static class InventoryAccessibility
             if (!IsAlive(container)) { Reset(); return; }
             InventoryDropFocus.Guard(container);
             bool known = InventorySelectionReader.TryGetEntry(container, out var entry);
-            string slotName = EquipmentSlotText.Read(container.identifier);
+            string slotName = EquipmentSlotText.Read(container.identifier) ?? Panels.ServiceSlotReader.Read(container);
+            // A vendor or item-service panel's introduction leads the first item read inside it.
+            if (Panels.PanelIntro.LeadFor(container.gameObject) is { Length: > 0 } introduction) PanelLead.Raise(introduction);
             string key, text;
             ItemData selectedData = null;
             bool hasTooltip = false;
