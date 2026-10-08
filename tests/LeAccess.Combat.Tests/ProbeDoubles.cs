@@ -82,10 +82,15 @@ internal sealed class Alignment : UnityEngine.Object
     public bool IsFoe(Alignment other) { Guard(); return ReferenceEquals(Foe, other); }
 }
 
+internal enum DisplayActorClass : byte { Normal, Magic, Rare, Boss }
+
 internal sealed class BaseDisplayInformation : UnityEngine.Object
 {
     public string Name;
     public int Reads;
+    public DisplayActorClass actorClass;
+    public bool Champion;
+    public bool IsChampion() { Guard(); return Champion; }
     public string GetLocalizedName() { Guard(); Reads++; return Name; }
 }
 
@@ -97,6 +102,7 @@ internal sealed class ActorVisuals : UnityEngine.Behaviour
     public bool dead;
     public bool InvalidTarget;
     public BaseDisplayInformation BaseDisplayInformation;
+    public ActorData Data;
     public bool SelectedByAim;
     public bool CausedDamage;
     public bool ThrowOnAlignment;
@@ -132,6 +138,8 @@ internal sealed class Actor : UnityEngine.Behaviour
     public BaseDisplayInformation Display;
     public ActorSync actorSync;
     public ActorData data;
+    public bool Boss;
+    public bool isBossOrMiniboss() { Guard(); return Boss; }
     public Alignment GetAlignment() { Guard(); if (ThrowOnAlignment) throw new InvalidOperationException("broken actor"); return Alignment; }
     public UnityEngine.Vector3 position() { Guard(); return transform.position; }
     public bool isInvalidTarget() { Guard(); return InvalidTarget || Dying; }
@@ -153,9 +161,27 @@ internal sealed class LocalPlayer : UnityEngine.Behaviour
 
 internal sealed class ActorData : UnityEngine.Object
 {
+    public enum RareStatus { Never, Sometimes, Always }
     public string actorName, LocalizedName;
     public int Reads;
+    public bool Boss, isChampion;
+    public RareStatus rareStatus;
+    public bool isBossOrMiniBoss() { Guard(); return Boss; }
     public string GetLocalizedActorName() { Guard(); Reads++; return LocalizedName; }
+}
+
+namespace LeAccess.I18n
+{
+    // Test catalog: the keys the nearest-enemy speech uses, in a form the assertions build from.
+    internal static class ModText
+    {
+        internal static readonly Dictionary<string, string> Catalog = new()
+        {
+            ["enemy.class.magic"] = "magic", ["enemy.class.rare"] = "rare", ["enemy.class.champion"] = "champion",
+            ["enemy.named_class"] = "{0}, {1}"
+        };
+        internal static string Format(string key, params object[] arguments) => string.Format(Catalog[key], arguments);
+    }
 }
 
 namespace LeAccess.Accessibility.Utils

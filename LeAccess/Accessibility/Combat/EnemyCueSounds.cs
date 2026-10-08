@@ -21,7 +21,7 @@ internal static class EnemyCueSounds
     private const double DiagnosticIntervalSeconds = 5;
     private static readonly EnemyCueProbe World = new();
     private static readonly EnemyCueTracker Tracker = new();
-    private static ConfigEntry<bool> _enabled, _bosses, _ordinary;
+    private static ConfigEntry<bool> _enabled, _bosses, _elites, _ordinary;
     private static ConfigEntry<int> _volume;
     private static RadarAudioOutput _audio;
     private static double _nextPoll, _nextAudioRetry, _nextDiagnostic;
@@ -35,6 +35,8 @@ internal static class EnemyCueSounds
             "Play short directional growls for the nearest enemies in sight, faster when closer.");
         _bosses = config.Bind(ConfigSection, "Bosses", true,
             "Give the nearest boss or miniboss its own deep swoop; when off, bosses growl like other enemies.");
+        _elites = config.Bind(ConfigSection, "Elites", true,
+            "Give the nearest rare or champion enemy its own higher swoop; when off, elites growl like other enemies.");
         _ordinary = config.Bind(ConfigSection, "Ordinary", true,
             "Growl for the nearest ordinary enemies in the streams a boss leaves free.");
         _volume = config.Bind(ConfigSection, "Volume", 100,
@@ -49,7 +51,7 @@ internal static class EnemyCueSounds
         {
             double now = Time.unscaledTimeAsDouble;
             string suspension = !_enabled.Value ? "disabled" : _volume.Value <= 0 ? "volume zero"
-                : !_bosses.Value && !_ordinary.Value ? "no enemy classes enabled"
+                : !_bosses.Value && !_ordinary.Value && !_elites.Value ? "no enemy classes enabled"
                 : NavigationAudioState.SuspensionReason ?? (!GameplayInputState.OwnsInput() ? "menu input"
                 : ScreenContentAnnouncer.HasActiveContent ? "screen content"
                 : DialogueAnnouncer.HasActiveContent ? "dialogue" : null);
@@ -57,7 +59,7 @@ internal static class EnemyCueSounds
             if (now >= _nextPoll)
             {
                 _nextPoll = now + EntityCueCadence.PollSeconds;
-                if (!World.TryCapture(_bosses.Value, _ordinary.Value)) { Pause(World.UnavailableReason, now); return; }
+                if (!World.TryCapture(_bosses.Value, _ordinary.Value, _elites.Value)) { Pause(World.UnavailableReason, now); return; }
                 if (World.LastFailure != null) Report(ref _lastFailure, World.LastFailure);
                 else _lastFailure = null;
                 if (_session != World.Session)
@@ -171,7 +173,7 @@ internal static class EnemyCueSounds
         World.Reset();
         _audio?.Dispose();
         _audio = null;
-        _enabled = _bosses = _ordinary = null;
+        _enabled = _bosses = _elites = _ordinary = null;
         _volume = null;
         _nextPoll = _nextAudioRetry = _nextDiagnostic = 0;
         _played = 0;

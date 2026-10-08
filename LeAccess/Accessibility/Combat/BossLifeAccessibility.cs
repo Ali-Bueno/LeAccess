@@ -14,7 +14,7 @@ internal static class BossLifeAccessibility
     // D2R boss_life_service.cpp polls every 200 ms.
     private const double PollSeconds = 0.2;
     private static readonly BossLifeState State = new();
-    private static ConfigEntry<bool> _enabled;
+    private static ConfigEntry<bool> _enabled, _elites;
     private static double _nextPoll;
     private static int _scene;
     private static string _lastFailure;
@@ -23,6 +23,8 @@ internal static class BossLifeAccessibility
     {
         _enabled = config.Bind(ConfigSection, "AnnounceBossLife", true,
             "Announce the life of bosses and minibosses as it falls, with the same steps as the player's life.");
+        _elites = config.Bind(ConfigSection, "AnnounceEliteLife", true,
+            "Also announce the life of the nearest rare or champion enemy on screen, one at a time.");
         Reset();
     }
 
@@ -43,8 +45,8 @@ internal static class BossLifeAccessibility
             if (scene.handle != _scene) { State.Reset(); _scene = scene.handle; }
             var camera = Camera.main;
             if (camera != null && !camera.isActiveAndEnabled) camera = null;
-            var samples = GameplayEnvironment.IsOnlineClient ? BossLifeProbe.Read(LocalPlayerSource.Visuals, camera)
-                : BossLifeProbe.Read(PlayerFinder.playerActorComponent, camera);
+            var samples = GameplayEnvironment.IsOnlineClient ? BossLifeProbe.Read(LocalPlayerSource.Visuals, camera, _elites.Value)
+                : BossLifeProbe.Read(PlayerFinder.playerActorComponent, camera, _elites.Value);
             if (BossLifeProbe.LastFailure is not null) ReportFailure(BossLifeProbe.LastFailure);
             if (samples == null) return;
 
@@ -79,7 +81,7 @@ internal static class BossLifeAccessibility
     internal static void Cleanup()
     {
         Reset();
-        _enabled = null;
+        _enabled = _elites = null;
         _lastFailure = null;
     }
 }

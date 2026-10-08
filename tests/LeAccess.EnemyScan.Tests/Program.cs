@@ -14,6 +14,8 @@ var english = new Dictionary<string, string>
     ["enemy_scan.count_many"] = "{0} enemies nearby", ["enemy_scan.entry"] = "{0}, {1}, about {2} units",
     ["enemy_scan.entry_boss"] = "{0}, boss, {1}, about {2} units", ["enemy_scan.unnamed"] = "Unknown enemy",
     ["enemy_scan.direction_here"] = "right on you",
+    ["enemy.class.magic"] = "magic", ["enemy.class.rare"] = "rare", ["enemy.class.champion"] = "champion",
+    ["enemy.named_class"] = "{0}, {1}",
     ["guidance.direction.up"] = "up", ["guidance.direction.right"] = "right", ["guidance.direction.down"] = "down",
     ["guidance.direction.left"] = "left", ["guidance.direction.up_right"] = "up and right",
 };
@@ -22,6 +24,7 @@ var spanish = new Dictionary<string, string>(english)
     ["enemy_scan.none"] = "Sin enemigos cerca", ["enemy_scan.count_many"] = "{0} enemigos cerca",
     ["enemy_scan.entry"] = "{0}, {1}, unas {2} unidades", ["enemy_scan.entry_boss"] = "{0}, jefe, {1}, unas {2} unidades",
     ["guidance.direction.up"] = "arriba", ["guidance.direction.right"] = "derecha", ["guidance.direction.up_right"] = "arriba a la derecha",
+    ["enemy.class.magic"] = "mágico", ["enemy.class.rare"] = "raro", ["enemy.class.champion"] = "campeón",
 };
 EnemyScanText Words(Dictionary<string, string> table) => (key, args) => string.Format(table[key], args);
 
@@ -30,8 +33,9 @@ var forward = new Vector3(0, 0, 1);
 var right = new Vector3(1, 0, 0);
 string Scan(IEnumerable<EnemyContact> contacts, Dictionary<string, string> table = null) =>
     EnemyScanReport.Build(contacts, player, forward, right, Words(table ?? english));
-EnemyContact At(int id, string name, float dx, float dz, bool boss = false, float dy = 0) =>
-    new(id, name, boss, player + new Vector3(dx, dy, dz));
+EnemyContact At(int id, string name, float dx, float dz, bool boss = false, float dy = 0,
+    EnemyClass enemyClass = EnemyClass.Normal) =>
+    new(id, name, boss ? EnemyClass.Boss : enemyClass, player + new Vector3(dx, dy, dz));
 
 Equal("No enemies nearby", Scan(Array.Empty<EnemyContact>()), "none nearby");
 Equal("Sin enemigos cerca", Scan(Array.Empty<EnemyContact>(), spanish), "none nearby in Spanish");
@@ -46,6 +50,19 @@ Equal("2 enemies nearby. Lagon, boss, up, about 6 units. Wolf, right, about 9 un
     Scan(new[] { At(1, "Wolf", 9, 0), At(2, "Lagon", 0, 6, boss: true) }), "boss tag and order");
 Equal("2 enemigos cerca. Lagon, jefe, arriba, unas 6 unidades. Wolf, derecha, unas 9 unidades",
     Scan(new[] { At(1, "Wolf", 9, 0), At(2, "Lagon", 0, 6, boss: true) }, spanish), "Spanish text");
+
+Equal("2 enemies nearby. Gilgamesh, rare, up, about 6 units. Imp, champion, right, about 9 units",
+    Scan(new[] { At(1, "Imp", 9, 0, enemyClass: EnemyClass.Champion), At(2, "Gilgamesh", 0, 6, enemyClass: EnemyClass.Rare) }),
+    "rare and champion words");
+Equal("1 enemy nearby. Gilgamesh, raro, arriba, unas 6 unidades",
+    Scan(new[] { At(2, "Gilgamesh", 0, 6, enemyClass: EnemyClass.Rare) }, spanish), "Spanish rare word");
+Equal("1 enemy nearby. Wolf, magic, up, about 4 units", Scan(new[] { At(1, "Wolf", 0, 4, enemyClass: EnemyClass.Magic) }), "magic word");
+Equal("1 enemy nearby. Unknown enemy, rare, up, about 4 units",
+    Scan(new[] { At(1, null, 0, 4, enemyClass: EnemyClass.Rare) }), "unnamed rare keeps its word");
+Equal(null, EnemyClassifier.WordKey(EnemyClass.Boss), "bosses keep their own wording");
+Equal(EnemyClass.Champion, EnemyClassifier.Classify(false, true, true, true), "champion outranks rare and magic");
+Equal(EnemyClass.Boss, EnemyClassifier.Classify(true, true, true, true), "boss outranks everything");
+Equal(EnemyClass.Normal, EnemyClassifier.Classify(false, false, false, false), "plain enemy is normal");
 
 Equal("1 enemy nearby. A, up and right, about 7 units", Scan(new[] { At(1, "A", 5, 5) }), "diagonal sector");
 var turned = EnemyScanReport.Build(new[] { At(1, "A", 0, 4) }, player, right, new Vector3(0, 0, -1), Words(english));

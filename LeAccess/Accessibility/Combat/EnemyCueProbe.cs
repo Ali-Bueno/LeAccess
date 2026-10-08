@@ -24,7 +24,7 @@ internal sealed class EnemyCueProbe
     internal string UnavailableReason { get; private set; }
     internal string LastFailure => HostileRegistry.LastFailure;
 
-    internal bool TryCapture(bool bosses, bool ordinary)
+    internal bool TryCapture(bool bosses, bool ordinary, bool elites)
     {
         Selected.Clear();
         _contacts.Clear();
@@ -38,7 +38,7 @@ internal sealed class EnemyCueProbe
         var up = snapshot.Axes[(int)RadarDirection.Up];
         var right = snapshot.Axes[(int)RadarDirection.Right];
         _selector.Select(_contacts, origin, new NVector3(up.X, 0, up.Y), new NVector3(right.X, 0, right.Y),
-            range, bosses, ordinary, _sight, Selected);
+            range, bosses, ordinary, _sight, Selected, elites);
         Session = snapshot.Session;
         UnavailableReason = null;
         return true;

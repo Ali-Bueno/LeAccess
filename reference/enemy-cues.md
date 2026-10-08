@@ -119,6 +119,7 @@ noise), NPC tap 1,893/s.
 |---|---|---|
 | Enabled | true | Enemy cues on or off |
 | Bosses | true | Bosses get the swoop; when off they growl like other enemies (D2R does the same for its disabled ranged class) |
+| Elites | true | Rare and champion enemies get their own rising cue; when off they growl |
 | Ordinary | true | Growls for ordinary enemies; when off only the boss swoop remains |
 | Volume | 100 | Percent of the D2R enemy cue level, like the other cue volumes |
 
@@ -161,3 +162,12 @@ capture-failure pause is not host-tested; the tracker behavior it relies on is.
 6. Inventory, pause, map, dialogue, zone change and death: immediate silence and
    a clean resume.
 7. `Bosses`, `Ordinary` and `Volume`; an online session as well as offline.
+
+## Elite cue (2026-10-08)
+
+Rare and champion enemies ([enemy-class.md](enemy-class.md)) get an elite cue: the boss swoop's voice run in
+reverse (a clean 140 to 420 Hz rise, metal depth 0.3 against 0.65) so it is never mistaken for a boss.
+Selection: boss first, then the nearest elite in sight (one elite stream, rank 1), then ordinary enemies;
+other elites growl as ordinary enemies. Max three streams and the sight rules are unchanged, but an
+off-mesh elite stays silent (only bosses are exempt). Config `[Enemy cues] Elites` (default true; off, they
+growl). Magic enemies stay ordinary. The log shows `Elite#id@dist/slotN`.

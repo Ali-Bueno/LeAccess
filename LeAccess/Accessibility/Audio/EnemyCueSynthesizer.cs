@@ -23,6 +23,10 @@ internal static class EnemyCueSynthesizer
     private const double SwoopShimmerRatio = 1.61;
     private const double SwoopLevel = 0.29;
     private const double SwoopMetalDepth = 0.65;
+    // 2026-10-08 elite swell: the boss swoop's voice run in reverse, rising and cleaner, so the two never blur.
+    private const double EliteLowHz = 140;
+    private const double EliteHighHz = 420;
+    private const double EliteMetalDepth = 0.3;
     private const double SwoopBody = 0.88;
     private const double SwoopAir = 0.12;
     private const double SwoopAirCutoffHz = 1500;
@@ -42,16 +46,21 @@ internal static class EnemyCueSynthesizer
             double progress = (double)frame / (frames - 1);
             double swell = Math.Sin(Math.PI * progress);
             double sample;
-            if (kind == EnemyCueKind.Boss)
+            if (kind != EnemyCueKind.Ordinary)
             {
+                bool boss = kind == EnemyCueKind.Boss;
+                double startHz = boss ? SwoopStartHz : EliteHighHz;
+                double endHz = boss ? SwoopEndHz : EliteLowHz;
+                double metalDepth = boss ? SwoopMetalDepth : EliteMetalDepth;
                 noise ^= noise << 13;
                 noise ^= noise >> 17;
                 noise ^= noise << 5;
                 air += airBlend * ((double)noise / uint.MaxValue * 2 - 1 - air);
                 double remaining = 1 - progress;
-                phase += 2 * Math.PI * (SwoopEndHz + (SwoopStartHz - SwoopEndHz) * remaining * remaining)
+                double sweep = boss ? remaining * remaining : progress * progress;
+                phase += 2 * Math.PI * (endHz + (startHz - endHz) * sweep)
                     * placement.Pitch / SampleRate;
-                double body = Math.Sin(phase + SwoopMetalDepth * Math.Sin(phase * SwoopShimmerRatio));
+                double body = Math.Sin(phase + metalDepth * Math.Sin(phase * SwoopShimmerRatio));
                 sample = SwoopLevel * swell * swell * (SwoopBody * body + SwoopAir * air);
             }
             else

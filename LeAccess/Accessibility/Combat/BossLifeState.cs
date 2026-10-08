@@ -5,7 +5,8 @@ using LeAccess.Accessibility.Vitals;
 
 namespace LeAccess.Accessibility.Combat;
 
-internal readonly record struct BossSample(int Id, string Name, int Percent, bool Dead, bool Audible = true);
+internal readonly record struct BossSample(int Id, string Name, int Percent, bool Dead, bool Audible = true,
+    bool Elite = false, float Distance = 0);
 
 internal readonly record struct BossLifeEntry(int Id, string Name, int Percent, bool Died);
 
@@ -28,13 +29,18 @@ internal sealed class BossLifeState
     private const int FinalStepsBelow = 10;
     private readonly Dictionary<int, VitalsAnnouncementState> _bosses = new();
     private readonly HashSet<int> _finalStepSpoken = new();
+    private int _lastVoiced = int.MinValue;
 
     internal BossLifeUpdate Observe(IReadOnlyList<BossSample> samples)
     {
         var seen = new HashSet<int>();
         var entries = new List<BossLifeEntry>();
-        foreach (var sample in samples)
+        int voiced = VoicedElite(samples);
+        foreach (var raw in samples)
         {
+            // Bosses all speak; of the rare and champion enemies only the voiced one does, the rest follow silently.
+            bool spoken = raw.Id == voiced || (raw.Dead || raw.Percent == 0) && raw.Id == _lastVoiced;
+            var sample = raw.Elite && !spoken ? raw with { Audible = false } : raw;
             seen.Add(sample.Id);
             bool tracked = _bosses.TryGetValue(sample.Id, out var bands);
             if (sample.Dead || sample.Percent == 0)
@@ -53,9 +59,23 @@ internal sealed class BossLifeState
             { bands.Acknowledge(change.HealthPercent, -1); continue; }
             entries.Add(new BossLifeEntry(sample.Id, sample.Name, change.HealthPercent, false));
         }
+        if (voiced != int.MinValue) _lastVoiced = voiced;
         // Unloaded bosses were not seen dead, so they are forgotten silently.
         foreach (int id in _bosses.Keys.Where(id => !seen.Contains(id)).ToList()) Forget(id);
         return entries.Count == 0 ? BossLifeUpdate.Empty : new BossLifeUpdate(entries);
+    }
+
+    // The nearest living elite on screen, so a pack of rares never talks over itself.
+    private static int VoicedElite(IReadOnlyList<BossSample> samples)
+    {
+        BossSample? voiced = null;
+        foreach (var sample in samples)
+        {
+            if (!sample.Elite || !sample.Audible || sample.Dead || sample.Percent <= 0) continue;
+            if (voiced is not { } best || sample.Distance < best.Distance ||
+                sample.Distance == best.Distance && sample.Id < best.Id) voiced = sample;
+        }
+        return voiced?.Id ?? int.MinValue;
     }
 
     internal void Acknowledge(BossLifeUpdate update)
@@ -74,5 +94,5 @@ internal sealed class BossLifeState
 
     private void Forget(int id) { _bosses.Remove(id); _finalStepSpoken.Remove(id); }
 
-    internal void Reset() { _bosses.Clear(); _finalStepSpoken.Clear(); }
+    internal void Reset() { _bosses.Clear(); _finalStepSpoken.Clear(); _lastVoiced = int.MinValue; }
 }

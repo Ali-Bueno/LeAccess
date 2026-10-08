@@ -66,3 +66,8 @@ Native scratch evidence is in `%TEMP%/LeAccess-player-footsteps-20261002/`:
 PermaLoad source examples). RVAs derive from the installed
 `BepInEx/interop/MethodAddressToToken.db`. No dependency, native hook, scene scan,
 automatic targeting, movement, attack or game launch was added.
+
+## Class word (2026-10-08)
+
+A magic, rare or champion nearest enemy is spoken as "<name>, <class>" ("Gilgamesh el Corrupto, raro"); bosses
+and normal enemies keep the plain name. See [enemy-class.md](enemy-class.md).

@@ -85,4 +85,33 @@ state.Observe(new[] { Alive(1, "Lagon", 100) });
 Equal("", Say(state.Observe(new[] { Hidden(1, "Lagon", 0, true) })), "off-screen death is silent");
 Equal("", Say(state.Observe(new[] { Alive(1, "Lagon", 0) })), "silently ended boss is forgotten");
 
+BossSample Elite(int id, string name, int percent, float distance, bool dead = false, bool audible = true) =>
+    new(id, name, percent, dead, audible, Elite: true, Distance: distance);
+state = new BossLifeState();
+state.Observe(new[] { Elite(1, "Gilgamesh", 100, 3), Elite(2, "Imp", 100, 6) });
+var pack = state.Observe(new[] { Elite(1, "Gilgamesh", 70, 3), Elite(2, "Imp", 40, 6) });
+Equal("Gilgamesh, 70 percent", Say(pack), "only the nearest elite of a pack is narrated");
+state.Acknowledge(pack);
+Equal("", Say(state.Observe(new[] { Elite(1, "Gilgamesh", 70, 3), Elite(2, "Imp", 40, 6) })), "the farther elite stays silent");
+var swapped = state.Observe(new[] { Elite(1, "Gilgamesh", 70, 8), Elite(2, "Imp", 30, 2) });
+Equal("Imp, 30 percent", Say(swapped), "the nearest elite takes over from its silent baseline");
+state.Acknowledge(swapped);
+Equal("", Say(state.Observe(new[] { Elite(1, "Gilgamesh", 20, 8), Elite(2, "Imp", 30, 2) })), "an elite that is no longer nearest stays silent");
+var bossAndElite = new BossLifeState();
+bossAndElite.Observe(new[] { Alive(7, "Lagon", 100), Elite(1, "Gilgamesh", 100, 3) });
+Equal("Lagon, 70 percent. Gilgamesh, 60 percent",
+    Say(bossAndElite.Observe(new[] { Alive(7, "Lagon", 70), Elite(1, "Gilgamesh", 60, 3) })), "a boss never silences the nearest elite");
+Equal("", Say(new BossLifeState().Observe(new[] { Elite(1, "Gilgamesh", 100, 3) })), "first elite sighting is silent");
+
+state = new BossLifeState();
+state.Observe(new[] { Elite(1, "Gilgamesh", 100, 3), Elite(2, "Imp", 100, 6) });
+var voicedKill = state.Observe(new[] { Elite(1, "Gilgamesh", 0, 3, dead: true), Elite(2, "Imp", 100, 6) });
+Equal("Gilgamesh, 0 percent", Say(voicedKill), "the voiced elite's death is spoken");
+state.Acknowledge(voicedKill);
+state = new BossLifeState();
+state.Observe(new[] { Elite(1, "Gilgamesh", 100, 3), Elite(2, "Imp", 100, 6) });
+state.Observe(new[] { Elite(1, "Gilgamesh", 100, 3), Elite(2, "Imp", 100, 6) });
+Equal("", Say(state.Observe(new[] { Elite(1, "Gilgamesh", 100, 3), Elite(2, "Imp", 0, 6, dead: true) })), "a silent elite dies silently");
+Equal("", Say(state.Observe(new[] { Elite(1, "Gilgamesh", 90, 3, audible: false) })), "off-screen elites follow silently");
+
 Console.WriteLine($"BossLife tests passed: {checks} checks");

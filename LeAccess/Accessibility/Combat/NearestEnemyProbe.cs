@@ -8,11 +8,13 @@ namespace LeAccess.Accessibility.Combat;
 internal static class NearestEnemyProbe
 {
     internal static string LastStatus { get; private set; }
+    internal static EnemyClass LastClass { get; private set; }
     internal static string LastFailure => HostileRegistry.LastFailure;
 
     internal static string FindName(ActorVisuals player, float range)
     {
         LastStatus = "online visuals unavailable";
+        LastClass = EnemyClass.Normal;
         var selection = new NearestEnemySelection(range);
         ActorVisuals nearest = null;
         int examined = 0, living = 0, inRange = 0;
@@ -33,6 +35,7 @@ internal static class NearestEnemyProbe
         LastStatus = $"registry=online visuals examined={examined} living={living} in_range={inRange}";
         if (!IsAlive(nearest)) return null;
         string name = ReadName(nearest.BaseDisplayInformation);
+        LastClass = EnemyClassProbe.Read(nearest);
         if (string.IsNullOrWhiteSpace(name)) LastStatus += " nearest_name=unavailable";
         return name;
     }
@@ -40,6 +43,7 @@ internal static class NearestEnemyProbe
     internal static string FindName(Actor player, float range)
     {
         LastStatus = "offline actors unavailable";
+        LastClass = EnemyClass.Normal;
         var selection = new NearestEnemySelection(range);
         Actor nearest = null;
         int examined = 0, living = 0, inRange = 0;
@@ -60,6 +64,7 @@ internal static class NearestEnemyProbe
         LastStatus = $"registry=offline actors examined={examined} living={living} in_range={inRange}";
         if (!IsAlive(nearest)) return null;
         string name = ReadOfflineName(nearest, out string source);
+        LastClass = EnemyClassProbe.Read(nearest);
         LastStatus += " " + source;
         return name;
     }

@@ -137,6 +137,7 @@ internal static class ExplorationProbe
                 foreach (var contact in Contacts)
                 {
                     string name = string.IsNullOrWhiteSpace(contact.Name) ? ModText.Get("enemy_scan.unnamed") : contact.Name;
+                    name = EnemyClassifier.Decorate(name, contact.Class, ModText.Format);
                     entries.Add(new ExplorationEntry($"enemy:{contact.Id}", name, ExplorationCategory.Enemy,
                         contact.Position, MinimumArrival, contact.Boss));
                     enemies++;

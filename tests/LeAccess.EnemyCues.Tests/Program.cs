@@ -22,6 +22,7 @@ internal static partial class Program
             SelectionSight();
             SelectionFilters();
             SelectionClasses();
+            SelectionElites();
             TrackerCadence();
             TrackerFairness();
             TrackerContinuity();
@@ -64,15 +65,16 @@ internal static partial class Program
         Check(pan == 0 && ahead == 0, "A missing camera axis is centered.");
     }
 
-    private static EnemyContact At(int id, float dx, float dz, bool boss = false, float dy = 0) =>
-        new(id, null, boss, Player + new Vector3(dx, dy, dz));
+    private static EnemyContact At(int id, float dx, float dz, bool boss = false, float dy = 0,
+        EnemyClass enemyClass = EnemyClass.Normal) =>
+        new(id, null, boss ? EnemyClass.Boss : enemyClass, Player + new Vector3(dx, dy, dz));
 
     private static List<EnemyCue> Select(IReadOnlyList<EnemyContact> contacts, bool bosses = true, bool ordinary = true,
-        Func<EnemyContact, TerrainSight> sight = null, float range = Range, Vector3? player = null)
+        Func<EnemyContact, TerrainSight> sight = null, float range = Range, Vector3? player = null, bool elites = true)
     {
         var selected = new List<EnemyCue>();
         new EnemyCueSelector().Select(contacts, player ?? Player, Up, Right, range, bosses, ordinary,
-            sight ?? (_ => TerrainSight.Clear), selected);
+            sight ?? (_ => TerrainSight.Clear), selected, elites);
         return selected;
     }
 
@@ -150,8 +152,8 @@ internal static partial class Program
     {
         var edge = Select(new[] { At(1, 0, Range), At(2, 0, Range + 0.01f) });
         Check(edge.Count == 1 && edge[0].Id == 1, "The range edge is included and beyond it is excluded.");
-        Check(Select(new[] { new EnemyContact(1, null, false, new Vector3(float.NaN, 0, 0)),
-            new EnemyContact(2, null, false, new Vector3(float.PositiveInfinity, 0, 0)) }).Count == 0,
+        Check(Select(new[] { new EnemyContact(1, null, EnemyClass.Normal, new Vector3(float.NaN, 0, 0)),
+            new EnemyContact(2, null, EnemyClass.Normal, new Vector3(float.PositiveInfinity, 0, 0)) }).Count == 0,
             "Non-finite positions are ignored.");
         foreach (float range in new[] { 0f, -1f, float.NaN, float.PositiveInfinity })
             Check(Select(new[] { At(1, 0, 1) }, range: range).Count == 0, $"Invalid range {range} gives no streams.");

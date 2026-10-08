@@ -44,4 +44,5 @@ Check(!state.TryAnnounce("Oso", 0.5, true, out _), "Custom interval limits rapid
 Check(state.TryAnnounce("Oso", 1, true, out _), "Custom interval permits the current enemy on time");
 NearestEnemyProbeTests.Run(Check);
 CombatServiceTests.Run(Check);
+EnemyClassTests.Run(Check);
 Console.WriteLine($"Combat tests passed: {checks} checks.");

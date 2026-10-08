@@ -6,9 +6,10 @@ using LeAccess.Accessibility.Navigation.Guidance;
 
 namespace LeAccess.Accessibility.Combat;
 
-internal readonly record struct EnemyContact(int Id, string Name, bool Boss, Vector3 Position);
-
-internal delegate string EnemyScanText(string key, params object[] arguments);
+internal readonly record struct EnemyContact(int Id, string Name, EnemyClass Class, Vector3 Position)
+{
+    internal bool Boss => Class == EnemyClass.Boss;
+}
 
 // Sorts, limits and words the on-demand enemy scan; see reference/enemy-scan.md.
 internal static class EnemyScanReport
@@ -35,6 +36,7 @@ internal static class EnemyScanReport
     {
         var delta = contact.Position - player;
         string name = string.IsNullOrWhiteSpace(contact.Name) ? text("enemy_scan.unnamed") : contact.Name;
+        name = EnemyClassifier.Decorate(name, contact.Class, text);
         string direction = text(GuidanceGeometry.Direction(delta, forward, right) ?? "enemy_scan.direction_here");
         int units = (int)Math.Round(new Vector2(delta.X, delta.Z).Length(), MidpointRounding.AwayFromZero);
         return text(contact.Boss ? "enemy_scan.entry_boss" : "enemy_scan.entry", name, direction, units);

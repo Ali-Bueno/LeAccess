@@ -18,5 +18,6 @@
     <Compile Include="../../LeAccess/Accessibility/Combat/EnemyScanReport.cs" Link="EnemyScanReport.cs" />
     <Compile Include="../../LeAccess/Accessibility/Combat/EnemyCueSelection.cs" Link="EnemyCueSelection.cs" />
     <Compile Include="../../LeAccess/Accessibility/Combat/EnemyCueTracker.cs" Link="EnemyCueTracker.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Combat/EnemyClass.cs" Link="EnemyClass.cs" />
   </ItemGroup>
 </Project>

@@ -10,6 +10,7 @@ using LeAccess.Accessibility.ControllerMenus;
 using LeAccess.Accessibility.Zones;
 using LeAccess.Accessibility.Npcs;
 using LeAccess.Accessibility.Skills;
+using LeAccess.I18n;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using LeAccess.Accessibility.Players;
@@ -111,6 +112,7 @@ public static class CombatAccessibility
             string blocked = SpeechBlockReason();
             ReportStatus($"{observation} speech={blocked ?? "ready"}", now);
             // Surface ownership and same-frame speech are reliable even when the backend stays "speaking".
+            name = EnemyClassifier.Decorate(name, NearestEnemyProbe.LastClass, ModText.Format);
             if (Announcements.TryAnnounce(name, now, blocked is null, out string nearest))
             {
                 string format = _announcementFormat.Value;

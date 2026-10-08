@@ -27,3 +27,12 @@ Ported from the D2R mod (`docs/boss-life.md`). Config: `[Combat feedback] Announ
 - The 0..1 scale of `HealthNormalized` is inferred from its name; the stubs hold no logic. Verify in an online session that the spoken percent matches the boss bar.
 - Not verified in game: that `TryCast<IOverheadBar>()` succeeds on `ActorVisuals`, and that dead bosses stay in the registry for at least one poll (otherwise the 0 percent is skipped).
 - Tests: `tests/LeAccess.BossLife.Tests`.
+
+## Elites (2026-10-08)
+
+Rare and champion enemies ([enemy-class.md](enemy-class.md)) are narrated like bosses: same on-screen
+rule, bands and first-sighting silence. Online health comes from the same `IOverheadBar.HealthNormalized`
+cast; an enemy without that bar is skipped. Anti-spam rule: only the nearest living on-screen elite is
+voiced (bosses all speak); the others follow their bands silently and a takeover starts from that silent
+baseline. An elite's death is spoken only if it was the last voiced one. Config `AnnounceEliteLife`
+(default true). Unverified: the `IOverheadBar` cast on non-boss online enemies.

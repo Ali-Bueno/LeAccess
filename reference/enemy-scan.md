@@ -40,3 +40,8 @@ Spanish, non-finite positions). `LeAccess.Combat.Tests` covers the registry walk
 ## Right-stick note
 
 The game also reads the right stick for manual targeting (`ControllerTargeting.RightStickHitTarget`, `EpochInputManager.RightStickInput`), so the up flick that requests a scan may also nudge the game's target toward that direction, exactly like the existing down flick for orientation. Both need a deliberate push from neutral. Set `[Enemy scan] RightStickUp = false` (and `[Orientation] RightStickDown = false`) if this interferes; F7/F6 remain.
+
+## Class word (2026-10-08)
+
+Scan and exploration-scanner entries add the same class word to non-boss special enemies; bosses keep "jefe".
+See [enemy-class.md](enemy-class.md).

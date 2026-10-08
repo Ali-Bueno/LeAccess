@@ -7,7 +7,7 @@ internal static partial class Program
     // D2R entity_cue_audio_tests.cpp bounds: peak 1500..14000 of a 32767 PCM full scale.
     private const double MinimumPeak = 1500.0 / 32767;
     private const double MaximumPeak = 14000.0 / 32767;
-    private static readonly EnemyCueKind[] Kinds = { EnemyCueKind.Boss, EnemyCueKind.Ordinary };
+    private static readonly EnemyCueKind[] Kinds = { EnemyCueKind.Boss, EnemyCueKind.Elite, EnemyCueKind.Ordinary };
 
     private static void Synthesis()
     {
@@ -41,7 +41,11 @@ internal static partial class Program
         float[] growl = EnemyCueSynthesizer.Synthesize(EnemyCueKind.Ordinary, 0, 1, 1);
         float[] swoop = EnemyCueSynthesizer.Synthesize(EnemyCueKind.Boss, 0, 1, 1);
         int frames = swoop.Length / 2;
-        Check(!growl.SequenceEqual(swoop), "The boss swoop and the growl have signatures of their own.");
+        float[] elite = EnemyCueSynthesizer.Synthesize(EnemyCueKind.Elite, 0, 1, 1);
+        Check(!growl.SequenceEqual(swoop) && !elite.SequenceEqual(swoop) && !elite.SequenceEqual(growl),
+            "The boss swoop, the elite swoop and the growl have signatures of their own.");
+        Check(Crossings(elite, frames / 6, frames / 3) < Crossings(elite, frames * 2 / 3, frames * 5 / 6),
+            "The elite swell sweeps up, against the boss swoop's fall.");
         Check(Crossings(swoop, frames / 6, frames / 3) > Crossings(swoop, frames * 2 / 3, frames * 5 / 6),
             "The boss swoop sweeps down.");
         Check(Crossings(growl, frames / 6, frames / 3) > Crossings(growl, frames * 2 / 3, frames * 5 / 6),

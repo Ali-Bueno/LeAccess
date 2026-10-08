@@ -26,10 +26,9 @@ internal static class EnemyScanProbe
             return HostileRegistry.Visit(player, (enemy, own) =>
             {
                 if (!HostileRegistry.IsLivingFoe(enemy, own) || !Included(enemy.transform.position, position, rangeSquared, view)) return;
-                var data = enemy.Data;
                 contacts.Add(new EnemyContact(enemy.GetInstanceID(),
                     readNames ? NearestEnemyProbe.ReadName(enemy.BaseDisplayInformation) : null,
-                    IsAlive(data) && data.isBossOrMiniBoss(), GuidanceRouteProbe.Convert(enemy.transform.position)));
+                    EnemyClassProbe.Read(enemy), GuidanceRouteProbe.Convert(enemy.transform.position)));
             });
         }
         var actor = PlayerFinder.playerActorComponent;
@@ -40,7 +39,7 @@ internal static class EnemyScanProbe
         {
             if (!HostileRegistry.IsLivingFoe(enemy, own) || !Included(enemy.position(), actorPosition, rangeSquared, view)) return;
             contacts.Add(new EnemyContact(enemy.GetInstanceID(), readNames ? NearestEnemyProbe.ReadOfflineName(enemy) : null,
-                enemy.isBossOrMiniboss(), GuidanceRouteProbe.Convert(enemy.position())));
+                EnemyClassProbe.Read(enemy), GuidanceRouteProbe.Convert(enemy.position())));
         });
     }
 
