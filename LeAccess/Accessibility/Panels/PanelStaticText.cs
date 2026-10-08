@@ -20,7 +20,7 @@ internal static class PanelStaticText
         !Inside<GeneralTooltop>(label, panel) && !Inside<FactionReward>(label, panel) &&
         !Inside<UIFavorText>(label, panel) && !Inside<UIGoldText>(label, panel) && !Inside<UIAncientBonesText>(label, panel) &&
         !Inside<SoulEmberCounterUI>(label, panel) && !Inside<UIKeyText>(label, panel) &&
-        !Inside<TimeBeastEvolutionTile>(label, panel) && !InsideSubTile(label, panel);
+        !Inside<TimeBeastEvolutionTile>(label, panel) && !Inside<SkillTreeNode>(label, panel) && !Inside<HarbingerDefeatedView>(label, panel) && !InsideSubTile(label, panel);
 
     // A faction overview lists its tiles itself; a rank panel is one tile on the panel's own object.
     private static bool InsideSubTile(Component label, Panel panel)

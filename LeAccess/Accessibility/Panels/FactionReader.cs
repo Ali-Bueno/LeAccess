@@ -31,7 +31,12 @@ internal static class FactionReader
         if (navigation is null || navigation.WasCollected) { _polled = 0; return; }
         Selectable selected = null;
         var rank = navigation.TryCast<FactionRankUI>();
-        if (IsAlive(rank)) selected = rank.GamepadButton;
+        if (IsAlive(rank))
+        {
+            var timelines = rank.TryCast<FactionRankUITimelines>();
+            if (IsAlive(timelines) && TimelineReader.Poll(timelines)) { _polled = 0; return; }
+            selected = rank.GamepadButton;
+        }
         else if (navigation.TryCast<FactionUI>() is { } overview && IsAlive(overview)) selected = overview.GamepadButton;
         if (!IsAlive(selected) || !selected.isActiveAndEnabled) { _polled = 0; return; }
         int id = selected.GetInstanceID();

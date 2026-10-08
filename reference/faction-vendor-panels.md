@@ -48,8 +48,46 @@ The four rank panels (`CircleOfFortuneRankPanel`, `MerchantsGuildRankPanel`, `Fo
 [, rango actual], title, description, desbloqueado | bloqueado, what unlocks it"; unlocked means `rank <= Faction.Rank`.
 The introduction adds "Rango N, favor M" (the game shows bare numbers in tooltip objects). Both UIs keep their own
 `GamepadButton`, so `FactionReader.Poll` announces it when it changes while a `FactionUI`/`FactionRankUI` is the current
-navigable. Limits: `FullScreenPanelFactions` (13k objects, Weaver tree), the Weaver tree, the prophecy grid and the Forgotten
-Knights timelines are not read; their buttons only get the generic reader.
+navigable. Limits: the prophecy grid is not read; the Weaver tree and the Forgotten Knights timelines have their own readers below.
+
+## Weaver tree
+
+Evidence (read-only UnityPy, game closed): the tree is `FactionRankPanelWeaver/FactionWeaverSilkenPath` in the `WeaverRankPanel`
+prefab: a `WeaverTreeNavigable` (GridNavigable) over `Weaver Tree Holder/Weaver Tree` (`WeaverTree`) with ~80 `Node_*`
+objects (`WeaverTreeNode` + `SkillnodeTooltip`, each with a `PointsAllocated` "0/2" label) and the woven-echo item slots
+(`WeaverTreeItemContainerUI`). The full-screen `TWFactionUI` (`_weaverTreeNavigable`) hosts the same classes. Header texts:
+`UnspentPoints`, `Unconfirmed Spent Points` (`FactionRankUIWeaver.unconfirmedPointsText`), Memory Amber.
+
+`WeaverTreeReader` (polled from `PanelControlReader.Update`; no hook) acts when `NavigationManager.currentlySelected` is a
+`WeaverTreeNavigable`; `ActiveNode` is the game's selected node. It uses the passive-tree model,
+`NodeTooltipContentBuilder.GetNodeTooltipInfo(node)` (localized name, effect, requirements), so wording is the game's.
+
+- **Entering a node**: "name, N de M puntos asignados[, requisitos no cumplidos], effect"; the first node after opening adds
+  "Árbol del Tejedor, N puntos por gastar" and the game's unconfirmed-points text. Moving is the game's spatial navigation.
+- **After Cross/Square on the same node**: only the new points, "requisitos no cumplidos" if it locked, the points left and
+  the changed unconfirmed text. The node summary is also what the generic focus path returns for a node (`TryRead`), so
+  nothing is read twice. A full or locked node shows in its summary instead of a refusal message (no submit hook).
+- **Right stick (details)**: effect and point bonus, requirements met/unmet, and the nodes it connects to
+  (`Tree.connections`), clockwise from up, each with its screen direction ("Alfa, arriba; Beta, izquierda").
+- `PanelStaticText` ignores labels inside nodes and timeline views so the panel introduction is not 80 "0/2" counters.
+
+Limits: no "N de M" place (navigation is spatial, not a grid); the woven-echo slots use the inventory reader; respec mode
+text and the search box stay generic; needs an in-game check that `ActiveNode` follows the stick and `unspentPoints`
+drops with unconfirmed points.
+
+## Forgotten Knights timelines
+
+Evidence: `ForgottenKnightsRankPanel/HarbingerOverview`: ten `TimelineHarbinger` (`HarbingerDefeatedView`: `IslandName`,
+`Harbinger Name` = `hoverText`, `HarbingerKilled`/`HarbingerNotKilled` boxes with `HarbingerIcon` buttons), a side panel
+(required corruption, kills, highest corruption kill) and the Aberroth prompt boxes; `FactionNavigationFK` has the
+"Harbingers" / "Rank Rewards" buttons. `FactionRankUITimelines` keeps `focusedTimeline`, `timelinesMap` and `CurrentKey`.
+
+`TimelineReader` (called from `FactionReader.Poll`) owns the selection while `timelinesRoot` is active and the gamepad
+focus is `GamepadKey.Timelines`, absent, or inside a view; other buttons keep the old reader. Entering the view says the
+game's figures and Aberroth prompt plus "N de 10 líneas temporales con el presagiador derrotado"; each timeline then reads
+"island, harbinger, presagiador derrotado | sin derrotar, N de 10". Harbinger names come from the label's localization key
+(`Localization.GetText`) because the label is hidden. Limits: if `focusedTimeline` is not the `timelinesMap` key the
+view is found from the gamepad button only; the extra-teleport and Aberroth location buttons stay generic.
 
 ## Item-service panels
 
@@ -84,8 +122,8 @@ confirmation step (`UnityDrivenNavigable` with header/message) is read once on e
 | Panel | Verdict |
 |---|---|
 | FactionsPanel, ChooseItemFactionPanel | new reader |
-| Circle of Fortune / Merchant's Guild / Forgotten Knights / Weaver rank panels | new reader (rank rewards, standing); trees, prophecies, timelines not done |
-| FullScreenPanelFactions | not done (Weaver tree) |
+| Circle of Fortune / Merchant's Guild / Forgotten Knights / Weaver rank panels | new reader (rank rewards, standing); Weaver tree and FK timelines read; prophecies not done |
+| FullScreenPanelFactions | Weaver tree and FK timelines read (same classes); tabs and reward rows generic |
 | Gold / Soul / CoF / MG gambling, Hunter / Weaver / Timeglass vendors | new reader (currencies, tabs, refresh, prices) |
 | BazaarPanel | not done (market search, stall and listing UI) |
 | BazaarPurchaseConfirmationModal | fixed (named costs) |
@@ -103,4 +141,5 @@ confirmation step (`UnityDrivenNavigable` with header/message) is read once on e
 1. A gambler or vendor: intro with title and currency, tab/refresh speech, price after the item name, currency after a buy.
 2. Faction choice tiles and a rank panel: tile summary on entry, rank rewards with locked/unlocked.
 3. Woven Echo panels, dungeon keys trader: introduction before the first slot; Reroll slot names.
-4. Time beast tiles, loot filter rules, mastery choice cards, bazaar purchase confirmation costs.
+4. Weaver tree: node entry, a point spent (points left), stick details with neighbours; FK timelines list and entry intro.
+5. Time beast tiles, loot filter rules, mastery choice cards, bazaar purchase confirmation costs.
