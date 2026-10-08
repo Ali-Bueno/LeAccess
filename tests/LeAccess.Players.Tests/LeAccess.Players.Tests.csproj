@@ -13,4 +13,5 @@
     <Compile Include="../../LeAccess/Accessibility/Audio/EntityCueCadence.cs" Link="EntityCueCadence.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
   </ItemGroup>
+  <Import Project="../LocalizationSources.props" />
 </Project>

@@ -93,6 +93,30 @@ Check(ScreenReader.Messages.Single().Text == "Current","Only the current name re
 LeAccess.Accessibility.Navigation.GameplayInputState.Owns = false; Tick(.34);
 Check(!NearbyPlayerAccessibility.HasPendingContent,"Menus clear pending player speech immediately");
 
+// Identity speech: username, then character name and level when known.
+string Level(int value) => LeAccess.I18n.ModText.Format("progression.level", value);
+Reset(); LeAccess.Accessibility.Social.FriendCharacterNames.ByUsername.Clear(); remote = Add("Canario");
+Check(NearbyPlayerProbe.TryRead(out target) && target.Character == null && target.Level == 0,"Unknown character and level stay empty, never invented");
+Check(PlayerIdentityText.Compose("Canario", null, 0) == "Canario","Username alone when nothing else is known");
+remote.actorVisuals.clientCharacterInfoProvider = new() { level = 34 };
+LeAccess.Accessibility.Social.FriendCharacterNames.ByUsername["Canario"] = "Ezio";
+Check(NearbyPlayerProbe.TryRead(out target) && target.Character == "Ezio" && target.Level == 34,"Probe carries the friend character name and synced level");
+Check(PlayerIdentityText.Compose(target.Name, target.Character, target.Level) == $"Canario, Ezio, {Level(34)}","Username, character name, level");
+Check(PlayerIdentityText.Compose("Canario", null, 34) == $"Canario, {Level(34)}","Level without character name");
+Check(PlayerIdentityText.Compose("Canario", " ", 0) == "Canario","Blank character name is skipped");
+var all = new List<OtherPlayer>();
+Check(NearbyPlayerProbe.TryReadAll(all) && all.Single().Level == 34 && all.Single().Character == "Ezio","Scanner list carries character and level");
+Reset(); LeAccess.Accessibility.Social.FriendCharacterNames.ByUsername["Canario"] = "Ezio";
+remote = Add("Canario"); remote.actorVisuals.clientCharacterInfoProvider = new() { level = 34 };
+Tick(0); Tick(.11); Tick(.22);
+Check(ScreenReader.Messages.Single().Text == $"Canario, Ezio, {Level(34)}" && !ScreenReader.Messages.Single().Interrupt,"Approach says username, character and level once");
+LeAccess.Accessibility.Social.FriendCharacterNames.ByUsername.Clear(); remote.actorVisuals.clientCharacterInfoProvider.level = 0;
+Tick(.33); Tick(.44);
+Check(ScreenReader.Messages.Count == 1,"A flickering character or level read does not repeat the announcement");
+remote.actorVisuals.clientCharacterInfoProvider.level = 35; Tick(.55); Tick(.66);
+Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages[1].Text == $"Canario, Ezio, {Level(35)}","A real level change is announced");
+LeAccess.Accessibility.Social.FriendCharacterNames.ByUsername.Clear();
+
 // Shared local-player source: PlayerFinder.FindPlayer zeroes the rig cache on re-find (co-op join).
 ActorVisuals JoinedHost()
 {

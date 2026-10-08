@@ -2,6 +2,7 @@ using System;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using EHG.Multiplayer;
 using LE.Networking;
+using LeAccess.Accessibility.Social;
 using LeAccess.Accessibility.Utils;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -9,9 +10,9 @@ using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Players;
 
-internal readonly record struct NearbyPlayerTarget(long Session, int InstanceId, string Name);
+internal readonly record struct NearbyPlayerTarget(long Session, int InstanceId, string Name, string Character = null, int Level = 0);
 
-internal readonly record struct OtherPlayer(int InstanceId, string Name, Vector3 Position);
+internal readonly record struct OtherPlayer(int InstanceId, string Name, Vector3 Position, string Character = null, int Level = 0);
 
 internal static class NearbyPlayerProbe
 {
@@ -36,19 +37,20 @@ internal static class NearbyPlayerProbe
             Vector3 origin = localVisuals.position();
             double best = double.PositiveInfinity;
             int bestId = int.MaxValue;
-            string bestName = null;
+            OtherPlayer bestPlayer = default;
+            bool found = false;
             foreach (var other in Others)
             {
                 Vector3 offset = other.Position - origin;
                 double distance = (double)offset.x * offset.x + (double)offset.y * offset.y + (double)offset.z * offset.z;
                 if (!double.IsFinite(distance) || distance > (double)range * range) continue;
                 if (distance > best || distance == best && other.InstanceId >= bestId) continue;
-                best = distance; bestId = other.InstanceId; bestName = other.Name;
+                best = distance; bestId = other.InstanceId; bestPlayer = other; found = true;
             }
             Others.Clear();
-            if (bestName == null) return false;
+            if (!found) return false;
             long session = ((long)(int)scene.handle << 32) | (uint)local.GetInstanceID();
-            target = new(session, bestId, bestName);
+            target = new(session, bestId, bestPlayer.Name, bestPlayer.Character, bestPlayer.Level);
             return true;
         }
         catch (Exception ex) { LastFailure ??= ex.Message; return false; }
@@ -113,11 +115,21 @@ internal static class NearbyPlayerProbe
                 if (!float.IsFinite(position.x) || !float.IsFinite(position.y) || !float.IsFinite(position.z)) continue;
                 string name = ReadName(visuals);
                 if (string.IsNullOrWhiteSpace(name)) continue;
-                others.Add(new OtherPlayer(visuals.GetInstanceID(), name, position));
+                others.Add(new OtherPlayer(visuals.GetInstanceID(), name, position, ReadCharacter(visuals), ReadLevel(visuals)));
             }
             catch (Exception ex) { LastFailure ??= ex.Message; }
         }
         return true;
+    }
+
+    // Only friends have a known character name (social presence cache); other players give none.
+    private static string ReadCharacter(ActorVisuals visuals) => FriendCharacterNames.Read(visuals.UserIdentity);
+
+    // The level comes with the remote's synced character info; 0 means not received yet.
+    private static int ReadLevel(ActorVisuals visuals)
+    {
+        var info = visuals.clientCharacterInfoProvider;
+        return IsAlive(info) && info.level > 0 ? info.level : 0;
     }
 
     private static string ReadName(ActorVisuals visuals)

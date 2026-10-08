@@ -150,7 +150,7 @@ internal static class ExplorationProbe
             if (NearbyPlayerProbe.TryReadAll(Others))
                 foreach (var other in Others)
                 {
-                    entries.Add(new ExplorationEntry($"player:{other.InstanceId}", other.Name, ExplorationCategory.Player,
+                    entries.Add(new ExplorationEntry($"player:{other.InstanceId}", PlayerIdentityText.Compose(other.Name, other.Character, other.Level), ExplorationCategory.Player,
                         GuidanceRouteProbe.Convert(other.Position), MinimumArrival));
                     players++;
                 }
