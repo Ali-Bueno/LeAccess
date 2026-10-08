@@ -136,4 +136,5 @@ form = Reset(); Tick(); form.newCharacterError.text = "Segundo error"; Tick(); T
 Check(ScreenReader.Messages.Single().Text == "Segundo error", "Rapid error changes discard the unsettled previous error");
 if (failures.Count != 0) throw new InvalidOperationException(string.Join(Environment.NewLine, failures));
 checks += KeyboardTests.Run();
+checks += TypingTests.Run();
 Console.WriteLine($"Character name tests passed: {checks} checks.");

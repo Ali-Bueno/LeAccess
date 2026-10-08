@@ -4,6 +4,8 @@
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/CharacterNameAccessibility.cs" Link="CharacterNameAccessibility.cs" />
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/CharacterNameKeyboard.cs" Link="CharacterNameKeyboard.cs" />
     <Compile Include="../../LeAccess/Accessibility/Patches/CharacterNameKeyboardPatches.cs" Link="CharacterNameKeyboardPatches.cs" />
+    <Compile Include="../../LeAccess/Accessibility/CharacterCreation/ScreenKeyboardTyping.cs" Link="ScreenKeyboardTyping.cs" />
+    <Compile Include="../../LeAccess/Accessibility/CharacterCreation/PhysicalTypingKeys.cs" Link="PhysicalTypingKeys.cs" />
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentTracker.cs" Link="ScreenContentTracker.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/UiVisibility.cs" Link="UiVisibility.cs" />
     <Compile Include="../UiScreenGeometryStub.cs" Link="UiScreenGeometryStub.cs" />

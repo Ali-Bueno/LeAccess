@@ -68,6 +68,17 @@ internal static class CharacterNameKeyboardPatches
         public static bool Prefix(ScreenKeyboardManager __instance) => CharacterNameKeyboard.AllowCancel(__instance);
     }
 
+    // Keys typed into the screen keyboard press no button hotkey, as with a focused field. The prologue has no
+    // short branch (rel32 call at +0xb), so the original may run.
+    [HarmonyPatch(typeof(ButtonInputListener), nameof(ButtonInputListener.CanBePressed))]
+    internal static class ButtonHotkey
+    {
+        public static void Postfix(ref bool __result)
+        {
+            if (ScreenKeyboardTyping.OwnsKeyboard) __result = false;
+        }
+    }
+
     [HarmonyPatch(typeof(EpochInputManager), nameof(EpochInputManager.IsControllerActive), MethodType.Setter)]
     internal static class DeviceMode
     {

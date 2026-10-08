@@ -89,6 +89,7 @@ public class Plugin : BasePlugin
         LeAccess.Accessibility.CharacterCreation.CreationChoiceReader.Reset();
         LeAccess.Accessibility.CharacterCreation.CharacterNameAccessibility.Reset();
         LeAccess.Accessibility.CharacterCreation.CharacterNameKeyboard.Reset();
+        LeAccess.Accessibility.CharacterCreation.ScreenKeyboardTyping.Reset();
         LeAccess.Accessibility.ScreenContent.ScreenContentAnnouncer.Reset();
         LeAccess.Accessibility.Dialogue.DialogueAnnouncer.Reset();
         LeAccess.Accessibility.Dialogue.VisibleSubtitleAnnouncer.Reset();

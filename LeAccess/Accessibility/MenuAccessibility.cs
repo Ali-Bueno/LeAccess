@@ -50,6 +50,7 @@ public class MenuAccessibility : MonoBehaviour
             ElementAnnouncer.ResetFocus();
         }
         LoginTransitionGuard.Update();
+        ScreenKeyboardTyping.Update();
         PauseMenuFocusRecovery.Update();
         ScreenContentAnnouncer.Update();
         DialogueAnnouncer.Update();
