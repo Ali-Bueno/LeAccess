@@ -12,8 +12,8 @@ the latest installed build. Technical findings and reproduction notes live in
 
 - Menu focus, settings, character classes, mastery descriptions and notifications.
 - Visible dungeon entry/exit, boss confirmation and native modal instructions.
-- Skill and passive details, equipped-skill buttons, inventory actions and quest
-  journal reading.
+- Skill and passive details, equipped-skill buttons, inventory actions, the inventory's
+  cosmetics tab ([cosmetics](reference/cosmetics-reading.md)) and quest journal reading.
 - Forge affix actions, shard details, and localized rune/glyph names and quantities.
 - Endgame and faction panels: dungeon/arena tiers, Monolith echoes and blessings, echo rewards,
   boss votes ([endgame](reference/endgame-panels.md)); faction choice and ranks, gamblers and special
@@ -113,7 +113,11 @@ level ups and new passive points or skill points are announced as they happen
 ([progression](reference/progression.md)).
 
 [Natural world sounds](reference/natural-world-sounds.md) reuse recordings from
-the D2R mod for loot and identified world interactions. Short repeating samples
+the D2R mod for loot and identified world interactions. Equipment and idols sound by
+rarity (normal, magic, rare/exalted, unique/set/legendary), and runes, glyphs, affix
+shards and other materials (keys, lenses, woven echoes) each have their own loop;
+shrines and the Nemesis use Last Epoch's own recordings and time rifts its rift loop
+([mapping](reference/world-object-sounds.md)). Short repeating samples
 share playback time with each other; radar knocks and breaths never wait behind
 them. An opening breath that ends in a quick double pip leads toward an unexplored area. The sounds are embedded in the plugin; no separate audio installation
 is required.

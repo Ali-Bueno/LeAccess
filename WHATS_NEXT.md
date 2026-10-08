@@ -1,3 +1,31 @@
+# Handoff — 2026-10-08 evening: loot by rarity, shrines/rifts/Nemesis, re-reads and online quests
+
+User report (away; installed after the game closed, nothing heard): inventory tabs read oddly; time rifts,
+shrines and the Nemesis ("Potenciar/Desterrar/Desafío") silent and unnamed; equipment not by rarity like D2R;
+runes, glyphs ("gemas"), shards ("fragmentos") without sounds; duplicate WAVs in `Sounds/` and `Sounds/Loops/`;
+after the A90→B10 cinematic the radar found only exits; mid-session: after a drop/equip the controller rumbles
+and the focused item is read again seconds later, cutting R3 details; can a waypoint be the login spawn.
+- Sounds: equipment/idols by rarity (D2R normal/magic/rare+exalted/unique+set+legendary), rune, glyph → D2R gem,
+  shard → D2R scroll, keys/lenses/echoes/other → D2R quest item; shrine and Nemesis loops from Last Epoch's
+  `Environmental.bank`; rifts/Monolith portals use the rift loop; caches the chest loop. Names come from the hover
+  tag through `Localization.GetText` (key-only tags were unnamed), else "santuario/fisura temporal/Némesis".
+  Root WAV excerpts removed: the loops-off fallback cuts the loop at load ([mapping](reference/world-object-sounds.md)).
+  Check: each rarity and material on the ground, a shrine and a Nemesis from 12 m, a time rift, loudness of
+  rune/gem/scroll clicks and the legendary loop; alternative bank samples are listed in the doc.
+- Cosmetics tab (raw "Helmet", "Skill MTX", "Class Filter - Acolyte"): own reader ([details](reference/cosmetics-reading.md)).
+- Inventory re-read: the key used wrapper pointers that an online sync replaces; now the item id, and a change
+  of only "N de M" is silent. The rumble is the game's haptics (its settings) ([details](reference/inventory-drop-focus.md#re-reading-after-an-online-sync-2026-10-08)).
+- B10: nothing was stuck; the arrival point is empty and the exit back (10.5 m below) was not counted as seen;
+  it is now, and the `[Exploration]` status logs on arrival with `room_gap`, `came_from` and distances ([details](reference/exploration-mode.md)).
+- Found in the log: automatic quest updates and dynamic objectives never spoke online (no saved character data
+  online) — fixed ([details](reference/quest-updates.md)); the co-op partner was named 478 times — leaving the
+  radius erased the memory; now 60 s for players ([details](reference/nearby-player-names.md)).
+- Waypoint spawn: the game stores `CharacterData.LastVisitedTownScene`; the previous session ended in A10 and
+  the next began in A06 (Ruinas desmoronadas), so login apparently returns to the last town/camp, not a chosen
+  waypoint (inferred, method bodies not read). The mod does not change save data.
+- Not done: generic unknown interactables still beep only within their ~2.5 m native radius (widening would make
+  every door/lever audible from 12 m); the plugin is now ~18 MB with the new loops.
+
 # Handoff — 2026-10-08: quality batch while the user was away
 
 User request: make every unread menu accessible; physical keyboard typing as soon as the screen keyboard
