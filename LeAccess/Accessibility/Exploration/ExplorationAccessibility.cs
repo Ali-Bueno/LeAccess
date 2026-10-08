@@ -89,6 +89,7 @@ internal static class ExplorationAccessibility
         {
             _session = world.Session;
             Catalog.Reset();
+            _nextStatus = 0; // the status at arrival shows what the scanner starts with
         }
         _world = world;
         if (world.SceneName != _sceneName)
