@@ -3,7 +3,7 @@ using LE.UI.PanelSystem;
 
 namespace LeAccess.Accessibility.Panels;
 
-internal enum PanelKind { None, Faction, FactionRank, Gambling, Vendor, Crafting, KeysTrader, Eternity, TimeBeast, LootFilter, Mastery }
+internal enum PanelKind { None, Faction, FactionRank, Gambling, Vendor, Crafting, KeysTrader, Eternity, TimeBeast, LootFilter, Mastery, Bazaar }
 
 /// <summary>Which of the faction, vendor and item-service panels a game panel is.</summary>
 /// <remarks>See reference/faction-vendor-panels.md.</remarks>
@@ -26,6 +26,7 @@ internal static class PanelFamily
         if (Is<TimeBeastEvolutionPanel>()) return PanelKind.TimeBeast;
         if (Is<LootFilterPanel>()) return PanelKind.LootFilter;
         if (Is<ChooseMasteryPanel>()) return PanelKind.Mastery;
+        if (Is<BazaarPanel>()) return PanelKind.Bazaar;
         return PanelKind.None;
     }
 

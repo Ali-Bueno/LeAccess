@@ -374,4 +374,5 @@ checks += GuideArticleTests.Run();
 checks += EndgameTests.Run();
 checks += PanelTextTests.Run();
 checks += FactionTreeTextTests.Run();
+checks += MarketTests.Run();
 Console.WriteLine($"Menu reading tests passed: {checks} checks.");

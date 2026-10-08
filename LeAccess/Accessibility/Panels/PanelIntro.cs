@@ -78,6 +78,7 @@ internal static class PanelIntro
         WeaverTreeReader.Reset();
         TimelineReader.Reset();
         MasterySelectionReader.Reset();
+        Market.BazaarReader.Reset();
     }
 
     // The nearest panel of an element and its family; the last answer is kept because focus reads repeat per frame.
@@ -106,7 +107,7 @@ internal static class PanelIntro
 
     private static string Compose(Panel panel, PanelKind kind)
     {
-        string title = kind is PanelKind.Gambling or PanelKind.Vendor or PanelKind.TimeBeast or PanelKind.LootFilter or PanelKind.Mastery
+        string title = kind is PanelKind.Gambling or PanelKind.Vendor or PanelKind.TimeBeast or PanelKind.LootFilter or PanelKind.Mastery or PanelKind.Bazaar
             ? Title(panel) : null;
         string body = kind is PanelKind.LootFilter or PanelKind.Mastery ? null : PanelStaticText.Read(panel);
         string extra = kind switch

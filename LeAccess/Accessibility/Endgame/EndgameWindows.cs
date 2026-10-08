@@ -47,6 +47,10 @@ internal static class EndgameWindows
         // Votes are spoken per player by the endgame service, and the countdown would reread the window every second.
         if (VoteRosterReader.TryRead(panel, out _))
             return () => ScreenContentReader.Read(root, null, null, include: label => !VoteRosterReader.IsRowOrTimer(panel, label));
+        var observatory = panel.TryCast<ObservatoryPanel>();
+        if (IsAlive(observatory))
+            return () => ScreenContentReader.Read(root, null, null,
+                include: label => IsStatic(root, label) && !Market.ObservatoryReader.IsSlotText(observatory, label));
         // Options, rows and lists are spoken one by one as they get focus.
         if (IsAlive(panel.TryCast<SanctuaryOfEterraPanel>()) || IsAlive(panel.TryCast<ChooseEchoRewardPanel>()) ||
             IsAlive(panel.TryCast<LadderPanel>()) || IsAlive(panel.TryCast<ChooseBlessingPanel>()))

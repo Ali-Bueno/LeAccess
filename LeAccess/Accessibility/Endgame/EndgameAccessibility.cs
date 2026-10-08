@@ -18,6 +18,7 @@ internal static class EndgameAccessibility
     private static int _panelId;
     private static bool _spokeStop;
     private static string _key;
+    private static string _notice;
     private static int _rejectedPanelId;
     private static string _lastFailure;
 
@@ -45,6 +46,7 @@ internal static class EndgameAccessibility
             // The window's opening text goes first; a stop or a vote never talks over it.
             bool free = ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame && !ScreenContentAnnouncer.HasPendingContent;
             UpdateVotes(panel, free);
+            UpdateNotice(panel, free);
             HasActiveContent = UpdateStop(panel, free, readDetails);
         }
         catch (Exception ex) { Reset(); ReportFailure(ex); }
@@ -57,6 +59,7 @@ internal static class EndgameAccessibility
         _panelId = 0;
         _spokeStop = false;
         _key = null;
+        _notice = null;
         HasActiveContent = false;
     }
 
@@ -66,7 +69,12 @@ internal static class EndgameAccessibility
         bool found = false;
         var monolith = panel.TryCast<MonolithPanel>();
         if (IsAlive(monolith)) found = MonolithReader.TryRead(monolith, out stop);
-        else if (UiFocusOwnership.TryGetSelected(out var selected)) found = EndgameStops.TryRead(panel, selected, out stop);
+        else
+        {
+            // The Observatory reads its slot even when no control has focus.
+            UiFocusOwnership.TryGetSelected(out var selected);
+            found = EndgameStops.TryRead(panel, selected, out stop);
+        }
         if (!found) { Tracker.Reset(); _key = null; return false; }
         if (_key != stop.Key) { Tracker.Reset(); _key = stop.Key; }
         // Stable text only: tooltips fill in over a frame or two.
@@ -78,6 +86,16 @@ internal static class EndgameAccessibility
         _spokeStop = true;
         Plugin.Log.LogInfo($"[Endgame] {announcement}");
         return true;
+    }
+
+    private static void UpdateNotice(Panel panel, bool free)
+    {
+        var ladder = panel.TryCast<LadderPanel>();
+        string notice = IsAlive(ladder) ? Market.LadderReader.EmptyNotice(ladder) : null;
+        if (notice == null) { _notice = null; return; }
+        if (notice == _notice || !free || !ScreenReader.TrySpeak(notice, interrupt: false)) return;
+        _notice = notice;
+        Plugin.Log.LogInfo($"[Endgame] {notice}");
     }
 
     private static void UpdateVotes(Panel panel, bool free)

@@ -11,3 +11,17 @@ namespace LeAccess.Accessibility.Panels
         internal static string LeadFor(UnityEngine.GameObject element) => null;
     }
 }
+
+namespace LeAccess.Accessibility.Market
+{
+    // The Bazaar and Observatory pickers need the game's UI; menu reading only needs them to own nothing.
+    internal static class BazaarReader
+    {
+        internal static bool TryRead(UnityEngine.GameObject element, bool details, out string text) { text = null; return false; }
+    }
+
+    internal static class ProphecyPickerReader
+    {
+        internal static bool TryRead(UnityEngine.GameObject element, out string text) { text = null; return false; }
+    }
+}
