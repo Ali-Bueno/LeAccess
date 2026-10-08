@@ -64,6 +64,11 @@ internal static class LootAndRoleTests
         Check(!probe.TryCapture(out _) && probe.Loops.Count == 2, "Non-equipment loot respects the loop range");
         rune.itemData.WasCollected = true;
         Check(!probe.TryCapture(out _) && probe.Loops.Count == 1, "Collected item data is skipped");
+        Check(hidden.itemData.Classified == 0 && rare.itemData.Classified == 1,
+            "Filtered loot is never classified and a kind is read once per item");
+        rare.itemData = new ItemData { Magic = true };
+        Check(!probe.TryCapture(out _) && probe.Loops.Any(l => l.Kind == NaturalCueKind.MagicEquipment),
+            "A pooled visual showing new item data is classified again");
 
         // Interactable identities.
         var listener = new WorldObjectClickListener();

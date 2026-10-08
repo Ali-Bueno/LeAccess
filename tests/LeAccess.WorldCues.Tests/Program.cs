@@ -95,7 +95,7 @@ Check(!probe.TryCapture(out _), "Collected visual and listener wrappers are safe
 Reset(); probe = new(); equipment = Equipment();
 equipment.itemData.Equipment = false;
 Check(!probe.TryCapture(out _), "Crafting material is not misclassified as equipment or interactable (and has no cue without a loop)");
-equipment.itemData.Equipment = true; equipment.label.canvasGroup.alpha = 0;
+equipment.itemData = new ItemData(); equipment.label.canvasGroup.alpha = 0;
 Check(probe.TryCapture(out _), "An unfiltered item is detected without rendering its label");
 equipment.label.canvasGroup.alpha = 1;
 equipment.itemData.WasCollected = true;

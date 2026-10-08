@@ -83,8 +83,11 @@ internal sealed class GroundItemLabel : PickupableGroundLabel
 namespace ItemFiltering { internal class Rule { internal enum RuleOutcome { SHOW, HIDE, HIGHLIGHT_DEPRECATED } } }
 internal sealed class ItemData
 {
+    private static int _nextPointer;
+    internal readonly IntPtr Pointer = new(++_nextPointer);
+    internal int Classified;
     internal bool WasCollected, Equipment = true, Idol, UniqueSetOrLegendary, Rare, Exalted, Magic, Rune, Glyph, AffixShard;
-    internal bool isEquipment() => Equipment;
+    internal bool isEquipment() { Classified++; return Equipment; }
     internal bool isIdol() => Idol;
     internal bool isUniqueSetOrLegendary() => UniqueSetOrLegendary;
     internal bool isRare() => Rare;

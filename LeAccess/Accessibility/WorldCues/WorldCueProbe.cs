@@ -13,6 +13,8 @@ namespace LeAccess.Accessibility.WorldCues;
 internal sealed class WorldCueProbe
 {
     private readonly HashSet<IntPtr> _lootListeners = new();
+    // An item's type and rarity never change; pooled visuals get new data, hence the pair as key.
+    private readonly Dictionary<(int, IntPtr), NaturalCueKind> _lootKinds = new();
     private Camera _camera;
     private long _session;
     private Vector3 _position, _right, _forward;
@@ -94,10 +96,11 @@ internal sealed class WorldCueProbe
                     RememberLoot(item.worldObjectClickListener);
                     var data = item.itemData;
                     if (data is null || data.WasCollected) { _missingItemData++; continue; }
-                    var kind = GroundLootClassifier.Classify(data);
                     var label = item.label;
                     if (!IsAlive(label)) { _missingLabel++; continue; }
                     if (label.lastFilterResult == Rule.RuleOutcome.HIDE) { _filtered++; continue; }
+                    var lootKey = (item.GetInstanceID(), data.Pointer);
+                    if (!_lootKinds.TryGetValue(lootKey, out var kind)) _lootKinds[lootKey] = kind = GroundLootClassifier.Classify(data);
                     if (GroundLootClassifier.IsGear(kind)) Consider(item.worldObjectClickListener, item, label, WorldCueCategory.Equipment, kind);
                     else { _nonEquipment++; ConsiderPickup(item.worldObjectClickListener, item, kind); }
                 }
@@ -275,7 +278,7 @@ internal sealed class WorldCueProbe
 
     internal void Reset()
     {
-        _camera = null; _session = 0; _lootListeners.Clear(); LastFailure = null;
+        _camera = null; _session = 0; _lootListeners.Clear(); _lootKinds.Clear(); LastFailure = null;
         HasWorld = false;
         Array.Clear(Targets, 0, Targets.Length);
         Array.Clear(_held, 0, _held.Length);
