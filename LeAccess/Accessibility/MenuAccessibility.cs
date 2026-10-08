@@ -127,6 +127,7 @@ public class MenuAccessibility : MonoBehaviour
         try
         {
             if (PassiveAccessibility.ReadCurrentDetails() || QuestAccessibility.ReadCurrentDetails() ||
+                Panels.PanelControlReader.ReadDetails() ||
                 Guide.GuideAccessibility.ReadCurrentDetails() ||
                 SettingsFocusAnnouncer.ReadCurrentDetails()) return;
             if (ClassCarouselHandler.TryReadDetails(out string text))

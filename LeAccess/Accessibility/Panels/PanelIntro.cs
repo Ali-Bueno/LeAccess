@@ -75,6 +75,8 @@ internal static class PanelIntro
         _lastPanel = null;
         VendorReader.Reset();
         FactionReader.Reset();
+        WeaverTreeReader.Reset();
+        TimelineReader.Reset();
         MasterySelectionReader.Reset();
     }
 

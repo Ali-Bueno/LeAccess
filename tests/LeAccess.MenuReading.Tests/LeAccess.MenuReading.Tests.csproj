@@ -33,6 +33,7 @@
     <Compile Include="../../LeAccess/Accessibility/Items/StashTabText.cs" Link="StashTabText.cs" />
     <Compile Include="../../LeAccess/Accessibility/Endgame/EndgameText.cs" Link="EndgameText.cs" />
     <Compile Include="../../LeAccess/Accessibility/Panels/PanelText.cs" Link="PanelText.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Panels/FactionTreeText.cs" Link="FactionTreeText.cs" />
     <Compile Include="../../LeAccess/Accessibility/Panels/CurrencyChanges.cs" Link="CurrencyChanges.cs" />
   </ItemGroup>
   <Import Project="../LocalizationSources.props" />
