@@ -373,4 +373,5 @@ checks += ForgeSummaryTests.Run(Reset);
 checks += GuideArticleTests.Run();
 checks += EndgameTests.Run();
 checks += PanelTextTests.Run();
+checks += MarketTests.Run();
 Console.WriteLine($"Menu reading tests passed: {checks} checks.");

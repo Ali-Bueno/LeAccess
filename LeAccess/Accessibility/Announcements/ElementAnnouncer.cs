@@ -278,6 +278,8 @@ public static class ElementAnnouncer
             return FormatSpecializedAnnouncement(go, filterRangeText, includeDetails, isDisabledOption || filterRangeUnavailable);
         if (Social.SocialReader.TryRead(go, out string socialText)) return socialText;
         if (Gifting.GiftPanelReader.TryReadResonanceRow(go, out string resonanceText)) return resonanceText;
+        if (Market.BazaarReader.TryRead(go, includeDetails, out string bazaarText)) return bazaarText;
+        if (Market.ProphecyPickerReader.TryRead(go, out string pickerText)) return pickerText;
         if (Panels.PanelControlReader.TryRead(go, out string panelText)) return panelText;
 
         // Layer 1: Try to get label from InfoForTooltip

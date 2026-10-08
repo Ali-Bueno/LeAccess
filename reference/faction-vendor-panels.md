@@ -73,6 +73,19 @@ other buttons stay generic.
 `GenericModalText`'s new skip/extra arguments) skips those labels and speaks "Coste: <gold>. <favor>. <n> fichas del
 Gremio de Mercaderes" for the visible wrappers, and again when the checkbox changes them (header update path).
 
+## Bazaar market
+
+Code: `Market/BazaarReader.cs` (event path in `ElementAnnouncer`, results polled from `PanelControlReader.Update`); `PanelKind.Bazaar`
+gives the panel an introduction (title and static text). Online data: offline or missing fields read nothing.
+
+- **Listing card** (`ListingUI`): name, type, level, price (gold and/or favor holders that are shown), place among the drawn
+  cards. The seller is not shown by the game. With the details key: implicits, affixes, forging/legendary potential, weaver's
+  will, corrupted, listed-at text.
+- **Pagination** (`PaginationButton`): "Página N de M [actual]", previous and next buttons named.
+- **Results**: once per drawn page ("37 anuncios, página 2 de 4") or "Sin resultados" (`QueryItemsResponse`,
+  `IsNoResultPanelActive`), not while the loading indicator is up.
+- Sort, class, rarity, stall type and the other filters are `TMP_Dropdown`/input controls on the generic path (not audited).
+
 ## Mastery choice
 
 `ChooseMasteryPanel` is a `MasteryPanel` per class: each mastery card has name, description, passive bonuses, an
@@ -87,7 +100,7 @@ confirmation step (`UnityDrivenNavigable` with header/message) is read once on e
 | Circle of Fortune / Merchant's Guild / Forgotten Knights / Weaver rank panels | new reader (rank rewards, standing); trees, prophecies, timelines not done |
 | FullScreenPanelFactions | not done (Weaver tree) |
 | Gold / Soul / CoF / MG gambling, Hunter / Weaver / Timeglass vendors | new reader (currencies, tabs, refresh, prices) |
-| BazaarPanel | not done (market search, stall and listing UI) |
+| BazaarPanel | new reader (listings, pagination, results; filters and dropdowns generic) |
 | BazaarPurchaseConfirmationModal | fixed (named costs) |
 | DungeonKeysTrader, Exchange Woven Echoes, Eternity Cache | introduction and slot names |
 | Glyph of Insight, Randomize Legendary Potential, Reroll Unique, Shatter Set, Swap Attributes, Idol Enchantment | introduction and slot captions |
@@ -104,3 +117,4 @@ confirmation step (`UnityDrivenNavigable` with header/message) is read once on e
 2. Faction choice tiles and a rank panel: tile summary on entry, rank rewards with locked/unlocked.
 3. Woven Echo panels, dungeon keys trader: introduction before the first slot; Reroll slot names.
 4. Time beast tiles, loot filter rules, mastery choice cards, bazaar purchase confirmation costs.
+5. Bazaar: a search speaks the result line, listing cards read name, type and price, pages read their number.

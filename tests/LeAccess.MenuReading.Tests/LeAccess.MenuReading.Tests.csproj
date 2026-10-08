@@ -34,6 +34,7 @@
     <Compile Include="../../LeAccess/Accessibility/Endgame/EndgameText.cs" Link="EndgameText.cs" />
     <Compile Include="../../LeAccess/Accessibility/Panels/PanelText.cs" Link="PanelText.cs" />
     <Compile Include="../../LeAccess/Accessibility/Panels/CurrencyChanges.cs" Link="CurrencyChanges.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Market/MarketText.cs" Link="MarketText.cs" />
   </ItemGroup>
   <Import Project="../LocalizationSources.props" />
 </Project>

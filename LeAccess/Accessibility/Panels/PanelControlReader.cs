@@ -33,6 +33,7 @@ internal static class PanelControlReader
     {
         PanelIntro.Update();
         VendorReader.Update();
+        Market.BazaarReader.Poll();
         try { FactionReader.Poll(); }
         catch (Exception ex)
         {
