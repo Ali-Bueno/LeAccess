@@ -84,8 +84,8 @@ available with right-stick-up.
 During gameplay the right stick is the [exploration scanner](reference/exploration-mode.md),
 a port of the Diablo 2 mod's: push it up or down to change category and left or right to
 step through that category's entries, nearest first. The categories and their order are
-D2R's: exit, portal, waypoint, unexplored room, room, quest, NPC, player, corpse (where you
-last died), stash, enemy, treasure (chests), shrine, object (levers, notes, the forge and
+D2R's: exit, portal, waypoint, unexplored room, room, quest, NPC, player, last death (where you
+last died; a destination only, nothing to pick up), stash, enemy (every enemy on screen), treasure (chests), shrine, object (levers, notes, the forge and
 other interactables) and item (loot on the ground). A category step says its name and then
 its nearest entry; each entry gives its name, distance in steps (one step is the character's
 width) and one of eight screen directions. Places are listed once you have seen them; quest

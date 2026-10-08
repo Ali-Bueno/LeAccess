@@ -11,7 +11,7 @@ namespace LeAccess.Accessibility.Exploration;
 internal enum ExplorationCategory
 {
     Quest = 0, Exit = 1, Waypoint = 2, Npc = 3, Stash = 4, Enemy = 5, UnexploredRoom = 6, Portal = 7, Room = 8,
-    Player = 9, Corpse = 10, Treasure = 11, Shrine = 12, Interactable = 13, Item = 14
+    Player = 9, LastDeath = 10, Treasure = 11, Shrine = 12, Interactable = 13, Item = 14
 }
 
 internal readonly record struct ExplorationEntry(string Key, string Name, ExplorationCategory Category,
@@ -29,7 +29,7 @@ internal sealed class ExplorationCatalog
     {
         ExplorationCategory.Exit, ExplorationCategory.Portal, ExplorationCategory.Waypoint,
         ExplorationCategory.UnexploredRoom, ExplorationCategory.Room, ExplorationCategory.Quest,
-        ExplorationCategory.Npc, ExplorationCategory.Player, ExplorationCategory.Corpse, ExplorationCategory.Stash,
+        ExplorationCategory.Npc, ExplorationCategory.Player, ExplorationCategory.LastDeath, ExplorationCategory.Stash,
         ExplorationCategory.Enemy, ExplorationCategory.Treasure, ExplorationCategory.Shrine,
         ExplorationCategory.Interactable, ExplorationCategory.Item
     };
@@ -111,7 +111,7 @@ internal sealed class ExplorationCatalog
         ExplorationCategory.Portal => "exploration.category.portal",
         ExplorationCategory.Room => "exploration.category.room",
         ExplorationCategory.Player => "exploration.category.player",
-        ExplorationCategory.Corpse => "exploration.category.corpse",
+        ExplorationCategory.LastDeath => "exploration.category.last_death",
         ExplorationCategory.Treasure => "exploration.category.treasure",
         ExplorationCategory.Shrine => "exploration.category.shrine",
         ExplorationCategory.Interactable => "exploration.category.interactable",

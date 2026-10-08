@@ -335,7 +335,7 @@
   "exploration.category.quest": "quest",
   "exploration.category.npc": "NPC",
   "exploration.category.player": "player",
-  "exploration.category.corpse": "corpse",
+  "exploration.category.last_death": "last death",
   "exploration.category.stash": "stash",
   "exploration.category.enemy": "enemy",
   "exploration.category.treasure": "treasure",

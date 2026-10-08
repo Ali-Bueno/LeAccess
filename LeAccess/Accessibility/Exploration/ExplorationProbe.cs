@@ -19,7 +19,7 @@ namespace LeAccess.Accessibility.Exploration;
 internal readonly record struct ExplorationFind(ExplorationCategory Category, string Name);
 
 // Builds the scanner's entries in the D2R categories: seen places from the click-listener registry, the quest
-// markers the game shows, live enemies and other players, seen ground items, the death place and the rooms.
+// markers the game shows, live enemies and other players, seen ground items, the last death place and the rooms.
 internal static class ExplorationProbe
 {
     private const string DeathPrefix = "death|";
@@ -125,9 +125,10 @@ internal static class ExplorationProbe
         try
         {
             Contacts.Clear();
+            // Every enemy on screen, as a sighted player sees them, plus any within skill reach off screen.
             float range = ControllerTargetingParadigm._SkillTargetMaxDistance;
             if (float.IsFinite(range) && range > 0 &&
-                EnemyScanProbe.TryRead(GameplayEnvironment.IsOnlineClient, range, Contacts, out _))
+                EnemyScanProbe.TryRead(GameplayEnvironment.IsOnlineClient, range, Contacts, out _, view: UnityEngine.Camera.main))
             {
                 foreach (var contact in Contacts)
                 {
@@ -246,7 +247,7 @@ internal static class ExplorationProbe
             if (parts.Length != 3 || !float.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float x) ||
                 !float.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float y) ||
                 !float.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float z)) continue;
-            entries.Add(new ExplorationEntry("death", ModText.Get("exploration.death_place"), ExplorationCategory.Corpse,
+            entries.Add(new ExplorationEntry("death", ModText.Get("exploration.death_place"), ExplorationCategory.LastDeath,
                 new Vector3(x, y, z), MinimumArrival));
             return true;
         }

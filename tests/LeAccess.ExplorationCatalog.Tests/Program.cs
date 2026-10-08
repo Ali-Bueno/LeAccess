@@ -40,7 +40,7 @@ Equal(string.Join(",", new[]
     {
         ExplorationCategory.Exit, ExplorationCategory.Portal, ExplorationCategory.Waypoint, ExplorationCategory.UnexploredRoom,
         ExplorationCategory.Room, ExplorationCategory.Quest, ExplorationCategory.Npc, ExplorationCategory.Player,
-        ExplorationCategory.Corpse, ExplorationCategory.Stash, ExplorationCategory.Enemy, ExplorationCategory.Treasure,
+        ExplorationCategory.LastDeath, ExplorationCategory.Stash, ExplorationCategory.Enemy, ExplorationCategory.Treasure,
         ExplorationCategory.Shrine, ExplorationCategory.Interactable, ExplorationCategory.Item
     }), string.Join(",", ExplorationCatalog.Order), "D2R category order");
 Equal(Enum.GetValues<ExplorationCategory>().Length, ExplorationCatalog.Order.Distinct().Count(), "every category is in the order once");
@@ -128,7 +128,7 @@ var level = new List<ExplorationEntry>
     Entry("room:0", "Room 1", ExplorationCategory.Room, 0, 0),
     Entry("objective:1", "Quest", ExplorationCategory.Quest, 40, 0),
     Entry("player:7", "Friend", ExplorationCategory.Player, 2, 2),
-    Entry("death", "Death", ExplorationCategory.Corpse, -3, 0),
+    Entry("death", "Death", ExplorationCategory.LastDeath, -3, 0),
     Entry("listener:1", "Stash", ExplorationCategory.Stash, 1, 1),
     Entry("listener:2", "Chest", ExplorationCategory.Treasure, 5, 0),
     Entry("listener:3", "Shrine", ExplorationCategory.Shrine, 0, 5),

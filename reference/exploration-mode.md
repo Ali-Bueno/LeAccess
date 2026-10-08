@@ -325,9 +325,9 @@ implement the exploration mode as it is there and you did it halfway." Sources:
 | Quest | misión | quest markers and the encounter arrow the game shows |
 | Npc | PNJ | relay/`NPCInteraction`, or a name tooltip plus conversation on an actor body |
 | Player | jugador | every other player (`NearbyPlayerProbe.TryReadAll`), in sight or not, online only |
-| Corpse | cadáver | "donde moriste": where the player last stood alive before dying in this scene; Last Epoch leaves no corpse |
+| LastDeath (D2R Corpse) | última muerte | "donde moriste": where the player last stood alive before dying in this scene; only a destination, Last Epoch leaves no corpse to pick up (renamed from "cadáver" 2026-10-08 at the user's request) |
 | Stash | alijo | `service.stash` |
-| Enemy | enemigo | live hostiles in skill-targeting range |
+| Enemy | enemigo | live hostiles on screen (camera viewport, as a sighted player sees them) or within skill-targeting range (2026-10-08; before only targeting range, so the category was usually absent while exploring) |
 | Treasure | tesoro | chest identities of the world sounds (`WorldCueIdentityReader`), until opened |
 | Shrine | santuario | listeners under `ShrinesManager.GetAllShrineObjects()` (refreshed every 5 s) |
 | Interactable | mecanismo | everything else with a name: notes and journals (name tooltip and conversation, no actor), the forge and other non-NPC services, levers, signposts |

@@ -335,7 +335,7 @@
   "exploration.category.quest": "misión",
   "exploration.category.npc": "PNJ",
   "exploration.category.player": "jugador",
-  "exploration.category.corpse": "cadáver",
+  "exploration.category.last_death": "última muerte",
   "exploration.category.stash": "alijo",
   "exploration.category.enemy": "enemigo",
   "exploration.category.treasure": "tesoro",
