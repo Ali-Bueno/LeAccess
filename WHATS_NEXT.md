@@ -1,3 +1,22 @@
+# Handoff — 2026-10-08 night: idols, elites, scanner on Create + right stick, minion orders
+
+User (later the same evening): no way to find equipped idols; move the radar to Share + right stick because
+the right stick gives minion orders, and make those accessible; "Gilgamesh el Corrupto" (A60) sounded ordinary,
+took long to kill and had no life narration; keep looking for bugs. Installed after the game closed; all unheard.
+- Idols: the native route is Right from the equipment's right column (top row → idol altar, second row → idol
+  grid) or Up twice from the backpack's right half; the equipment slot says "Derecha: ídolos"; entering says
+  "Ídolos. N equipados. N ranuras libres…"; idols are a list like the backpack; slot states from the game; one new
+  prefix on `IdolsContainerUI.HandleNavigateInput` ([details](reference/idols.md)). Check: the hint, the summary,
+  moving and leaving the grid, R3 on an idol.
+- Elites: `BaseDisplayInformation.actorClass`/`IsChampion()`; "Gilgamesh el Corrupto, raro", a rising elite cue
+  for the nearest rare/champion, life narrated for the nearest on-screen elite; an enemy shown as Boss counts as a
+  boss even if `isBossOrMiniBoss()` is false ([details](reference/enemy-class.md)). Check Gilgamesh-like enemies.
+- Scanner: Create + right stick; the right stick alone is the game's minion command (the scanner used to fire it:
+  27 game NREs today); the mod holds the game's flag down while Create is held ([details](reference/minion-commands.md)).
+- Minion orders: polled from the game's re-arm flag; "Esbirros: atacar a X"/"Esbirros: mover", silent without
+  minions; log `[Minion command] minions=N target=…`. Check with a minion build online and offline.
+- Bug sweep of the log: remaining Unity errors are the game's own (decals, ability list on load, level customization).
+
 # Handoff — 2026-10-08 evening: loot by rarity, shrines/rifts/Nemesis, re-reads and online quests
 
 User report (away; installed after the game closed, nothing heard): inventory tabs read oddly; time rifts,

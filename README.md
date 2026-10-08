@@ -12,8 +12,9 @@ the latest installed build. Technical findings and reproduction notes live in
 
 - Menu focus, settings, character classes, mastery descriptions and notifications.
 - Visible dungeon entry/exit, boss confirmation and native modal instructions.
-- Skill and passive details, equipped-skill buttons, inventory actions, the inventory's
-  cosmetics tab ([cosmetics](reference/cosmetics-reading.md)) and quest journal reading.
+- Skill and passive details, equipped-skill buttons, inventory actions, equipped idols (Right from
+  the equipment's right column; [idols](reference/idols.md)), the inventory's cosmetics tab
+  ([cosmetics](reference/cosmetics-reading.md)) and quest journal reading.
 - Forge affix actions, shard details, and localized rune/glyph names and quantities.
 - Endgame and faction panels: dungeon/arena tiers, Monolith echoes and blessings, echo rewards,
   boss votes ([endgame](reference/endgame-panels.md)); faction choice and ranks, gamblers and special
@@ -106,8 +107,12 @@ toward the route through ground you have already explored, faster when closer, a
 when no explored route exists (keyboard: Ctrl+B). In menus the right stick keeps reading
 details (no Create needed). Without a button,
 [enemy cues](reference/enemy-cues.md) growl for up to three
-nearby enemies in sight (a deeper swoop for a boss), panned on screen and faster
-when closer; `[Enemy cues]` in the configuration turns them off or adjusts them.
+nearby enemies in sight (a deeper swoop for a boss, a rising sweep for the nearest rare or
+champion enemy), panned on screen and faster when closer; `[Enemy cues]` in the configuration
+turns them off or adjusts them. Magic, rare and champion enemies add their class to their name,
+and rare and champion enemies have their life narrated like bosses ([classes](reference/enemy-class.md)).
+A right-stick minion order is spoken ("Esbirros: atacar a X" / "Esbirros: mover") when you have
+minions ([minion commands](reference/minion-commands.md)).
 Each gold pickup or gold reward is spoken with its amount ("50 de oro"), except at
 vendors, which announce the new total ([gold](reference/vitals-api.md#gold-pickups-2026-10-08));
 level ups and new passive points or skill points are announced as they happen
