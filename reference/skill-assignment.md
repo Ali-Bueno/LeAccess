@@ -137,6 +137,21 @@ the user's check: Flurry in the class panel, available grid and action bar shoul
 agree on the assigned button; learned/locked skills should state their true
 requirements, and right-stick-up should remain the only description trigger.
 
+## Online equipped slots (2026-10-07, build 25711439)
+
+Online (log 2026-10-07): every skill lost its "Equipada"/"No equipada" status
+(`[Skill binding] player unavailable`) and action-bar slots in the assignment flow
+fell back to the object name "Ability Icon1". The online `Local Player` root has no
+`Actor` ([multiplayer-local-player.md](multiplayer-local-player.md)), so
+`PlayerFinder.getPlayerActor()` fails. Online, `SkillBindingReader` now reads
+`LocalPlayer.instance.abilityList` (`ClientAbilityList`) the way the HUD does:
+`getAbilityCount` (`0x23F0D70`) and `getAbility(slot - 1)` (`0x23F0DD0`), which take
+`abilities` once `directReferenceAbilityListInitialized` (+0x60) is set and resolve
+`abilityRefs` otherwise. `ClientAbilityList` overrides neither; base
+`getEquippedAbilities` is a bare `abilities` getter. Offline is unchanged.
+`SetTransformStateForClient` only stores a flag; the bar while transformed is unverified.
+Tests: Skills 268 (online list, unassigned, bar slot, empty slot, collected list).
+
 ## Square carries the highlighted skill (2026-10-04)
 
 User report: "I press Square to assign the skill to a button, but on the button the assign screen

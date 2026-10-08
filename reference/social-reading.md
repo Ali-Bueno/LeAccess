@@ -84,8 +84,8 @@ reader), `SocialWindows`, `SocialText` (wording), `SocialAccessibility` (polled 
 - Openings: the first announcement inside a newly visible window leads with its own labels
   (title, explanation) and the neutral username hint ("El nombre de usuario de la cuenta de Last Epoch; si tiene número, inclúyelo: Nombre#1234"; the number is optional, "canario69" worked for a friend request and a party invite); options lead with
   "Opciones de …". Introduced windows are forgotten when they hide.
-- Results: social chat lines are matched against the game's localized templates (37 keys from the
-  UI/Common tables; suffix templates after a name, `{n}` templates by pattern), logged `[Social]`,
+- Results: social chat lines are matched against the game's localized templates (38 keys from the
+  UI/Common tables, including the gift's `Notification_Resonance_Spent`; suffix templates after a name, `{n}` templates by pattern), logged `[Social]`,
   and lead the next Social announcement or speak alone one frame later. A "User service error: "
   log line while the invite window is open says "No se encontró ese nombre de usuario".
 - Typing: while a username window is open its field is polled; typed characters, erased characters
@@ -121,6 +121,76 @@ Unverified at runtime: what Cross does on a card (Member 2+ carry `SocialRightCl
 possibly the player options), whether `fillAmount` drives the bars, and `IsInteractable` while the
 portal is unavailable.
 
+## Presence and party internals (2026-10-07, static, build 25711439)
+
+Investigated after a co-op attempt where both friends saw each other offline and no party formed.
+- Online = the friend's account ID is in the chat service's online list (`0x1c37eb0`/`0x1c38970`, account ID
+  only) **and** their character summary has a non-empty name (`0x1cb6430`); a missing or unreadable summary
+  (`0x1c82d90`) lists them offline. `Get Online players - Chat system not connected` comes from `0x1ca0a10`.
+- The client filters presence by no region, realm, mode, solo or language. The own status dropdown is saved
+  locally only (`0x26ef480`; the server call `0x1caf7c0` is a no-op), so friends only see online/offline.
+- Opening the Friends tab adds one blank loading row to the online section (`0x17bacf0`); after a timer
+  (`0x17be130`) it is removed when nobody is online. `CountRows` skips rows with a blank name for this reason.
+- Opening Social re-queries presence when enough time has passed (`0x207b740` → `0x26c4c20`), so a failed
+  query at login does not stick.
+- The invite (`0x139fe50`) posts "X ha recibido la invitación a tu grupo" immediately, without a reply; only
+  the backend's `PartyIDChanged` (`0x1cae480`) proves a party. Realm, mode, solo and version mismatches are
+  server-side refusals with client error texts (`0x1f3cbe1`). `SHA MISMATCH` (`0x19031c0`) is log-only.
+
+## Item gifting (2026-10-07)
+
+User report: "the gift equipment menu doesn't work". Static analysis of Steam build **25764382** (V = verified
+in disassembly or assets, I = inferred); nothing below has been heard.
+
+- V "Regalar objeto" (party options, only for party members) runs `RightClickMenu.GiftItem` @0x26be870:
+  `UIBase.openInventory` @0x1803890 (inventory on the Right), then `UIBase.OpenItemGiftingPanel` @0x17fe6f0 →
+  `ItemGiftingPanel.OnOpenWithArgs` @0x2074880 → `ItemGiftingPanelUI.OnPanelOpen` @0x17a4d10 (panel in the Center).
+  With gifting disabled it first shows "El regalo ha fallado / Regalar no es posible en estos momentos.".
+- V The panel takes focus: `ItemGiftingPanel.OnSelected` @0x20748b0 selects its `ItemGiftPopupNavigable`
+  (NavigableID 119), whose `OnSelected` @0x10511e0 picks stop 0, Confirm (stop 2 with an item on the cursor).
+- V Prefab `assets_2c31067832ca1a75.bundle`, root `Item Gifting`: `_selectables` = Confirm Gift Button,
+  ResonanceSlot, giftedItem (`LegendaryContainerUI`, ContainerID 60 ITEM_TO_GIFT), Close_Button. Texts: title
+  `Gifts_Gifting_Header` "Regalo de objetos", recipient "Regalo a" + name (an unclosed colour tag), description
+  `Gifts_Description` ("Los jugadores solo pueden recibir objetos que hayan caído mientras estaban juntos en la
+  misma zona, a menos que se use una Resonancia al regalar."), `Gifts_Confirm`, `Gifts_Gifting_ResonanceRequired`
+  (box hidden until needed). The resonance and close stops are icons only.
+- V `HandleNavigateInput` @0x1050cb0: Up next stop, Down previous, wrapping; Left/Right nothing. Cross
+  (`HandleSubmitInput` @0x1050d50) presses a button, opens the resonance pop-up (`ResonanceFlyout`, rows
+  `GiftResonanceUI` with player and amount), picks the slot's item up, or on an empty slot jumps to the inventory.
+  Square on the slot returns the item. In the inventory Square moves the item into the slot (`ProcessDropSubmit`
+  → quick move); L2 is `TryFocusInDirection(-1)` @0x2066d60, focused location minus one: Right → Center.
+- V Rules (`ValidateGiftItem` @0x14121d0): items that dropped with the recipient present, otherwise a gold or
+  obsidian resonance; some uniques never. `ConfirmGiftItemButtonPress` @0x17a49f0 sends `MessageConfirmGiftItem`
+  only online; no confirmation dialog, the panel stays open. The server answers with notifications ("Regalo
+  enviado", "El destinatario tiene que estar en la misma zona.", "El inventario de regalos del destinatario está
+  lleno.") and the chat line "Has gastado 1 {0} para regalar un objeto.".
+- V The slotted resonance lives only in `<SlottedResonance>k__BackingField`, a native `Nullable<ResonanceType>`
+  (`get_SlottedResonance` @0x17a59b0 returns the word at +0x70; cleared to 0 by `ClearSlottedResonance`). The
+  interop wrapper throws while it is empty, so the mod reads its two bytes (hasValue, value) through the field's
+  runtime offset (layout I, from `Nullable<T>`).
+
+Why it seemed broken (I): the panel opened silently on an unavailable Confirm; nothing read the title, rule,
+slot or resonance (all icons or plain labels), and the way to the item (slot → inventory → Square → L2) was
+never said.
+
+Mod behaviour (`Gifting/GiftPanelReader`, `GiftAccessibility`, wording `GiftText`, keys `gift.*`):
+
+| Moment | Spanish |
+|---|---|
+| Opening (first stop) | "Regalo de objetos. Regalo a canario69. Los jugadores solo pueden recibir… Arriba y abajo recorren las opciones." + the stop |
+| Confirm | "Confirmar regalo, botón. Objeto: X. 1 de 4"; unavailable: "… (No disponible). Primero pon un objeto en la ranura de regalo" or "Objeto: X. Necesitas resonancias" |
+| Resonance stop | "Sin resonancia / Resonancia de oro / Resonancia de obsidiana. Cruz para elegir una resonancia. 2 de 4" |
+| Slot | "Ranura de regalo vacía. Cruz va al inventario; allí, Cuadrado trae el objeto. 3 de 4" or "Ranura de regalo: X. Cuadrado lo devuelve al inventario" |
+| Close | "Cerrar, botón. 4 de 4" |
+| Resonance pop-up row | "Resonancia de oro. <player>. Cantidad: 3" |
+| Inventory while gifting | first brief led by "Regalo de objetos abierto: Cuadrado lleva el objeto a la ranura de regalo; L2 vuelve al regalo"; after Square "X listo para regalar. L2 vuelve al regalo" or "No se movió a la ranura de regalo" |
+
+The panel is polled (state changes on the same stop are spoken again); the manual-details gesture repeats the
+panel's text and the stop. `[Gift] panel open, focus on <navigable>` logs every time the open panel loses focus,
+so a test shows where focus went after "Regalar objeto". Tests: gift wording and the resonance chat line in
+`tests/LeAccess.Social.Tests`. Pending listening: focus right after the options menu closes (it deregisters the
+party navigable), the result notifications, resonance rows, and an item left in the slot when the panel closes.
+
 ## Limits and pending listening
 
 - Whether the windows open with focus on their button or field is unheard.
@@ -128,4 +198,4 @@ portal is unavailable.
 - The invite failure log line is not specific to "not found" (network errors read the same).
 - Which social lines really pass through `SubmitSystemMessage` beyond the three disassembled ones.
 - How a controller user reaches the invitation prompt: read the focus log line on the first test.
-- Tests: `tests/LeAccess.Social.Tests` (58 checks).
+- Tests: `tests/LeAccess.Social.Tests` (74 checks).

@@ -205,13 +205,17 @@ internal static class SocialReader
         return false;
     }
 
-    // Collapsing deactivates the rows but keeps them, so every player row in the panel counts.
+    // Collapsing deactivates the rows but keeps them, so every named row counts; the panel's own
+    // loading placeholder has a blank name and is not a player (reference/social-reading.md).
     private static int CountRows(GameObject panel)
     {
         int count = 0;
         var parent = panel.transform;
         for (int i = 0; i < parent.childCount; i++)
-            if (IsAlive(parent.GetChild(i).GetComponent<SocialPanelPlayerRef>())) count++;
+        {
+            var row = parent.GetChild(i).GetComponent<SocialPanelPlayerRef>();
+            if (IsAlive(row) && IsAlive(row.socialPlayerName) && !string.IsNullOrWhiteSpace(row.socialPlayerName.text)) count++;
+        }
         return count;
     }
 

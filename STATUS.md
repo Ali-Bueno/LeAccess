@@ -1,6 +1,16 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-06 (Claude session): first co-op session worked (invite, accept, portal). Fixed: the
+**Updated:** 2026-10-07 evening (Claude session): game build 25764382. Online exploration memory now saves
+(key had no character identity online); inventory no longer jumps to the last item (hidden pointer hover);
+crafting materials, "Regalar objeto" gifting, the game guide article and stash tabs are read
+([inventory](reference/inventory-drop-focus.md), [crafting](reference/crafting-reading.md),
+[gift](reference/social-reading.md), [guide](reference/guide-reading.md), [exploration](reference/exploration-mode.md)).
+All unheard. Earlier 2026-10-07: co-op works again after restarts. Online skills now say
+Equipada/No equipada and action-bar slots read their skill (the online root has no `Actor`;
+[details](reference/skill-assignment.md#online-equipped-slots-2026-10-07-build-25711439)). New-character
+checkboxes, Normal/Difícil and the realm banner speak their state; either mode button flips the mode
+([details](reference/creation-menu-reading.md)).
+Earlier, 2026-10-06: first co-op session worked (invite, accept, portal). Fixed: the
 joining player's mod losing its own character ([details](reference/multiplayer-local-player.md)) and the
 "Grupo" party overview reading raw names ([details](reference/social-reading.md)); listening pending.
 Earlier, 2026-10-05 latest: L3/R3 were still silent: the game draws its older
@@ -43,7 +53,7 @@ Startup, online play and listening on this build still need in-game validation.
 
 ## Current installation
 
-- **Game:** Steam build **25711439** (version 1.5.1.2) since 2026-10-04 15:18, Unity **6000.4.8f1**, IL2CPP metadata **39**. BepInEx regenerated interop at 16:28 on the user's launch; the repair patcher fixed the same 16 rows in five assemblies.
+- **Game:** Steam build **25764382** since 2026-10-07 14:16 (the server updated first, hence that morning's `SHA MISMATCH`); before it 25711439 (1.5.1.2) since 2026-10-04 15:18. RVAs in older reference docs belong to their stated build. Then: Unity **6000.4.8f1**, IL2CPP metadata **39**. BepInEx regenerated interop at 16:28 on the user's launch; the repair patcher fixed the same 16 rows in five assemblies.
 - **Path:** `D:\games\steam\steamapps\common\Last Epoch`.
 - **Loader:** BepInEx **6.0.0-be.788**, Il2CppInterop **1.5.3**; automatic updates remain enabled.
 - **Interop:** regenerated offline from the installed binary/metadata, 214 DLLs and two native databases installed and byte-verified. The existing preloader repaired the same 16 Unity orphan rows. Native audit: 46 regressions, 60 declarations / 59 targets.
@@ -91,7 +101,7 @@ requested. No release or new ZIP has been requested.
 | Area | Current evidence / remaining work |
 |---|---|
 | Steam port | Earlier build 25672295 logged online creation, connection and InGame. Current hotfix compiles and passes native audit; startup/online listening pending. |
-| Native hook safety | 46 checks; build 25690669, 72 declarations / 71 distinct native targets; two new hooks (2026-10-04 afternoon: `SkillsPanelManager.HandleNavigateInput` prefix, `EpochInputManager.ControllerShouldBeActive` postfix) first relative branch +0x13/+0x15. Audit on 25711439 after regeneration: 46 checks, 75 declarations / 74 native targets. Hooks whose original runs must not start with a relative branch: the passive navigate prefix and three tiny bodies now replay the native code instead ([detour crash](reference/runtime-feedback.md#passive-navigation-crash-detoured-short-branch-prologue-2026-10-04)). |
+| Native hook safety | 46 checks; build 25690669, 72 declarations / 71 distinct native targets; two new hooks (2026-10-04 afternoon: `SkillsPanelManager.HandleNavigateInput` prefix, `EpochInputManager.ControllerShouldBeActive` postfix) first relative branch +0x13/+0x15. Audit on 25711439 after regeneration: 46 checks, 75 declarations / 74 native targets. On 25764382 (2026-10-07): 46 checks, 80 declarations / 79 native targets; new `ItemContainerUI.set_IsHovered` prefix, first relative branch +0x17. Hooks whose original runs must not start with a relative branch: the passive navigate prefix and three tiny bodies now replay the native code instead ([detour crash](reference/runtime-feedback.md#passive-navigation-crash-detoured-short-branch-prologue-2026-10-04)). |
 | Reader recovery | Bounded reconnection; covered readers acknowledge accepted output and retry current content. 41 transport checks plus service regressions. [Scope/limits](reference/screen-reader-lifecycle.md); listening pending. |
 | Early online/offline selection | Empty native nullable no longer throws during readiness polling or erases the first click; observation failures retain intent, dispatch remains once-only. 56 checks; fresh startup listening pending. |
 | Menus/focus | Screen-reader keys (Ctrl, Shift, Alt, Insert, CapsLock, Windows) keep controller mode, so menus no longer lose focus and reset ([cause](reference/runtime-feedback.md#controller-mode-lost-to-screen-reader-keys-2026-10-04)). Settings sliders/toggles speak only the new value while focus stays; headings no longer repeat after dropdowns; popups never speak raw object names; controller button names localized; zero-height labels that render (main-menu "Partida sin conexión") are read again. Native mediator callbacks follow FocusedPanel; typed forge/material selections and background/faded guards. 307 menu + 63 settings-source checks. [Audit and limits](reference/menu-visibility.md); listening pending. |
@@ -136,6 +146,9 @@ requested. No release or new ZIP has been requested.
 
 ## Validation and references
 
+- 2026-10-07 17:14: friend ZIP `LeAccess-Steam-1.5.1-prueba-20261007-171427.zip` (repo root, ignored by git), SHA-256 `1708B9E3A6C144EEA4D030EEE342D99C79F82D15BCF5E1F2563A70AFA25920AB`, 264 files, game build 25764382; adds online exploration saving, inventory jump fix, materials, gifting, guide and stash readers; readme lists them. Inventory 317, MenuReading 336, Social 74, Forge 51, Localization 884, PatchSafety 46, Exploration 368, Skills 268, Classes 143, package 242. `tests/LeAccess.ItemTooltipModel.Tests` does not compile since 85bcaa7 (missing `CraftingMainUI` double).
+- 2026-10-07 12:30: friend ZIP `LeAccess-Steam-1.5.1-prueba-20261007-123005.zip` (repo root, ignored by git), SHA-256 `F5F9CB869628C4833B2B23990D9C9D061485C1F94D3289800F63FEF0EBC2A68A`, 264 files; adds online skill equip status and action-bar slot reading. Skills 268.
+- 2026-10-07 11:41: friend ZIP `LeAccess-Steam-1.5.1-prueba-20261007-114140.zip` (repo root, ignored by git), SHA-256 `D45EC138BD7B55779F921BFC7B9BBDF89AEC1735133D8EA566198D180D280DC3`, 264 files; adds the creation choice states and stops counting the Friends loading placeholder as a player; readme explains the mode buttons and grouping rules. Package tests 242.
 - 2026-10-06 16:08: friend ZIP `LeAccess-Steam-1.5.1-prueba-20261006-160806.zip` (repo root, ignored by git), SHA-256 `26C92028BBEED2032FFEF7850E572ED8394ABFF3964CC1F0E722ED11AC9F8333`, 264 files; adds the co-op local-player fix and the party overview reader.
 - 2026-10-06 15:30: friend ZIP `LeAccess-Steam-1.5.1-prueba-20261006-153055.zip` (repo root, ignored by git), SHA-256 `A4CD7F82736D30722B10405A277A9596105E0259957D2CE3F550073A00BB8A1D`, 264 files, game 1.5.1.2 / build 25711439; adds L3/R3 comparison (older tooltip), forge from the inventory and the Social reader; readme lists them.
 - 2026-10-05 13:45: friend ZIP `LeAccess-Steam-1.5.1-prueba-20261005-134547.zip` (repo root, ignored by git), SHA-256 `EA128FC6D28E1FE20F12F9A01AF59B52E3261838FD160AFD341BC76B618453E5`, 264 files, game 1.5.1.2 / build 25711439; readme now lists skill modification, passive/banner rules and gold. Its `LeAccess.dll` (`3BDD2F412E0580F96ECE101923A4C31F1DED8B22FBBD31F5745B4EE49F6EB3BF`) is the installed copy. Package tests: 242 checks. Rebuilds of the same source can differ in bytes, so the package build's DLL was installed rather than the earlier one.

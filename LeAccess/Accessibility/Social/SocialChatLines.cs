@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace LeAccess.Accessibility.Social;
 
-/// <summary>Recognises the game's system chat lines about parties, friends and blocking by their localized templates.</summary>
+/// <summary>Recognises the game's system chat lines about parties, friends, blocking and gift resonances by their localized templates.</summary>
 /// <remarks>Keys come from the game's UI and Common string tables; see reference/social-reading.md.</remarks>
 internal static class SocialChatLines
 {
@@ -24,7 +24,7 @@ internal static class SocialChatLines
         "Common_CycleMissmatch_invite_Legacy", "Common_CycleMissmatch_invite_Cycle", "ErrorCode_PartyInviteExistingDungeonRun",
         "ErrorCode_PartyServerProfileMismatch", "ErrorCode_PartySoloChallenge", "ErrorCode_PartyModeMismatch",
         "ErrorCode_PartyLeave", "ErrorCode_PartyPromote", "ErrorCode_PartyCreate", "ErrorCode_PartyFetch",
-        "ErrorCode_PartySetRegion", "ErrorCode_KickedForInactivity"
+        "ErrorCode_PartySetRegion", "ErrorCode_KickedForInactivity", "Notification_Resonance_Spent"
     };
 
     /// <summary>Whether a system line is one of the social templates, given the game's current text for a key.</summary>

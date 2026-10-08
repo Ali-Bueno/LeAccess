@@ -8,6 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/Social/*.cs" Link="%(Filename)%(Extension)" />
+    <Compile Include="../../LeAccess/Accessibility/Gifting/GiftText.cs" Link="GiftText.cs" />
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentTracker.cs" Link="ScreenContentTracker.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/UiVisibility.cs" Link="UiVisibility.cs" />
     <Compile Include="../UiScreenGeometryStub.cs" Link="UiScreenGeometryStub.cs" />

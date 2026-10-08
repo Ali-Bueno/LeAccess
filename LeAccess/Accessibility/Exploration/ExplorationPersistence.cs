@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using EHG.Multiplayer;
 using LeAccess.Accessibility.MapSections;
+using LeAccess.Accessibility.Players;
 
 namespace LeAccess.Accessibility.Exploration;
 
@@ -12,12 +12,11 @@ namespace LeAccess.Accessibility.Exploration;
 internal static class ExplorationPersistence
 {
     private const double SaveSeconds = 30;
-    private const int MaxNameLength = 64;
     private static string _key;
     private static long _session;
     private static int _savedCells, _savedSeenVersion;
     private static double _nextSave;
-    private static string _lastWarning;
+    private static string _lastWarning, _lastTrace;
 
     internal static void Update(double now, MapSectionWorldSnapshot world)
     {
@@ -59,25 +58,57 @@ internal static class ExplorationPersistence
         _session = 0;
         _savedCells = _savedSeenVersion = 0;
         _nextSave = 0;
-        _lastWarning = null;
+        _lastWarning = _lastTrace = null;
     }
 
+    // Online, PlayerFinder's character data can lack the name or class (see reference/exploration-mode.md),
+    // so each identity part is read from the first source that has it.
     private static string CurrentKey()
     {
-        var character = PlayerFinder.getPlayerData();
-        if (character is null || character.WasCollected) return null;
-        string name = character.CharacterName;
-        if (string.IsNullOrWhiteSpace(name)) return null;
-        return $"{(GameplayEnvironment.IsOnlineClient ? "online" : "offline")}-{SanitizeName(name)}-{character.CharacterClass}";
+        bool online = GameplayEnvironment.IsOnlineClient;
+        string name = null, account = null;
+        int? classId = null;
+        string trace = null;
+        try
+        {
+            var character = PlayerFinder.getPlayerData();
+            bool hasData = character is not null && !character.WasCollected;
+            if (hasData)
+            {
+                name = character.CharacterName;
+                classId = character.CharacterClass;
+            }
+            if (online)
+            {
+                if (string.IsNullOrWhiteSpace(name)) name = TrackerName();
+                if (string.IsNullOrWhiteSpace(name)) name = InfoProviderName();
+                account = AccountName();
+                trace = $"data={(hasData ? "present" : "absent")} name='{name}' class={classId?.ToString() ?? "none"} account='{account}'";
+            }
+        }
+        catch (Exception ex) { Warn($"identity read failed: {ex.Message}"); }
+        string key = ExplorationKey.Compose(online, name, classId, account);
+        if (online && key != _lastTrace)
+        {
+            _lastTrace = key;
+            Plugin.Log.LogInfo($"[Exploration saved] online identity key={key ?? "none"} {trace}");
+        }
+        return key;
     }
 
-    internal static string SanitizeName(string name)
+    private static string TrackerName()
     {
-        var invalid = Path.GetInvalidFileNameChars();
-        var text = new StringBuilder();
-        foreach (char c in name.Trim())
-            text.Append(char.IsControl(c) || Array.IndexOf(invalid, c) >= 0 || c == ' ' ? '_' : c);
-        return text.Length > MaxNameLength ? text.ToString(0, MaxNameLength) : text.ToString();
+        var tracker = PlayerFinder.getPlayerDataTracker();
+        return tracker is null || tracker.WasCollected ? null : tracker.getCharacterName();
+    }
+
+    private static string InfoProviderName() =>
+        PlayerFinder.TryGetLocalPlayerInfo(out var info) && info is not null && !info.WasCollected ? info.getCharacterName() : null;
+
+    private static string AccountName()
+    {
+        var identity = LocalPlayerSource.Visuals?.UserIdentity;
+        return identity is null || identity.WasCollected ? null : identity.Username;
     }
 
     private static string PathFor(string key) =>

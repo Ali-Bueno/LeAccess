@@ -127,3 +127,36 @@ manual gesture, without activation or adjacent-mastery speech. The user-confirme
 `charCycle` and, only while its object is active, `hardcoreTag` text, all in the
 game's own localized text. Popup mode no longer falls back to generic object names
 ("Button", "Toggle"); it uses tooltip text or stays silent. Needs an in-game check.
+
+## New-character details: checkboxes, game mode, change realm
+
+Inspected in the installed `PermaLoad.bundle/CharacterSelection` prefab on 2026-10-07 (game closed).
+`LocalCharacterSlots` and `CharacterSelect` share the root `CharacterSelection` object.
+
+| Control | Component / binding | State source |
+|---|---|---|
+| `Challenges/Solo Account Found` | `Button`, `onClick` -> `LocalCharacterSlots.ToggleSoloChallenge` | `isSoloChallenge`; its `selected` child is the typed `soloChallengeCheckmark` |
+| `Challenges/Solo Character Found` | `Button`, `onClick` -> `ToggleSoloCharacterChallenge` | `isSoloCharacterChallenge`; `selected` child is `soloCharacterChallengeCheckmark` |
+| `Game Modes/Standard`, `Game Modes/Hardcore` | `Button`, `onClick` -> `toggleTransform` then `ToggleHardcoreChallenge` (both buttons) | `isHardcore`; each has an untyped `selected` frame (Standard active by default) |
+| `Cycle-Realm-Selected/changeRealmButton`, `Legacy-Realm-Selected/changeRealmButton` | `Button`, `onClick` -> `SetActive` on `CycleModal` and the realm-choice buttons | the banner is the typed `CharacterCreationRealm_Cycle` / `_Legacy`; title is `CycleName` (Cycle) or `Name` (Legacy) |
+| `Create Character Button` | typed `createCharacterButton`; no state | not changed |
+
+`CreationChoiceReader` identifies checkboxes through their typed checkmark (the checkmark's parent is the
+button), realms through the typed banner GameObjects, and Standard/Hardcore only by exact name under
+`Game Modes` (no typed reference exists). Labels are the control's single visible direct-child TMP text, so
+names stay in the game's language; an ambiguous or missing label falls back to the generic reader.
+
+Spoken (es): "Botín en solitario - personaje, casilla, no marcada" / "..., casilla, marcada";
+"Normal, seleccionado" / "Difícil, no seleccionado"; "Cambiar de reino, reino actual: Temporada 5" (or the
+Legacy title). After a press, `Poll` (from `MenuAccessibility`, no Harmony patch) speaks only the new state once:
+"marcada" / "no marcada" for checkboxes, the mode now selected for modes ("Difícil, seleccionado" even when
+Normal was pressed), the full line for a realm change.
+It stays silent while the control is not focused and when the state was already read by a focus announcement.
+
+**Either mode button switches the mode.** Both carry a `MultiTransformToggler` (`toggleType` 0 = `BothWays`)
+whose `transformsToToggle` are the same three objects (`Standard/selected`, `Hardcore/selected`,
+`Hardcore/HardcoreDetailsHolder`), then call `ToggleHardcoreChallenge`; both are interactable. Pressing
+"Normal" while Normal is selected therefore creates a hardcore character. Verified in the prefab 2026-10-07.
+
+Tests: `tests/LeAccess.Classes.Tests/CreationChoiceTests.cs`. Needs an in-game check: the exact rendered
+realm title text.

@@ -1,5 +1,20 @@
 # Menu reading audit — Steam 1.5.0.1
 
+## Guide and menu sweep (2026-10-07, log 16:16)
+
+Fixed: the [game guide](guide-reading.md) article, its category states and the hint tooltip;
+stash tabs and folders now say name, item or tab count, selected/priority state and
+folder expansion (`Items/StashTabReader`; the generic path gave only the label).
+
+Checked in the log, no change needed: dialogue responses, quest reward confirm, social
+headers and tabs, party invite, pause/main menu buttons, keyboard keys, MTX tab.
+
+Remaining, not verified by log or prefab: the transient "Ability Selection Icon" object-name
+speech when the skill picker grid first focuses (skill agent area); "Available/Incompatible
+Affixes Holder" names (forge shard list, crafting area); non-modal endgame panels
+(Monolith, Factions, Observatory, Nemesis, Circle of Fortune, character stats) have no dedicated
+reader and no log evidence yet; the stash tab/folder wording needs a listening check.
+
 ## Native/prefab follow-up (2026-10-02)
 
 The latest user report led to verified fixes for [creation tabs and class

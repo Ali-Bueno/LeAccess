@@ -8,7 +8,10 @@ namespace LeAccess.Accessibility.Announcements;
 
 internal static class CraftingMaterialReader
 {
-    internal static bool TryRead(GameObject element, out string text, out bool unavailable)
+    // Key template of ItemTooltipContentBuilder.GetDescription (build 25764382, 0x1FEC390): base type, then subtype.
+    private const string DescriptionKey = "Item_SubType_Description_{0}_{1}";
+
+    internal static bool TryRead(GameObject element, bool includeDetails, out string text, out bool unavailable)
     {
         text = null;
         unavailable = false;
@@ -31,10 +34,21 @@ internal static class CraftingMaterialReader
             string quantity = TextUtils.IsVisibleLabel(label) && label.transform.IsChildOf(material.transform)
                 ? TextUtils.CleanText(label.text) : null;
             text = ScreenContentTracker.Combine(new[] { name,
-                string.IsNullOrWhiteSpace(quantity) ? null : ModText.Format("crafting.quantity", quantity) });
+                string.IsNullOrWhiteSpace(quantity) ? null : ModText.Format("crafting.quantity", quantity),
+                includeDetails ? Description(types[0], source.allowedSubID) : null });
             unavailable = !material.interactable;
             return true;
         }
         catch (System.Exception) { text = null; unavailable = false; return false; }
+    }
+
+    // The game's own tooltip description: localized by key, the item list's text as fallback; needs no item in stock.
+    private static string Description(int baseType, int subType)
+    {
+        var items = ItemList.get();
+        var entry = items is not null && !items.WasCollected ? items.GetNonEquipmentSubItem(baseType, subType) : null;
+        if (entry is null || entry.WasCollected) return null;
+        string text = TextUtils.CleanText(Localization.GetText(string.Format(DescriptionKey, baseType, subType), entry.description));
+        return string.IsNullOrWhiteSpace(text) ? null : text;
     }
 }

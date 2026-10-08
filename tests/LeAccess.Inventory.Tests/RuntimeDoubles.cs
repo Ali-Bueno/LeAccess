@@ -156,6 +156,8 @@ internal class ItemContainerUI : UnityEngine.Component
     public ItemContainerEntry currentlySelectedItem;
     public UnityEngine.Vector2Int currentFocusSlot { get; set; }
     public bool forceUpdate;
+    public bool isHovered;
+    public bool IsHovered { get => isHovered; set => isHovered = value; }
     public bool singleSlotControllerNavigation;
     internal UnityEngine.Vector2Int NearestSlot;
     internal readonly List<ItemContainerEntry> Focused = new();

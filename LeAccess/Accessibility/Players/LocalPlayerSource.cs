@@ -35,7 +35,7 @@ internal static class LocalPlayerSource
     internal static bool FromLocalPlayer => OnlineLocal() is not null;
 
     // LocalPlayer.Awake stores itself; only the tagged local root carries that component.
-    private static LocalPlayer OnlineLocal()
+    internal static LocalPlayer OnlineLocal()
     {
         if (!GameplayEnvironment.IsOnlineClient) return null;
         var local = LocalPlayer.instance;

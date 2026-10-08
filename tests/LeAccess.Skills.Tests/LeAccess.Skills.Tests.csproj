@@ -11,6 +11,7 @@
     <Compile Include="../../LeAccess/Accessibility/Announcements/UiVisibility.cs" Link="UiVisibility.cs" />
     <Compile Include="../UiScreenGeometryStub.cs" Link="UiScreenGeometryStub.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Players/LocalPlayerSource.cs" Link="LocalPlayerSource.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/GroupedGridOrder.cs" Link="GroupedGridOrder.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/GroupEntryTracker.cs" Link="GroupEntryTracker.cs" />
     <Compile Include="../../LeAccess/Accessibility/Utils/TextUtils.cs" Link="TextUtils.cs" />

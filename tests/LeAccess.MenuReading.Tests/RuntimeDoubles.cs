@@ -275,6 +275,8 @@ namespace LeAccess.Accessibility.CharacterCreation
     { internal static bool TryReadControl(UnityEngine.GameObject go, out ClassSelection selection) { selection = default; return false; } }
     internal static class CharacterTileReader
     { internal static bool TryRead(UnityEngine.GameObject go, out string text) { text = null; return false; } }
+    internal static class CreationChoiceReader
+    { internal static bool TryRead(UnityEngine.GameObject go, out string text) { text = null; return false; } }
     internal static class ClassCarouselHandler
     { internal static bool TryHandleFocus(UnityEngine.GameObject go) => false; }
     public static class MasteryReader
@@ -310,6 +312,13 @@ namespace LeAccess.Accessibility.Items
         internal const string BuybackText = "Recompra";
         internal static bool TryReadTab(UnityEngine.GameObject go, out string text)
         { text = go == OwnedTab ? BuybackText : null; return text != null; }
+    }
+    internal static class ItemTooltipReader
+    {
+        internal static UnityEngine.GameObject Opener;
+        internal static string Text;
+        internal static bool TryReadForOpener(UnityEngine.GameObject opener, TooltipItemManager.SlotType slot, out string text)
+        { text = opener is not null && ReferenceEquals(opener, Opener) && slot == TooltipItemManager.SlotType.AFFIX ? Text : null; return text != null; }
     }
 }
 namespace LeAccess.Accessibility.Inventory { public static class InventoryAccessibility { public static bool TryHandleFocus(UnityEngine.GameObject go) => false; } }

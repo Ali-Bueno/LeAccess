@@ -11,6 +11,7 @@
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/ClassSelectionReader.cs" Link="ClassSelectionReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/CreationClassTabReader.cs" Link="CreationClassTabReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/CreationRealmReader.cs" Link="CreationRealmReader.cs" />
+    <Compile Include="../../LeAccess/Accessibility/CharacterCreation/CreationChoiceReader.cs" Link="CreationChoiceReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/ClassCarouselHandler.cs" Link="ClassCarouselHandler.cs" />
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/MasteryReader.cs" Link="MasteryReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentTracker.cs" Link="ScreenContentTracker.cs" />
@@ -19,4 +20,5 @@
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
     <Compile Include="../../LeAccess/Accessibility/Utils/TextUtils.cs" Link="TextUtils.cs" />
   </ItemGroup>
+  <Import Project="../LocalizationSources.props" />
 </Project>

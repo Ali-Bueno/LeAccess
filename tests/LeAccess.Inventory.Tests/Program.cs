@@ -405,6 +405,7 @@ InventoryActionTests.Run(Check);
 EquippedItemTests.Run(Check);
 SpeechAcceptanceTests.Run(Check);
 DropFocusTests.Run(Check);
+PointerHoverTests.Run(Check);
 NavigationTests.Run(Check);
 GoldNoticeTests.Run(Check);
 ComparisonModeTests.Run(Check);

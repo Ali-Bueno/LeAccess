@@ -18,6 +18,7 @@ void Reset()
     ScreenContentAnnouncer.Root = null; DialogueAnnouncer.HasActiveContent = false;
     ControllerMenuAccessibility.HasActiveContent = false; NavigationManager.currentlySelected = null;
     CharacterSelect.instance = null; Localization.Texts.Clear(); Localization.Common = new();
+    LocalCharacterSlots.instance = null; CreationChoiceReader.Reset();
 }
 void Frame() { ScreenReader.SpokeThisFrame = false; ClassCarouselHandler.CheckPendingClassAnnouncement(); }
 MasteryButton Mastery(GameObject parent, string name, string description)
@@ -189,4 +190,5 @@ Check(!MasteryReader.TryGetMasteryInfo(first.gameObject, out _, out _), "ambiguo
 checks += CreationTabTests.Run(Reset);
 checks += CreationRealmTests.Run(Reset);
 checks += CharacterTileTests.Run(Reset);
+checks += CreationChoiceTests.Run(Reset);
 Console.WriteLine($"Classes: {checks} checks passed.");

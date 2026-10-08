@@ -85,7 +85,7 @@ public static class ElementAnnouncer
         if (ControllerMenuAccessibility.TryHandleFocus(go) || InventoryAccessibility.TryHandleFocus(go) ||
             PassiveAccessibility.TryHandleFocus(go) || QuestAccessibility.TryHandleFocus(go) ||
             SkillAccessibility.TryHandleFocus(go) || ClassCarouselHandler.TryHandleFocus(go) ||
-            Forge.ForgeAccessibility.TryHandleFocus(go)) return;
+            Forge.ForgeAccessibility.TryHandleFocus(go) || Gifting.GiftAccessibility.TryHandleFocus(go)) return;
 
         if (!UiFocusOwnership.Allows(go)) return;
         go = Social.SocialReader.Canonical(go);
@@ -251,6 +251,9 @@ public static class ElementAnnouncer
         if (!restrictToControl && Items.MerchantMenuReader.TryReadTab(go, out string merchantTab))
             return merchantTab;
         if (CharacterTileReader.TryRead(go, out string tileText)) return tileText;
+        if (Guide.GuideAccessibility.TryReadCategory(go, out string guideText)) return guideText;
+        if (Items.StashTabReader.TryRead(go, out string stashText)) return stashText;
+        if (CreationChoiceReader.TryRead(go, out string choiceText)) return choiceText;
         if (WaypointReader.TryRead(go, includeDetails, out string waypointText)) return waypointText;
         if (CharacterStatLineReader.TryRead(go, out string statText)) return statText;
         if (ClassSelectionReader.TryReadControl(go, out var classSelection))
@@ -264,13 +267,15 @@ public static class ElementAnnouncer
         // Check if this option is disabled by the game developers
         bool isDisabledOption = IsDisabledOption(go);
 
-        if (CraftingMaterialReader.TryRead(go, out string materialText, out bool materialUnavailable))
+        if (CraftingMaterialsPanelReader.TryRead(go, out string materialsPanelText)) return materialsPanelText;
+        if (CraftingMaterialReader.TryRead(go, includeDetails, out string materialText, out bool materialUnavailable))
             return FormatSpecializedAnnouncement(go, materialText, includeDetails, isDisabledOption || materialUnavailable);
         if (CraftingControlReader.TryRead(go, includeDetails, out string craftingText, out bool craftingUnavailable))
             return FormatSpecializedAnnouncement(go, craftingText, includeDetails, isDisabledOption || craftingUnavailable);
         if (FilterRangeControlReader.TryRead(go, out string filterRangeText, out bool filterRangeUnavailable))
             return FormatSpecializedAnnouncement(go, filterRangeText, includeDetails, isDisabledOption || filterRangeUnavailable);
         if (Social.SocialReader.TryRead(go, out string socialText)) return socialText;
+        if (Gifting.GiftPanelReader.TryReadResonanceRow(go, out string resonanceText)) return resonanceText;
 
         // Layer 1: Try to get label from InfoForTooltip
         TextDetector.TryGetFromTooltipInfo(go, ref label, ref description);

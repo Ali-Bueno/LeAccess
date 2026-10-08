@@ -272,3 +272,47 @@ Square that fills a forge slot leads the next brief with "<item> en la forja"; S
 the item in place with an empty cursor speaks "No se movió a la forja" (with the forge's item when
 it holds one). Focus on `CraftingMainUI` is read by the forge reader (item and "Confirma para dejar
 aquí el objeto que llevas"), not as an inventory slot. Listening pending.
+
+## Crafting materials from the inventory (2026-10-07)
+
+User report: shards, glyphs and runes cannot be read from the inventory. Steam build **25764382**
+(updated that day; the materials bundle `assets_302b3eb53d6ca3c0.bundle` changed with it). V = verified.
+
+Log of the 2026-10-07 session: the equipment's way up reaches `openCraftingInventoryButton` ("Materiales de
+fabricación"); Cross opens the panel on the filter "cualquier afijo" (5429–5442, 12270–12316). Shard rows
+`ShardButton(Clone)` spoke only the affix name ("Vida"); the section stops spoke their object names
+("Available Affixes Holder", "Incompatible Affixes Holder"); Up from the filter reached "Runa de creación.
+Cantidad: 0" (12285), but nothing said the runes and glyphs are there.
+
+- V `CraftingMaterialsPanelUI.HandleNavigateInput` 0x178CE20, on the filter row (NavigableID 21): Up →
+  `TryToSelectNavigableFromIDAndSetIndex(CRAFTING_RUNES_AND_GLYPHS_PANEL 57, (5,1))`; Down → shard list
+  (CRAFTING_MATERIALS_SCROLL_VIEW 23) only when `IsAnyShardAffixAvailable`; Left/Right walk the three filter
+  `TabUIElement`s (`prefixesOnly`, `allAffixes`, `suffixesOnly`; current one in `currentlySelected`), Left
+  of the first reaches the search field (22). Up from the list's top returns to the filters.
+- V Row prefab `ShardButton`: the root holds `ShardAffixListElement` and `TooltipAffix`; its `Button` is the
+  child `Button`. `ShardAffixListElement.OnSelected` 0x17D2140 shows the focus cursor on the root, so the
+  old "inside the button" check failed and the generic reader took the first label.
+- V `BuildView` 0x17D1320 draws the count with `FormattingExtensions.WithBrackets` ("[12]").
+- V `OnSelected` also calls `TooltipAffix.OnPointerEnter` 0x17F0410: a shard item (base type 101, subtype
+  = affix) opened through `TooltipSystem.OpenItemTooltip` with slot `AFFIX` and the row root as opener.
+- V The section stops are the `PooledVerticalLayoutGroup` holders (Selectables in the list); their headings
+  are `unusedAffixesHeader`, `appliedAffixesHeader`, `incompatibleAffixesHeader` (keys
+  `Crafting_Materials_Shards_Affix_List_Available/Applied/Incompatible`). Section lists hold filtered-out
+  entries too (`OnFilterUpdated` 0x178D890 flags them), so no count is spoken.
+- V Runes and glyphs: `CraftingRunesAndGlyphsPanel` rows `_firstSelectablesRow` (6 runes, 3 glyphs) and
+  `_secondSelectablesRow` (6 runes, 2 glyphs) of `MaterialContainerUI`; no `InfoForTooltip`, so manual
+  details added nothing. `ItemTooltipContentBuilder.GetDescription` 0x1FEC390 reads
+  `Localization.GetText("Item_SubType_Description_{base}_{sub}", ItemList.get().GetNonEquipmentSubItem(base,
+  sub).description)`, which needs no item in stock.
+
+Mod behaviour (`CraftingControlReader`, new `CraftingMaterialsPanelReader`, `CraftingMaterialReader`):
+
+| Stop | Spanish |
+|---|---|
+| Filter | "cualquier afijo, filtro seleccionado. Arriba: runas y glifos; abajo: fragmentos de afijo" (the game's no-shard notice joins when shown) |
+| Section stop | the game's localized heading (English prefab text "available to be applied"); never the object name |
+| Shard row (root or button) | "Vida. Prefijo. Fragmentos: 12"; manual details add the improvement type and the affix tooltip the game opened for that row |
+| Rune or glyph (panel and forge flyouts) | unchanged "Runa de creación. Cantidad: 0"; manual details add the game's description |
+
+Tests: 16 new checks in `tests/LeAccess.MenuReading.Tests` (323). Listening pending: the shard tooltip
+text through the older tooltip reader, the localized headings, and descriptions for every rune and glyph.

@@ -79,8 +79,52 @@ internal static class CraftingTests
         Check(ElementAnnouncer.TryReadDetails(shard.button, out var details) && details.EndsWith("Adds 12 health."), "Manual shard details include rendered improvement");
         reset(); shard.tmpName.text = "Fire resistance"; shard.tmpQuantity.text = "2"; ElementAnnouncer.AnnounceElement(shard.button);
         Check(ScreenReader.Messages.Single().Text == Speech.Join("Fire resistance", "Prefix", Speech.F("crafting.shards", 2)), "Reused shard row reads current labels");
+        reset(); shard.tmpQuantity.text = "[14]"; ElementAnnouncer.AnnounceElement(shard.gameObject);
+        Check(ScreenReader.Messages.Single().Text == Speech.Join("Fire resistance", "Prefix", Speech.F("crafting.shards", 14)),
+            "The highlighted row itself reads its shard, with the game's bracketed count unwrapped");
+        LeAccess.Accessibility.Items.ItemTooltipReader.Opener = shard.gameObject;
+        LeAccess.Accessibility.Items.ItemTooltipReader.Text = "Fire resistance. Tier 1: +5%";
+        reset();
+        Check(ElementAnnouncer.TryReadDetails(shard.gameObject, out details) && details.EndsWith("Adds 12 health. Fire resistance. Tier 1: +5%"),
+            "Manual row details add the affix tooltip the game opened for that row");
+        reset(); ElementAnnouncer.AnnounceElement(shard.gameObject);
+        Check(!ScreenReader.Messages.Single().Text.Contains("Tier 1"), "The brief row reading omits the affix tooltip");
+        LeAccess.Accessibility.Items.ItemTooltipReader.Opener = null;
+        reset(); shard.button.GetComponent<Button>().Interactable = false; ElementAnnouncer.AnnounceElement(shard.gameObject);
+        Check(ScreenReader.Messages.Single().Text.EndsWith(Speech.DisabledMark()), "A row whose button the game disabled says so");
+        shard.button.GetComponent<Button>().Interactable = true;
         reset(); var nested = shard.button.Child().Add(new Button());
         Check(!CraftingControlReader.TryRead(nested.gameObject, false, out _, out _), "Nested unrelated buttons cannot borrow a shard action");
+        reset(); var stray = shard.gameObject.Child("main");
+        Check(!CraftingControlReader.TryRead(stray, false, out _, out _), "Other parts of the row are not the highlighted row");
+
+        reset(); var panelRoot = new GameObject(); var panel = panelRoot.Add(new CraftingMaterialsPanelUI());
+        CraftingMaterialsFilterTab Tab(string caption)
+        { var tab = panelRoot.Child("CraftingMaterialsFilterTab").Add(new CraftingMaterialsFilterTab()); Label(tab.gameObject, caption); return tab; }
+        panel.allAffixes = Tab("any affix"); panel.prefixesOnly = Tab("prefixes"); panel.suffixesOnly = Tab("suffixes");
+        panel.currentlySelected = panel.allAffixes;
+        ElementAnnouncer.AnnounceElement(panel.allAffixes.gameObject);
+        Check(ScreenReader.Messages.Single().Text == Speech.Join(Speech.F("crafting.filter_selected", "any affix"), Speech.T("crafting.materials_directions")),
+            "The selected shard filter says it is selected and where the runes, glyphs and shards are");
+        reset(); ElementAnnouncer.AnnounceElement(panel.prefixesOnly.gameObject);
+        Check(ScreenReader.Messages.Single().Text.StartsWith(Speech.F("crafting.filter", "prefixes")), "Other filters are not called selected");
+        panel.noShardNotice = Label(panelRoot.Child("No Shard Notice"), "You have no affix shards.");
+        reset(); ElementAnnouncer.AnnounceElement(panel.allAffixes.gameObject);
+        Check(ScreenReader.Messages.Single().Text.Contains("You have no affix shards."), "The game's no-shard notice joins the filter reading");
+        panel.noShardNotice.gameObject.Active = false;
+        reset(); ElementAnnouncer.AnnounceElement(panel.allAffixes.gameObject);
+        Check(!ScreenReader.Messages.Single().Text.Contains("no affix shards"), "A hidden notice stays silent");
+        reset(); var foreignTab = new GameObject().Add(new CraftingMaterialsFilterTab()); Label(foreignTab.gameObject, "elsewhere");
+        Check(!CraftingMaterialsPanelReader.TryRead(foreignTab.gameObject, out _), "Tabs outside the materials panel are not its filters");
+
+        var content = panelRoot.Child("Content");
+        panel.unusedAffixesHeader = Label(content.Child("Available Affix Header"), "available to be applied").transform;
+        panel._availableAffixesGroup = content.Child("Available Affixes Holder").Add(new PooledVerticalLayoutGroup());
+        panel._incompatibleAffixesGroup = content.Child("Incompatible Affixes Holder").Add(new PooledVerticalLayoutGroup());
+        reset(); ElementAnnouncer.AnnounceElement(panel._availableAffixesGroup.gameObject);
+        Check(ScreenReader.Messages.Single().Text == "available to be applied", "A section stop reads its own heading, not its object name");
+        reset(); ElementAnnouncer.AnnounceElement(panel._incompatibleAffixesGroup.gameObject);
+        Check(ScreenReader.Messages.Count == 0, "A section without a readable heading stays silent instead of speaking its object name");
         foreach (string lifetime in new[] { "collected", "disabled" })
         {
             reset(); row.WasCollected = lifetime == "collected"; row.Enabled = lifetime != "disabled";
@@ -110,3 +154,14 @@ public class ShardAffixListElement : UnityEngine.Behaviour
     public GameObject button;
     public TextMeshProUGUI tmpName, tmpQuantity, tmpAffixType, improvementTMP;
 }
+public class TabUIElement : UnityEngine.UI.Selectable { }
+public class CraftingMaterialsFilterTab : TabUIElement { }
+public class PooledVerticalLayoutGroup : UnityEngine.UI.Selectable { }
+public class CraftingMaterialsPanelUI : UnityEngine.Behaviour
+{
+    public TabUIElement allAffixes, prefixesOnly, suffixesOnly, currentlySelected;
+    public TMP_Text noShardNotice;
+    public PooledVerticalLayoutGroup _availableAffixesGroup, _appliedAffixesGroup, _incompatibleAffixesGroup;
+    public Transform unusedAffixesHeader, appliedAffixesHeader, incompatibleAffixesHeader;
+}
+public class TooltipItemManager { public enum SlotType { INVENTORY, EQUIPPED, GROUND, CRAFTING, STASH, SHOP, AFFIX, MATERIAL } }

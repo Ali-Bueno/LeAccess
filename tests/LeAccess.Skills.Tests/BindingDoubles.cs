@@ -25,6 +25,7 @@ internal static class PlayerFinder
     internal static LocalTreeData treeData;
     internal static LocalTreeData getLocalTreeData() => treeData;
     internal static Actor getPlayerActor() => player?.GetComponent<Actor>();
+    internal static ActorVisuals playerActorVisuals;
 }
 internal sealed class Actor : UnityEngine.Component
 {
@@ -35,7 +36,20 @@ internal class AbilityList : UnityEngine.Component
 {
     internal NativeArray<Ability> allEquipped;
     internal NativeArray<Ability> getEquippedAbilities() => allEquipped;
+    internal NativeArray<Ability> hudSlots = new(Array.Empty<Ability>());
+    internal int getAbilityCount() => hudSlots.Count;
+    internal Ability getAbility(int index) => hudSlots[index];
 }
+internal sealed class ClientAbilityList : AbilityList { }
+internal sealed class LocalPlayer : UnityEngine.Component
+{
+    internal static LocalPlayer instance;
+    internal ActorSync actorSync;
+    internal ClientAbilityList abilityList;
+}
+internal sealed class ActorSync : UnityEngine.Component { internal ActorVisuals actorVisuals; }
+internal sealed class ActorVisuals : UnityEngine.Component { internal ActorSync actorSync; }
+namespace EHG.Multiplayer { internal static class GameplayEnvironment { internal static bool IsOnlineClient; } }
 internal sealed class ComboAbilityList : AbilityList
 {
     internal NativeArray<Ability> equippedAbilities;

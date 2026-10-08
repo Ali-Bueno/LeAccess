@@ -77,6 +77,8 @@ map sections, world cues, NPC probe, vitals, nearby players, encounter guidance 
 boss life. The same files also read `Player` from it. This identity does not depend
 on PlayerFinder's lazy refresh, on the other player's presence or on a stale
 `player`. Session keys are unchanged because the root is the same tagged object.
+Skill equip status reads `LocalPlayer.abilityList` online, since the root has no `Actor`
+([details](skill-assignment.md#online-equipped-slots-2026-10-07-build-25711439)).
 
 `LocalPlayerDiagnostics` logs one line per scene/root/rig change, for example:
 `[LocalPlayer] scene=Z12 root=Local Player(Clone)#… rig=v_… source=LocalPlayer.instance

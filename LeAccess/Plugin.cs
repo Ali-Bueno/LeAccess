@@ -86,6 +86,7 @@ public class Plugin : BasePlugin
         GameLocale.Reset();
         LeAccess.Accessibility.CharacterCreation.PauseMenuFocusRecovery.Reset();
         LeAccess.Accessibility.CharacterCreation.ClassCarouselHandler.Reset();
+        LeAccess.Accessibility.CharacterCreation.CreationChoiceReader.Reset();
         LeAccess.Accessibility.CharacterCreation.CharacterNameAccessibility.Reset();
         LeAccess.Accessibility.CharacterCreation.CharacterNameKeyboard.Reset();
         LeAccess.Accessibility.ScreenContent.ScreenContentAnnouncer.Reset();
@@ -97,6 +98,7 @@ public class Plugin : BasePlugin
         LeAccess.Accessibility.ControllerMenus.ControllerMenuAccessibility.Reset();
         LeAccess.Accessibility.Skills.SkillAccessibility.Reset();
         LeAccess.Accessibility.Forge.ForgeAccessibility.Reset();
+        LeAccess.Accessibility.Gifting.GiftAccessibility.Reset();
         LeAccess.Accessibility.Forge.ForgeResultLog.Uninstall();
         LeAccess.Accessibility.Social.SocialAccessibility.Reset();
         LeAccess.Accessibility.Social.SocialLog.Uninstall();

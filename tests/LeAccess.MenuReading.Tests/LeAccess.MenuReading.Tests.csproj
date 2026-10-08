@@ -12,6 +12,7 @@
     <Compile Include="../../LeAccess/Accessibility/Announcements/CraftingControlReader.cs" Link="CraftingControlReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/CraftingSelectionReader.cs" Link="CraftingSelectionReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/CraftingMaterialReader.cs" Link="CraftingMaterialReader.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Announcements/CraftingMaterialsPanelReader.cs" Link="CraftingMaterialsPanelReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/ForgeSummaryReader.cs" Link="ForgeSummaryReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/FilterRangeControlReader.cs" Link="FilterRangeControlReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Settings/SettingsFocusAnnouncer.cs" Link="SettingsFocusAnnouncer.cs" />
@@ -28,6 +29,8 @@
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentTracker.cs" Link="ScreenContentTracker.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
     <Compile Include="../../LeAccess/Accessibility/Utils/TextUtils.cs" Link="TextUtils.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Guide/GuideArticleText.cs" Link="GuideArticleText.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Items/StashTabText.cs" Link="StashTabText.cs" />
   </ItemGroup>
   <Import Project="../LocalizationSources.props" />
 </Project>

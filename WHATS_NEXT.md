@@ -1,3 +1,53 @@
+# Handoff — 2026-10-07 evening: exploration saving, inventory jump, materials, gifting, guide
+
+Game build now 25764382 (Steam updated 14:16; the server had updated first). Three parallel fixes, all
+unheard; installed; friend ZIP 20261007-171427; not committed.
+- Online exploration never saved: the persistence key needed a character name/class that is blank
+  online; `ExplorationKey` falls back to tracker, info provider, then account. Check the new
+  `[Exploration saved] online identity key=…` line, then `saved key=online-…` and a reload after restart
+  ([details](reference/exploration-mode.md)).
+- Inventory jumped to the last item: a hidden mouse left the grid hovered and the game refocused the cell
+  under it (0,0) on item changes; a `set_IsHovered` prefix keeps it false in controller mode. Check no jump
+  after equips/drops/reopen and no `[Inventory drop] focus moved to 0,0` ([details](reference/inventory-drop-focus.md)).
+- Materials panel: shard rows (name, type, count), section headings, filter hint, rune/glyph descriptions
+  on the details gesture ([details](reference/crafting-reading.md)).
+- "Regalar objeto": panel intro, confirm/resonance/gift slot/close, inventory hint (Square to slot, L2 back),
+  result line; check the `[Gift] panel open, focus on …` line ([details](reference/social-reading.md)).
+- Guide: entry article read after its label, details gesture rereads, headers say desplegado/plegado; forge
+  "Guía" may only show a hint. Stash tabs/folders read name, count, state ([details](reference/guide-reading.md),
+  [audit](reference/menu-reading-audit.md)). Not covered yet: endgame panels (Monolith, factions, Nemesis…).
+
+# Handoff — 2026-10-07 later: online skills lost "Equipada" and bar slots read "Ability Icon1"
+
+After restarts the co-op party worked. Online, `[Skill binding] player unavailable`: `SkillBindingReader`
+took the equipped list from `PlayerFinder.getPlayerActor()`, but the online local root has no `Actor`, so
+skills lost Equipada/No equipada and the assignment flow's bar slots (`AbilityIcon1` under
+`ActionBarAbility (n)`) fell back to "Ability Icon1". Online it now reads `LocalPlayer.abilityList` with the
+HUD's own `getAbilityCount`/`getAbility` ([details](reference/skill-assignment.md#online-equipped-slots-2026-10-07-build-25711439)).
+Skills 268, Players 41, Combat 157 pass; installed; friend ZIP 20261007-123005; not committed.
+Listening check: Skills menu (Equipada: button / No equipada), assigning a skill (slot names its skill
+and button), the `[Skill binding] ready` log line; transformed (werebear) bar unverified.
+
+# Handoff — 2026-10-07: co-op failed again; creation challenge boxes are silent
+
+User and friend (new characters, both "online") each saw the other "sin conexión" and could not group.
+User's side, from Player.log versus the working 2026-10-06 session: the character is Swordfish cycle,
+Normal, no solo challenge (nothing pressed at creation); "canario69 ha recibido la invitación" came 3
+times but no `RtmClientPartyManager … PartyIDChanged` followed (on 10-06 the party ID appeared at once,
+the friend joined 6 s later); new today: `Get Online players - Chat system not connected` 0.3 s before
+`Connected to chat` at login, and 3 × `SHA MISMATCH` (client 233fb127…, server 8350432…; Steam reports
+no pending update). Native analysis ([details](reference/social-reading.md#presence-and-party-internals-2026-10-07-static-build-25711439)):
+presence is account chat connection plus a readable character summary, with no region/mode filter; the
+invite line is posted without any server reply, the party is the server's decision. The "1 en línea"
+the user heard was the panel's own blank loading row, which the mod counted: fixed (Social 67). Advised a
+full restart of both games, same realm/mode/no solo, a whisper test, and the friend's log.
+Fixed: the creation screen's "Botín en solitario - personaje/cuenta" checkboxes, "Normal/Difícil" and
+"Cambiar de reino" spoke only their names. `CreationChoiceReader` now speaks state on focus and the new
+state once after a press. Prefab fact: both mode buttons flip the mode, so pressing "Normal" while Normal
+is selected makes a hardcore character ([details](reference/creation-menu-reading.md)). Classes 143,
+Localization 822, MenuReading 307, PatchSafety 46, Social 66, package 242 pass; installed, friend ZIP
+20261007-113113 built, not committed. Listening check: each control on focus and after Cross, realm title.
+
 # Handoff — 2026-10-06 later: first co-op session
 
 User and a friend played online: friend request, party invite (by "canario69", no #number needed),

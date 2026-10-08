@@ -60,17 +60,21 @@ public class MenuAccessibility : MonoBehaviour
         QuestAccessibility.Update();
         SkillAccessibility.Update(readDetails);
         ClassCarouselHandler.CheckPendingClassAnnouncement();
+        CreationChoiceReader.Poll(ElementAnnouncer.IsRelatedToFocusedElement);
         if (SettingsFocusAnnouncer.Update()) _lastPolledSelection = 0;
         else PollSelectedControl();
         ElementAnnouncer.FlushPendingFocus();
         OpenWorldMap.AnnounceSelection();
         CharacterNameAccessibility.Update();
         Social.SocialAccessibility.Update();
+        Guide.GuideAccessibility.Update();
         Forge.ForgeInventoryNotices.Observe();
+        Gifting.GiftAccessibility.Observe();
         InventoryAccessibility.Update(readDetails);
         Forge.ForgeAccessibility.Update(readDetails);
+        Gifting.GiftAccessibility.Update(readDetails);
         if (readDetails && !SkillAccessibility.HasActiveContent && !InventoryAccessibility.HasActiveContent &&
-            !Forge.ForgeAccessibility.HasActiveContent)
+            !Forge.ForgeAccessibility.HasActiveContent && !Gifting.GiftAccessibility.HasActiveContent)
             ReadSelectedDetails();
         ZoneAnnouncer.Update();
         bool worldContentActive = ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
@@ -101,7 +105,7 @@ public class MenuAccessibility : MonoBehaviour
         NotificationAnnouncer.Update(ScreenReader.SpokeThisFrame || DialogueAnnouncer.HasActiveContent || InventoryAccessibility.HasPendingContent ||
             PassiveAccessibility.HasPendingContent || QuestAccessibility.HasPendingContent || CharacterNameAccessibility.HasPendingContent ||
             ControllerMenuAccessibility.HasActiveContent || SkillAccessibility.HasPendingContent || ClassCarouselHandler.HasPendingContent || ZoneAnnouncer.HasPendingContent ||
-            GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || LandmarkAccessibility.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || questUpdatesPending);
+            Guide.GuideAccessibility.HasPendingContent || GroundLootAccessibility.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || LandmarkAccessibility.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || questUpdatesPending);
         ButtonPromptAnnouncer.Update(InventoryAccessibility.HasPendingContent || GroundLootAccessibility.HasPendingContent ||
             PassiveAccessibility.HasPendingContent || QuestAccessibility.HasPendingContent || CharacterNameAccessibility.HasPendingContent ||
             ControllerMenuAccessibility.HasPendingContent || SkillAccessibility.HasPendingContent || ClassCarouselHandler.HasPendingContent ||
@@ -117,6 +121,7 @@ public class MenuAccessibility : MonoBehaviour
         try
         {
             if (PassiveAccessibility.ReadCurrentDetails() || QuestAccessibility.ReadCurrentDetails() ||
+                Guide.GuideAccessibility.ReadCurrentDetails() ||
                 SettingsFocusAnnouncer.ReadCurrentDetails()) return;
             if (ClassCarouselHandler.TryReadDetails(out string text))
             { ScreenReader.Speak(text, true); return; }

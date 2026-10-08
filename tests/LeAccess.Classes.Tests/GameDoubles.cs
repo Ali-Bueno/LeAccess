@@ -30,6 +30,13 @@ internal class CharacterSelect : Component
     internal enum CharacterSelectState { ClassSelection, NameCreation, CharacterSelection }
     internal CharacterSelectState currentState;
     internal static CharacterSelect instance;
+    internal GameObject CharacterCreationRealm_Cycle, CharacterCreationRealm_Legacy;
+}
+internal class LocalCharacterSlots : Component
+{
+    internal static LocalCharacterSlots instance;
+    internal bool isSoloChallenge, isSoloCharacterChallenge, isHardcore;
+    internal GameObject soloChallengeCheckmark, soloCharacterChallengeCheckmark;
 }
 internal class MasteryButton : Component
 {

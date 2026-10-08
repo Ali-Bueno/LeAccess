@@ -36,6 +36,21 @@ internal static class CraftingSelectionTests
         Check(tooltip.SetTextCalls == 0, "Brief material speech does not populate tooltip models");
         reset(); NavigationManager.currentlySelected = nav;
         Check(ElementAnnouncer.TryReadDetails(rune.gameObject, out var details) && details.Contains("Destroys an item to recover shards.") && tooltip.SetTextCalls == 1, "Manual material inspection retains the existing native tooltip details path");
+        rune.gameObject.Components.Remove(tooltip);
+        ItemList.Instance.Entries[(17, 3)] = new ItemList.NonEquipmentItem { description = "Destroys an item." };
+        reset(); NavigationManager.currentlySelected = nav;
+        Check(ElementAnnouncer.TryReadDetails(rune.gameObject, out details) &&
+            details == Speech.Join("Rune of Shattering", Speech.F("crafting.quantity", 7), "Destroys an item."),
+            "Manual rune inspection adds the item list's description when no localized text exists");
+        Localization.Texts["Item_SubType_Description_17_3"] = "Destruye un objeto.";
+        reset(); NavigationManager.currentlySelected = nav;
+        Check(ElementAnnouncer.TryReadDetails(rune.gameObject, out details) && details.EndsWith("Destruye un objeto."),
+            "Manual rune inspection prefers the game's localized description key");
+        reset(); NavigationManager.currentlySelected = nav; ElementAnnouncer.AnnounceElement(rune.gameObject);
+        Check(!ScreenReader.Messages.Single().Text.Contains("Destruye"), "Brief material speech omits the description");
+        ItemList.Instance.Entries.Clear(); Localization.Texts.Clear();
+        reset(); NavigationManager.currentlySelected = nav;
+        Check(!ElementAnnouncer.TryReadDetails(rune.gameObject, out _), "A subtype missing from the item list adds no invented description");
         reset(); NavigationManager.currentlySelected = nav; nav._selectedButtonId = 1;
         Check(!UiFocusOwnership.Allows(rune.gameObject) && UiFocusOwnership.Allows(glyph.gameObject), "Same-frame flyout switches immediately reject the retained rune");
         ElementAnnouncer.AnnounceElement(glyph.gameObject);
@@ -50,7 +65,7 @@ internal static class CraftingSelectionTests
         Check(ScreenReader.Messages.Single().Text == Speech.Join("Glifo de esperanza", Speech.F("crafting.quantity", 2)), "Native material names and mod quantity labels remain localized");
         reset(); LeAccess.I18n.ModText.SetLanguage("en"); NavigationManager.currentlySelected = nav;
         var nested = glyph.gameObject.Child().Add(new UnityEngine.UI.Button());
-        Check(!CraftingMaterialReader.TryRead(nested.gameObject, out _, out _), "Nested side actions cannot borrow material identity");
+        Check(!CraftingMaterialReader.TryRead(nested.gameObject, false, out _, out _), "Nested side actions cannot borrow material identity");
         foreach (int index in new[] { -1, 2 })
         {
             reset(); NavigationManager.currentlySelected = nav; nav._selectedButtonId = index;
@@ -67,14 +82,14 @@ internal static class CraftingSelectionTests
         Check(!UiFocusOwnership.Allows(glyph.gameObject), "Disabled native material behaviours release selection"); glyph.Enabled = true;
         var source = (SingleSubTypeContainer)glyph.container;
         reset(); NavigationManager.currentlySelected = nav; source.id = 999;
-        Check(!CraftingMaterialReader.TryRead(glyph.gameObject, out _, out _), "Backing containers must match the material's native identifier"); source.id = glyph.identifier;
+        Check(!CraftingMaterialReader.TryRead(glyph.gameObject, false, out _, out _), "Backing containers must match the material's native identifier"); source.id = glyph.identifier;
         reset(); NavigationManager.currentlySelected = nav; source.allowedBaseType = new(new[] { 17, 18 });
-        Check(!CraftingMaterialReader.TryRead(glyph.gameObject, out _, out _), "Ambiguous native type constraints do not invent a material type"); source.allowedBaseType = new(new[] { 17 });
+        Check(!CraftingMaterialReader.TryRead(glyph.gameObject, false, out _, out _), "Ambiguous native type constraints do not invent a material type"); source.allowedBaseType = new(new[] { 17 });
         reset(); NavigationManager.currentlySelected = nav; glyph.externalItemNumber.gameObject.Active = false;
         ElementAnnouncer.AnnounceElement(glyph.gameObject);
         Check(ScreenReader.Messages.Single().Text == "Glifo de esperanza", "Hidden material counts are excluded"); glyph.externalItemNumber.gameObject.Active = true;
         reset(); NavigationManager.currentlySelected = nav; glyph.externalItemNumber = new GameObject().Add(new TextMeshProUGUI { text = "999" });
-        Check(CraftingMaterialReader.TryRead(glyph.gameObject, out var text, out _) && !text.Contains("999"), "Foreign serialized quantity labels are excluded");
+        Check(CraftingMaterialReader.TryRead(glyph.gameObject, false, out var text, out _) && !text.Contains("999"), "Foreign serialized quantity labels are excluded");
         foreach (string gate in new[] { "closed", "disabled", "collected", "loading", "background" })
         {
             reset(); NavigationManager.currentlySelected = nav;
@@ -145,7 +160,20 @@ public class SingleSubTypeContainer : IItemContainer
     public NativeArray<int> allowedBaseType;
     public int GetContainerID() => id;
 }
-public static class Localization { public static ItemLocalization Items = new(); }
+public static class Localization
+{
+    public static ItemLocalization Items = new();
+    public static Dictionary<string, string> Texts = new();
+    public static string GetText(string key, string fallback = "") => Texts.TryGetValue(key, out var text) ? text : fallback;
+}
+public class ItemList : NativeObject
+{
+    public static ItemList Instance = new();
+    public static ItemList get() => Instance;
+    public Dictionary<(int, int), NonEquipmentItem> Entries = new();
+    public NonEquipmentItem GetNonEquipmentSubItem(int baseType, int subType) => Entries.GetValueOrDefault((baseType, subType));
+    public class NonEquipmentItem : NativeObject { public string description; }
+}
 public class ItemLocalization : NativeObject
 {
     public Dictionary<(int, int), string> Names = new();

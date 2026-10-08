@@ -212,6 +212,27 @@ run before vitals in `MenuAccessibility.LateUpdate`). Tests: `LeAccess.Explorati
 - Not saved: procedural scopes (regenerated), the locked target, catalog selection. Plugin `Unload` is the only
   `Cleanup` path, so a game exit relies on the 30 s save.
 
+### Online saving (2026-10-07, co-op log 16:16)
+
+Report: "online, maps do not count as explored after passing through them".
+
+- In-session memory is fine: `visited_rooms` grows with movement (Z62 2 -> 42, line 6107 onward) and a re-entered
+  scene keeps its rooms (Z52 `remembered=47` at line 4658, 49 at 5770).
+- Nothing persisted: the 16154-line log has no `[Exploration saved]` line at all, no `Exploration persistence` warning,
+  and the config folder holds only `offline-fiona-4.bin` (2026-10-05). Every first entry starts at 2-8 remembered
+  places (lines 687, 1337). The save/load path is silent while `CurrentKey()` is null, so the key was null online
+  although `getPlayerData()` was non-null (quests spoke, line 3668). The online character is `yarkidius` (line 551);
+  the likely gap is a blank `CharacterData.CharacterName`/class online (not provable from the log).
+- Fix (`ExplorationKey`, `ExplorationPersistence.CurrentKey`): online, the name falls back from `CharacterData` to
+  `CharacterDataTracker.getCharacterName()`, then `LocalPlayerInfoProvider.getCharacterName()`, then the account
+  `UserIdentity.Username` of the local rig (`online-account-<name>`); a missing class drops from the key
+  (`online-<name>`). Offline keys are unchanged. Online, one `[Exploration saved] online identity key=... data=...
+  name=... class=... account=...` line is logged whenever the key changes, so the next log shows which source worked.
+- Not changed: the beacon refuses party members, NPCs and the death place whose route crosses unexplored ground
+  (lines 7611, 9178, 14657) by design (explored ground only).
+- To check in game: a `[Exploration saved] saved key=online-...` line within 30 s of walking, the file under
+  `BepInEx/config/LeAccess/Exploration/`, and `loaded key=` plus a high `remembered=` on the next launch.
+
 ## Live report fixes (2026-10-04, first listening session, 23:54 log)
 
 The user confirmed the scanner, Create menu and beacon work offline. Fixes:

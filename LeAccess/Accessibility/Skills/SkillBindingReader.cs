@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using LeAccess.Accessibility.Navigation;
+using LeAccess.Accessibility.Players;
 using Rewired;
 using LeAccess.Accessibility.Announcements;
 using LeAccess.I18n;
@@ -110,6 +111,9 @@ internal static class SkillBindingReader
         LastStatus = "player unavailable";
         try
         {
+            // Online the local root carries LocalPlayer and its ClientAbilityList, not an Actor.
+            var local = LocalPlayerSource.OnlineLocal();
+            if (local is not null) return TryReadHudSlots(local.abilityList, out equipped);
             var player = PlayerFinder.getPlayer();
             var actor = PlayerFinder.getPlayerActor();
             if (!NavigationObjectLifetime.IsAlive(player) || !NavigationObjectLifetime.IsAlive(actor)) return false;
@@ -131,6 +135,19 @@ internal static class SkillBindingReader
             return equipped.Count > 0;
         }
         catch (Exception ex) { LastStatus = "equipped slots read failed: " + ex.GetType().Name; return false; }
+    }
+
+    // The same reads AbilityBarIcon.UpdateIcon makes: getAbility(slot - 1) within getAbilityCount().
+    private static bool TryReadHudSlots(AbilityList abilities, out List<Ability> equipped)
+    {
+        equipped = null;
+        LastStatus = "ability list unavailable";
+        if (!NavigationObjectLifetime.IsAlive(abilities)) return false;
+        equipped = new List<Ability>();
+        int count = abilities.getAbilityCount();
+        for (int index = 0; index < count; index++) equipped.Add(abilities.getAbility(index));
+        LastStatus = equipped.Count > 0 ? "ready" : "equipped slots empty";
+        return equipped.Count > 0;
     }
 
     private static void ReadBindings(AbilityBarIcon icon, List<string> bindings)

@@ -44,6 +44,9 @@ Check(SocialChatLines.IsSocial("Bea#5678 se ha añadido a tu lista de amigos.", 
     SocialChatLines.IsSocial("Fallada al enviar solicitud de amistad", Localize), "Friend added and friend request failed");
 Check(SocialChatLines.IsSocial("No se puede bloquear al jugador Bea#5678", Localize) &&
     SocialChatLines.IsSocial("Ana establece la Región del Grupo en: Europa", Localize), "Templates with placeholders");
+Localization.Texts["Notification_Resonance_Spent"] = "\"Has gastado 1 {0} para regalar un objeto.\"";
+Check(SocialChatLines.IsSocial("\"Has gastado 1 Resonancia de oro para regalar un objeto.\"", Localize),
+    "Spending a resonance on a gift is reported like the other social lines");
 Check(!SocialChatLines.IsSocial("Bienvenido a Last Epoch", Localize) && !SocialChatLines.IsSocial("", Localize) &&
     !SocialChatLines.IsSocial("ha recibido la invitación a tu grupo. y más", Localize), "Other system lines are not social");
 
@@ -108,14 +111,20 @@ var card = bea.Child("PlayerCard");
 Check(SocialReader.Canonical(card) == bea && SocialReader.Canonical(bea) == bea && Read(card) == Read(bea),
     "The row's card is the same stop as its row");
 Check(Read(loadingRow) == Join(T("social.loading"), "Amigos en línea"), "A loading row says so instead of an object name");
-Check(Read(online.Header) == "Amigos en línea. Expandida. 3 jugadores", "An expanded header with its row count: " + Read(online.Header));
+Check(Read(online.Header) == "Amigos en línea. Expandida. 2 jugadores",
+    "An expanded header counts named rows, not the loading placeholder: " + Read(online.Header));
 Check(Read(offline.Header) == Join("Sin conexión", T("social.collapsed"), T("social.players_one")),
     "A collapsed header still counts its hidden rows");
 Check(Read(blocked.Header) == Join("Jugadores bloqueados", T("social.expanded"), T("social.players_none")),
     "The game's empty-list placeholder is not a player");
 Check(Read(online.Toggle.gameObject) == Read(online.Header), "The header's own toggle reads like the header");
 Check(SocialReader.TryReadToggleState(online.Toggle, false, out string state) &&
-    state == Join(T("social.collapsed"), F("social.players_many", 3)), "Toggling a section says collapsed and its count");
+    state == Join(T("social.collapsed"), F("social.players_many", 2)), "Toggling a section says collapsed and its count");
+var pending = Section("Comprobando", true);
+(social.sentRequestToggle, social.sentRequestsPanel) = (pending.Toggle, pending.Panel);
+Row(pending, "", null, null, loading: true);
+Check(Read(pending.Header) == Join("Comprobando", T("social.expanded"), T("social.players_none")),
+    "A section holding only the loading placeholder has no players");
 Check(!SocialReader.TryReadToggleState(new GameObject().Add(new Toggle()), true, out _), "Other toggles keep on and off");
 Check(Read(request) == Join("Eva#3333", "Peticiones de amistad"), "A friend request row");
 Check(Read(accept) == F("social.button", "Aceptar") && Read(deny) == "Rechazar solicitud, botón",
@@ -373,6 +382,26 @@ Check(SocialAccessibility.LeadFor(acceptInvite) == "Bea#5678 te ha invitado a un
 SocialAccessibility.LeadSpoken(acceptInvite);
 Frame(); Frame();
 Check(ScreenReader.Messages.Count == 0, "and is not repeated on its own");
+
+// Item gifting panel wording.
+Check(LeAccess.Accessibility.Gifting.GiftText.Confirm("Confirmar regalo", true, "Espada rota", null) ==
+    Join(F("gift.button", "Confirmar regalo"), F("gift.item", "Espada rota")), "A ready gift names what it sends");
+Check(LeAccess.Accessibility.Gifting.GiftText.Confirm("Confirmar regalo", false, null, "Necesitas resonancias") ==
+    Join(F("control.disabled", F("gift.button", "Confirmar regalo")), T("gift.needs_item")),
+    "An empty slot explains the unavailable button, without the resonance box");
+Check(LeAccess.Accessibility.Gifting.GiftText.Confirm(null, false, "Espada rota", "Necesitas resonancias") ==
+    Join(F("control.disabled", F("gift.button", T("gift.confirm"))), F("gift.item", "Espada rota"), "Necesitas resonancias"),
+    "An item that needs a resonance says so with the game's notice; a missing caption uses the mod's");
+Check(LeAccess.Accessibility.Gifting.GiftText.Slot(null) == T("gift.slot_empty") &&
+    LeAccess.Accessibility.Gifting.GiftText.Slot("Espada rota") == F("gift.slot_item", "Espada rota"), "The gift slot, empty or filled");
+Check(LeAccess.Accessibility.Gifting.GiftText.Resonance(LeAccess.Accessibility.Gifting.GiftResonance.None) ==
+    Join(T("gift.resonance_none"), T("gift.resonance_hint")) &&
+    LeAccess.Accessibility.Gifting.GiftText.Resonance(LeAccess.Accessibility.Gifting.GiftResonance.Obsidian).StartsWith(T("gift.resonance_obsidian")),
+    "The resonance slot names what is slotted");
+Check(LeAccess.Accessibility.Gifting.GiftText.ResonanceRow(LeAccess.Accessibility.Gifting.GiftResonance.Gold, "Bea#5678", "3") ==
+    Join(T("gift.resonance_gold"), "Bea#5678", F("gift.amount", 3)) &&
+    LeAccess.Accessibility.Gifting.GiftText.ResonanceRow(LeAccess.Accessibility.Gifting.GiftResonance.Gold, null, " ") == T("gift.resonance_gold"),
+    "A resonance row reads its kind, player and amount, skipping blanks");
 
 SocialLog.Uninstall();
 Check(BepInEx.Logging.Logger.Listeners.Count == 0, "Unloading removes the log listener");

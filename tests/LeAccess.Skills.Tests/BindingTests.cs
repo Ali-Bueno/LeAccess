@@ -267,5 +267,30 @@ internal static class BindingTests
         manager._gridNavigable = grid; grid.gameObject.Active = false;
         check(!SkillAssignmentReader.TryReadContext(icon.gameObject, out _), "Hidden grid cannot announce stale choices");
         Reset();
+        RunOnline(check);
+    }
+
+    // Online the tagged root has LocalPlayer and its ClientAbilityList but no Actor.
+    private static void RunOnline(Action<bool, string> check)
+    {
+        var wolf = new Ability { abilityName = "Invocar lobo" };
+        var swipe = new Ability { abilityName = "Barrido" };
+        PlayerFinder.player = new GameObject();
+        var list = new ClientAbilityList { hudSlots = new NativeArray<Ability>(new[] { null, wolf, null, null, null }) };
+        LocalPlayer.instance = PlayerFinder.player.Add(new LocalPlayer { abilityList = list });
+        EHG.Multiplayer.GameplayEnvironment.IsOnlineClient = true;
+        Bind("cast-two", EpochInputManager.InputActions.Ability2, "B");
+        check(SkillBindingReader.ReadAssignment(wolf) == Speech.F("skill.equipped_binding", "B") &&
+            SkillBindingReader.LastStatus == "ready", "Online equipped slots come from LocalPlayer's ability list");
+        check(SkillBindingReader.ReadAssignment(swipe) == Speech.T("skill.not_equipped"), "Online unassigned skill says not equipped");
+        var icon = new GameObject().Add(new AbilityBarIcon { abilityNumber = 2, player = PlayerFinder.player });
+        check(SkillBindingReader.TryReadSlot(icon, out var slotted) && slotted == wolf, "Online action bar slot reads its skill");
+        check(SkillBindingReader.TryReadSlot(1, out var empty) && empty is null, "Online empty slot is known empty");
+        list.WasCollected = true;
+        check(SkillBindingReader.ReadAssignment(wolf) == null && SkillBindingReader.LastStatus == "ability list unavailable",
+            "A collected online list stays silent");
+        EHG.Multiplayer.GameplayEnvironment.IsOnlineClient = false;
+        LocalPlayer.instance = null;
+        Reset();
     }
 }

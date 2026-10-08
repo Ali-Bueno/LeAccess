@@ -10,6 +10,7 @@ internal static class Program
             BeaconTests.Run();
             SynthTests.Run();
             StoreTests.Run();
+            KeyTests.Run();
             UnexploredTests.Run();
             Console.WriteLine($"Exploration tests passed: {_checks} checks.");
             return 0;
