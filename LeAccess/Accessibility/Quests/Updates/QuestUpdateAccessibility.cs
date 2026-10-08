@@ -69,13 +69,13 @@ internal static class QuestUpdateAccessibility
             double now = Time.unscaledTimeAsDouble;
             if (now < _nextPoll) return;
             _nextPoll = now + PollSeconds;
-            var player = PlayerFinder.player;
+            var player = Players.LocalPlayerSource.Player;
             if (!IsAlive(player) || !player.activeInHierarchy || player.scene.handle != scene.handle) return;
-            var character = PlayerFinder.getPlayerData();
-            if (character is null || character.WasCollected) return;
-            if (_character != character.Pointer)
+            var character = QuestAnnouncementEligibility.Character();
+            if (character == IntPtr.Zero) return;
+            if (_character != character)
             {
-                Reset(); _character = character.Pointer; _nextPoll = now + PollSeconds;
+                Reset(); _character = character; _nextPoll = now + PollSeconds;
                 gameplayAccess = QuestAnnouncementEligibility.HasGameplayAccess(otherContentActive, _character);
             }
             _canOwnAnnouncement = gameplayAccess;

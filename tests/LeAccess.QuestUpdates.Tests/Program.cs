@@ -378,6 +378,11 @@ static class Program
         Check(ScreenReader.Spoken.Count == 4, "custom speech interval respected");
         Poll(elapsed: 3);
         Check(ScreenReader.Spoken.Count == 5 && ScreenReader.Spoken[4].Contains("9/10"), "custom interval releases latest update");
+        PlayerFinder.Character = null; LeAccess.Accessibility.Players.LocalPlayerSource.Online = new();
+        Poll(elapsed: 6); Poll(elapsed: 6); tracked.objectives[0].progress = 10; Poll(elapsed: 6); Poll(elapsed: 6);
+        Check(ScreenReader.Spoken.Count == 6 && ScreenReader.Spoken[5].Contains("10/10"),
+            "online, without saved character data, the LocalPlayer identity still allows updates");
+        PlayerFinder.Character = new(); LeAccess.Accessibility.Players.LocalPlayerSource.Online = null;
         config.Interval.Value = double.NaN;
         tracked.objectives[0].progress = 10; Poll(elapsed: 5); Poll();
         Check(ScreenReader.Spoken.Count == 6, "invalid interval does not prevent future speech");

@@ -137,3 +137,12 @@ namespace LeAccess
     internal sealed class Logger
     { internal readonly List<string> Warnings = new(); internal void LogInfo(string text) { } internal void LogWarning(string text) => Warnings.Add(text); }
 }
+namespace LeAccess.Accessibility.Players
+{
+    internal static class LocalPlayerSource
+    {
+        internal static UnityEngine.Object Online;
+        internal static UnityEngine.GameObject Player => PlayerFinder.player;
+        internal static UnityEngine.Object OnlineLocal() => Online;
+    }
+}

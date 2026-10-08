@@ -115,3 +115,13 @@ actual services and also verifies rejected dynamic output preserves its preferre
 shared turn. The main build passes with `SkipPluginDeployment=true`, zero warnings
 or errors; no game, speech/audio device, quest state or network action was opened
 or changed by verification.
+
+## Silent online (2026-10-08)
+
+The 2026-10-08 online session (about four hours of campaign, A06 to B25) logged no `[Quest update]` and no
+dynamic objective line. Online, `PlayerFinder.getPlayerData()` is absent (`[Exploration saved] online identity
+... data=absent`), and both pollers and `QuestAnnouncementEligibility` returned early on it. The character
+identity is now `QuestAnnouncementEligibility.Character()`: the saved data's pointer offline, the
+`LocalPlayer` component's online; the player root comes from `LocalPlayerSource.Player`, like the other world
+systems ([multiplayer](multiplayer-local-player.md)). Quest updates 117, dynamic objectives 90 checks.
+Listening pending online: new quest, objective change, completion.

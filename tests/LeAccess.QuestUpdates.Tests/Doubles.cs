@@ -130,3 +130,12 @@ public class EpochInputManager : UnityEngine.Object
 { public static EpochInputManager instance = new(); public bool isInputFieldActive; }
 public class ScreenKeyboardManager : UnityEngine.Object
 { public static ScreenKeyboardManager Instance = new(); public bool _enabled; }
+namespace LeAccess.Accessibility.Players
+{
+    public static class LocalPlayerSource
+    {
+        public static UnityEngine.Object Online;
+        public static UnityEngine.GameObject Player => PlayerFinder.player;
+        public static UnityEngine.Object OnlineLocal() => Online;
+    }
+}
