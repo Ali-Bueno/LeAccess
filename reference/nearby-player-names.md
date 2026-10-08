@@ -69,3 +69,12 @@ the scanner Player entries (`PlayerIdentityText`; the level reuses `progression.
   cache key is the master account ID.
 - Anti-repeat: character and level are remembered per target, so a flickering read does not repeat; a real
   change (level up, name arriving) re-announces once.
+
+## Repeats in co-op (2026-10-08)
+
+The 2026-10-08 co-op session spoke the partner ("CANARIO69, Nivel N") 478 times in about two hours, a median
+of 17 log lines apart. Two causes: leaving the native radius called `Names.Reset()`, which erased the
+spoken memory so the 5 s repeat gap never applied, and any menu, window or dialogue reset it too. Now a
+loss or a menu calls `Names.Lost(now)`, and players use a 60 s gap (`NearbyPlayerAccessibility.RepeatGapSeconds`,
+`NpcNameAnnouncementState` takes the gap; NPCs keep 5 s): a partner walking with the player is named once,
+and again only after a minute away. Players 53 checks. Listening pending in co-op.

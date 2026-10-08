@@ -9,7 +9,9 @@ namespace LeAccess.Accessibility.Players;
 
 internal static class NearbyPlayerAccessibility
 {
-    private static readonly NpcNameAnnouncementState Names = new();
+    // A party member walks with the player and keeps crossing the native radius; name them again only after a minute away.
+    internal const double RepeatGapSeconds = 60;
+    private static readonly NpcNameAnnouncementState Names = new(RepeatGapSeconds);
     private static double _nextPoll;
     private static string _lastFailure;
     private static long _knownSession;
@@ -21,16 +23,17 @@ internal static class NearbyPlayerAccessibility
     {
         try
         {
-            if (NavigationAudioState.IsSuspended || !GameplayInputState.OwnsInput() ||
-                ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent)
-            { Reset(); return; }
             double now = Time.unscaledTimeAsDouble;
             if (!double.IsFinite(now)) { Reset(); return; }
+            // Menus and windows pause naming without forgetting who was already named.
+            if (NavigationAudioState.IsSuspended || !GameplayInputState.OwnsInput() ||
+                ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent)
+            { Names.Lost(now); _nextPoll = 0; return; }
             if (now < _nextPoll) return;
             _nextPoll = now + NpcCueTiming.PollSeconds;
             bool found = NearbyPlayerProbe.TryRead(out var target);
             ReportFailure(NearbyPlayerProbe.LastFailure);
-            if (!found) { Names.Reset(); return; }
+            if (!found) { Names.Lost(now); return; }
             if (!Names.Observe(target.Session, target.InstanceId, Describe(target),
                 ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame && !otherSpeechPending,
                 now, out string announcement)) return;

@@ -85,7 +85,14 @@ Check(ScreenReader.Messages.Single() == ("Remote",false),"Settled nearby name is
 Tick(.22); Tick(.33); Check(ScreenReader.Messages.Count == 1,"Standing nearby does not repeat the same player");
 remote.actorVisuals.transform.position = new(20,0,0); Tick(.44);
 remote.actorVisuals.transform.position = new(2,0,0); Tick(.55); Tick(.66);
-Check(ScreenReader.Messages.Count == 2,"Leaving and approaching rearms naming");
+Check(ScreenReader.Messages.Count == 1,"A partner crossing the radius edge is not named again");
+LeAccess.Accessibility.Navigation.GameplayInputState.Owns = false; Tick(.77);
+LeAccess.Accessibility.Navigation.GameplayInputState.Owns = true; Tick(.88); Tick(.99);
+Check(ScreenReader.Messages.Count == 1,"Closing a menu does not name the same partner again");
+remote.actorVisuals.transform.position = new(20,0,0); Tick(1.2);
+double back = 1.2 + NearbyPlayerAccessibility.RepeatGapSeconds;
+remote.actorVisuals.transform.position = new(2,0,0); Tick(back); Tick(back + .11);
+Check(ScreenReader.Messages.Count == 2,"Leaving for the repeat gap rearms naming");
 Reset(); remote = Add("Remote"); Tick(0,true); Tick(.11,true);
 Check(ScreenReader.Messages.Count == 0 && NearbyPlayerAccessibility.HasPendingContent,"Higher priority speech defers the current player name");
 remote.actorVisuals.Identity.Username = "Current"; Tick(.22,true); Tick(.33);

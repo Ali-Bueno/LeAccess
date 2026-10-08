@@ -4,11 +4,14 @@ internal sealed class NpcNameAnnouncementState
 {
     // Brief losses are range-edge flicker; the same NPC stays silent inside this gap.
     internal const double RepeatGapSeconds = 5;
+    private readonly double _repeatGap;
     private long _session;
     private int _target;
     private string _candidate;
     private string _spoken;
     private double _lostAt = double.NaN;
+
+    internal NpcNameAnnouncementState(double repeatGapSeconds = RepeatGapSeconds) => _repeatGap = repeatGapSeconds;
 
     internal bool HasPendingContent => !string.IsNullOrWhiteSpace(_candidate) && _candidate != _spoken;
 
@@ -21,7 +24,7 @@ internal sealed class NpcNameAnnouncementState
             _session = session;
             _target = target;
         }
-        if (!double.IsNaN(_lostAt) && now - _lostAt >= RepeatGapSeconds) _spoken = null;
+        if (!double.IsNaN(_lostAt) && now - _lostAt >= _repeatGap) _spoken = null;
         _lostAt = double.NaN;
         string current = name?.Trim();
         bool stable = current == _candidate;
