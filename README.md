@@ -96,7 +96,7 @@ sighting of an exit, waypoint or the stash says "the radar has logged a new exit
 chime, the nearest unentered room hums from its nearest point, and entering one plays a short
 cue. Keyboard: Ctrl+Numpad 8/2 and 4/6.
 Hold **Create** (Share) for the mod menu: **Square** reads life, mana and potions, **Triangle**
-reads your gold (keyboard: Ctrl+G), **Cross** starts the beacon toward the selected entry (again cancels). While Create is held the
+reads your gold (keyboard: Ctrl+G), **Circle** reads your level, experience percentage, unspent passive points, skills that can level up and the zone (keyboard: Ctrl+L), **Cross** starts the beacon toward the selected entry (again cancels). While Create is held the
 game's button actions pause, so Square and Cross do not cast or interact. The beacon pings
 toward the route through ground you have already explored, faster when closer, and refuses
 when no explored route exists (keyboard: Ctrl+B). In menus the right stick keeps reading

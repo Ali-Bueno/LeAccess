@@ -33,7 +33,7 @@ Check(VitalsInput.ReportPressed(KeyCode.None, true), "Create+Square command repo
 Check(!VitalsInput.ReportPressed(KeyCode.None, false), "Controller disabled ignores the Create+Square command");
 Check(!VitalsInput.GoldPressed(), "Create+Square does not read gold");
 foreach (var other in new[] { ExplorationCommand.None, ExplorationCommand.Lock, ExplorationCommand.EntryNext, ExplorationCommand.CategoryPrevious,
-    ExplorationCommand.Gold })
+    ExplorationCommand.Gold, ExplorationCommand.Status })
 {
     ExplorationInput.Command = other;
     Check(!VitalsInput.ReportPressed(KeyCode.None, true), $"{other} does not report vitals");

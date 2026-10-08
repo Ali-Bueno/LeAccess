@@ -42,6 +42,9 @@ En las pasivas solo se sale de la cuadricula desde la primera columna; cada
 columna dice los puntos que pide, y confirmar sin efecto explica el motivo.
 El estandarte de especializaciones es una lista: arriba y abajo recorren los
 arboles, confirmar abre el elegido y derecha vuelve al arbol.
+Nivel: manten Create y pulsa Circulo (teclado: Ctrl+L) para oir nivel, porcentaje de
+experiencia, puntos de pasiva y habilidades por mejorar, y la zona. Sin pulsar nada
+se dicen al subir de nivel y al tener un punto nuevo.
 Oro: manten Create y pulsa Triangulo (teclado: Ctrl+G). Tambien se dice al abrir
 el inventario o un vendedor y despues de comprar o vender.
 En el inventario, manten L3 sobre un objeto para compararlo con el equipado,

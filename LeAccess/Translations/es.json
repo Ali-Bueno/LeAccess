@@ -362,5 +362,16 @@
   "party.portal": "Portal a {0}",
   "party.portal_anyone": "Portal al jugador",
   "social.choices": "{0} o {1}",
-  "social.user_not_found": "No se encontró ese nombre de usuario"
+  "social.user_not_found": "No se encontró ese nombre de usuario",
+  "progression.level_up": "Nivel {0}",
+  "progression.level": "Nivel {0}",
+  "progression.max_level": "Nivel maximo",
+  "progression.experience": "{0} por ciento de la experiencia para el siguiente nivel",
+  "progression.passive_point": "Punto de pasiva disponible",
+  "progression.passive_points": "{0} puntos de pasiva disponibles",
+  "progression.skill_can_level": "{0} puede subir de nivel",
+  "progression.skills_can_level": "{0} pueden subir de nivel",
+  "progression.new_skill": "Nueva habilidad disponible",
+  "progression.zone": "Zona: {0}",
+  "progression.unavailable": "Progreso no disponible"
 }

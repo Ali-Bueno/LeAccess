@@ -22,7 +22,7 @@ internal static class ExplorationInput
 
     private struct Reading
     {
-        internal bool Modifier, Vitals, Lock, Gold;
+        internal bool Modifier, Vitals, Lock, Gold, Status;
         internal ExplorationCommand Flick;
         internal string Signature;
     }
@@ -43,7 +43,7 @@ internal static class ExplorationInput
         _scanner = config.Bind("Exploration", "ControllerScanner", true,
             "Drive the exploration scanner with the controller right stick during gameplay: up/down change category, left/right change entry.");
         _modifierMenu = config.Bind("Exploration", "ModifierMenu", true,
-            "Hold the controller Create/Share button for the exploration menu (Square = vitals, Cross = lock, Triangle = gold). The game button bindings are paused while it is held.");
+            "Hold the controller Create/Share button for the exploration menu (Square = vitals, Cross = lock, Triangle = gold, Circle = level and progress). The game button bindings are paused while it is held.");
         _previousModifier = _active = false;
         _controllerFailure = _suppressionFailure = _keyboardFailure = null;
     }
@@ -84,7 +84,7 @@ internal static class ExplorationInput
             var command = KeyboardCommand();
             if (command == ExplorationCommand.None && _active)
                 command = reading.Vitals ? ExplorationCommand.Vitals : reading.Lock ? ExplorationCommand.Lock
-                    : reading.Gold ? ExplorationCommand.Gold : command;
+                    : reading.Gold ? ExplorationCommand.Gold : reading.Status ? ExplorationCommand.Status : command;
             Command = command != ExplorationCommand.None ? command : reading.Flick;
         }
         catch (Exception ex)
@@ -133,6 +133,8 @@ internal static class ExplorationInput
                 if (cross is not null && !cross.WasCollected && cross.justPressed) reading.Lock = true;
                 var triangle = template.actionTopRow2;
                 if (triangle is not null && !triangle.WasCollected && triangle.justPressed) reading.Gold = true;
+                var circle = template.actionBottomRow2;
+                if (circle is not null && !circle.WasCollected && circle.justPressed) reading.Status = true;
             }
             if (stick && reading.Flick == ExplorationCommand.None)
             {
@@ -222,6 +224,7 @@ internal static class ExplorationInput
             if (Input.GetKeyDown(KeyCode.Keypad6)) return ExplorationCommand.EntryNext;
             if (Input.GetKeyDown(KeyCode.B)) return ExplorationCommand.Lock;
             if (Input.GetKeyDown(KeyCode.G)) return ExplorationCommand.Gold;
+            if (Input.GetKeyDown(KeyCode.L)) return ExplorationCommand.Status;
         }
         catch (Exception ex) { ReportFailure("Exploration keyboard", ex, ref _keyboardFailure); }
         return ExplorationCommand.None;

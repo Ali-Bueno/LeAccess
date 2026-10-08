@@ -61,6 +61,7 @@ public class Plugin : BasePlugin
         QuestUpdateAccessibility.Initialize(Config);
         CombatAccessibility.Initialize(Config);
         VitalsAccessibility.Initialize(Config);
+        LeAccess.Accessibility.Progression.ProgressionAccessibility.Initialize(Config);
         BossLifeAccessibility.Initialize(Config);
         LandmarkAccessibility.Initialize(Config);
         MapSectionAccessibility.Initialize(Config);
@@ -110,6 +111,7 @@ public class Plugin : BasePlugin
         ButtonPromptAnnouncer.Reset();
         CombatAccessibility.Cleanup();
         VitalsAccessibility.Cleanup();
+        LeAccess.Accessibility.Progression.ProgressionAccessibility.Cleanup();
         ControllerBindingLog.Cleanup();
         ExplorationAccessibility.Cleanup();
         BossLifeAccessibility.Cleanup();

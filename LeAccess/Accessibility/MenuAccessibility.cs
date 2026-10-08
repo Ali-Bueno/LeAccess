@@ -108,6 +108,7 @@ public class MenuAccessibility : MonoBehaviour
             ZoneAnnouncer.HasPendingContent || NpcSounds.HasPendingName || NearbyPlayerAccessibility.HasPendingContent || LandmarkAccessibility.HasPendingContent || MapSectionAccessibility.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent || questUpdatesPending);
         CombatAccessibility.Update(PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent || VisibleSubtitleAnnouncer.HasPendingContent);
         VitalsAccessibility.Update(worldContentActive);
+        LeAccess.Accessibility.Progression.ProgressionAccessibility.Update(worldContentActive);
         ControllerBindingLog.Update();
         BossLifeAccessibility.Update();
     }
