@@ -78,7 +78,9 @@ jugar en grupo, los dos personajes deben tener el mismo reino y el mismo modo,
 y ninguno Botin en solitario.
 Tambien se leen las facciones y sus rangos, las apuestas, los vendedores
 especiales, el filtro de botin, la eleccion de especializacion, el Monolito y
-sus bendiciones, las entradas a mazmorras y las votaciones de jefes.
+sus bendiciones, las entradas a mazmorras, las votaciones de jefes, el arbol
+del Tejedor, las lineas temporales de los Caballeros Olvidados, las profecias
+del Observatorio, el Bazar, la clasificacion y los rituales de Morditas.
 Es una version de prueba: algunas pantallas y elementos aun pueden no leerse.
 
 SI NO HABLA O FALLA EL ARRANQUE

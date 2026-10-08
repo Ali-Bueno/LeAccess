@@ -21,6 +21,12 @@ emote/ping/quick-chat class in the interop; only an audio `WeightedClip.emoteInd
 - Gold pickups "N de oro" ([details](reference/vitals-api.md#gold-pickups-2026-10-08)); progression:
   "Nivel N", points, skills that can level, Create+Circle / Ctrl+L status ([details](reference/progression.md)).
   Check the XP percent against the bar (log `[Progression]`), and online.
+- Later the same day: a friend's report — offline, skills lost "Equipada" and bar slots read "Ability Icon1".
+  `PlayerAbilityList` sets `HasInitialised` only after an ability is used; the reader no longer waits for it and
+  reads the action bar's own list ([details](reference/skill-assignment.md)). Check offline in town before casting;
+  log `[Skill binding] source: action bar list`. Also read now: Weaver tree, Forgotten Knights timelines
+  ([factions](reference/faction-vendor-panels.md)), Observatory prophecies, Ladder rows, Morditas rituals
+  ([endgame](reference/endgame-panels.md)) and Bazaar listings; still generic: Bazaar/Ladder dropdowns, my stall.
 - Next QoL proposal (not started): D2R attack-reach ping (sound when an enemy in sight enters the main
   skill's reach; d2r-access `docs/attack-reach.md`).
 
