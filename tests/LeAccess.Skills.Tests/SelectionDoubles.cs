@@ -129,7 +129,8 @@ internal sealed class SkillTreeNode : UnityEngine.Component
     internal int id;
     internal string nodeName, description;
     internal NativeArray<RequirementFromNode> requirements;
-    internal sealed class RequirementFromNode : NativeObject { internal SkillTreeNode node; }
+    internal bool requirementsMet = true;
+    internal sealed class RequirementFromNode : NativeObject { internal SkillTreeNode node; internal byte requirement; }
 }
 internal sealed class NodeTooltipManager : UnityEngine.Component
 {

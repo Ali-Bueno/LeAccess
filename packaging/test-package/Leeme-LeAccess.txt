@@ -37,7 +37,9 @@ hacia la vecina, sin dar la vuelta; al entrar se dice su nombre y luego
 modo mando, asi que puedes callar al lector sin perder el foco del menu.
 En el arbol de una habilidad, arriba desde la raiz lleva a los botones
 Especializar y Restablecer (quitar puntos u olvidar la especializacion); al abrir
-el arbol se dice si esta especializada y cuantos puntos quedan sin gastar.
+el arbol se dice si esta especializada y cuantos puntos quedan sin gastar. Cada
+nodo dice que nodo requiere; stick derecho arriba da la ruta desde el inicio de
+la rama y a que nodos lleva.
 En las pasivas solo se sale de la cuadricula desde la primera columna; cada
 columna dice los puntos que pide, y confirmar sin efecto explica el motivo.
 El estandarte de especializaciones es una lista: arriba y abajo recorren los

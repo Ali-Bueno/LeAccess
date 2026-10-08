@@ -258,17 +258,19 @@ internal static class SkillSelectionReader
             !UiVisibility.IsVisible(node.gameObject)) return false;
         var localized = Localization.Skills;
         if (localized is null || localized.WasCollected) return false;
-        string name = TextUtils.CleanText(localized.GetNodeName(tree.treeID, node.id, node.nodeName));
+        string NodeName(SkillTreeNode other) => TextUtils.CleanText(localized.GetNodeName(tree.treeID, other.id, other.nodeName));
+        string name = NodeName(node);
         string description = TextUtils.CleanText(localized.GetNodeDescription(tree.treeID, node.id, node.description));
         string points = null;
         string key = $"node:{tree.GetInstanceID()}:{node.GetInstanceID()}";
         bool placed = SkillTreeNavigation.TryDescribe(panel, node, out string branch, out int place, out int count);
+        SkillTreeNavigation.TryReadLinks(panel, node, NodeName, out string requires, out string links);
         var notice = SkillTreeState.TryRead(panel, out var state) ? SkillTreeState.Describe(key, state) : default;
         // The root is the skill itself and takes no points; in respec mode A refunds only where the game allows it.
         string status = ScreenContentTracker.Combine(new[] {
             node.maxPoints > 0 ? ModText.Format("node.points", node.pointsAllocated, node.maxPoints) : null,
             state.Respeccing && node.pointsAllocated > 0 && !node.getCouldBeRespecced() ? ModText.Get("skill.cannot_refund") : null,
-            notice.After, placed ? ModText.Format("list.position", place, count) : null });
+            notice.After, requires, placed ? ModText.Format("list.position", place, count) : null });
         if (notice.Before != null) branch = ScreenContentTracker.Combine(new[] { notice.Before, branch });
         var detailsSource = SkillDetailsSource.Description;
         bool modernVisible = false;
@@ -276,8 +278,9 @@ internal static class SkillSelectionReader
             out modernVisible))
         {
             if (!string.IsNullOrWhiteSpace(modernName)) name = modernName;
-            selection = new SkillSelection(key, node.gameObject,
-                tree.ability, null, name, modernDetails, SkillDetailsSource.Tooltip, Status: status, IsNode: true, Context: branch);
+            selection = new SkillSelection(key, node.gameObject, tree.ability, null, name,
+                ScreenContentTracker.Combine(new[] { modernDetails, links }), SkillDetailsSource.Tooltip, Status: status, IsNode: true,
+                Context: branch);
             return !string.IsNullOrWhiteSpace(name);
         }
         var tooltip = NodeTooltipManager.instance;
@@ -295,7 +298,7 @@ internal static class SkillSelectionReader
         }
         if (string.IsNullOrWhiteSpace(name)) return false;
         selection = new SkillSelection(key, node.gameObject,
-            tree.ability, null, name, ScreenContentTracker.Combine(new[] { description, points }), detailsSource,
+            tree.ability, null, name, ScreenContentTracker.Combine(new[] { description, points, links }), detailsSource,
             Status: status, IsNode: true, Context: branch);
         return true;
     }

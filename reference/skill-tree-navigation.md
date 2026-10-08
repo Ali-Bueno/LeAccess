@@ -141,3 +141,16 @@ Mod behaviour (2026-10-05, `SkillTreeState`, `SkillTreeNavigation`, `SkillSelect
 Skills suite: 263 checks; no new hooks (the existing `HandleSubmitInput` prefix now also takes the
 panel). Runtime unverified: every button label, whether hidden buttons are inactive in the
 hierarchy, online point updates, and the modals as heard.
+
+## Node connections (2026-10-08)
+
+User report: Catapulta sat at "6 de N" of branch 1, while a guide said only the branch's first two nodes
+(Camino firme, Martillos alados) lead to it; the depth-first list hid which node hangs from which. Navigation is
+unchanged. Each node's brief now adds what it requires, from `SkillTreeNode.requirements`
+(`RequirementFromNode.node` and `.requirement` points), the root aside: "requiere Martillos alados"; while the
+game's own `requirementsMet` is false, each short requirement says its points, "requiere 1 punto en Martillos
+alados, tiene 0". The details gesture (right stick up) adds "Ruta: Camino firme, Martillos alados" (the chain of
+first requirements from the branch's first node) and "Lleva a: …" (every node listing this one among its
+requirements, in reading order). Whether several requirements mean all or any is not established; each is named
+and the game's overall flag decides the wording. `SkillTreeLinks` (text), `SkillTreeNavigation.TryReadLinks`
+(data). Skills 280 checks; listening pending.

@@ -101,6 +101,33 @@ internal static class TreeNavigationTests
         panel.currentlySelectedNode = b2;
         check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && selection.Context is null &&
             selection.Status.EndsWith(Speech.F("list.position", 2, 3)), "A move inside the branch does not repeat its name");
+
+        // Connections: a node names what it requires (the root aside); details give the way to it and what it leads to.
+        check(SkillSelectionReader.TryRead(out selection, includeDetails: false) &&
+            selection.Status.EndsWith(Speech.Join(Speech.F("skill.requires", "B1"), Speech.F("list.position", 2, 3))),
+            "A node says the node it requires before its place in the branch");
+        panel.currentlySelectedNode = b1;
+        check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && !selection.Status.Contains(Speech.F("skill.requires", "Raíz")),
+            "A branch's first node does not name the root it hangs from");
+        check(SkillSelectionReader.TryRead(out selection, includeDetails: true) &&
+            selection.Details.EndsWith(Speech.F("skill.leads_to", "B2, B3")) && !selection.Details.Contains(Speech.F("skill.path", "")),
+            "Details list the nodes a node leads to, top first, and no way for a branch's first node");
+        var b4 = Node("B4", 7, 300, -50, b2);
+        b4.requirements[0].requirement = 2; b4.requirementsMet = false; b2.pointsAllocated = 1;
+        tree.nodeList = new(new[] { root, b2, a1, loose, b1, a2, b3, b4 });
+        panel.currentlySelectedNode = b4;
+        check(SkillSelectionReader.TryRead(out selection, includeDetails: true) &&
+            selection.Status.Contains(Speech.F("skill.requires", Speech.F("skill.requires_points", 2, "B2", 1))) &&
+            selection.Details.EndsWith(Speech.F("skill.path", "B1, B2")),
+            "An unmet requirement says the points it needs and has; details give the way from the branch's first node");
+        b4.requirements[0].requirement = 1; b2.pointsAllocated = 0;
+        check(SkillSelectionReader.TryRead(out selection, includeDetails: false) &&
+            selection.Status.Contains(Speech.F("skill.requires", Speech.F("skill.requires_point", 1, "B2", 0))),
+            "One missing point is said in the singular");
+        b4.requirementsMet = true;
+        check(SkillSelectionReader.TryRead(out selection, includeDetails: false) &&
+            selection.Status.Contains(Speech.F("skill.requires", "B2")), "A met requirement names the node alone");
+        tree.nodeList = new(new[] { root, b2, a1, loose, b1, a2, b3 });
         panel.currentlySelectedNode = root;
         check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && selection.Context is null,
             "The root is the skill itself and has no branch name");

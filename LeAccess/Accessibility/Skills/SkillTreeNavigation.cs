@@ -13,9 +13,12 @@ internal static class SkillTreeNavigation
 {
     private static readonly List<SkillTreeNode> Nodes = new();
     private static readonly List<int> Branch = new();
+    private static readonly List<int> Parents = new();
+    private static readonly List<List<int>> RequiredBy = new();
     private static readonly GroupEntryTracker Entry = new();
     private static List<int> _order = new();
     private static IntPtr _tree;
+    private static int _root = -1;
     private static int _listCount = -1;
     private static string _lastFailure;
 
@@ -105,6 +108,36 @@ internal static class SkillTreeNavigation
         return true;
     }
 
+    /// <summary>What the node requires (the root aside) for its brief, and for its details the way to it from its branch's
+    /// first node and the nodes that require it.</summary>
+    internal static bool TryReadLinks(SkillsPanelManager panel, SkillTreeNode node, Func<SkillTreeNode, string> name,
+        out string requires, out string details)
+    {
+        requires = details = null;
+        if (!IsAlive(panel) || !IsAlive(node) || !TryReadOrder(panel)) return false;
+        int index = Nodes.FindIndex(candidate => candidate.Pointer == node.Pointer);
+        if (index < 0) return false;
+        var requirements = new List<SkillTreeLinks.Requirement>();
+        var list = node.requirements;
+        if (list is not null && !list.WasCollected)
+            for (int i = 0; i < list.Count; i++)
+            {
+                var entry = list[i];
+                var required = entry?.node;
+                if (!IsAlive(required) || IndexOf(required) == _root) continue;
+                requirements.Add(new(name(required), entry.requirement, required.pointsAllocated));
+            }
+        requires = SkillTreeLinks.Requires(requirements, node.requirementsMet);
+        var path = new List<string>();
+        for (int parent = Parents[index], steps = 0; parent >= 0 && parent != _root && steps < Nodes.Count; parent = Parents[parent], steps++)
+            path.Insert(0, name(Nodes[parent]));
+        var leadsTo = new List<string>();
+        foreach (int next in _order)
+            if (RequiredBy[index].Contains(next)) leadsTo.Add(name(Nodes[next]));
+        details = SkillTreeLinks.Details(path, leadsTo);
+        return true;
+    }
+
     /// <summary>The next selection names its branch again.</summary>
     internal static void ForgetBranch() => Entry.Reset();
 
@@ -112,6 +145,9 @@ internal static class SkillTreeNavigation
     {
         Nodes.Clear();
         Branch.Clear();
+        Parents.Clear();
+        RequiredBy.Clear();
+        _root = -1;
         _order = new List<int>();
         _tree = IntPtr.Zero;
         _listCount = -1;
@@ -135,32 +171,43 @@ internal static class SkillTreeNavigation
         for (int i = 0; i < list.Count; i++)
             if (IsAlive(list[i]) && list[i].gameObject.activeInHierarchy) Nodes.Add(list[i]);
         var described = new List<SkillTreeOrder.Node>(Nodes.Count);
-        foreach (var node in Nodes)
+        foreach (var node in Nodes) RequiredBy.Add(new List<int>());
+        for (int index = 0; index < Nodes.Count; index++)
         {
+            var node = Nodes[index];
             var position = node.transform.position;
-            described.Add(new SkillTreeOrder.Node(RequiredIndex(node), position.x, position.y));
+            int parent = RequiredIndex(node, index);
+            Parents.Add(parent);
+            described.Add(new SkillTreeOrder.Node(parent, position.x, position.y));
         }
         // The game treats the list's first node as the tree's root hexagon.
         int root = list.Count > 0 && IsAlive(list[0]) ? Nodes.FindIndex(node => node.Pointer == list[0].Pointer) : -1;
+        _root = root;
         _order = SkillTreeOrder.Build(described, root, Branch);
         _tree = tree.Pointer;
         _listCount = list.Count;
         return _order.Count > 0;
     }
 
-    private static int RequiredIndex(SkillTreeNode node)
+    // The first required node in the tree places this one; every required node lists it as leading on.
+    private static int RequiredIndex(SkillTreeNode node, int self)
     {
         var requirements = node.requirements;
         if (requirements is null || requirements.WasCollected) return -1;
+        int first = -1;
         for (int i = 0; i < requirements.Count; i++)
         {
             var required = requirements[i]?.node;
-            if (!IsAlive(required)) continue;
-            int index = Nodes.FindIndex(candidate => candidate.Pointer == required.Pointer);
-            if (index >= 0) return index;
+            int index = IndexOf(required);
+            if (index < 0 || index == self) continue;
+            if (first < 0) first = index;
+            if (!RequiredBy[index].Contains(self)) RequiredBy[index].Add(self);
         }
-        return -1;
+        return first;
     }
+
+    private static int IndexOf(SkillTreeNode node) =>
+        IsAlive(node) ? Nodes.FindIndex(candidate => candidate.Pointer == node.Pointer) : -1;
 
     /// <summary>The game's own exit when nothing lies above, landing on the button the tree needs now.</summary>
     /// <remarks>Native order: clear the selection and both tooltips, set the top row, focus the cell; the last node stays

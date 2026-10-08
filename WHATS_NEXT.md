@@ -31,6 +31,9 @@ emote/ping/quick-chat class in the interop; only an audio `WeightedClip.emoteInd
   once (check settings dropdowns do not speak twice); Bazaar my stall, listing form and filters; Observatory lens
   effects; other players' level and friend character name in the scanner and on approach — if the character
   name never appears for the friend, check the friends-cache key ([details](reference/nearby-player-names.md)).
+- Evening: specialization tree nodes say what they require ("requiere Martillos alados"; points needed/held when
+  unmet) and the details gesture adds "Ruta: …" and "Lleva a: …" ([details](reference/skill-tree-navigation.md#node-connections-2026-10-08)).
+  Check Catapulta: it should name Martillos alados and the route Camino firme, Martillos alados.
 - Next QoL proposal (not started): D2R attack-reach ping (sound when an enemy in sight enters the main
   skill's reach; d2r-access `docs/attack-reach.md`).
 
