@@ -54,6 +54,7 @@ public class MenuAccessibility : MonoBehaviour
         ScreenContentAnnouncer.Update();
         DialogueAnnouncer.Update();
         ElementAnnouncer.ResetFocusIfUnowned();
+        Panels.PanelControlReader.Update();
         ControllerMenuAccessibility.Update();
         bool readDetails = MenuDetailInput.ReadRequested();
         PassiveAccessibility.Update();

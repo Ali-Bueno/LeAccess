@@ -15,7 +15,12 @@ internal static class NativeWindowDiscovery
         int id = root.GetInstanceID();
         if (ScreenContentAnnouncer.HasWindowOwner(id)) return;
         var panel = foreground.TryCast<Panel>();
-        var modal = IsAlive(panel) && !IsExplicitPanel(panel) ? new GenericModalText(root) : null;
+        GenericModalText modal = null;
+        if (IsAlive(panel) && !IsExplicitPanel(panel))
+        {
+            Panels.CostModalReader.TryCreate(panel, out var skip, out var extra);
+            modal = new GenericModalText(root, skip, extra);
+        }
         var endgame = IsAlive(panel) ? Endgame.EndgameWindows.Reader(panel) : null;
         ScreenContentAnnouncer.Track(root, retainWhenHidden: true, separateWindow: true,
             readText: endgame ?? (modal is null ? null : modal.ReadOpening), ownsWindow: () => OwnsWindow(foreground),

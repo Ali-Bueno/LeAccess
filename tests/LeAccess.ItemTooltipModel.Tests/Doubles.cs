@@ -225,3 +225,16 @@ namespace LeAccess.Accessibility.Utils
     internal static class TextUtils
     { internal static string CleanText(string value) => value is null ? null : System.Text.RegularExpressions.Regex.Replace(value, "<[^>]+>", "").Trim(); }
 }
+
+namespace LeAccess.Accessibility.Panels
+{
+    // Vendor panels are not modelled here; the ordinary shop path is what these tests cover.
+    internal static class VendorReader
+    {
+        internal static bool TryPrice(ItemContainerUI container, out TooltipItemManager.SlotType slot, out string priceKey)
+        { slot = TooltipItemManager.SlotType.UNDEFINED; priceKey = null; return false; }
+    }
+}
+
+// Added so the suite compiles against the forge-aware selection reader.
+internal class CraftingMainUI : UnityEngine.Behaviour { }

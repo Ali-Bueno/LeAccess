@@ -418,5 +418,21 @@
   "endgame.locked": "Bloqueado",
   "endgame.selected": "seleccionado",
   "endgame.slot_empty": "Ranura vacía",
-  "endgame.tier": "Grado {0}"
+  "endgame.tier": "Grado {0}",
+  "panels.tab": "pestaña",
+  "panels.tab_selected": "pestaña seleccionada",
+  "panels.you_have": "Tienes {0}",
+  "panels.standing": "Rango {0}, favor {1}",
+  "panels.faction_banner": "Estandarte de la facción",
+  "panels.rank_of": "Rango {0} de {1}",
+  "panels.rank_current": "rango actual",
+  "panels.reward_unlocked": "desbloqueado",
+  "panels.reward_locked": "bloqueado",
+  "panels.chosen": "elegida",
+  "panels.rule": "Regla {0} de {1}",
+  "panels.rule_on": "activada",
+  "panels.rule_off": "desactivada",
+  "panels.key_slot": "Ranura de llave {0} de {1}",
+  "panels.cost": "Coste: {0}",
+  "panels.merchant_tokens": "{0} fichas del Gremio de Mercaderes"
 }

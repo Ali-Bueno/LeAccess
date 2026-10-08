@@ -47,3 +47,12 @@ namespace LeAccess.Accessibility.Endgame
         internal static System.Func<string> Reader(LE.UI.PanelSystem.Panel panel) => null;
     }
 }
+
+namespace LeAccess.Accessibility.Panels
+{
+    internal static class CostModalReader
+    {
+        internal static bool TryCreate(LE.UI.PanelSystem.Panel panel, out System.Func<UnityEngine.Component, bool> skip, out System.Func<string> extra)
+        { skip = null; extra = null; return false; }
+    }
+}

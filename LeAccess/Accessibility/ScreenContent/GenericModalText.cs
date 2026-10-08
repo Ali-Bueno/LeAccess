@@ -19,24 +19,35 @@ internal sealed class GenericModalText
     private TMP_Text _title;
     private TMP_Text _message;
 
-    internal GenericModalText(GameObject root) => _root = root;
+    private readonly System.Func<Component, bool> _skip;
+    private readonly System.Func<string> _extra;
+
+    // A modal may name labels it reads itself (`skip`) and add that text (`extra`); see reference/faction-vendor-panels.md.
+    internal GenericModalText(GameObject root, System.Func<Component, bool> skip = null, System.Func<string> extra = null)
+    {
+        _root = root;
+        _skip = skip;
+        _extra = extra;
+    }
 
     internal string ReadOpening()
     {
         _resolved = false; _attempts = 0;
         Resolve();
-        return ScreenContentReader.Read(_root, _title, _message, include: IsStatic);
+        return ScreenContentTracker.Combine(new[]
+            { ScreenContentReader.Read(_root, _title, _message, include: IsStatic), _extra?.Invoke() });
     }
 
     internal string ReadHeader()
     {
         Resolve();
         if (!UiVisibility.IsVisible(_root)) return null;
-        return ScreenContentTracker.Combine(new[] { Read(_title), Read(_message) });
+        return ScreenContentTracker.Combine(new[] { Read(_title), Read(_message), _extra?.Invoke() });
     }
 
     // Lists, scroll content and control captions belong to focus navigation, not to the window body.
-    private bool IsStatic(Component label) => !IsInside<Selectable>(label) && !IsInside<ScrollRect>(label);
+    private bool IsStatic(Component label) =>
+        !IsInside<Selectable>(label) && !IsInside<ScrollRect>(label) && !(_skip?.Invoke(label) ?? false);
 
     private bool IsInside<T>(Component label) where T : Component
     {

@@ -55,6 +55,7 @@ internal static class MerchantItemReader
         slot = TooltipItemManager.SlotType.UNDEFINED;
         priceKey = null;
         purchase = false;
+        if (Panels.VendorReader.TryPrice(container, out slot, out priceKey)) { purchase = true; return true; }
         var ui = UIBase.instance;
         if (!IsAlive(ui) || !IsAlive(container)) return false;
         var panel = UIBase.GetPanelIfOpen<ShopPanel>();
