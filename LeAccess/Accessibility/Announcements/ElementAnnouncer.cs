@@ -255,6 +255,7 @@ public static class ElementAnnouncer
         if (CharacterTileReader.TryRead(go, out string tileText)) return tileText;
         if (Guide.GuideAccessibility.TryReadCategory(go, out string guideText)) return guideText;
         if (Items.StashTabReader.TryRead(go, out string stashText)) return stashText;
+        if (Cosmetics.CosmeticsReader.TryRead(go, out string cosmeticsText)) return cosmeticsText;
         if (CreationChoiceReader.TryRead(go, out string choiceText)) return choiceText;
         if (WaypointReader.TryRead(go, includeDetails, out string waypointText)) return waypointText;
         if (CharacterStatLineReader.TryRead(go, out string statText)) return statText;
