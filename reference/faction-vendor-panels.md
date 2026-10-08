@@ -122,7 +122,25 @@ gives the panel an introduction (title and static text). Online data: offline or
 - **Pagination** (`PaginationButton`): "Página N de M [actual]", previous and next buttons named.
 - **Results**: once per drawn page ("37 anuncios, página 2 de 4") or "Sin resultados" (`QueryItemsResponse`,
   `IsNoResultPanelActive`), not while the loading indicator is up.
-- Sort, class, rarity, stall type and the other filters are `TMP_Dropdown`/input controls on the generic path (not audited).
+- **Dropdowns** (stall type, sort, rarity, class, corrupted, primordial, T6/T7 counts, price-lowering type/frequency) are plain
+  `TMP_Dropdown`s. `BazaarControlReader` says "Title: value"; the title is the sibling `FilterTitle` label, and the stall type and
+  sort dropdowns (title object inactive in the prefab) are named from `BazaarUI.stallTypeDropdown` / `FilterUI.sortingSelection`.
+  Expanded options are generic (`Announcements/DropdownReader.cs`): text, "seleccionado" for the chosen one, "N de M" among the
+  active toggles of the list. A value chosen while the list closes is said once by `DropdownValueWatcher` (0.3 s settle) unless the
+  focus announcement already spoke it (`NoteSpoken`); every dropdown that goes through the generic path benefits.
+- **Fields**: `InputSmall` pairs under one `FilterTitle` read "Rango de nivel, mínimo: 5" / "máximo" (or "vacío"); single fields
+  (`NumberInput`) add the `_suffix` unit; the multi-selection openers (affixes, uniques, item type, subtype) read title plus the
+  opener's own label text. Typing uses the existing screen-keyboard handling.
+- **My stall** (`BazaarStallReader`): the listed / sold buttons read as tabs with the selected one; `UI_STATE` changes are said
+  once with the count ("Mi puesto, anuncios activos: 3 anuncios, página 1 de 1" or "Tu puesto no tiene anuncios"); own
+  listings (`ItemListingData.IsOwnedByRequestingUser`) add the state from `ItemListingData.State` (a la venta / vendido /
+  oro cobrado / retirado; the game has no "expired") and the action from the card's button (`buttonText`, Unlist or Redeem);
+  the sold-items indicator reads "Vendidos: N" plus its View Stall button; icon-only Back and Clear buttons are named.
+- **List an item** (`BazaarListReader`, `ListItemUI`): placing an item says its name and details once, then the suggested price
+  once it loads (polled, `ListItemDetails`/`PriceSuggestionUI`); an empty slot says so. The asking price field reads
+  "Precio de venta: 500 de oro" plus the game's tax summary; the price-lowering checkbox, type, amount, frequency and floor read
+  as titled controls; the confirm button reads its caption, favor cost and fee/lowering summaries (disabled marked); inventory
+  and stash source buttons are named. Gold is the only currency (no selector exists in the prefab).
 
 ## Mastery choice
 
@@ -138,7 +156,7 @@ confirmation step (`UnityDrivenNavigable` with header/message) is read once on e
 | Circle of Fortune / Merchant's Guild / Forgotten Knights / Weaver rank panels | new reader (rank rewards, standing); Weaver tree and FK timelines read; prophecies not done |
 | FullScreenPanelFactions | Weaver tree and FK timelines read (same classes); tabs and reward rows generic |
 | Gold / Soul / CoF / MG gambling, Hunter / Weaver / Timeglass vendors | new reader (currencies, tabs, refresh, prices) |
-| BazaarPanel | new reader (listings, pagination, results; filters and dropdowns generic) |
+| BazaarPanel | new reader (listings, pagination, results, titled filters and dropdowns, my stall, list-an-item form) |
 | BazaarPurchaseConfirmationModal | fixed (named costs) |
 | DungeonKeysTrader, Exchange Woven Echoes, Eternity Cache | introduction and slot names |
 | Glyph of Insight, Randomize Legendary Potential, Reroll Unique, Shatter Set, Swap Attributes, Idol Enchantment | introduction and slot captions |
@@ -156,4 +174,6 @@ confirmation step (`UnityDrivenNavigable` with header/message) is read once on e
 3. Woven Echo panels, dungeon keys trader: introduction before the first slot; Reroll slot names.
 4. Weaver tree: node entry, a point spent (points left), stick details with neighbours; FK timelines list and entry intro.
 5. Time beast tiles, loot filter rules, mastery choice cards, bazaar purchase confirmation costs.
-6. Bazaar: a search speaks the result line, listing cards read name, type and price, pages read their number.
+6. Bazaar: a search speaks the result line, listing cards read name, type and price, pages read their number; each filter
+   dropdown says title and value, its list says N de M and the chosen one, choosing says the new value once; my stall tabs,
+   own listing state and action; list-an-item: item, suggested price, price field, confirm button.

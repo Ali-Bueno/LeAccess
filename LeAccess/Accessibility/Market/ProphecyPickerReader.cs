@@ -41,9 +41,13 @@ internal static class ProphecyPickerReader
         string name = lens.HasValue ? Clean(ProphecyLensUI.GetDisplayName(lens)) : null;
         var socket = option.GetComponentInParent<ProphecyLensSocketUI>();
         Place(socket, out int position, out int count);
-        text = MarketText.LensOption(name, Current(socket?._activeIndicator), position, count);
+        text = MarketText.LensOption(name, lens.HasValue ? Clean(Localization.GetText(LensEffectKey((int)lens.Value), "")) : null,
+            Current(socket?._activeIndicator), position, count);
         return true;
     }
+
+    // The slot's effect label builds its text from the common string table: CircleOfFortune_Lens_<LensType index>_Effect.
+    private static string LensEffectKey(int lensType) => $"CircleOfFortune_Lens_{lensType}_Effect";
 
     private static bool Current(UnityEngine.UI.Image indicator) => IsAlive(indicator) && indicator.isActiveAndEnabled;
 

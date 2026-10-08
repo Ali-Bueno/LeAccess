@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using LeAccess.Accessibility.Announcements;
 using LeAccess.Accessibility.ScreenContent;
 using LeAccess.I18n;
 
@@ -11,7 +12,9 @@ internal readonly record struct ProphecySlotInfo(string Region, bool Locked, str
 internal readonly record struct LadderMember(string Name, string Class, string Level, bool Dead);
 
 internal readonly record struct ListingSummary(string Name, string Type, string Level, string Gold, string Favor,
-    int Position, int Count);
+    int Position, int Count, string State = null, string Action = null);
+
+internal enum ListingState { Active, Sold, Redeemed, Cancelled }
 
 /// <summary>Mod-authored wording of the Observatory, Ladder and Bazaar readers; game text is always passed in.</summary>
 /// <remarks>See reference/endgame-panels.md and reference/faction-vendor-panels.md.</remarks>
@@ -48,8 +51,9 @@ internal static class MarketText
         Combine(name, current ? ModText.Get("market.current") : null, locked ? ModText.Get("market.locked") : description,
             locked ? lockReason : null, favor > 0 && !locked ? ModText.Format("market.prophecy_favor", favor) : null, Place(position, count));
 
-    internal static string LensOption(string name, bool current, int position, int count) =>
-        Combine(name ?? ModText.Get("market.prophecy_lens_none"), current ? ModText.Get("market.current") : null, Place(position, count));
+    /// <summary>A lens offered by the picker: name, what it does (the game's effect text), whether it is equipped, place.</summary>
+    internal static string LensOption(string name, string effect, bool current, int position, int count) =>
+        Combine(name ?? ModText.Get("market.prophecy_lens_none"), current ? ModText.Get("market.current") : null, effect, Place(position, count));
 
     /// <summary>A ladder row: rank first, then each character with its class and level, then the score.</summary>
     internal static string LadderRow(string rank, string score, IReadOnlyList<LadderMember> members, bool own, int position, int count)
@@ -66,7 +70,54 @@ internal static class MarketText
 
     /// <summary>A bazaar listing: what it is and what it costs; the affixes follow when details are asked for.</summary>
     internal static string Listing(ListingSummary listing, string details) =>
-        Combine(listing.Name, listing.Type, listing.Level, Price(listing.Gold, listing.Favor), details, Place(listing.Position, listing.Count));
+        Combine(listing.Name, listing.Type, listing.Level, Price(listing.Gold, listing.Favor), listing.State, listing.Action, details,
+            Place(listing.Position, listing.Count));
+
+    /// <summary>What a listing of the player's own stall is doing.</summary>
+    internal static string ListingStatus(ListingState state) => ModText.Get(state switch
+    {
+        ListingState.Sold => "market.listing_sold",
+        ListingState.Redeemed => "market.listing_redeemed",
+        ListingState.Cancelled => "market.listing_cancelled",
+        _ => "market.listing_active"
+    });
+
+    internal static string ListingAction(string caption) => Labeled("market.listing_action", caption);
+
+    /// <summary>The stall view the player is in, with its listing count or the empty notice.</summary>
+    internal static string StallView(bool sold, int total, int page, int pages) => Combine(
+        ModText.Get(sold ? "market.stall_sold" : "market.stall_listed"),
+        total <= 0 ? ModText.Get("market.stall_empty") : ModText.Format("market.results", total, page, pages));
+
+    internal static string SoldWaiting(string count) => Labeled("market.sold_waiting", count);
+
+    /// <summary>A filter or form field: its title, the typed value (or that it is empty) and the unit it is typed in.</summary>
+    internal static string InputField(string title, string value, string suffix = null, bool gold = false)
+    {
+        title ??= ModText.Get("control.text_field");
+        if (string.IsNullOrWhiteSpace(value)) return ModText.Format("control.empty_field", title);
+        string shown = gold ? ModText.Format("market.price_gold", value) : string.IsNullOrWhiteSpace(suffix) ? value : $"{value} {suffix}";
+        return DropdownReader.Control(title, shown);
+    }
+
+    /// <summary>One of a minimum / maximum pair of filter fields.</summary>
+    internal static string RangeField(string title, bool max, string value) =>
+        InputField(ModText.Format(max ? "market.range_max" : "market.range_min", title ?? ModText.Get("control.text_field")), value);
+
+    internal static string Checkbox(string title, bool on) => DropdownReader.Control(title, ModText.Get(on ? "state.on" : "state.off"));
+
+    /// <summary>The item chosen for listing: its name and details, with the price the game suggests.</summary>
+    internal static string ListItem(string name, string details, string suggested) =>
+        Combine(Labeled("market.list_item", name), details, Labeled("market.list_suggested", suggested));
+
+    internal static string ListEmpty(string gameText) => string.IsNullOrWhiteSpace(gameText) ? ModText.Get("market.list_empty") : gameText;
+
+    /// <summary>The confirm button of the list-an-item form with its favor cost and the fee summaries the game shows.</summary>
+    internal static string ListButton(string caption, string favorCost, string tax, string lowering) => Combine(
+        string.IsNullOrWhiteSpace(caption) ? ModText.Get("market.list_action") : caption, Labeled("market.list_favor_cost", favorCost), tax, lowering);
+
+    internal static string SourceButton(bool stash, string caption) => string.IsNullOrWhiteSpace(caption)
+        ? ModText.Get(stash ? "market.list_stash" : "market.list_inventory") : caption;
 
     private static string Price(string gold, string favor) => Combine(
         string.IsNullOrWhiteSpace(gold) ? null : ModText.Format("market.price_gold", gold),
