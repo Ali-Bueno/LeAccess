@@ -15,3 +15,12 @@ namespace LeAccess.Accessibility.Items
         internal static bool TryRead(UnityEngine.GameObject element, out string text) { text = null; return false; }
     }
 }
+
+namespace LeAccess.Accessibility.Cosmetics
+{
+    // The cosmetics reader needs the game's cosmetics types; menu reading only needs it to own nothing.
+    internal static class CosmeticsReader
+    {
+        internal static bool TryRead(UnityEngine.GameObject element, out string text) { text = null; return false; }
+    }
+}

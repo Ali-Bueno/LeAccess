@@ -515,5 +515,10 @@
   "progression.skills_can_level": "{0} pueden subir de nivel",
   "progression.new_skill": "Nueva habilidad disponible",
   "progression.zone": "Zona: {0}",
-  "progression.unavailable": "Progreso no disponible"
+  "progression.unavailable": "Progreso no disponible",
+  "cosmetics.empty": "vacío",
+  "cosmetics.locked": "bloqueado",
+  "cosmetics.slot": "Ranura estética",
+  "cosmetics.filter_on": "{0}, filtro activado",
+  "cosmetics.filter_off": "{0}, filtro desactivado"
 }

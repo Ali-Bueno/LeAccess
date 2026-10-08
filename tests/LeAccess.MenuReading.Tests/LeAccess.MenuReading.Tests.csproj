@@ -32,6 +32,7 @@
     <Compile Include="../../LeAccess/Accessibility/Utils/TextUtils.cs" Link="TextUtils.cs" />
     <Compile Include="../../LeAccess/Accessibility/Guide/GuideArticleText.cs" Link="GuideArticleText.cs" />
     <Compile Include="../../LeAccess/Accessibility/Items/StashTabText.cs" Link="StashTabText.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Cosmetics/CosmeticsText.cs" Link="CosmeticsText.cs" />
     <Compile Include="../../LeAccess/Accessibility/Endgame/EndgameText.cs" Link="EndgameText.cs" />
     <Compile Include="../../LeAccess/Accessibility/Panels/PanelText.cs" Link="PanelText.cs" />
     <Compile Include="../../LeAccess/Accessibility/Panels/FactionTreeText.cs" Link="FactionTreeText.cs" />

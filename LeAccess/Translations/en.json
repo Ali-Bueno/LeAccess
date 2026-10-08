@@ -515,5 +515,10 @@
   "progression.skills_can_level": "{0} can level up",
   "progression.new_skill": "New skill available",
   "progression.zone": "Zone: {0}",
-  "progression.unavailable": "Progress unavailable"
+  "progression.unavailable": "Progress unavailable",
+  "cosmetics.empty": "empty",
+  "cosmetics.locked": "locked",
+  "cosmetics.slot": "Cosmetic slot",
+  "cosmetics.filter_on": "{0}, filter on",
+  "cosmetics.filter_off": "{0}, filter off"
 }
