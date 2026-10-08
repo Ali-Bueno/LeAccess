@@ -143,7 +143,9 @@ namespace LeAccess.I18n
         internal static string Get(string key) => key switch
         {
             "service.merchant" => "Mercader", "service.stash" => "Alijo",
-            "service.forge" => "Forja", "service.waypoint" => "Punto de viaje", _ => key
+            "service.forge" => "Forja", "service.waypoint" => "Punto de viaje",
+            "exploration.shrine" => "santuario", "exploration.time_rift" => "fisura temporal",
+            "exploration.nemesis" => "Némesis", "exploration.chest" => "cofre", _ => key
         };
     }
 }
@@ -151,7 +153,7 @@ internal sealed class HoverTagOnMouseOver : UnityEngine.Behaviour
 {
     internal enum HoverTargetType { ZONE_TRANSITION, NPC, SIGNPOST, OTHER, DUNGEON_TRANSITION, SAME_SCENE_TRANSITION, LOCALIZATION_KEY }
     internal HoverTargetType hoverTargetType = HoverTargetType.SIGNPOST;
-    internal string hoverText;
+    internal string hoverText, localizationKey;
     internal TransitionOrGateInteraction sceneInteraction, dungeonTransitionInteraction;
 }
 internal sealed class TransitionOrGateInteraction : UnityEngine.Behaviour { internal string sceneName; }
@@ -178,4 +180,19 @@ namespace LeAccess.Accessibility.Utils
         internal static string CleanText(string text)=>text is null ? null :
             System.Text.RegularExpressions.Regex.Replace(System.Text.RegularExpressions.Regex.Replace(text,"<[^>]+>",""),@"\s+"," ").Trim();
     }
+}
+
+internal sealed class Shrine : UnityEngine.Behaviour { }
+internal sealed class ShrineSync : UnityEngine.Behaviour { }
+internal sealed class TimeRiftInteraction : UnityEngine.Behaviour { }
+internal sealed class ActivateTimeRift : UnityEngine.Behaviour { }
+internal sealed class TimeBeastRift : UnityEngine.Behaviour { }
+internal sealed class MonolithPortal : UnityEngine.Behaviour { }
+internal sealed class ShatteredRoadPortalInteractable : UnityEngine.Behaviour { }
+internal sealed class NemesisEncounterInteractableObject : UnityEngine.Behaviour { }
+internal sealed class OneShotCacheInteractableObject : UnityEngine.Behaviour { }
+internal static class Localization
+{
+    internal static readonly Dictionary<string, string> Texts = new();
+    internal static string GetText(string key, string fallback = "") => Texts.TryGetValue(key, out var value) ? value : string.IsNullOrEmpty(fallback) ? key : fallback;
 }

@@ -122,10 +122,43 @@ Last Epoch recordings chosen by the user ([sound design](sound-design.md#last-ep
 Every recording under a second now repeats once a second; the three one-shots
 take the mix's full headroom. Equipment, chests and the stash keep D2R.
 
-Not ported yet: D2R's magic/rare/legendary equipment loops (LE rarity is not
-mapped), door and quest-item loops, ancient bones. Tests: `LeAccess.WorldLoops.Tests` 45 checks
-(decoding, levels, seamless position, fades, release, clamping, pitch) and
-world cues 195 checks. Listening is pending.
+Tests: `LeAccess.WorldLoops.Tests` and world cues cover decoding, levels, seamless position, fades, release, clamping and pitch. Listening is pending.
+
+## Loot by rarity and type, and more interactables (2026-10-08)
+
+`GroundLootClassifier` maps the game's item predicates to a loop; the same mixer, range and loot filter as
+equipment apply (a hidden label stays silent; a kind whose loop failed to load is silent, never a borrowed
+equipment cue). Unknown interactables keep the repeated cue at the native radius: widening it would make every
+door, lever and lore object beep from `LoopRange`.
+
+| Game item or object | Loop | Source |
+|---|---|---|
+| Normal equipment | `equipment` | D2R `normal equipment` |
+| Magic equipment | `magic_equipment` | D2R `magic equipment` |
+| Rare or exalted equipment | `rare_equipment` | D2R `rare equipment` |
+| Unique, set, legendary | `legendary_equipment` | D2R `legendary equipment` |
+| Idols | by rarity, as equipment | |
+| Rune | `rune` | D2R `rune` |
+| Glyph | `gem` | D2R `gem` |
+| Affix shard | `scroll` | D2R `scroll` |
+| Key, lens, woven echo, other loot | `quest_item` | D2R `quest item` |
+| Shrine (`Shrine`, `ShrineSync`) | `shrine` | LE `Environmental` `sfx_enviro_shrine_nature_main_loop` (28 s) |
+| Nemesis (`NemesisEncounterInteractableObject`) | `nemesis` | LE `Environmental` `sfx_ui_nemesis_corpse_loop` (22 s) |
+| Time rift, Monolith/Shattered Road portal (`TimeRiftInteraction`, `ActivateTimeRift`, `TimeBeastRift`, `MonolithPortal`, `ShatteredRoadPortalInteractable`) | `portal` | LE time-rift loop (unchanged) |
+| One-shot cache | `chest` | D2R `chest` |
+
+`InteractableRoles.Read` finds these components on the listener or its ancestors. Shrines and the Nemesis are
+landmarks (voices first, `LoopRange`). Names: `InteractableRoles.Name` takes the hover tag's text, resolved through
+`Localization.GetText` when it has a `localizationKey`, and only then the mod's `exploration.shrine`,
+`exploration.time_rift`, `exploration.nemesis`. The nearby-landmark announcement and the scanner use it, so key-only
+tags (log: `LOCALIZATION_KEY` without a portal controller) are named. Unverified without the game: that the rift and
+Nemesis components sit on or above the listener, and the speech text of their tags.
+
+## Fallback cues are cut from the loops
+
+The root `Sounds/*.wav` excerpts duplicated the loops. Only `discovery.wav` and `inside_unexplored_room.wav` (no
+loop twin) remain; `NaturalCueBank` cuts the repeated-cue fallback from the first `GoldSeconds`, `EquipmentSeconds`,
+`ContainerSeconds`, `TransitionSeconds` or `RouteSeconds` of the loop at load time (the old file lengths).
 
 ## Continuous sonar lifecycle follow-up
 

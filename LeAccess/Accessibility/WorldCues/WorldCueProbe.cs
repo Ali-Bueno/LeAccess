@@ -94,11 +94,12 @@ internal sealed class WorldCueProbe
                     RememberLoot(item.worldObjectClickListener);
                     var data = item.itemData;
                     if (data is null || data.WasCollected) { _missingItemData++; continue; }
-                    if (!data.isEquipment()) { _nonEquipment++; continue; }
+                    var kind = GroundLootClassifier.Classify(data);
                     var label = item.label;
                     if (!IsAlive(label)) { _missingLabel++; continue; }
                     if (label.lastFilterResult == Rule.RuleOutcome.HIDE) { _filtered++; continue; }
-                    Consider(item.worldObjectClickListener, item, label, WorldCueCategory.Equipment);
+                    if (GroundLootClassifier.IsGear(kind)) Consider(item.worldObjectClickListener, item, label, WorldCueCategory.Equipment, kind);
+                    else { _nonEquipment++; ConsiderPickup(item.worldObjectClickListener, item, kind); }
                 }
                 catch (Exception ex) { LastFailure ??= ex.Message; }
 
@@ -161,7 +162,7 @@ internal sealed class WorldCueProbe
     }
 
     private void Consider(WorldObjectClickListener listener, MonoBehaviour owner,
-        PickupableGroundLabel label, WorldCueCategory category)
+        PickupableGroundLabel label, WorldCueCategory category, NaturalCueKind? lootKind = null)
     {
         bool interactable = category == WorldCueCategory.Interactable;
         if (interactable && (!IsAlive(listener) || !listener.isActiveAndEnabled || !IsAlive(listener.gameObject) ||
@@ -185,7 +186,7 @@ internal sealed class WorldCueProbe
         NaturalCueKind? sound = category switch
         {
             WorldCueCategory.Coins => NaturalCueKind.Gold,
-            WorldCueCategory.Equipment => NaturalCueKind.Equipment,
+            WorldCueCategory.Equipment => lootKind ?? NaturalCueKind.Equipment,
             _ => null
         };
         if (interactable)

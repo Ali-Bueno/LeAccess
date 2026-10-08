@@ -2,6 +2,7 @@
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net6.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/Landmarks/LandmarkProbe.cs" Link="LandmarkProbe.cs" />
+    <Compile Include="../../LeAccess/Accessibility/WorldCues/InteractableRole.cs" Link="InteractableRole.cs" />
     <Compile Include="../../LeAccess/Accessibility/Npcs/WorldServiceReader.cs" Link="WorldServiceReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
     <Compile Include="../../LeAccess/Accessibility/Players/LocalPlayerSource.cs" Link="LocalPlayerSource.cs" />

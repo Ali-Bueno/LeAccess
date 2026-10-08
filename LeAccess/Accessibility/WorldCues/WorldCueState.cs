@@ -18,7 +18,8 @@ internal static class WorldCueReach
     internal const float FarGain = 0.35f;
 
     internal static bool IsLandmark(NaturalCueKind? kind) =>
-        kind is NaturalCueKind.Portal or NaturalCueKind.ZoneTransition or NaturalCueKind.Stash;
+        kind is NaturalCueKind.Portal or NaturalCueKind.ZoneTransition or NaturalCueKind.Stash or
+            NaturalCueKind.Shrine or NaturalCueKind.Nemesis;
 
     internal static float Limit(float range, bool held) => held ? range + ExitMargin : range;
 

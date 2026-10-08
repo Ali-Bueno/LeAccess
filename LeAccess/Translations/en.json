@@ -359,6 +359,8 @@
   "exploration.unexplored_room": "unexplored room {0}",
   "exploration.chest": "chest",
   "exploration.shrine": "shrine",
+  "exploration.time_rift": "time rift",
+  "exploration.nemesis": "Nemesis",
   "exploration.death_place": "where you died",
   "exploration.found_exit": "The radar has logged a new exit: {0}",
   "exploration.found_place": "The radar has logged a new place: {0}",

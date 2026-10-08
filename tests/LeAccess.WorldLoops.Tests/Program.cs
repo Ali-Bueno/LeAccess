@@ -11,7 +11,9 @@ bool Throws(Action action) { try { action(); return false; } catch (ArgumentOutO
 
 // Every supplied loop decodes whole, peak-normalized with D2R's level trims; LE one-shots fill the mix headroom.
 foreach (var kind in new[] { NaturalCueKind.Gold, NaturalCueKind.Equipment, NaturalCueKind.Chest,
-    NaturalCueKind.Stash, NaturalCueKind.Portal, NaturalCueKind.ZoneTransition, NaturalCueKind.Potion, NaturalCueKind.Tome })
+    NaturalCueKind.Stash, NaturalCueKind.Portal, NaturalCueKind.ZoneTransition, NaturalCueKind.Potion, NaturalCueKind.Tome,
+    NaturalCueKind.MagicEquipment, NaturalCueKind.RareEquipment, NaturalCueKind.LegendaryEquipment, NaturalCueKind.Rune,
+    NaturalCueKind.Gem, NaturalCueKind.Scroll, NaturalCueKind.QuestItem, NaturalCueKind.Shrine, NaturalCueKind.Nemesis })
 {
     var clip = WorldLoopBank.Get(kind);
     Check(clip.Length > 0 && WorldLoopBank.Has(kind), $"{kind} loop loads");
@@ -22,8 +24,15 @@ foreach (var kind in new[] { NaturalCueKind.Gold, NaturalCueKind.Equipment, Natu
     Check(Math.Abs(peak - expected) < 1e-3, $"{kind} loop peaks at its trimmed level");
 }
 Check(WorldLoopBank.Get(NaturalCueKind.Portal).Length > 9 * Rate, "The portal loop is the whole recording, not a 300 ms excerpt");
-foreach (var kind in new[] { NaturalCueKind.Stash, NaturalCueKind.Gold, NaturalCueKind.Potion, NaturalCueKind.Tome })
+foreach (var kind in new[] { NaturalCueKind.Stash, NaturalCueKind.Gold, NaturalCueKind.Potion, NaturalCueKind.Tome,
+    NaturalCueKind.Rune, NaturalCueKind.Gem, NaturalCueKind.Scroll })
     Check(WorldLoopBank.Get(kind).Length == Rate, $"The short {kind} recording is padded to repeat once a second");
+Check(WorldLoopBank.Get(NaturalCueKind.Shrine).Length > 20 * Rate && WorldLoopBank.Get(NaturalCueKind.Nemesis).Length > 20 * Rate,
+    "The Last Epoch shrine and Nemesis loops are whole recordings longer than 20 s");
+Check(new[] { NaturalCueKind.MagicEquipment, NaturalCueKind.RareEquipment, NaturalCueKind.LegendaryEquipment, NaturalCueKind.QuestItem }
+    .All(k => WorldLoopBank.Get(k).Length >= Rate), "The D2R rarity and quest loops are at least a second long");
+Check(WorldLoopSelection.IsLandmark(NaturalCueKind.Shrine) && WorldLoopSelection.IsLandmark(NaturalCueKind.Nemesis) &&
+    !WorldLoopSelection.IsLandmark(NaturalCueKind.Rune), "Shrines and the Nemesis claim voices as landmarks; loot does not");
 Check(!WorldLoopBank.Has(NaturalCueKind.Discovery) && WorldLoopBank.Get((NaturalCueKind)99).Length == 0,
     "Kinds without a loop and invalid kinds are empty");
 Check(WorldLoopBank.LastFailure == null, "No loop failed to load");

@@ -2,6 +2,7 @@ using System;
 using EHG.Multiplayer;
 using LeAccess.Accessibility.Utils;
 using LeAccess.Accessibility.Npcs;
+using LeAccess.Accessibility.WorldCues;
 using LeAccess.I18n;
 using Networking.Multiplayer.Interactables.Portals;
 using UnityEngine;
@@ -85,6 +86,16 @@ internal static class LandmarkProbe
                 if (found && (distance > nearest || distance == nearest && id >= target.InstanceId)) continue;
                 string nameStatus = "no_tag";
                 string name = hasTag ? ReadName(tag, scene, portal, out nameStatus) : null;
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    // Shrines, time rifts and the Nemesis altar carry generic or key-only tags.
+                    var role = InteractableRoles.Read(listener);
+                    if (role != InteractableRole.None)
+                    {
+                        name = InteractableRoles.Name(role, hasTag ? tag : null);
+                        nameStatus = $"role:{role}";
+                    }
+                }
                 string service = WorldServiceReader.ReadServiceKey(listener);
                 if (service is not null)
                 {

@@ -82,7 +82,18 @@ internal sealed class GroundItemLabel : PickupableGroundLabel
 }
 namespace ItemFiltering { internal class Rule { internal enum RuleOutcome { SHOW, HIDE, HIGHLIGHT_DEPRECATED } } }
 internal sealed class ItemData
-{ internal bool WasCollected, Equipment = true; internal bool isEquipment() => Equipment; }
+{
+    internal bool WasCollected, Equipment = true, Idol, UniqueSetOrLegendary, Rare, Exalted, Magic, Rune, Glyph, AffixShard;
+    internal bool isEquipment() => Equipment;
+    internal bool isIdol() => Idol;
+    internal bool isUniqueSetOrLegendary() => UniqueSetOrLegendary;
+    internal bool isRare() => Rare;
+    internal bool isExaltedItem() => Exalted;
+    internal bool isMagic() => Magic;
+    internal bool IsRune() => Rune;
+    internal bool IsGlyph() => Glyph;
+    internal bool IsAffixShard() => AffixShard;
+}
 internal sealed class GroundGoldVisuals : UnityEngine.MonoBehaviour
 {
     internal static Registry<GroundGoldVisuals> all = new();
@@ -141,10 +152,40 @@ internal sealed class HoverTagOnMouseOver : UnityEngine.MonoBehaviour
 {
     internal enum HoverTargetType { OTHER, ZONE_TRANSITION, DUNGEON_TRANSITION, SIGNPOST }
     internal HoverTargetType hoverTargetType;
+    internal string hoverText, localizationKey;
     internal TransitionOrGateInteraction sceneInteraction, dungeonTransitionInteraction;
 }
 internal sealed class TransitionOrGateInteraction : UnityEngine.MonoBehaviour { internal string sceneName; }
 internal sealed class ChestSync : UnityEngine.MonoBehaviour { }
+internal sealed class Shrine : UnityEngine.MonoBehaviour { }
+internal sealed class ShrineSync : UnityEngine.MonoBehaviour { }
+internal sealed class TimeRiftInteraction : UnityEngine.MonoBehaviour { }
+internal sealed class ActivateTimeRift : UnityEngine.MonoBehaviour { }
+internal sealed class TimeBeastRift : UnityEngine.MonoBehaviour { }
+internal sealed class MonolithPortal : UnityEngine.MonoBehaviour { }
+internal sealed class ShatteredRoadPortalInteractable : UnityEngine.MonoBehaviour { }
+internal sealed class NemesisEncounterInteractableObject : UnityEngine.MonoBehaviour { }
+internal sealed class OneShotCacheInteractableObject : UnityEngine.MonoBehaviour { }
+internal static class Localization
+{
+    internal static readonly Dictionary<string, string> Texts = new();
+    internal static string GetText(string key, string fallback = "") => Texts.TryGetValue(key, out var value) ? value : string.IsNullOrEmpty(fallback) ? key : fallback;
+}
+namespace LeAccess.I18n
+{
+    internal static class ModText
+    {
+        internal static string Get(string key) => key switch
+        {
+            "exploration.shrine" => "santuario", "exploration.time_rift" => "fisura temporal",
+            "exploration.nemesis" => "Némesis", "exploration.chest" => "cofre", _ => key
+        };
+    }
+}
+namespace LeAccess.Accessibility.Utils
+{
+    internal static class TextUtils { internal static string CleanText(string text) => text?.Trim(); }
+}
 internal sealed class VaultsOfUncertainFateChest : UnityEngine.MonoBehaviour { internal bool hasBeenOpened; }
 namespace LE.Gameplay.Monolith { internal sealed class MonolithChestInteraction : UnityEngine.MonoBehaviour { } }
 namespace LE.Gameplay.PrimalHunt { internal sealed class CaveTreasureChest : UnityEngine.MonoBehaviour { } }

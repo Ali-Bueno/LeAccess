@@ -47,10 +47,14 @@ internal static class ExplorationClassifier
         // The stash and waypoints also pass the NPC test.
         if (service == "service.stash") return Place(ExplorationCategory.Stash, ModText.Get(service), out place);
         if (service == "service.waypoint") return Place(ExplorationCategory.Waypoint, ModText.Get(service), out place);
-        if (IsShrine(listener))
-            return Place(ExplorationCategory.Shrine, HoverName(listener) ?? ModText.Get("exploration.shrine"), out place);
+        var role = InteractableRoles.Read(listener);
+        if (IsShrine(listener) || role == InteractableRole.Shrine)
+            return Place(ExplorationCategory.Shrine, InteractableRoles.Name(InteractableRole.Shrine, Tag(listener)), out place);
+        if (role is InteractableRole.TimeRift or InteractableRole.Nemesis)
+            return Place(role == InteractableRole.TimeRift ? ExplorationCategory.Portal : ExplorationCategory.Interactable,
+                InteractableRoles.Name(role, Tag(listener)), out place);
         if (WorldCueIdentityReader.ReadKind(listener) == NaturalCueKind.Chest)
-            return Place(ExplorationCategory.Treasure, HoverName(listener) ?? ModText.Get("exploration.chest"), out place);
+            return Place(ExplorationCategory.Treasure, InteractableRoles.Name(InteractableRole.Cache, Tag(listener)), out place);
         if (WorldServiceReader.IsNpc(listener))
             return Place(IsCharacter(listener) ? ExplorationCategory.Npc : ExplorationCategory.Interactable,
                 NpcNameReader.Read(listener, out _), out place);
@@ -114,14 +118,8 @@ internal static class ExplorationClassifier
     }
 
     // The label the game shows on hover, localized when it carries a key.
-    private static string HoverName(WorldObjectClickListener listener)
-    {
-        var tag = Tag(listener);
-        if (tag is null) return null;
-        string name = TextUtils.CleanText(string.IsNullOrWhiteSpace(tag.localizationKey)
-            ? tag.hoverText : Localization.GetText(tag.localizationKey, tag.hoverText));
-        return string.IsNullOrWhiteSpace(name) ? null : name;
-    }
+    private static string HoverName(WorldObjectClickListener listener) =>
+        InteractableRoles.Name(InteractableRole.None, Tag(listener));
 
     private static string Destination(WorldObjectClickListener listener)
     {

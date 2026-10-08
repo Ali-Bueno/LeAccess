@@ -15,6 +15,10 @@ Those are listening references, not active sounds.
 
 ## Meaning and availability
 
+Every duration below is the first part of the matching `Sounds/Loops/` recording, cut when the fallback cue loads
+(no separate files; see [loops](world-object-sounds.md#fallback-cues-are-cut-from-the-loops)). Rarity, rune, gem,
+scroll, quest-item, shrine and Nemesis loops: [mapping](world-object-sounds.md#loot-by-rarity-and-type-and-more-interactables-2026-10-08).
+
 | Audible meaning in Last Epoch | Recording (D2R unless marked LE) | Duration |
 |---|---|---|
 | Gold pile | LE `UI.bank` `sfx_ui_general_goldsmall` | 300 ms |

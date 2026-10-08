@@ -12,5 +12,6 @@
     <Compile Include="../../LeAccess/Accessibility/Audio/WorldCueSynthesizer.cs" Link="WorldCueSynthesizer.cs" />
     <Compile Include="../../LeAccess/Accessibility/WorldCues/WorldCueState.cs" Link="WorldCueState.cs" />
     <EmbeddedResource Include="../../LeAccess/Sounds/*.wav" LogicalName="LeAccess.Sounds.%(Filename)%(Extension)" Condition="'$(OmitNaturalAudioResources)' != 'true'" />
+    <EmbeddedResource Include="../../LeAccess/Sounds/Loops/*.wav" LogicalName="LeAccess.Sounds.Loops.%(Filename)%(Extension)" Condition="'$(OmitNaturalAudioResources)' != 'true'" />
   </ItemGroup>
 </Project>
