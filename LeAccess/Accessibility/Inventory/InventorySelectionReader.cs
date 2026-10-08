@@ -98,11 +98,17 @@ internal static class InventorySelectionReader
         ContainerID.EQ_GLOVES or ContainerID.EQ_BELT or ContainerID.EQ_BOOTS or ContainerID.EQ_RIGHTRING or
         ContainerID.EQ_LEFTRING or ContainerID.EQ_AMULET or ContainerID.EQ_RELIC;
 
-    private static Il2CppSystem.Object ReadCell(Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase raw, Vector2Int index)
+    /// <summary>The equipment's native [x,y] table, or null when it is not a live two-dimensional array.</summary>
+    internal static Il2CppSystem.Array ReadGrid(Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase raw)
     {
-        if (raw is null || raw.WasCollected) return null;
-        var cells = raw.TryCast<Il2CppSystem.Array>();
-        if (cells is null || cells.WasCollected || cells.Rank != 2 || index.x < 0 || index.y < 0 ||
+        var cells = raw is not null && !raw.WasCollected ? raw.TryCast<Il2CppSystem.Array>() : null;
+        return cells is not null && !cells.WasCollected && cells.Rank == 2 ? cells : null;
+    }
+
+    internal static Il2CppSystem.Object ReadCell(Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase raw, Vector2Int index)
+    {
+        var cells = ReadGrid(raw);
+        if (cells is null || index.x < 0 || index.y < 0 ||
             index.x >= cells.GetLength(0) || index.y >= cells.GetLength(1)) return null;
         // EquippedItemsNavigable.Select uses [x,y]; see reference/equipped-items.md.
         var cell = cells.GetValue(index.x, index.y);

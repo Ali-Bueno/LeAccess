@@ -172,12 +172,28 @@ internal sealed class ItemContainersManager : UnityEngine.Component
     internal OneSlotItemContainer cursor = new();
 }
 internal enum ContainerID { UNDEFINED, INVENTORY, EQ_HELMET, EQ_ARMOR, EQ_WEAPON, EQ_OFFHAND, EQ_GLOVES, EQ_BELT,
-    EQ_BOOTS, EQ_RIGHTRING, EQ_LEFTRING, EQ_AMULET, EQ_RELIC, SHOP, SHOP_BUYBACK }
+    EQ_BOOTS, EQ_RIGHTRING, EQ_LEFTRING, EQ_AMULET, EQ_RELIC, SHOP, SHOP_BUYBACK, IDOLS, IDOLS_INVENTORY }
 namespace LE.Factions { internal sealed class ShopContainerUI : ItemContainerUI { } }
 // The forge's item slot is an inventory-style container the forge reader speaks.
 internal sealed class CraftingMainUI : ItemContainerUI { }
+internal sealed class IdolsContainerUI : ItemContainerUI { }
+internal sealed class IdolsInventoryContainerUI : ItemContainerUI { }
 internal enum ContainerType { INVENTORY, EQUIPPED, STASH, SHOP }
-internal sealed class IItemContainer : NativeObject
+internal sealed class IdolsItemContainer : IItemContainer
+{
+    public enum IdolSlotState { Blocked, Locked, Unlocked }
+    internal readonly Dictionary<(int, int), IdolSlotState> States = new();
+    internal readonly HashSet<(int, int)> Refracted = new();
+    internal int StateReads;
+    // Unlisted cells are unlocked, like most of a real grid.
+    internal IdolSlotState GetSlotState(int x, int y, out bool isRefracted)
+    {
+        StateReads++;
+        isRefracted = Refracted.Contains((x, y));
+        return States.GetValueOrDefault((x, y), IdolSlotState.Unlocked);
+    }
+}
+internal class IItemContainer : NativeObject
 {
     internal ContainerType Type;
     internal ContainerID Id;
@@ -204,7 +220,14 @@ internal sealed class EquippedItemsNavigable : UnityEngine.Component
     internal Il2CppSystem.Object navigables, rects;
     internal UnityEngine.Vector2Int currentlySelectedIdx;
 }
-internal static class NavigationManager { public static NativeObject currentlySelected; }
+internal enum NavigableID { NONE, EQUIPPED_ITEMS_CONTAINER, IDOLS_CONTAINER, IDOL_ALTAR }
+internal sealed class NavigationManager : UnityEngine.Component
+{
+    public static NativeObject currentlySelected;
+    public static NavigationManager instance;
+    internal readonly Dictionary<NavigableID, Il2CppSystem.Object> Registered = new();
+    public bool GetNavigableFromID(NavigableID id, out Il2CppSystem.Object nav) => Registered.TryGetValue(id, out nav);
+}
 internal sealed class TooltipItemManager : UnityEngine.Component
 {
     public enum SlotType { INVENTORY, EQUIPPED, GROUND, STASH }

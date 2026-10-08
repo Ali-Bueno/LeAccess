@@ -419,6 +419,7 @@ SpeechAcceptanceTests.Run(Check);
 DropFocusTests.Run(Check);
 PointerHoverTests.Run(Check);
 NavigationTests.Run(Check);
+IdolTests.Run(Check);
 GoldNoticeTests.Run(Check);
 ComparisonModeTests.Run(Check);
 Console.WriteLine($"Inventory tests passed: {checks} checks.");

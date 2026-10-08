@@ -24,6 +24,17 @@ internal static class NavigationTests
             Plan(-1, Direction.DOWN, 4, 7) == Select(2) && Plan(-1, Direction.RIGHT, 9, 3) == Select(4),
             "An empty focused cell resumes from its place in the reading order");
         check(Plan(0, (Direction)9) == new InventoryNavigationOrder.Move(MoveKind.Native), "Unknown directions fall back to the game");
+        var exit = new InventoryNavigationOrder.Move(MoveKind.Exit);
+        const InventoryNavigationOrder.Edges idolExits = InventoryNavigationOrder.Edges.Left | InventoryNavigationOrder.Edges.Up |
+            InventoryNavigationOrder.Edges.Down;
+        InventoryNavigationOrder.Move Idol(int current, Direction direction) =>
+            InventoryNavigationOrder.Plan(order, current, -1, -1, direction, idolExits);
+        check(Idol(0, Direction.LEFT) == exit && Idol(4, Direction.DOWN) == exit && Idol(1, Direction.UP) == exit,
+            "A grid that the game leaves on several sides exits there at the list's ends");
+        check(Idol(4, Direction.RIGHT) == stay && Idol(1, Direction.LEFT) == Select(0), "Sides that wrap natively still repeat the item");
+        check(InventoryNavigationOrder.Plan(new List<Anchor>(), -1, 0, 4, Direction.RIGHT, idolExits) == stay &&
+            InventoryNavigationOrder.Plan(new List<Anchor>(), -1, 0, 4, Direction.LEFT, idolExits) == exit,
+            "An empty grid can still be left on its exit sides");
 
         ItemContainerEntry Item(int x, int y, int width = 1, int height = 1) =>
             new() { Position = new() { x = x, y = y }, size = new() { x = width, y = height } };
