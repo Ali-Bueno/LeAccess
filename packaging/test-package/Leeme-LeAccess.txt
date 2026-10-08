@@ -46,7 +46,11 @@ Nivel: manten Create y pulsa Circulo (teclado: Ctrl+L) para oir nivel, porcentaj
 experiencia, puntos de pasiva y habilidades por mejorar, y la zona. Sin pulsar nada
 se dicen al subir de nivel y al tener un punto nuevo.
 Oro: manten Create y pulsa Triangulo (teclado: Ctrl+G). Tambien se dice al abrir
-el inventario o un vendedor y despues de comprar o vender.
+el inventario o un vendedor y despues de comprar o vender, y al recoger oro se
+dice la cantidad, por ejemplo "50 de oro".
+Radar (stick derecho en el juego): arriba y abajo cambian de categoria,
+izquierda y derecha recorren sus elementos. Enemigo lista todos los enemigos
+en pantalla; ultima muerte lleva a donde moriste (no hay cuerpo que recoger).
 En el inventario, manten L3 sobre un objeto para compararlo con el equipado,
 R3 para las explicaciones de sus modificadores, y L3 y luego R3 para ver
 los rangos.
@@ -72,6 +76,9 @@ Normal y Dificil dicen cual esta elegido y Cambiar de reino dice el reino
 actual. Cuidado: pulsar Normal o Dificil cambia siempre al otro modo. Para
 jugar en grupo, los dos personajes deben tener el mismo reino y el mismo modo,
 y ninguno Botin en solitario.
+Tambien se leen las facciones y sus rangos, las apuestas, los vendedores
+especiales, el filtro de botin, la eleccion de especializacion, el Monolito y
+sus bendiciones, las entradas a mazmorras y las votaciones de jefes.
 Es una version de prueba: algunas pantallas y elementos aun pueden no leerse.
 
 SI NO HABLA O FALLA EL ARRANQUE

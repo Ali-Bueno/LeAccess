@@ -15,6 +15,9 @@ the latest installed build. Technical findings and reproduction notes live in
 - Skill and passive details, equipped-skill buttons, inventory actions and quest
   journal reading.
 - Forge affix actions, shard details, and localized rune/glyph names and quantities.
+- Endgame and faction panels: dungeon/arena tiers, Monolith echoes and blessings, echo rewards,
+  boss votes ([endgame](reference/endgame-panels.md)); faction choice and ranks, gamblers and special
+  vendors, item-service panels, loot-filter rules and mastery choice ([factions/vendors](reference/faction-vendor-panels.md)).
 - Visible dialogue, examination descriptions, NPC subtitles and cinematic text.
 - Nearby NPC, enemy, loot, destination and other-player names.
 - Health/mana/potion-charge feedback and directional navigation and world-object audio cues.
@@ -104,6 +107,10 @@ details. Without a button,
 [enemy cues](reference/enemy-cues.md) growl for up to three
 nearby enemies in sight (a deeper swoop for a boss), panned on screen and faster
 when closer; `[Enemy cues]` in the configuration turns them off or adjusts them.
+Each gold pickup or gold reward is spoken with its amount ("50 de oro"), except at
+vendors, which announce the new total ([gold](reference/vitals-api.md#gold-pickups-2026-10-08));
+level ups and new passive points or skill points are announced as they happen
+([progression](reference/progression.md)).
 
 [Natural world sounds](reference/natural-world-sounds.md) reuse recordings from
 the D2R mod for loot and identified world interactions. Short repeating samples
