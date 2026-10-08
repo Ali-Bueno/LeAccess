@@ -28,11 +28,17 @@ no longer issues a minion command (no marker, no exception). Without Create the 
 `[Exploration input] game minion command held back while Create is down` appears once per hold when the flag was
 armed. The action-40 button path is not blocked (no controller button is bound to it in the verified layout).
 
-## Not done
+## Spoken commands (2026-10-08, polling, no hook)
 
-No spoken feedback for minion commands. A Harmony hook on `EpochInputManager.HandleMinionCommand` takes a `Transform`
-argument (PatchSafety rejects exact `Il2CppObjectBase` signatures) and the original throws often online, so a postfix
-would not reliably run. A polling alternative: watch the flag clear and read `RightStickTarget`.
+A hook on `EpochInputManager.HandleMinionCommand` is unsafe (a `Transform` argument; the original throws often online),
+so `Combat/MinionCommandAccessibility` polls instead: the flag going from set to clear, in controller gameplay, while
+the mod did not hold it down (Create not held this frame or the last, `MinionCommandState`), means a command fired.
+A throwing command leaves the flag set and stays silent. The target is `ControllerManager.instance.Targeting.RightStickTarget`
+(the one the game passes), named like the nearest enemy. It says "Esbirros: atacar a X" or "Esbirros: mover", and
+nothing without minions: online the live `LocalPlayer.clientSummonTracker.clientMinionCreationReferences` (each minion's
+creation references register there), offline `Actor.TryGetExistingSummonTracker(...).summons`. Each fire logs
+`[Minion command] minions=N target=…`. Combat 175 checks. Unverified: the minion count sources online/offline, other
+code clearing the flag, the action-40 button path (not observed).
 
 ## Check in game
 

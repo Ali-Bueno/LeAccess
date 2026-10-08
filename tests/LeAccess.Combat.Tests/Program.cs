@@ -45,4 +45,5 @@ Check(state.TryAnnounce("Oso", 1, true, out _), "Custom interval permits the cur
 NearestEnemyProbeTests.Run(Check);
 CombatServiceTests.Run(Check);
 EnemyClassTests.Run(Check);
+MinionCommandTests.Run(Check);
 Console.WriteLine($"Combat tests passed: {checks} checks.");

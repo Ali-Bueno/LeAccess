@@ -178,8 +178,10 @@ namespace LeAccess.I18n
         internal static readonly Dictionary<string, string> Catalog = new()
         {
             ["enemy.class.magic"] = "magic", ["enemy.class.rare"] = "rare", ["enemy.class.champion"] = "champion",
-            ["enemy.named_class"] = "{0}, {1}"
+            ["enemy.named_class"] = "{0}, {1}",
+            ["minions.command_move"] = "move", ["minions.command_attack"] = "attack {0}"
         };
+        internal static string Get(string key) => Catalog[key];
         internal static string Format(string key, params object[] arguments) => string.Format(Catalog[key], arguments);
     }
 }

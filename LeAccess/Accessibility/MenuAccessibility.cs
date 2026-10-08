@@ -121,6 +121,7 @@ public class MenuAccessibility : MonoBehaviour
         LeAccess.Accessibility.Progression.ProgressionAccessibility.Update(worldContentActive);
         ControllerBindingLog.Update();
         BossLifeAccessibility.Update();
+        MinionCommandAccessibility.Update();
     }
 
     private static void ReadSelectedDetails()

@@ -15,5 +15,6 @@
     <Compile Include="../../LeAccess/Accessibility/Players/LocalPlayerSource.cs" Link="LocalPlayerSource.cs" />
     <Compile Include="../../LeAccess/Accessibility/Combat/EnemyClass.cs" Link="EnemyClass.cs" />
     <Compile Include="../../LeAccess/Accessibility/Combat/EnemyClassProbe.cs" Link="EnemyClassProbe.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Combat/MinionCommandState.cs" Link="MinionCommandState.cs" />
   </ItemGroup>
 </Project>

@@ -124,6 +124,8 @@
   "quest.unpinned": "Sin fijar",
   "quest.objective_completed": "{0} (Completado)",
   "enemy.class.magic": "mágico",
+  "minions.command_move": "Esbirros: mover",
+  "minions.command_attack": "Esbirros: atacar a {0}",
   "enemy.class.rare": "raro",
   "enemy.class.champion": "campeón",
   "enemy.named_class": "{0}, {1}",
