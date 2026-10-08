@@ -15,6 +15,7 @@
     <Compile Include="../../LeAccess/Accessibility/Exploration/RoomTracker.cs" Link="RoomTracker.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationCatalog.cs" Link="ExplorationCatalog.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationSeenMemory.cs" Link="ExplorationSeenMemory.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationArrival.cs" Link="ExplorationArrival.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationStore.cs" Link="ExplorationStore.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationKey.cs" Link="ExplorationKey.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/BeaconState.cs" Link="BeaconState.cs" />

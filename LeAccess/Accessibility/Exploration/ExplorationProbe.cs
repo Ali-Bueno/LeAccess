@@ -34,6 +34,7 @@ internal static class ExplorationProbe
     private static readonly List<FrontierArea> Frontier = new();
     private static readonly List<ExplorationFind> Finds = new();
     private static readonly RoomTracker Tracker = new();
+    private static readonly ExplorationArrival Arrival = new();
     private const int UnseenLogged = 6;
     private const float MinimumArrival = 1.5f;
     // Right beside the player a place counts as seen even without walkable line of sight: the
@@ -64,6 +65,7 @@ internal static class ExplorationProbe
         if (!scene.IsValid() || !scene.isLoaded || (int)scene.handle != world.SceneHandle) return false;
         Seen.Enter(ExplorationSeenMemory.Scope(world.SceneName, world.Session, world.IsFixedLayout));
         var player = new Vector3((float)world.X, (float)world.Y, (float)world.Z);
+        Arrival.Observe(world.Session, player);
         Vector3 origin = default;
         bool hasOrigin = nav is not null && nav.TrySample(player, out origin);
         bool CanSeeHere(Vector3 target, float interactionRange) =>
@@ -88,9 +90,11 @@ internal static class ExplorationProbe
                     float range = listener.interactionRange;
                     if (!Seen.Contains(memory))
                     {
-                        if (!CanSeeHere(position, range))
+                        if (!Arrival.IsWayBack(place.Category, place.Destination, cameFrom, position, seenRange) &&
+                            !CanSeeHere(position, range))
                         {
-                            if (unseen++ < UnseenLogged) Unseen.Add(place.Name);
+                            if (unseen++ < UnseenLogged)
+                                Unseen.Add($"{place.Name} {ExploredMap.Horizontal(player, position):F0}m");
                             continue;
                         }
                         Seen.Add(memory);
@@ -166,7 +170,7 @@ internal static class ExplorationProbe
         bool death = AddDeathPlace(entries);
 
         int unexplored = 0, rooms = 0, visited = 0;
-        string source = "none";
+        string source = "none", roomGap = "none";
         bool hasRooms = false;
         // A failed room read falls back to the frontier rather than listing nothing.
         try { hasRooms = MinimapRoomReader.TryRead(world, now, Rooms); }
@@ -182,6 +186,9 @@ internal static class ExplorationProbe
                 foreach (var room in Rooms)
                     if (!room.Revealed && !Seen.Contains(RoomTracker.VisitKey(MinimapRoomReader.Layout, room.Index)))
                         Unvisited.Add(room);
+                // Diagnostic: distance to the nearest room the player is not in.
+                if (RoomTracker.TryNearest(Rooms, player, Vector3.UnitZ, Vector3.UnitX, out float gap, out _, out _))
+                    roomGap = gap.ToString("F0", CultureInfo.InvariantCulture);
             }
             else if (explored is not null)
             {
@@ -194,8 +201,8 @@ internal static class ExplorationProbe
 
         LastStatus = $"places={places} unseen={unseen} remembered={Seen.Count} quests={quests} enemies={enemies} " +
             $"players={players} items={items} death={death} unexplored={unexplored} source={source} rooms={rooms} " +
-            $"visited_rooms={visited} frontier_pending={explored?.FrontierPending ?? 0} origin={hasOrigin} " +
-            $"not_yet_seen=[{string.Join("; ", Unseen)}]";
+            $"visited_rooms={visited} room_gap={roomGap} frontier_pending={explored?.FrontierPending ?? 0} origin={hasOrigin} " +
+            $"came_from={cameFrom ?? "none"} not_yet_seen=[{string.Join("; ", Unseen)}]";
         return true;
     }
 
@@ -284,6 +291,7 @@ internal static class ExplorationProbe
         Finds.Clear();
         Frontier.Clear();
         Tracker.Clear();
+        Arrival.Clear();
         MinimapRoomReader.Reset();
         ExplorationClassifier.Reset();
         Targets.Clear();

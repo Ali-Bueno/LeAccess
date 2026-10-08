@@ -367,3 +367,40 @@ category walk, key compatibility, room numbering/entry/baseline, nearest room po
 filter, death replacement). Nothing heard in game. Status line fields: `quests players items death unexplored
 source rooms visited_rooms frontier_pending`; log lines `[Exploration] El radar ha registrado ...`,
 `entered unexplored room N`, `death place x,z`.
+
+## Arrival and the way back (2026-10-08)
+
+User report: after the cinematic from A90 the radar in B10 found only the map exits. Log
+`BepInEx/LogOutput.log` of 2026-10-08 (line numbers) and a survey of `scene_B10_unity.bundle`
+(scratch UnityPy script, not kept):
+
+- **No stuck registry or gate.** First B10 status (30698): `places=0 unseen=4 quests=0 enemies=0
+  rooms=56 visited_rooms=0`; the scanner answered "aquí no hay nada" four times, so it ran. World sounds
+  `registry=0/0/6/0` after loading has the shape of B20's normal arrival (`0/0/8/0`, 31880); the
+  `39/27/5/0` at 30694 is A90's last scan logged during the load. Loot grew later from kills (a party
+  member joined at 20:22:03). `[NearestEnemy] living` counts every registered living foe anywhere; the
+  scanner reads the same `HostileRegistry` limited to the screen or skill reach, and no enemy came into
+  range before 30926. The `Map places` floor lines are one-shot diagnostics of the place-name probe
+  (5 in B10, as elsewhere), not the scanner.
+- **The arrival area is bare.** The player spawns at `Transitions Folder/A90/TransitionExitWIP/from ( zone )`,
+  the ordinary arrival from A90 (the cinematic changes nothing). The 56 minimap volumes start 87 m away
+  (first entered at x 18, z 74: `entered unexplored room 30`, 31375); the waypoint is ~106 m away, the
+  other exits' arrival points ~98 m and ~276 m. The only quest marker (`Pulse ControllerFindWelryn`,
+  "Encuentra la ciudad de Welryn", ~294 m) waits for its objective: the quest log still read "Llega a la
+  superficie a través del Bosque Guarecido" at 30836, the marker appeared at 30922.
+- **The way back missed the seen test.** The A90 exit's listener is 10.5 m (flat) from the spawn and
+  below it: beyond its 9 m interaction range and the 10 m off-mesh limit, without NavMesh line of sight
+  from the spawn. It was listed only after the player moved.
+
+**Fix.** `ExplorationArrival` keeps the first position of each scene session; an exit to the scene the
+player came from, within `SeenRange` of that arrival point, counts as seen (still not a find). An
+arrival far from that exit (a waypoint) reveals nothing.
+
+**Diagnostics.** The `[Exploration]` status is logged on the first refresh of each scene session and
+adds `room_gap=` (distance to the nearest minimap room the player is not in), `came_from=` and each
+unseen place's flat distance (`not_yet_seen=[Punto de viaje 106m; ...]`).
+
+**Evidence and limits.** `LeAccess.Exploration.Tests` 383 checks (15 arrival checks with the B10
+geometry). Not heard in game. Unverified: what advances the B10 objective (no quest trigger near the
+path in the bundle; possibly a server event); the new status fields in a live log; the bundle-to-runtime
+height offset (spawn y -0.9 in the bundle, 6.16 at runtime), so the survey used flat distances only.
