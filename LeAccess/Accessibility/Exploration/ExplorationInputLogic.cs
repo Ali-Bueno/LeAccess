@@ -26,6 +26,13 @@ internal static class StickFlick
     }
 }
 
+// Without the Create modifier the right stick belongs to the game (minion commands).
+internal static class ScannerGate
+{
+    internal static ExplorationCommand Controller(bool modifierHeld, ExplorationCommand flick) =>
+        modifierHeld ? flick : ExplorationCommand.None;
+}
+
 // Remembers exactly which bindings the mod disabled so only those are ever re-enabled.
 internal sealed class BindingSuppression<T>
 {

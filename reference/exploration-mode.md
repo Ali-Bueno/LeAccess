@@ -418,3 +418,10 @@ unseen place's flat distance (`not_yet_seen=[Punto de viaje 106m; ...]`).
 geometry). Not heard in game. Unverified: what advances the B10 objective (no quest trigger near the
 path in the bundle; possibly a server event); the new status fields in a live log; the bundle-to-runtime
 height offset (spawn y -0.9 in the bundle, 6.16 at runtime), so the survey used flat distances only.
+
+## Controller remap (2026-10-08)
+
+The scanner needs Create held: Create + right stick up/down = category, left/right = entry. Without Create the
+right stick goes to the game, which uses it for minion commands ([details](minion-commands.md)). While Create is held
+the mod clears `EpochInputManager.canControllerMinionCommand` each frame so the game does not also issue a command.
+Keyboard unchanged. Earlier text above that says "right stick" for the scanner means Create + right stick.

@@ -353,7 +353,7 @@
   "exploration.beacon.unavailable": "Guidance unavailable",
   "exploration.scanner.empty": "nothing found here",
   "exploration.scanner.category_empty": "no {0} here",
-  "exploration.scanner.no_selection": "Choose a destination with the right stick",
+  "exploration.scanner.no_selection": "Choose a destination with Create and the right stick",
   "exploration.scanner.unavailable": "The scanner is not available right now",
   "exploration.boss": "{0}, boss",
   "exploration.entry": "{0}, {1}, {2}",

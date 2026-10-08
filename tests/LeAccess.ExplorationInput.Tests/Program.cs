@@ -34,6 +34,13 @@ foreach (var (x, y) in frames)
 Check(fired.Count == 2 && fired[0] == ExplorationCommand.CategoryPrevious && fired[1] == ExplorationCommand.EntryPrevious,
     "A held push yields one command and the next flick another");
 
+// The stick scans only while Create is held; otherwise the game keeps it.
+foreach (var flick in Enum.GetValues<ExplorationCommand>())
+{
+    Check(ScannerGate.Controller(true, flick) == flick, $"Create held passes {flick}");
+    Check(ScannerGate.Controller(false, flick) == ExplorationCommand.None, $"Create up drops {flick}");
+}
+
 // Suppression ledger with fakes.
 var enabled = new Dictionary<string, bool> { ["a"] = true, ["b"] = true, ["c"] = true, ["d"] = false };
 var held = new HashSet<string>();

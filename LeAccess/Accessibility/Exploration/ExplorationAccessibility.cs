@@ -10,7 +10,7 @@ using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Exploration;
 
-// Right-stick scanner of what the player has discovered (D2R exploration policy) and the
+// Create + right-stick scanner of what the player has discovered (D2R exploration policy) and the
 // Create+Cross beacon. See reference/exploration-mode.md.
 internal static class ExplorationAccessibility
 {
@@ -32,7 +32,7 @@ internal static class ExplorationAccessibility
     internal static void Initialize(ConfigFile config)
     {
         _enabled = config.Bind(ConfigSection, "Enabled", true,
-            "Scanner of discovered places, quest markers and nearby enemies (right stick), and the beacon (hold Create, press Cross).");
+            "Scanner of discovered places, quest markers and nearby enemies (hold Create, move the right stick), and the beacon (hold Create, press Cross).");
         _seenRange = config.Bind(ConfigSection, "SeenRange", 20f, new ConfigDescription(
             "A place is listed once it has been this close (world units) and in walkable line of sight.",
             new AcceptableValueRange<float>(5f, 60f)));
