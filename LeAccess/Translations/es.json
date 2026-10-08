@@ -106,6 +106,7 @@
   "vitals.unavailable": "Vida y maná no disponibles",
   "gold.amount": "Oro: {0}",
   "gold.unavailable": "Oro no disponible",
+  "gold.pickup": "{0} de oro",
   "forge.opened": "Forja",
   "forge.prefix": "Prefijo {0}",
   "forge.suffix": "Sufijo {0}",

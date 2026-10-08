@@ -207,7 +207,7 @@ internal static class InventoryAccessibility
     }
 
     // Every vendor the game trades through a gold-tracking container, plus the bazaar.
-    private static bool VendorOpen(UIBase ui) =>
+    internal static bool VendorOpen(UIBase ui) =>
         ui.IsShopOpen() || ui.IsGamblingOpen() || ui.IsSoulGamblingOpen() || ui.IsDungeonKeysTraderPanelOpen() ||
         ui.IsFactionGamblingCoFOpen() || ui.IsFactionGamblingMGOpen() || ui.IsFactionTheWeaverVendorPanelOpen() ||
         ui.IsHunterVendorPanelOpen() || ui.IsTimeglassVendorPanelOpen() || ui.IsBazaarPanelOpen();

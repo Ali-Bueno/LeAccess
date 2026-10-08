@@ -268,6 +268,24 @@ try
     Tick(.4,keyboard:true,controller:true);
     Check(VitalsProbe.Reads == reads && ScreenReader.Spoken.Count == 0,"cleanup disables update and input");
     Check(!VitalsInput.KeyboardPressed && !VitalsInput.ControllerPressed,"cleanup clears edge state");
+    // Gold pickups: the counter's rises, after a silent baseline, never at a vendor.
+    var pickups = new GoldPickupState();
+    Check(pickups.Observe(1, 100, false) == 0, "The first gold reading is a silent baseline");
+    Check(pickups.Observe(1, 100, false) == 0, "Unchanged gold says nothing");
+    Check(pickups.Observe(1, 103, false) == 3, "A pickup of 3 gold is reported as 3");
+    pickups.Acknowledge();
+    Check(pickups.Observe(1, 153, false) == 50, "Each pickup is its own amount");
+    Check(pickups.Observe(1, 233, false) == 130, "A gain not yet spoken adds up with the next one");
+    pickups.Acknowledge();
+    Check(pickups.Observe(1, 200, false) == 0, "Spending or dropping gold is not a find");
+    Check(pickups.Observe(1, 280, false) == 80, "A gain after spending counts from the lower amount");
+    pickups.Acknowledge();
+    Check(pickups.Observe(1, 500, true) == 0 && pickups.Observe(1, 500, false) == 0, "Selling at a vendor stays silent here");
+    Check(pickups.Observe(1, 510, true) == 0 && pickups.Pending == 0, "A vendor also clears a gain still pending");
+    Check(pickups.Observe(2, 9000, false) == 0, "Another character's counter is a new baseline, not a gain");
+    Check(pickups.Observe(2, null, false) == 0 && pickups.Observe(2, 9100, false) == 0,
+        "An unreadable counter resets the baseline");
+    Check(pickups.Observe(2, 9150, false) == 50, "Pickups resume after the new baseline");
     Console.WriteLine($"Passed {checks} vitals service checks.");
 }
 finally { VitalsAccessibility.Cleanup(); }

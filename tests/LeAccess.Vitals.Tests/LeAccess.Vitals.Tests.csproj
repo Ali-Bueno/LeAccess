@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/Vitals/VitalsAccessibility.cs" Link="VitalsAccessibility.cs" />
     <Compile Include="../../LeAccess/Accessibility/Vitals/VitalsAnnouncementState.cs" Link="VitalsAnnouncementState.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Vitals/GoldPickupState.cs" Link="GoldPickupState.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
   </ItemGroup>
 </Project>

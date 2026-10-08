@@ -74,6 +74,16 @@ whose container tracks gold counts as a shop: `IsShopOpen`, `IsGamblingOpen`, `I
 item brief, so a vendor without item containers stays silent). Inventory suite 269 checks;
 listening pending.
 
+## Gold pickups (2026-10-08)
+
+User request (for a friend): say the gold of each pickup, "3 de oro", "50 de oro". `GoldPickupAnnouncer`
+polls the same `GoldTracker.value` as the gold command every frame and speaks each rise, queued
+(`gold.pickup`). The first reading, a different tracker (`Pointer`: another character, player or
+session) and an unreadable counter are silent baselines; falls (spending, dropping) are ignored; while a
+gold vendor is open (`InventoryAccessibility.VendorOpen`) rises are left to the shop's own total notice.
+A gain whose speech is rejected adds up with the next one. Quest gold rewards are rises too and are
+spoken the same way. `[Vitals] AnnounceGoldPickups` turns it off. Vitals 101 checks; listening pending.
+
 Settings are created on the next launch in `BepInEx/config/LeAccess.cfg`:
 
 ```ini

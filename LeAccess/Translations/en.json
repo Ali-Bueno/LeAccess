@@ -106,6 +106,7 @@
   "vitals.unavailable": "Life and mana unavailable",
   "gold.amount": "Gold: {0}",
   "gold.unavailable": "Gold unavailable",
+  "gold.pickup": "{0} gold",
   "forge.opened": "Forge",
   "forge.prefix": "Prefix {0}",
   "forge.suffix": "Suffix {0}",
