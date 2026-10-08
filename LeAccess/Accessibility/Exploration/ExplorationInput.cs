@@ -6,7 +6,7 @@ using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Exploration;
 
-// One exploration command per frame from the right stick, the keyboard and the Create modifier.
+// One exploration command per frame from Create + right stick, the keyboard and the Create modifier.
 // While the modifier is held in gameplay the game bindings of every button are switched off, so
 // Square and Cross do not also cast or interact; each is restored once its button is up.
 internal static class ExplorationInput
@@ -30,7 +30,7 @@ internal static class ExplorationInput
     private static ConfigEntry<bool> _scanner;
     private static ConfigEntry<bool> _modifierMenu;
     private static readonly BindingSuppression<Suppressed> Ledger = new();
-    private static bool _previousModifier, _active;
+    private static bool _previousModifier, _active, _minionLogged;
     private static string _suppressionSignature;
     private static string _controllerFailure, _suppressionFailure, _keyboardFailure;
 
@@ -41,9 +41,9 @@ internal static class ExplorationInput
     internal static void Initialize(ConfigFile config)
     {
         _scanner = config.Bind("Exploration", "ControllerScanner", true,
-            "Drive the exploration scanner with the controller right stick during gameplay: up/down change category, left/right change entry.");
+            "Drive the exploration scanner with the controller right stick while Create is held during gameplay: up/down change category, left/right change entry. Without Create the right stick stays with the game (minion commands).");
         _modifierMenu = config.Bind("Exploration", "ModifierMenu", true,
-            "Hold the controller Create/Share button for the exploration menu (Square = vitals, Cross = lock, Triangle = gold, Circle = level and progress). The game button bindings are paused while it is held.");
+            "Hold the controller Create/Share button for the exploration menu (right stick = scanner, Square = vitals, Cross = lock, Triangle = gold, Circle = level and progress). The game button bindings are paused while it is held.");
         _previousModifier = _active = false;
         _controllerFailure = _suppressionFailure = _keyboardFailure = null;
     }
@@ -65,7 +65,7 @@ internal static class ExplorationInput
                 _active = false;
                 return;
             }
-            if (!reading.Modifier) _active = false;
+            if (!reading.Modifier) { _active = false; _minionLogged = false; }
             else if (wentDown)
             {
                 _active = true;
@@ -80,12 +80,13 @@ internal static class ExplorationInput
             }
             if (!_active && Ledger.Count > 0) ReleaseWhenButtonsUp();
             MenuHeld = _active;
+            if (_active) BlockMinionCommand();
 
             var command = KeyboardCommand();
             if (command == ExplorationCommand.None && _active)
                 command = reading.Vitals ? ExplorationCommand.Vitals : reading.Lock ? ExplorationCommand.Lock
                     : reading.Gold ? ExplorationCommand.Gold : reading.Status ? ExplorationCommand.Status : command;
-            Command = command != ExplorationCommand.None ? command : reading.Flick;
+            Command = command != ExplorationCommand.None ? command : ScannerGate.Controller(_active, reading.Flick);
         }
         catch (Exception ex)
         {
@@ -195,6 +196,17 @@ internal static class ExplorationInput
             RestoreAll("suppression error");
             _active = false;
         }
+    }
+
+    // The game fires a minion command when the right stick leaves rest; keeping its flag down gives the stick to the scanner.
+    private static void BlockMinionCommand()
+    {
+        var manager = EpochInputManager.instance;
+        if (!IsAlive(manager)) return;
+        if (manager.canControllerMinionCommand && !_minionLogged)
+            Plugin.Log.LogInfo("[Exploration input] game minion command held back while Create is down");
+        _minionLogged = manager.canControllerMinionCommand || _minionLogged;
+        manager.canControllerMinionCommand = false;
     }
 
     private static void ReleaseWhenButtonsUp()

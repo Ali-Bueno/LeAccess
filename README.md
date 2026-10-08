@@ -84,8 +84,9 @@ Settings announce the tab and each control's name/value, including sound sliders
 and visible challenge states when no button is available. Descriptions remain
 available with right-stick-up.
 
-During gameplay the right stick is the [exploration scanner](reference/exploration-mode.md),
-a port of the Diablo 2 mod's: push it up or down to change category and left or right to
+During gameplay the [exploration scanner](reference/exploration-mode.md) is Create (Share) held
+plus the right stick (the right stick alone still gives your minions orders). It is a port of the
+Diablo 2 mod's: push the stick up or down to change category and left or right to
 step through that category's entries, nearest first. The categories and their order are
 D2R's: exit, portal, waypoint, unexplored room, room, quest, NPC, player, last death (where you
 last died; a destination only, nothing to pick up), stash, enemy (every enemy on screen), treasure (chests), shrine, object (levers, notes, the forge and
@@ -98,12 +99,12 @@ entered (in maps without them, edges where unseen ground continues). As in D2R, 
 sighting of an exit, waypoint or the stash says "the radar has logged a new exit/place" with a
 chime, the nearest unentered room hums from its nearest point, and entering one plays a short
 cue. Keyboard: Ctrl+Numpad 8/2 and 4/6.
-Hold **Create** (Share) for the mod menu: **Square** reads life, mana and potions, **Triangle**
+With **Create** (Share) held you also get the mod menu: **Square** reads life, mana and potions, **Triangle**
 reads your gold (keyboard: Ctrl+G), **Circle** reads your level, experience percentage, unspent passive points, skills that can level up and the zone (keyboard: Ctrl+L), **Cross** starts the beacon toward the selected entry (again cancels). While Create is held the
 game's button actions pause, so Square and Cross do not cast or interact. The beacon pings
 toward the route through ground you have already explored, faster when closer, and refuses
 when no explored route exists (keyboard: Ctrl+B). In menus the right stick keeps reading
-details. Without a button,
+details (no Create needed). Without a button,
 [enemy cues](reference/enemy-cues.md) growl for up to three
 nearby enemies in sight (a deeper swoop for a boss), panned on screen and faster
 when closer; `[Enemy cues]` in the configuration turns them off or adjusts them.
