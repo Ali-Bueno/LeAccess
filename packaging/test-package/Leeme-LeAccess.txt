@@ -48,12 +48,12 @@ El estandarte de especializaciones es una lista: arriba y abajo recorren los
 arboles, confirmar abre el elegido y derecha vuelve al arbol.
 Mapa del mundo: Cuadrado oculta o muestra las misiones (teclado: Mayus izquierda).
 Con las misiones ocultas, arriba y abajo en la cruceta saltan de un punto de
-viaje desbloqueado a otro como en una lista, region por region: se dice la region
-al entrar, el lugar, su nivel, si estas aqui, sus misiones y "N de M". Cruz viaja
-como siempre. Con las misiones visibles la cruceta sigue eligiendo misiones.
+viaje a otro como en una lista, region por region: se dice la region al entrar,
+el lugar, su nivel, si estas aqui, si esta bloqueado, sus misiones y "N de M".
+Cruz viaja como siempre. Con las misiones visibles la cruceta sigue eligiendo misiones.
 LB y RB cambian de era y se dice su nombre y su posicion; Triangulo vuelve a tu
 ubicacion. El stick izquierdo sigue moviendo el mapa libremente y tambien llega a
-los lugares bloqueados o sin punto de viaje.
+los lugares sin punto de viaje.
 Maestria de epoca: la primera entrada de la lista de misiones, Conocimiento de
 Orobyss, dice su progreso y que hacer; stick derecho arriba lista cada linea
 temporal como conseguida o pendiente. Al completarla, derecha enfoca el panel y

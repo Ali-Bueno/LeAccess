@@ -119,7 +119,7 @@ session folder, not kept):
 What the mod does (`MapLocationList`, prefix `MapNavigatePatch`):
 
 - With `questPanel.questsHidden`, D-pad up/down walk the current era's travel points in `waypointsInMenu`
-  (unlocked and not a `noWaypointInScene` marker; see the counts section below).
+  (locked ones included, not `noWaypointInScene` markers; see the counts section below).
   Regions come in `regionsInMenu` order, each with its own `waypointsInRegion` order, and places
   in no region come last. Each step zooms in first if the map is in the region band, centres the
   map on the place and selects it, exactly like the recentre above. Cross then travels natively.
@@ -195,9 +195,11 @@ Prefab dump of `assets_5aa78568bec82d5c.bundle` (UnityPy):
 | Ruined | 41 | six inactive twins |
 | End of Time | 15 | none; 12 `MonolithHub` islands share one scene |
 
-Across eras, 55 entries are markers with no waypoint. The list therefore keeps only unlocked
-travel points; locked places and markers stay reachable with the stick and are read by the
-selection poller. The current entry is tracked by identity, so the islands step one by one.
+Across eras, 55 entries are markers with no waypoint. The list therefore leaves the markers out;
+they stay reachable with the stick and are read by the selection poller. Locked waypoints were left
+out too at first, then put back at the user's request: they are listed and say "Bloqueado".
+After an era switch, the place the map settles on queues behind the era's name instead of
+interrupting it (user report). The current entry is tracked by identity, so the islands step one by one.
 
 `UIEra.mapTitle` holds plain English strings ("Eterra - Ruined Era"). `OpenEra` copies one into
 `mapTitle` with no localization; its completion lambda 0x178A040 only drives the dissolve. The poller

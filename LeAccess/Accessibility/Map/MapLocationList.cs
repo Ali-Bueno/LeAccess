@@ -50,8 +50,8 @@ internal static class MapLocationList
         return next >= 0 && next < count ? next : -1;
     }
 
-    /// <summary>The current era's travel points, by region in the map's order; waypoints in no region come last.</summary>
-    /// <remarks>Locked waypoints and the map's markers without a waypoint stay reachable with the stick.</remarks>
+    /// <summary>The current era's waypoints, locked ones included, by region in the map's order; waypoints in no region come last.</summary>
+    /// <remarks>The map's markers without a waypoint stay reachable with the stick.</remarks>
     internal static List<Entry> Build(MapPanel map)
     {
         var entries = new List<Entry>();
@@ -103,8 +103,7 @@ internal static class MapLocationList
         return null;
     }
 
-    internal static bool IsTravelPoint(UIWaypoint waypoint) =>
-        IsAlive(waypoint) && !waypoint.noWaypointInScene && waypoint.GetIsActive();
+    internal static bool IsTravelPoint(UIWaypoint waypoint) => IsAlive(waypoint) && !waypoint.noWaypointInScene;
 
     // The End of Time's islands share one scene, so the last snapped waypoint wins while it is still the focused scene.
     private static int IndexOf(List<Entry> entries, MapPanel map)

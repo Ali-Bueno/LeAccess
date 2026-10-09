@@ -218,7 +218,13 @@ Check(ScreenReader.Messages[^1].Text == T("map.quests_shown"), "showing the ques
 listMap.questPanel.questsHidden = true; Poll();
 Check(ScreenReader.Messages[^1].Text == T("map.quests_hidden"), "hiding the quests says the D-pad now walks the places");
 listMap.CurrentEra = SceneList.Era.Divine; listMap.mapTitle.text = "Era Divina"; Poll();
-Check(ScreenReader.Messages[^1].Text.StartsWith(J(listMap.mapTitle.text, Pos(2, 2))), "a new era tab says its title and position");
+Check(ScreenReader.Messages[^1].Text.StartsWith(J(listMap.mapTitle.text, Pos(2, 2))) && ScreenReader.Messages[^1].Interrupt,
+    "a new era tab says its title and position");
+listMap.focusedSceneID = "E"; listMap.selectedLocationLabel.text = "Templo"; Poll();
+Check(ScreenReader.Messages[^1].Text.StartsWith("Templo") && !ScreenReader.Messages[^1].Interrupt,
+    "the place the map settles on after an era switch queues behind the era's name");
+listMap.focusedSceneID = "A"; listMap.selectedLocationLabel.text = "Aldea"; Poll();
+Check(ScreenReader.Messages[^1].Interrupt, "later moves interrupt again");
 listMap.CurrentEra = SceneList.Era.Ancient; listMap.mapTitle.text = "Era Antigua"; Poll();
 
 string Nav(Direction direction)
@@ -232,14 +238,14 @@ Check(Nav(Direction.DOWN) is null && centered.Count == 0, "with the quests shown
 listMap.questPanel.questsHidden = true;
 Check(Nav(Direction.LEFT) is null && Nav(Direction.RIGHT) is null, "LB and RB keep switching eras");
 listMap.focusedSceneID = null;
-Check(Nav(Direction.DOWN) == J("Norte", "Bosque", Level(), Pos(1, 2)) && centered[^1] == bosque.gameObject &&
+Check(Nav(Direction.DOWN) == J("Norte", "Bosque", Level(), Pos(1, 3)) && centered[^1] == bosque.gameObject &&
     listMap.focusedSceneID == bosque.sceneName, "Down with nothing focused centres and selects the first region's first place, naming the region even with its label hidden");
-Check(!MapLocationList.IsTravelPoint(cerrado) && !MapLocationList.IsTravelPoint(marca),
-    "locked waypoints and markers without a waypoint are neither listed nor counted");
+Check(Nav(Direction.DOWN) == J("Cerrado", Level(), T("waypoint.locked"), Pos(2, 3)),
+    "locked waypoints are listed and say so; markers without a waypoint are neither listed nor counted");
 MapSelectionAnnouncer.Update(listMap, false);
 Check(ScreenReader.Messages.Count == 1, "the selection poller does not repeat the list's own speech");
 aldea.playerIsHere = true;
-Check(Nav(Direction.DOWN) == J("Aldea", Level(), T("waypoint.here"), Pos(2, 2)), "the next place in the region follows its order, with waypoint states");
+Check(Nav(Direction.DOWN) == J("Aldea", Level(), T("waypoint.here"), Pos(3, 3)), "the next place in the region follows its order, with waypoint states");
 Check(Nav(Direction.DOWN) == J("Sur", "Costa", Level()), "entering another region names it; a single place has no position");
 Check(Nav(Direction.DOWN) == J("Desierto", Level()), "places in no region follow the regions, unnamed");
 int snaps = centered.Count;

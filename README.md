@@ -16,7 +16,7 @@ the latest installed build. Technical findings and reproduction notes live in
   the equipment's right column; [idols](reference/idols.md)), the inventory's cosmetics tab
   ([cosmetics](reference/cosmetics-reading.md)) and quest journal reading.
 - Forge affix actions, shard details, and localized rune/glyph names and quantities.
-- World map: with the quests hidden (Square), D-pad up/down snap between unlocked travel points region by region
+- World map: with the quests hidden (Square), D-pad up/down snap between travel points (locked ones say so) region by region
   ("N of M", region named on entry) and Cross travels; era tabs (LB/RB) say their title and position
   ([details](reference/waypoint-map.md#list-navigation-with-the-quests-hidden-2026-10-09)); the epoch mastery
   panel (Knowledge of Orobyss) reads its progress, timeline points and completion

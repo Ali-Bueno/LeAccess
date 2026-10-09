@@ -13,9 +13,9 @@ internal static class MapSelectionAnnouncer
 {
     private static string _selectionKey;
     private static SceneList.Era? _era;
-    private static bool _questsHidden;
+    private static bool _questsHidden, _afterEra;
 
-    internal static void Reset() { _selectionKey = null; _era = null; _questsHidden = false; }
+    internal static void Reset() { _selectionKey = null; _era = null; _questsHidden = _afterEra = false; }
 
     /// <summary>A quest change moves the location too; its brief speaks first, so the location queues after it.</summary>
     /// <returns>True when the selected location itself changed.</returns>
@@ -30,14 +30,17 @@ internal static class MapSelectionAnnouncer
         bool moved = key != _selectionKey, eraChanged = _era != map.CurrentEra, questsToggled = !first && questsHidden != _questsHidden;
         if (!moved && !eraChanged && !questsToggled) return false;
         _selectionKey = key; _era = map.CurrentEra; _questsHidden = questsHidden;
-        if (!questMoved && !eraChanged && ScreenReader.SpokeThisFrame && !first) return moved;
+        if (!questMoved && !eraChanged && ScreenReader.SpokeThisFrame && !first) { _afterEra = false; return moved; }
         var parts = new List<string>();
         if (eraChanged) parts.AddRange(Era(map));
         if (questsToggled || first && questsHidden) parts.Add(ModText.Get(questsHidden ? "map.quests_hidden" : "map.quests_shown"));
         if (moved || eraChanged) parts.AddRange(Describe(map, scene, region, label));
         string text = ScreenContentTracker.Combine(parts);
         if (string.IsNullOrWhiteSpace(text)) return moved;
-        ScreenReader.Speak(text, !questMoved);
+        // The place the map settles on after an era switch queues behind the era's name instead of cutting it.
+        bool queue = questMoved || _afterEra && !eraChanged;
+        _afterEra = eraChanged;
+        ScreenReader.Speak(text, !queue);
         Plugin.Log.LogInfo($"[World map] {text}");
         return moved;
     }
