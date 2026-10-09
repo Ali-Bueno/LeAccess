@@ -1,7 +1,7 @@
 LeAccess - paquete de prueba para Last Epoch
 
 Compatible con la version Steam de Windows de 64 bits. Preparado con Last Epoch
-1.5.1.2, compilacion 25711439, y BepInEx 6.0.0-be.788. Necesitas tener tu propia
+1.5.1, compilacion de Steam 25764382, y BepInEx 6.0.0-be.788. Necesitas tener tu propia
 copia del juego instalada. Este ZIP no contiene el juego ni partidas guardadas.
 
 INSTALACION
@@ -50,11 +50,18 @@ se dicen al subir de nivel y al tener un punto nuevo.
 Oro: manten Create y pulsa Triangulo (teclado: Ctrl+G). Tambien se dice al abrir
 el inventario o un vendedor y despues de comprar o vender, y al recoger oro se
 dice la cantidad, por ejemplo "50 de oro".
-Radar (stick derecho en el juego): arriba y abajo cambian de categoria,
-izquierda y derecha recorren sus elementos. Enemigo lista todos los enemigos
-en pantalla; ultima muerte lleva a donde moriste (no hay cuerpo que recoger).
+Radar: manten Create y mueve el stick derecho; arriba y abajo cambian de
+categoria, izquierda y derecha recorren sus elementos. El stick derecho solo es
+del juego: da ordenes a tus esbirros, y el mod dice "Esbirros: atacar a X" o
+"Esbirros: mover". Enemigo lista todos los enemigos en pantalla; ultima muerte
+lleva a donde moriste (no hay cuerpo que recoger).
 Jugador dice el nombre de usuario y el nivel (y el personaje si es tu amigo);
 al acercarte a otro jugador se dicen esos mismos datos.
+Idolos equipados: en el equipo, ve a la columna derecha y pulsa Derecha (desde
+la fila de arriba llegas al altar, desde la segunda a la cuadricula de idolos);
+la casilla lo avisa con "Derecha: idolos". Dentro se recorre idolo a idolo y se
+dicen las ranuras libres y bloqueadas. La pestana de esteticos del inventario
+tambien se lee.
 En el inventario, manten L3 sobre un objeto para compararlo con el equipado,
 R3 para las explicaciones de sus modificadores, y L3 y luego R3 para ver
 los rangos.
@@ -85,6 +92,13 @@ especiales, el filtro de botin, la eleccion de especializacion, el Monolito y
 sus bendiciones, las entradas a mazmorras, las votaciones de jefes, el arbol
 del Tejedor, las lineas temporales de los Caballeros Olvidados, las profecias
 del Observatorio, el Bazar, la clasificacion y los rituales de Morditas.
+Sonidos: el equipo y los idolos suenan segun su rareza (normal, magico, raro o
+exaltado, unico/conjunto/legendario); runas, glifos, fragmentos y otros
+materiales tienen su propio sonido; notas y registros suenan como un tomo; los
+santuarios, las fisuras temporales y la Nemesis suenan y se nombran al acercarte.
+Enemigos: los magicos, raros y campeones dicen su clase ("Gilgamesh el Corrupto,
+raro"); el raro o campeon mas cercano tiene un sonido propio y su vida se narra
+como la de un jefe.
 Es una version de prueba: algunas pantallas y elementos aun pueden no leerse.
 
 SI NO HABLA O FALLA EL ARRANQUE

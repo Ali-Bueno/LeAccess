@@ -170,6 +170,7 @@ requested. No release or new ZIP has been requested.
 
 ## Validation and references
 
+- 2026-10-08 22:53: friend ZIP `LeAccess-Steam-1.5.1-prueba-20261008-225317.zip` (repo root, ignored by git), SHA-256 `A5F30FE5DFC51317A0F21B56CDC84FF0758332DB9C40845DB220A7D30922D201`, 264 files, game build 25764382; adds everything from the evening and night batches (loot sounds, shrines/rifts/Nemesis, notes as tomes, cosmetics, idols, elites, scanner on Create + right stick, minion orders, online quest updates, inventory re-read and co-op naming fixes); the Leeme lists them. Its `LeAccess.dll` (`760AE8215A2E4F3E…`) is the installed copy. Package 242 checks.
 - 2026-10-08 night (notes): all 61 host suites pass (NpcProbe 112, LandmarkProbe 101, WorldCues 246). Installed `LeAccess.dll` SHA-256 `5393EA1007637F9C…` after the game closed.
 - 2026-10-08 night: all 61 host suites pass (Inventory 356, Combat 175, EnemyCues 181, BossLife 40, EnemyScan 28, ExplorationInput 45, Localization 1172, PatchSafety 46 with 82 declarations / 81 targets; new prefix `IdolsContainerUI.HandleNavigateInput`). Installed `LeAccess.dll` SHA-256 `F3F0A0FBE7B1FB04…` after the game closed. No friend ZIP.
 - 2026-10-08 evening: all 61 host suites pass (Inventory 322, WorldCues 245, WorldLoops 176, NaturalAudio 165, Exploration 383, QuestUpdates 117, DynamicObjectives 90, Players 53, MenuReading 546, Localization 1128, PatchSafety 46 with 81 declarations). Installed `LeAccess.dll` SHA-256 `7FEB48AFFDAE72E1…` (about 18 MB with the new loops), after the game closed. No friend ZIP built.
