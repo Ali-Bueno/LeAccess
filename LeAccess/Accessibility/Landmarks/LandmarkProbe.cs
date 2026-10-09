@@ -95,6 +95,12 @@ internal static class LandmarkProbe
                         name = InteractableRoles.Name(role, hasTag ? tag : null);
                         nameStatus = $"role:{role}";
                     }
+                    else if (WorldServiceReader.IsReadable(listener))
+                    {
+                        // Notes are no longer NPCs, so their dialogue name is announced here.
+                        name = NpcNameReader.Read(listener, out _);
+                        nameStatus = "readable";
+                    }
                 }
                 string service = WorldServiceReader.ReadServiceKey(listener);
                 if (service is not null)

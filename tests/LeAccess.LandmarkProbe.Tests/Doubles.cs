@@ -62,6 +62,7 @@ namespace UnityEngine
         internal Transform transform => gameObject.transform;
         internal T GetComponent<T>() where T : class => gameObject.GetComponent<T>();
         internal T GetComponentInParent<T>(bool inactive = false) where T : class => gameObject.GetComponentInParent<T>();
+        internal T GetComponentInChildren<T>(bool inactive) where T : class => GetComponentsInChildren<T>(inactive).FirstOrDefault();
         internal List<T> GetComponentsInChildren<T>(bool inactive) where T : class
         {
             var result = new List<T>();
@@ -75,6 +76,7 @@ namespace UnityEngine
             return result;
         }
     }
+    internal sealed class SkinnedMeshRenderer : Component { }
     internal class Behaviour : Component
     {
         internal bool enabled = true;
@@ -114,6 +116,7 @@ internal sealed class NativeList<T> : UnityEngine.Object
 }
 internal sealed class WorldObjectClickListener : UnityEngine.Behaviour
 {
+    internal string DialogueName;
     internal static NativeList<WorldObjectClickListener> allListener = new();
     internal HoverTagOnMouseOver hoverTagOnMouseOver;
     internal RelayNPCInteraction _NPCinteraction;
@@ -195,4 +198,12 @@ internal static class Localization
 {
     internal static readonly Dictionary<string, string> Texts = new();
     internal static string GetText(string key, string fallback = "") => Texts.TryGetValue(key, out var value) ? value : string.IsNullOrEmpty(fallback) ? key : fallback;
+}
+
+namespace LeAccess.Accessibility.Npcs
+{
+    internal static class NpcNameReader
+    {
+        internal static string Read(WorldObjectClickListener listener, out string source) { source = "dialogue database"; return listener.DialogueName; }
+    }
 }

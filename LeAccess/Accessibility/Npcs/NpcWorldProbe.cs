@@ -93,7 +93,7 @@ internal sealed class NpcWorldProbe
 
     internal static bool IsNpc(WorldObjectClickListener listener)
     {
-        return WorldServiceReader.IsNpc(listener);
+        return WorldServiceReader.IsCharacterNpc(listener);
     }
 
     private string ReadName(WorldObjectClickListener listener, out string source)

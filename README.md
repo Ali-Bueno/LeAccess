@@ -121,7 +121,8 @@ level ups and new passive points or skill points are announced as they happen
 [Natural world sounds](reference/natural-world-sounds.md) reuse recordings from
 the D2R mod for loot and identified world interactions. Equipment and idols sound by
 rarity (normal, magic, rare/exalted, unique/set/legendary), and runes, glyphs, affix
-shards and other materials (keys, lenses, woven echoes) each have their own loop;
+shards and other materials (keys, lenses, woven echoes) each have their own loop; notes, lore
+records and paintings use the tome loop;
 shrines and the Nemesis use Last Epoch's own recordings and time rifts its rift loop
 ([mapping](reference/world-object-sounds.md)). Short repeating samples
 share playback time with each other; radar knocks and breaths never wait behind

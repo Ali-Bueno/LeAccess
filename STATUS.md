@@ -2,7 +2,8 @@
 
 **Updated:** 2026-10-08 night: equipped idols reachable and read ([idols](reference/idols.md)); rare/champion
 enemies named with their class, elite cue and life narration ([classes](reference/enemy-class.md)); scanner moved to
-Create + right stick and minion orders spoken ([minions](reference/minion-commands.md)). All unheard.
+Create + right stick and minion orders spoken ([minions](reference/minion-commands.md)); notes and lore records use
+the tome loop instead of the NPC cue ([notes](reference/natural-world-sounds.md#notes-lore-records-and-paintings-2026-10-08)). All unheard.
 Earlier, 2026-10-08 evening (Claude session, user away; installed after the game closed, all unheard):
 ground loot sounds by rarity and type, shrines/time rifts/Nemesis get loops and names, duplicate WAVs removed
 ([sounds](reference/world-object-sounds.md)); cosmetics tab read ([details](reference/cosmetics-reading.md));
@@ -169,6 +170,7 @@ requested. No release or new ZIP has been requested.
 
 ## Validation and references
 
+- 2026-10-08 night (notes): all 61 host suites pass (NpcProbe 112, LandmarkProbe 101, WorldCues 246). Installed `LeAccess.dll` SHA-256 `5393EA1007637F9C…` after the game closed.
 - 2026-10-08 night: all 61 host suites pass (Inventory 356, Combat 175, EnemyCues 181, BossLife 40, EnemyScan 28, ExplorationInput 45, Localization 1172, PatchSafety 46 with 82 declarations / 81 targets; new prefix `IdolsContainerUI.HandleNavigateInput`). Installed `LeAccess.dll` SHA-256 `F3F0A0FBE7B1FB04…` after the game closed. No friend ZIP.
 - 2026-10-08 evening: all 61 host suites pass (Inventory 322, WorldCues 245, WorldLoops 176, NaturalAudio 165, Exploration 383, QuestUpdates 117, DynamicObjectives 90, Players 53, MenuReading 546, Localization 1128, PatchSafety 46 with 81 declarations). Installed `LeAccess.dll` SHA-256 `7FEB48AFFDAE72E1…` (about 18 MB with the new loops), after the game closed. No friend ZIP built.
 - 2026-10-08 11:56: friend ZIP `LeAccess-Steam-1.5.1-prueba-20261008-115642.zip` (repo root, ignored by git), SHA-256 `9A9BD0C1B0DF7B87453C7E6785FB6C622DB7EEE1141D6257119D965B70CCF8BD`, 264 files; adds skill tree node connections. `LeAccess.dll` `E409BBF6FB14CD2F` is the installed copy (installed after the user closed the game). Skills 280, Localization 1114, package 242.

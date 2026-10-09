@@ -97,6 +97,8 @@ internal static class LootAndRoleTests
             Check(WorldCueIdentityReader.ReadKind(child) == expected, $"{component.GetType().Name} on the owner identifies its listener");
         }
         Check(WorldCueIdentityReader.ReadKind(foreign) == null, "Unrelated listeners stay unclassified");
+        var note = new WorldObjectClickListener { Readable = true };
+        Check(WorldCueIdentityReader.ReadKind(note) == NaturalCueKind.Tome, "A note, lore record or painting loops the tome");
 
         // Names: the game's own text first, the mod catalog only when the game gives none.
         var tag = new HoverTagOnMouseOver { hoverTargetType = HoverTagOnMouseOver.HoverTargetType.OTHER };

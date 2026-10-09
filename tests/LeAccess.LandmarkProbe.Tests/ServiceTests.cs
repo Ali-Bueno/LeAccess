@@ -105,6 +105,18 @@ internal static class ServiceTests
         Check(LandmarkProbe.TryRead(out result) && result.Name == "Némesis", "The Nemesis altar falls back to its mod name");
         altar.Allowed = false;
         Check(!LandmarkProbe.TryRead(out _), "A role never bypasses native availability");
+        // A note shares the NPC interaction but has no character model: the landmark names it from its dialogue.
+        WorldObjectClickListener.allListener = new();
+        var noteGo = new GameObject();
+        var note = Add(noteGo, new WorldObjectClickListener { interactionRange = 2, DialogueName = "Nota ajada" });
+        note._NPCinteraction = Add(noteGo, new RelayNPCInteraction());
+        note.transform.position = new Vector3 { x = 1 };
+        WorldObjectClickListener.allListener.Items.Add(note);
+        Check(LandmarkProbe.TryRead(out var noteResult) && noteResult.Name == note.DialogueName &&
+            LandmarkProbe.LastStatus.Contains("readable"), "A note is announced by its dialogue name");
+        var model = new GameObject(); model.transform.parent = noteGo.transform; noteGo.Children.Add(model);
+        Add(model, new UnityEngine.SkinnedMeshRenderer());
+        Check(!LandmarkProbe.TryRead(out _), "An NPC with a model is left to the NPC announcements");
         return checks;
     }
 }

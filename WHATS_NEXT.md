@@ -15,6 +15,10 @@ took long to kill and had no life narration; keep looking for bugs. Installed af
   27 game NREs today); the mod holds the game's flag down while Create is held ([details](reference/minion-commands.md)).
 - Minion orders: polled from the game's re-arm flag; "Esbirros: atacar a X"/"Esbirros: mover", silent without
   minions; log `[Minion command] minions=N target=…`. Check with a minion build online and offline.
+- Notes ("Nota", "Registros del primer anciano", "Pintura ancestral"…) sounded like NPCs: they share the NPC
+  interaction but have no skinned model; now the tome loop, the scanner's object category and "Cerca: Nota"
+  ([details](reference/natural-world-sounds.md#notes-lore-records-and-paintings-2026-10-08)). Check a note and that
+  NPCs keep their own cue.
 - Bug sweep of the log: remaining Unity errors are the game's own (decals, ability list on load, level customization).
 
 # Handoff — 2026-10-08 evening: loot by rarity, shrines/rifts/Nemesis, re-reads and online quests

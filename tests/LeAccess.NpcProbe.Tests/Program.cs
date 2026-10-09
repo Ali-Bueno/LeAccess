@@ -14,7 +14,7 @@ WorldObjectClickListener Candidate(float x, float y, float z, bool npc = true)
     var root = new GameObject();
     root.transform.position = new(x, y, z);
     var listener = root.Add(new WorldObjectClickListener());
-    if (npc) root.Add(new NPCInteraction());
+    if (npc) { root.Add(new NPCInteraction()); root.Child().Add(new SkinnedMeshRenderer()); }
     WorldObjectClickListener.allListener.Add(listener);
     return listener;
 }
@@ -69,7 +69,7 @@ Check(probe.TryCapture(1, out result) && result.Distance == 0 && result.Pan == 0
 Check(result.Name is null, "Missing diagnostic NPC name does not suppress its sound target");
 WorldObjectClickListener.allListener.Clear();
 var relay = Candidate(0, 0, 2, false);
-relay._NPCinteraction = relay.gameObject.Add(new RelayNPCInteraction());
+relay._NPCinteraction = relay.gameObject.Add(new RelayNPCInteraction()); relay.gameObject.Child().Add(new SkinnedMeshRenderer());
 Check(probe.TryCapture(1, out result) && result.InstanceId == relay.GetInstanceID(), "Cached relay NPC marker covers vendor/quest interactions");
 relay._NPCinteraction.isActiveAndEnabled = false;
 Check(!probe.TryCapture(1, out _), "Disabled NPC marker is not actionable");
@@ -136,6 +136,7 @@ Check(probe.TryCapture(1, out result) && result.Name == "Herrero" && result.Name
 WorldObjectClickListener.allListener.Clear();
 var parentRoot = new GameObject();
 parentRoot.Add(new NpcNameTooltip { TopText = "Anciana" });
+parentRoot.Child().Add(new SkinnedMeshRenderer());
 var collider = parentRoot.Child().Add(new WorldObjectClickListener());
 collider.gameObject.Add(new NPCInteraction());
 WorldObjectClickListener.allListener.Add(collider);
@@ -145,6 +146,7 @@ Check(probe.TryCapture(1, out result) && result.Name == "Anciana",
 WorldObjectClickListener.allListener.Clear();
 var siblingRoot = new GameObject();
 var npcMarker = siblingRoot.Add(new NPCInteraction());
+siblingRoot.Child().Add(new SkinnedMeshRenderer());
 siblingRoot.Child().Add(new NpcNameTooltip { TopText = "Mercader" });
 var siblingCollider = siblingRoot.Child().Add(new WorldObjectClickListener());
 siblingCollider.gameObject.Add(new NPCInteraction());
@@ -187,7 +189,7 @@ Check(probe.TryCapture(1, out result) && result.Name == "Nombre válido",
 
 // Installed Z22: listener + relay on Grael/Grael; only the explicitly referenced child owns dialogue.
 WorldObjectClickListener.allListener.Clear();
-var grael = Candidate(0, 0, 1, false);
+var grael = Candidate(0, 0, 1, false); grael.gameObject.Child().Add(new SkinnedMeshRenderer());
 var graelRelay = grael.gameObject.Add(new RelayNPCInteraction());
 grael._NPCinteraction = graelRelay;
 var questBranch = grael.gameObject.Child();
@@ -359,6 +361,7 @@ Check(probe.TryCapture(1, out result) && result.Name == "Nombre mostrado" && res
     "Actual NPC name component retains precedence over database fallback");
 
 checks += ServiceTests.Run();
+checks += ReadableTests.Run();
 
 WorldObjectClickListener.allListener.Clear();
 var retained = Candidate(0, 0, 1);

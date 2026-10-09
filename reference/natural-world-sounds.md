@@ -135,3 +135,20 @@ judge timbre, level balance, chest coverage and whether simultaneous landmarks
 remain easy to distinguish while moving. Approach coins/equipment, then a
 verified stash/waypoint/exit; compare left/right/behind and open a menu during a
 cue. Verify pickup or leaving range stops that object's repetition.
+
+## Notes, lore records and paintings (2026-10-08)
+
+User: notes, messages and scrolls sounded like NPCs; they should use the tome sound. They are conversation objects:
+the same `RelayNPCInteraction`/`LEConversationTrigger` as NPCs, so `WorldServiceReader.IsNpc` took them and the
+log named them as NPCs ("Nota", "Nota ajada", "Registros del primer anciano", "El registro de Erza", "Pintura
+ancestral", "El fragmento"). Scene survey (UnityPy over `scene_{A10,A40,A60,EoT}_unity.bundle` with
+`monoscripts.bundle`): every NPC and examinable body has a `SkinnedMeshRenderer` under its click listener; notes
+("Note", "Records of the First Elder", "Lore Coll Placeholder") have none. Exceptions seen: EoT's "Fertile Soil" and
+"Lost Spriggan" easter egg also have no skinned model.
+
+`WorldServiceReader.IsReadable`: an NPC interaction, no skinned model under the listener (nor under its relay's or its
+`NpcNameTooltip` owner's root, for collider-child layouts), and no service. Readables get the tome loop
+(`WorldCueIdentityReader`), no NPC cue (`NpcWorldProbe.IsNpc` is `IsCharacterNpc`), the scanner's object category,
+and the nearby-landmark announcement by their dialogue name ("Cerca: Nota", status `readable`). Positive model checks
+are cached per listener; a model that loads later turns the object into an NPC. NpcProbe 112, LandmarkProbe 101,
+WorldCues 246 checks. Listening pending.

@@ -129,7 +129,7 @@ internal sealed class GroundItemVisuals : UnityEngine.MonoBehaviour
 internal sealed class WorldObjectClickListener : UnityEngine.MonoBehaviour
 {
     internal static Registry<WorldObjectClickListener> allListener = new();
-    internal bool requiresClick = true, Available = true, Npc, Throw, controllerTargetingUsePlayerY;
+    internal bool requiresClick = true, Available = true, Npc, Readable, Throw, controllerTargetingUsePlayerY;
     internal float interactionRange = 5;
     internal string ServiceKey;
     internal HoverTagOnMouseOver hoverTagOnMouseOver;
@@ -149,7 +149,11 @@ internal sealed class TargetingConfiguration { internal bool WasCollected; inter
 namespace LeAccess.Accessibility.Npcs
 {
     internal static class NpcWorldProbe { internal static bool IsNpc(WorldObjectClickListener listener) => listener.Npc; }
-    internal static class WorldServiceReader { internal static string ReadServiceKey(WorldObjectClickListener listener) => listener.ServiceKey; }
+    internal static class WorldServiceReader
+    {
+        internal static string ReadServiceKey(WorldObjectClickListener listener) => listener.ServiceKey;
+        internal static bool IsReadable(WorldObjectClickListener listener) => listener.Readable;
+    }
 }
 internal sealed class HoverTagOnMouseOver : UnityEngine.MonoBehaviour
 {

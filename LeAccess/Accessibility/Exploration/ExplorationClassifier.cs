@@ -95,6 +95,7 @@ internal static class ExplorationClassifier
     // NPCs have an NPC interaction or a body; notes and journals open a conversation with only a name tooltip.
     private static bool IsCharacter(WorldObjectClickListener listener)
     {
+        if (WorldServiceReader.IsReadable(listener)) return false;
         var relay = listener._NPCinteraction;
         if (IsAlive(relay) && relay.isActiveAndEnabled) return true;
         var npc = listener.GetComponent<NPCInteraction>();

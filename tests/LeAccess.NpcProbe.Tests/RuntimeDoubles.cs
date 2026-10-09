@@ -36,6 +36,7 @@ namespace UnityEngine
             }
             return result;
         }
+        public T GetComponentInChildren<T>(bool inactive) where T : Component => GetComponentsInChildren<T>(inactive).FirstOrDefault();
         public T GetComponentInParent<T>(bool inactive = false) where T : Component
         {
             for (var current = gameObject; current is not null; current = current.Parent)
@@ -46,6 +47,7 @@ namespace UnityEngine
             return null;
         }
     }
+    internal sealed class SkinnedMeshRenderer : Component { }
     internal sealed class GameObject : Object
     {
         public readonly Transform transform;

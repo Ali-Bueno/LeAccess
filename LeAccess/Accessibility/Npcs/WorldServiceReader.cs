@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
@@ -5,6 +6,32 @@ namespace LeAccess.Accessibility.Npcs;
 
 internal static class WorldServiceReader
 {
+    // Listeners known to own a character model; a model never leaves, but one may load after its listener.
+    private static readonly HashSet<int> Modelled = new();
+
+    /// <summary>A conversation object without a character model: notes, lore records, paintings.</summary>
+    internal static bool IsReadable(WorldObjectClickListener listener) =>
+        IsNpc(listener) && !HasCharacterModel(listener) && ReadServiceKey(listener) is null;
+
+    /// <summary>An NPC with a character model; readable objects share the NPC interaction but are not characters.</summary>
+    internal static bool IsCharacterNpc(WorldObjectClickListener listener) => IsNpc(listener) && !IsReadable(listener);
+
+    // NPCs and examinable bodies carry a skinned model under their listener; notes do not (reference/natural-world-sounds.md).
+    private static bool HasCharacterModel(WorldObjectClickListener listener)
+    {
+        int id = listener.GetInstanceID();
+        if (Modelled.Contains(id)) return true;
+        var model = listener.GetComponentInChildren<SkinnedMeshRenderer>(true);
+        // A listener on a collider child has its model beside it, under the relay's or the named NPC's root.
+        var relay = IsAlive(model) ? null : listener._NPCinteraction;
+        if (IsAlive(relay)) model = relay.GetComponentInChildren<SkinnedMeshRenderer>(true);
+        var owner = IsAlive(model) ? null : listener.GetComponentInParent<NpcNameTooltip>();
+        if (IsAlive(owner)) model = owner.GetComponentInChildren<SkinnedMeshRenderer>(true);
+        if (!IsAlive(model)) return false;
+        Modelled.Add(id);
+        return true;
+    }
+
     internal static string ReadServiceKey(WorldObjectClickListener listener)
     {
         if (!IsAlive(listener) || !listener.isActiveAndEnabled) return null;

@@ -17,6 +17,8 @@ internal static class WorldCueIdentityReader
         string service = WorldServiceReader.ReadServiceKey(listener);
         if (service == "service.stash") return NaturalCueKind.Stash;
         if (service == "service.waypoint") return NaturalCueKind.Portal;
+        // Notes, lore records and paintings sound like a tome, not like the NPC whose interaction they share.
+        if (WorldServiceReader.IsReadable(listener)) return NaturalCueKind.Tome;
 
         var portal = listener.GetComponentInParent<PortalVisualController>();
         if (Available(portal) && IsAlive(portal.mouseListenerObj) &&
