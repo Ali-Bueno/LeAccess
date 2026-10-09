@@ -1,6 +1,9 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-09 evening: the world-map list shows everything a sighted player sees: markers, icons, End of Time islands
+**Updated:** 2026-10-09 night: mod speech in all ten game languages (French, German, Brazilian Portuguese, Polish,
+Russian, Korean, Simplified Chinese, Japanese added with the game's own terms; Japanese `jp` recognized)
+([localization](reference/localization.md)). Unheard.
+Earlier, 2026-10-09 evening: the world-map list shows everything a sighted player sees: markers, icons, End of Time islands
 ([whole map](reference/waypoint-map.md#the-whole-map-as-a-sighted-player-sees-it-2026-10-09-user-request)). Unheard.
 Earlier, 2026-10-09 afternoon: world-map list includes locked waypoints again (user request); the era name is no
 longer cut by the place the map focuses after LB/RB ([map](reference/waypoint-map.md#counts-era-and-region-names-2026-10-09-user-report-2-de-15-with-about-5-places-eras-silent)). Unheard.
@@ -144,7 +147,7 @@ requested. No release or new ZIP has been requested.
 | Reader recovery | Bounded reconnection; covered readers acknowledge accepted output and retry current content. 41 transport checks plus service regressions. [Scope/limits](reference/screen-reader-lifecycle.md); listening pending. |
 | Early online/offline selection | Empty native nullable no longer throws during readiness polling or erases the first click; observation failures retain intent, dispatch remains once-only. 56 checks; fresh startup listening pending. |
 | Menus/focus | 2026-10-08 evening: inventory cosmetics tab (slots, skill rows, class filters, tabs). 2026-10-08: endgame panels (dungeon/arena tiers and key slots, Aberroth, boss votes, Sanctuary, echo rewards, blessings, Monolith echoes, Nemesis, Morditas) and faction/vendor panels (faction choice, rank rewards, gamblers, special vendors with prices, item-service slots, time beast, loot-filter rules, mastery choice, bazaar costs); later: Weaver tree, Forgotten Knights timelines, Observatory prophecies, Bazaar listings/pages/results, Ladder rows, Morditas ritual buttons; afternoon: dropdown options "N de M"/selected and new value once (generic `DropdownReader`), Bazaar my stall and listing form, lens effects; not covered: listing-form slot focus, remote players' class ([endgame](reference/endgame-panels.md), [factions/vendors](reference/faction-vendor-panels.md)). Screen-reader keys (Ctrl, Shift, Alt, Insert, CapsLock, Windows) keep controller mode, so menus no longer lose focus and reset ([cause](reference/runtime-feedback.md#controller-mode-lost-to-screen-reader-keys-2026-10-04)). Settings sliders/toggles speak only the new value while focus stays; headings no longer repeat after dropdowns; popups never speak raw object names; controller button names localized; zero-height labels that render (main-menu "Partida sin conexión") are read again. Native mediator callbacks follow FocusedPanel; typed forge/material selections and background/faded guards. 307 menu + 63 settings-source checks. [Audit and limits](reference/menu-visibility.md); listening pending. |
-| Mod localization | Automatic game language, en/es catalogs, override and per-key fallback; 376 checks. |
+| Mod localization | All ten game languages (en, es, fr, de, pt-BR, pl, ru, ko, zh, ja; game `jp` mapped), automatic game language, override and per-key fallback; non-Spanish catalogs unreviewed by native speakers ([details](reference/localization.md)); 5,692 checks; listening pending. |
 | Return from Start | Character creation owner/control restored after pause closes; 134 checks. User confirms it works. |
 | Internal panel chatter | Removed; background Forge/Skill Tree opening or closing no longer speaks object names. |
 | Tutorials/popups/terms | Generic modals (loot-filter editor, pickers, stash setup) read title/message/static text once on open; scrolling and control captions stay silent; quick notices speak inside them. Hidden/faded modals release focus; tutorials yield to dialogue. Rejected output retains current content and modal priority. 232 screen-content + 118 notification checks. [Evidence](reference/announcement-lifecycle.md). |
@@ -186,6 +189,7 @@ requested. No release or new ZIP has been requested.
 
 ## Validation and references
 
+- 2026-10-09 night: ten-language catalogs installed (`LeAccess.dll` `612E546CC8F6B624…`, game closed; eight new catalogs copied); Localization 5692, package 250, and the 20 catalog-embedding suites pass. No friend ZIP.
 - 2026-10-09 12:12: friend ZIP `LeAccess-Steam-1.5.1-prueba-20261009-121206.zip` (repo root, ignored by git), SHA-256 `2D28DD062CF401CD76F0D7010396E4FD748941EBE3E6E6AFEC7AFF60286CF7A7`, 264 files; replaces 20261009-071254 with the world-map list (whole map, eras, islands), the epoch mastery panel and the inventory refresh fix (Leeme updated). Its `LeAccess.dll` (`C2A54EF91E45BD96…`) is the installed copy. Package 242.
 - 2026-10-09 11:58: whole-map list installed (`LeAccess.dll` `C2A54EF91E45BD96…`, game closed); Waypoints 75, Localization 1198.
 - 2026-10-09 11:48: locked waypoints listed again and era name queued before the settled place; installed `LeAccess.dll` `5EAA9C7080481D88…` (game closed); Waypoints 69.

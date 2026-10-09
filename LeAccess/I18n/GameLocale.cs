@@ -6,6 +6,8 @@ namespace LeAccess.I18n;
 
 internal static class GameLocale
 {
+    // The game's Japanese locale is "jp" (string-table bundle "japanese(jp)"), which runtimes accept as an unknown culture.
+    private const string GameJapaneseLocale = "jp";
     private static ConfigEntry<string> _language;
     private static string _lastGameLanguage = "en";
     private static bool _readFailureLogged;
@@ -51,6 +53,13 @@ internal static class GameLocale
 
     private static string ResolveGameLanguage(string locale)
     {
+        var languageKeys = LocaleNames.LanguageKeys;
+        if (languageKeys != null && languageKeys.TryGetValue(locale, out LanguageKey language) &&
+            CatalogLanguage(language) is { } catalogLanguage)
+            return catalogLanguage;
+        if (string.Equals(locale, GameJapaneseLocale, StringComparison.OrdinalIgnoreCase))
+            return CatalogLanguage(LanguageKey.Japanese);
+
         string cultureCode = locale.Replace('_', '-');
         try
         {
@@ -63,25 +72,21 @@ internal static class GameLocale
         {
         }
 
-        var languageKeys = LocaleNames.LanguageKeys;
-        if (languageKeys != null && languageKeys.TryGetValue(locale, out LanguageKey language))
-        {
-            return language switch
-            {
-                LanguageKey.English => "en",
-                LanguageKey.Portuguese => "pt",
-                LanguageKey.Chinese => "zh",
-                LanguageKey.German => "de",
-                LanguageKey.Polish => "pl",
-                LanguageKey.Korean => "ko",
-                LanguageKey.French => "fr",
-                LanguageKey.Spanish => "es",
-                LanguageKey.Russian => "ru",
-                LanguageKey.Japanese => "ja",
-                _ => cultureCode
-            };
-        }
-
         return cultureCode;
     }
+
+    private static string CatalogLanguage(LanguageKey language) => language switch
+    {
+        LanguageKey.English => "en",
+        LanguageKey.Portuguese => "pt",
+        LanguageKey.Chinese => "zh",
+        LanguageKey.German => "de",
+        LanguageKey.Polish => "pl",
+        LanguageKey.Korean => "ko",
+        LanguageKey.French => "fr",
+        LanguageKey.Spanish => "es",
+        LanguageKey.Russian => "ru",
+        LanguageKey.Japanese => "ja",
+        _ => null
+    };
 }

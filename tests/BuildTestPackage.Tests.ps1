@@ -36,10 +36,10 @@ try {
         Check ($null -ne $zip.GetEntry('BepInEx/patchers/LeAccess.InteropRepair/LeAccess.InteropRepair.dll')) 'Interop repair must be packaged.'
         Check (-not ($names -match '(?i)(^|/)(interop|cache|unity-libs|logs|saves|accounts?)(/|$)|LogOutput|GameAssembly|Last Epoch\.exe|Probe|\.pdb$')) 'Private/generated/game/probe artifacts must be absent.'
         Check (@($names | Where-Object { $_ -like 'BepInEx/config/*' }).Count -eq 1) 'Only the generated BepInEx diagnostic config belongs in the ZIP.'
-        foreach ($language in @('en', 'es')) {
-            $entry = $zip.GetEntry("BepInEx/plugins/LeAccess/Translations/$language.json")
-            $source = Join-Path $repo "LeAccess/bin/Debug/net6.0/Translations/$language.json"
-            Check ((Hash-Entry $entry) -eq (Get-FileHash -LiteralPath $source).Hash) 'Catalog must come from this build.'
+        foreach ($catalog in @(Get-ChildItem -LiteralPath (Join-Path $repo 'LeAccess/Translations') -File -Filter '*.json')) {
+            $entry = $zip.GetEntry("BepInEx/plugins/LeAccess/Translations/$($catalog.Name)")
+            $source = Join-Path $repo "LeAccess/bin/Debug/net6.0/Translations/$($catalog.Name)"
+            Check ($null -ne $entry -and (Hash-Entry $entry) -eq (Get-FileHash -LiteralPath $source).Hash) ('Catalog must come from this build: ' + $catalog.Name)
         }
         $entry = $zip.GetEntry('BepInEx/config/BepInEx.cfg'); $reader = [IO.StreamReader]::new($entry.Open())
         try { $config = $reader.ReadToEnd() } finally { $reader.Dispose() }

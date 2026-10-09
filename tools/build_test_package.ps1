@@ -102,10 +102,11 @@ try {
     }
     Add-PackageFile (Join-Path $repo 'LeAccess.InteropRepair/bin/Debug/net6.0/LeAccess.InteropRepair.dll') `
         'BepInEx/patchers/LeAccess.InteropRepair/LeAccess.InteropRepair.dll'
-    foreach ($language in @('en', 'es')) {
-        $catalog = Join-Path $build "Translations/$language.json"
-        Get-Content -LiteralPath $catalog -Raw | ConvertFrom-Json | Out-Null
-        Add-PackageFile $catalog "BepInEx/plugins/LeAccess/Translations/$language.json"
+    $catalogs = @(Get-ChildItem -LiteralPath (Join-Path $build 'Translations') -File -Filter '*.json')
+    if ($catalogs.Count -eq 0) { throw 'Translation catalogs are missing.' }
+    foreach ($catalog in $catalogs) {
+        Get-Content -LiteralPath $catalog.FullName -Raw -Encoding UTF8 | ConvertFrom-Json | Out-Null
+        Add-PackageFile $catalog.FullName "BepInEx/plugins/LeAccess/Translations/$($catalog.Name)"
     }
     $packageAssets = Join-Path $repo 'packaging/test-package'
     Add-PackageFile (Join-Path $packageAssets 'Leeme-LeAccess.txt') 'Leeme-LeAccess.txt'

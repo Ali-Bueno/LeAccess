@@ -13,7 +13,7 @@ void Equal<T>(T expected, T actual, string name)
     checks++;
     if (!EqualityComparer<T>.Default.Equals(expected, actual)) throw new Exception($"{name}: expected '{expected}', got '{actual}'");
 }
-void Initialize(string json = null, string language = "fr")
+void Initialize(string json = null, string language = "it")
 {
     string directory = Path.Combine(fixtureRoot, Guid.NewGuid().ToString("N"));
     Directory.CreateDirectory(directory);
@@ -27,18 +27,25 @@ try
     Equal("en", ModText.Language, "default language");
     Equal("On", ModText.Get("state.on"), "default speech");
     var assembly = typeof(ModText).Assembly;
-    using var englishStream = assembly.GetManifestResourceStream("LeAccess.Translations.en.json");
-    using var spanishStream = assembly.GetManifestResourceStream("LeAccess.Translations.es.json");
-    var english = JsonSerializer.Deserialize<Dictionary<string, string>>(englishStream);
-    var spanish = JsonSerializer.Deserialize<Dictionary<string, string>>(spanishStream);
-    Equal(true, english.Keys.ToHashSet().SetEquals(spanish.Keys), "complete key parity");
-    foreach (var entry in english)
+    const string catalogPrefix = "LeAccess.Translations.";
+    var bundled = new Dictionary<string, Dictionary<string, string>>();
+    foreach (string resource in assembly.GetManifestResourceNames().Where(n => n.StartsWith(catalogPrefix) && n.EndsWith(".json")))
     {
-        ModText.SetLanguage("en");
-        Equal(entry.Value, ModText.Get(entry.Key), "English " + entry.Key);
-        ModText.SetLanguage("es");
-        Equal(spanish[entry.Key], ModText.Get(entry.Key), "Spanish " + entry.Key);
+        using var stream = assembly.GetManifestResourceStream(resource);
+        bundled[resource[catalogPrefix.Length..^".json".Length]] = JsonSerializer.Deserialize<Dictionary<string, string>>(stream);
     }
+    // Every text language the game ships (LanguageKey) has a bundled catalog.
+    Equal("de,en,es,fr,ja,ko,pl,pt,ru,zh", string.Join(",", bundled.Keys.OrderBy(k => k, StringComparer.Ordinal)), "bundled game languages");
+    var english = bundled["en"];
+    ModText.Initialize(null, warnings.Add);
+    foreach (var (language, catalog) in bundled)
+    {
+        Equal(true, english.Keys.ToHashSet().SetEquals(catalog.Keys), "complete key parity " + language);
+        ModText.SetLanguage(language);
+        foreach (var entry in catalog)
+            Equal(entry.Value, ModText.Get(entry.Key), $"{language} {entry.Key}");
+    }
+    Equal(0, warnings.Count, "bundled catalogs valid");
     ModText.SetLanguage("es-MX");
     Equal("Menú del mando", ModText.Get("controller.menu"), "regional parent");
     Initialize("{\"state.on\":\"Oui\"}");
@@ -79,17 +86,17 @@ try
     Initialize("{\"state.on\":\"Cached\"}");
     Equal("Cached", ModText.Get("state.on"), "initial load");
     // Locate the owned fixture by content, without depending on enumeration order.
-    string cachedDirectory = Directory.GetDirectories(fixtureRoot).Single(d => File.Exists(Path.Combine(d, "fr.json")) && File.ReadAllText(Path.Combine(d, "fr.json")) == "{\"state.on\":\"Cached\"}");
-    File.WriteAllText(Path.Combine(cachedDirectory, "fr.json"), "{\"state.on\":\"Changed\"}");
+    string cachedDirectory = Directory.GetDirectories(fixtureRoot).Single(d => File.Exists(Path.Combine(d, "it.json")) && File.ReadAllText(Path.Combine(d, "it.json")) == "{\"state.on\":\"Cached\"}");
+    File.WriteAllText(Path.Combine(cachedDirectory, "it.json"), "{\"state.on\":\"Changed\"}");
     Equal("Cached", ModText.Get("state.on"), "catalog loaded once");
     string bomDirectory = Path.Combine(fixtureRoot, "bom");
     Directory.CreateDirectory(bomDirectory);
-    File.WriteAllText(Path.Combine(bomDirectory, "fr.json"), "{\"state.on\":\"Été\"}", new System.Text.UTF8Encoding(true));
+    File.WriteAllText(Path.Combine(bomDirectory, "it.json"), "{\"state.on\":\"Été\"}", new System.Text.UTF8Encoding(true));
     ModText.Initialize(bomDirectory, warnings.Add);
-    ModText.SetLanguage("fr");
+    ModText.SetLanguage("it");
     Equal("Été", ModText.Get("state.on"), "UTF-8 BOM external catalog");
     ModText.Initialize(Path.Combine(fixtureRoot, "missing"), warnings.Add);
-    ModText.SetLanguage("fr");
+    ModText.SetLanguage("it");
     Equal("On", ModText.Get("state.on"), "missing directory");
     ModText.SetLanguage("zz-ZZ");
     Equal("On", ModText.Get("state.on"), "unknown culture English lookup");
@@ -136,6 +143,24 @@ try
     Localization.Current = "game_spanish";
     GameLocale.Refresh();
     Equal("es", ModText.Language, "game language key mapping");
+    // Locale codes of the game's string-table bundles, e.g. "japanese(jp)" and "spanish(spain)(es-es)".
+    var gameLocales = new Dictionary<string, string>
+    {
+        ["en"] = "en", ["es-ES"] = "es", ["fr"] = "fr", ["de"] = "de", ["pt"] = "pt",
+        ["pl"] = "pl", ["ru"] = "ru", ["ko"] = "ko", ["zh"] = "zh", ["jp"] = "ja"
+    };
+    foreach (var (locale, catalog) in gameLocales)
+    {
+        Localization.Current = locale;
+        GameLocale.Refresh();
+        Equal(bundled[catalog]["state.on"], ModText.Get("state.on"), "game locale " + locale);
+    }
+    LocaleNames.LanguageKeys["jp"] = LanguageKey.Japanese;
+    Localization.Current = "en";
+    GameLocale.Refresh();
+    Localization.Current = "jp";
+    GameLocale.Refresh();
+    Equal("ja", ModText.Language, "game key table before culture parsing");
     Console.WriteLine($"Passed {checks} localization checks.");
 }
 finally

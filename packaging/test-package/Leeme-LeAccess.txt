@@ -128,6 +128,12 @@ Despues de cerrar el juego, conserva BepInEx/LogOutput.log y explica que estabas
 haciendo. Revisa el archivo antes de compartirlo: el juego puede incluir nombres
 o rutas de tu equipo. No compartas partidas, carpetas de cuenta ni tokens.
 
+IDIOMA
+Los mensajes propios del mod siguen el idioma de texto del juego: ingles, espanol,
+frances, aleman, portugues de Brasil, polaco, ruso, coreano, chino simplificado o
+japones. Para fijar otro, en BepInEx/config/LeAccess.cfg cambia Language = auto
+por un codigo (en, es, fr, de, pt, pl, ru, ko, zh, ja) y reinicia el juego.
+
 PARA DESACTIVAR EL MOD
 Con el juego cerrado, mueve BepInEx/plugins/LeAccess fuera de la carpeta plugins.
 Para desactivar tambien el cargador, cambia el nombre de winhttp.dll. Si hay
@@ -135,8 +141,8 @@ otros mods, esa segunda opcion tambien los desactivara. No borres partidas.
 
 CONTENIDO Y CREDITOS
 Se incluyen el cargador oficial, LeAccess, su reparador de interoperabilidad,
-sus dependencias de audio/lector de pantalla, catalogos ingles/espanol, este
-documento y LeAccess-SHA256.txt con las huellas de archivos.
+sus dependencias de audio/lector de pantalla, catalogos de voz en los diez
+idiomas del juego, este documento y LeAccess-SHA256.txt con las huellas de archivos.
 Las licencias y enlaces al codigo fuente estan en LeAccess-Licencias.
 Los componentes LGPL se cargan como bibliotecas separadas y pueden sustituirse
 por versiones modificadas compatibles para depuracion de sus modificaciones.
