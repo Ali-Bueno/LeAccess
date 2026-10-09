@@ -18,7 +18,9 @@ the latest installed build. Technical findings and reproduction notes live in
 - Forge affix actions, shard details, and localized rune/glyph names and quantities.
 - World map: with the quests hidden (Square), D-pad up/down snap from place to place region by region
   ("N of M", region named on entry) and Cross travels; era tabs (LB/RB) say their title and position
-  ([details](reference/waypoint-map.md#list-navigation-with-the-quests-hidden-2026-10-09)).
+  ([details](reference/waypoint-map.md#list-navigation-with-the-quests-hidden-2026-10-09)); the epoch mastery
+  panel (Knowledge of Orobyss) reads its progress, timeline points and completion
+  ([panel](reference/waypoint-map.md#epoch-mastery-panel-knowledge-of-orobyss-2026-10-09)).
 - Endgame and faction panels: dungeon/arena tiers, Monolith echoes and blessings, echo rewards,
   boss votes ([endgame](reference/endgame-panels.md)); faction choice and ranks, gamblers and special
   vendors, item-service panels, loot-filter rules and mastery choice ([factions/vendors](reference/faction-vendor-panels.md)).

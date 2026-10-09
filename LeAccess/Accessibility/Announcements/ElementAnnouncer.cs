@@ -258,6 +258,7 @@ public static class ElementAnnouncer
         if (Cosmetics.CosmeticsReader.TryRead(go, out string cosmeticsText)) return cosmeticsText;
         if (CreationChoiceReader.TryRead(go, out string choiceText)) return choiceText;
         if (WaypointReader.TryRead(go, includeDetails, out string waypointText)) return waypointText;
+        if (EpochMasteryReader.TryRead(go, out string masteryText)) return masteryText;
         if (CharacterStatLineReader.TryRead(go, out string statText)) return statText;
         if (ClassSelectionReader.TryReadControl(go, out var classSelection))
             return string.IsNullOrWhiteSpace(classSelection.Name) ? null :

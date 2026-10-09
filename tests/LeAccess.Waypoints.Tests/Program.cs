@@ -251,6 +251,45 @@ Check(LeAccess.Plugin.Log.Warnings.Count == 0, "a snapped selection that holds l
 Nav(Direction.DOWN); MapLocationList.CheckSnap(listMap); listMap.focusedSceneID = "elsewhere"; MapLocationList.CheckSnap(listMap);
 Check(LeAccess.Plugin.Log.Warnings.Count == 1 && LeAccess.Plugin.Log.Warnings[0].Contains("elsewhere"), "a snapped selection the game replaced is logged");
 
+// Epoch mastery panel (Knowledge of Orobyss).
+var masteryObject = new GameObject();
+var mastery = masteryObject.Add(new EpochMasteryUI
+{
+    progressionPanel = masteryObject.Child(), completionPanel = masteryObject.Child()
+});
+mastery.masteryDescription = Label(mastery.progressionPanel, "Consigue al menos 5 de conocimiento.");
+EpochMasteryCheckboxUI Point(string name, bool done)
+{
+    var boxObject = mastery.progressionPanel.Child();
+    return boxObject.Add(new EpochMasteryCheckboxUI { label = Label(boxObject, name), IsComplete = done });
+}
+mastery.progressionPointsCheckBoxes = new[] { Point("Capítulo VIII", true), Point("Caída del Imperio (2 de conocimiento)", false) };
+var completionText = Label(mastery.completionPanel, "Habla con el anciano.");
+var acknowledgeObject = mastery.completionPanel.Child();
+mastery.acknowledgeButton = acknowledgeObject.Add(new UnityEngine.UI.Button());
+var acknowledgeLabel = Label(acknowledgeObject, "Viajar");
+mastery.completionPanel.Active = false;
+EpochMasteryReader.Describe(mastery, out string guidance, out string checklist);
+Check(guidance == mastery.masteryDescription.text && checklist == J(
+        ModText.Format("epoch_mastery.point_done", mastery.progressionPointsCheckBoxes[0].label.text),
+        ModText.Format("epoch_mastery.point_missing", mastery.progressionPointsCheckBoxes[1].label.text)),
+    "in progress, the panel gives its description and each timeline point as done or missing");
+Check(!EpochMasteryReader.TryRead(acknowledgeObject, out _), "the hidden completion button is not read");
+mastery.progressionPanel.Active = false; mastery.completionPanel.Active = true;
+EpochMasteryReader.Describe(mastery, out guidance, out checklist);
+Check(guidance == J(completionText.text, acknowledgeLabel.text, T("epoch_mastery.travel_hint")) && checklist is null,
+    "completed, the panel gives its completion text and how to travel");
+Check(EpochMasteryReader.TryRead(acknowledgeObject, out string focused) && focused == J(completionText.text, acknowledgeLabel.text),
+    "focusing the acknowledge button reads the completion text with it");
+Check(!EpochMasteryReader.TryRead(mastery.completionPanel, out _), "only the acknowledge button is claimed");
+ScreenReader.Messages.Clear();
+EpochMasteryReader.AnnounceSubmit(mastery, SubmitType.X_SQUARE);
+EpochMasteryReader.AnnounceSubmit(mastery, SubmitType.A_EX);
+Check(ScreenReader.Messages.Single() == (T("waypoint.traveling"), true), "Cross on the completed panel says it travels");
+masteryObject.Active = false;
+EpochMasteryReader.Describe(mastery, out guidance, out checklist);
+Check(guidance is null && checklist is null, "a hidden panel adds nothing to the entry");
+
 Console.WriteLine($"Waypoint tests passed: {checks} checks");
 
 static class Extensions { internal static T Also<T>(this T value, Action<T> action) { action(value); return value; } }

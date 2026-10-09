@@ -28,6 +28,14 @@ internal sealed class WaypointDescriptionPopup : Component { internal TextMeshPr
 internal static class SceneList { internal enum Era { Ancient, Divine } }
 internal enum SubmitType { A_EX, X_SQUARE }
 internal enum Direction { UP, DOWN, LEFT, RIGHT }
+internal sealed class EpochMasteryCheckboxUI : Component { internal TextMeshProUGUI label; internal bool IsComplete; }
+internal sealed class EpochMasteryUI : Component
+{
+    internal GameObject progressionPanel, completionPanel;
+    internal UnityEngine.UI.Button acknowledgeButton;
+    internal EpochMasteryCheckboxUI[] progressionPointsCheckBoxes;
+    internal TextMeshProUGUI masteryDescription;
+}
 internal sealed class QuestPanel : Component { internal bool questsHidden; }
 internal sealed class WorldMapArrow : Component
 {

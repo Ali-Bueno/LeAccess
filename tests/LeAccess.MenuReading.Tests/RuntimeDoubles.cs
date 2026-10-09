@@ -267,6 +267,8 @@ namespace LeAccess.Accessibility.Map
 {
     internal static class WaypointReader
     { internal static bool TryRead(UnityEngine.GameObject go, bool includeDetails, out string text) { text = null; return false; } }
+    internal static class EpochMasteryReader
+    { internal static bool TryRead(UnityEngine.GameObject go, out string text) { text = null; return false; } }
 }
 namespace LeAccess.Accessibility.CharacterCreation
 {

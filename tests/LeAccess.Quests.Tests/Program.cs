@@ -335,4 +335,27 @@ foreach (string gate in new[] { "changed", "collected", "unready", "popup" })
     button.quest = originalQuest; button.tmp.text = info.questName.text;
     ScreenContentAnnouncer.HasActiveContent = false; QuestAccessibility.Reset();
 }
+// Knowledge of Orobyss: the map's first entry has no quest; selecting it shows the epoch mastery panel.
+var orobyssPanelGo = new GameObject();
+var orobyssPanel = orobyssPanelGo.Add(new QuestPanel());
+var orobyssGenerator = Child(orobyssPanelGo.transform).Add(new QuestButtonGenerator { questPanel = orobyssPanel });
+orobyssPanel.buttonGenerator = orobyssGenerator;
+var orobyss = Child(orobyssGenerator.transform).Add(new QuestButton
+    { buttonGenerator = orobyssGenerator, isKnowledgeOfOrobyssQuest = true, epochMasteryUI = new EpochMasteryUI() });
+orobyss.tmp = Label(orobyss.transform, "Knowledge of Orobyss (3/5)");
+orobyssGenerator._selectedButton_k__BackingField = orobyss;
+LeAccess.Accessibility.Map.EpochMasteryReader.Guidance = "Gain at least 5 Knowledge of Orobyss.";
+LeAccess.Accessibility.Map.EpochMasteryReader.Checklist = "Chapter VIII, done";
+Check(QuestSelectionReader.TryRead(orobyssGenerator, out var orobyssSelection) && orobyssSelection.Summary == orobyss.tmp.text &&
+    orobyssSelection.Objectives == LeAccess.Accessibility.Map.EpochMasteryReader.Guidance &&
+    orobyssSelection.Details == LeAccess.Accessibility.Map.EpochMasteryReader.Checklist &&
+    LeAccess.Accessibility.Map.EpochMasteryReader.LastPanel == orobyss.epochMasteryUI,
+    "Knowledge of Orobyss reads its title, the panel's guidance as the brief and the timeline points as details");
+string orobyssKey = orobyssSelection.Key;
+orobyss.tmp.text = "Knowledge of Orobyss (4/5)";
+Check(QuestSelectionReader.TryRead(orobyssGenerator, out orobyssSelection) && orobyssSelection.Key == orobyssKey,
+    "progress changes keep the entry's identity, so only the changed summary is spoken");
+orobyss.isKnowledgeOfOrobyssQuest = false;
+Check(!QuestSelectionReader.TryRead(orobyssGenerator, out _), "another entry without a quest stays unread");
+
 Console.WriteLine($"Passed {checks} quest journal checks.");

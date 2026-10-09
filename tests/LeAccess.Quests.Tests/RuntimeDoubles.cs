@@ -94,8 +94,10 @@ public class QuestButton : UnityEngine.Behaviour
     public Quest quest;
     public QuestButtonGenerator buttonGenerator;
     public TMPro.TextMeshProUGUI tmp, chapterText;
-    public bool completed, pinned;
+    public bool completed, pinned, isKnowledgeOfOrobyssQuest;
+    public EpochMasteryUI epochMasteryUI;
 }
+public class EpochMasteryUI : UnityEngine.Behaviour { }
 public class QuestInformation : UnityEngine.Behaviour
 {
     public string getNameForState(QuestState state) => "Localized " + state;
@@ -123,6 +125,16 @@ public class NavigationManager : UnityEngine.Behaviour
 }
 namespace LE.UI.PanelSystem { public class WorldMapPanel : UnityEngine.Behaviour { public MapPanel _mapPanel; } }
 namespace LE.UI { public static class LoadingScreen { public static bool IsVisible; } }
+namespace LeAccess.Accessibility.Map
+{
+    internal static class EpochMasteryReader
+    {
+        internal static string Guidance, Checklist;
+        internal static EpochMasteryUI LastPanel;
+        internal static void Describe(EpochMasteryUI panel, out string guidance, out string checklist)
+        { LastPanel = panel; guidance = Guidance; checklist = Checklist; }
+    }
+}
 namespace LeAccess.Accessibility.Utils
 {
     internal static class TextUtils

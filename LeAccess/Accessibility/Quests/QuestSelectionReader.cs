@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using LeAccess.Accessibility.Announcements;
+using LeAccess.Accessibility.Map;
 using LeAccess.Accessibility.ScreenContent;
 using LeAccess.Accessibility.Utils;
 using LeAccess.I18n;
@@ -25,9 +26,17 @@ internal static class QuestSelectionReader
             !IsAlive(panel.buttonGenerator) || panel.buttonGenerator.Pointer != generator.Pointer) return false;
         var button = generator._selectedButton_k__BackingField;
         if (!IsAlive(button) || !button.isActiveAndEnabled || !UiVisibility.IsVisible(button.gameObject) ||
-            !IsAlive(button.quest) || !IsAlive(button.buttonGenerator) || button.buttonGenerator.Pointer != generator.Pointer) return false;
+            !IsAlive(button.buttonGenerator) || button.buttonGenerator.Pointer != generator.Pointer) return false;
         string title = ReadText(button.tmp, button.transform);
         if (string.IsNullOrWhiteSpace(title)) return false;
+        // The first entry, Knowledge of Orobyss, has no quest: selecting it shows the epoch mastery panel instead.
+        if (button.isKnowledgeOfOrobyssQuest)
+        {
+            EpochMasteryReader.Describe(button.epochMasteryUI, out string guidance, out string checklist);
+            selection = new QuestSelection($"{generator.Pointer}:{button.Pointer}:orobyss", title, guidance, checklist);
+            return true;
+        }
+        if (!IsAlive(button.quest)) return false;
         string key = $"{generator.Pointer}:{button.Pointer}:{button.quest.Pointer}";
         var info = generator.questInformation;
         bool hasModel = QuestModelReader.TryRead(button.quest, info, out string state,

@@ -16,3 +16,11 @@ internal static class WaypointTravelPatch
 {
     private static void Prefix(UIWaypointStandard __instance) => MapTravelAnnouncer.AnnounceTravel(__instance);
 }
+
+// Cross on the focused, completed epoch mastery panel acknowledges it and travels at once. The prologue has no
+// relative branch, so the original may run.
+[HarmonyPatch(typeof(EpochMasteryUI), nameof(EpochMasteryUI.HandleSubmitInput))]
+internal static class EpochMasterySubmitPatch
+{
+    private static void Prefix(EpochMasteryUI __instance, SubmitType type) => EpochMasteryReader.AnnounceSubmit(__instance, type);
+}

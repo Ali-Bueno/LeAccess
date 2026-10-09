@@ -138,3 +138,47 @@ What the mod does (`MapLocationList`, prefix `MapNavigatePatch`):
 Open: the order inside regions is the prefab's, not necessarily story or geographic order.
 D-pad left/right are untouched, so jumping between regions is not offered. Whether the
 `UIEra.mapTitle` text is localized is unverified. Waypoints tests 56 checks; listening pending.
+
+## Epoch mastery panel (Knowledge of Orobyss, 2026-10-09)
+
+Native evidence, build 25764382 (static, read-only):
+
+- When it shows: `EpochMasteryUI.ShouldBeActive` 0x173B950 needs the "MonolithHub" scene unlocked
+  and `MonolithProgressManager.IsEpochMasteryActive` (unlocked by an NPC interaction, not yet
+  acknowledged). Offline it throws when `UnlockedWaypointScenes` is null, which is the startup
+  exception in the log. `Refresh` 0x173B590 keeps the panel active only while `isPanelToggledOn`.
+  `progressionPanel` shows before the threshold and `completionPanel` once it is reached (count
+  capped at 5).
+- The only controller path is the quest list. `GetQuestButtons` puts a "Knowledge of Orobyss
+  (n/5)" button with `quest = null` and `isKnowledgeOfOrobyssQuest` first, and
+  `activateDefaultQuest` selects it when the list opens. `QuestButton.clicked` 0x17BA4A0 calls
+  `TogglePanel(true)` for it, hides the quest details and zooms to "TheCrossRoad". Any other quest
+  calls `TogglePanel(false)`.
+- Texts:
+  - progress `"{0}/{1}"`;
+  - `masteryDescription` from `Knowledge_Of_Orobyss_Panel_Description`;
+  - each checkbox `label` is a chapter ("Chapter VIII/IX") or a timeline name, plus
+    `Knowledge_Of_Orobyss_Panel_PointsWorth` when worth 2;
+  - `IsComplete` / `toggle.isOn` come from the progress manager;
+  - the completion texts are prefab text.
+- Focus: D-pad right (`MapPanel.HandleContextNavigationInput`) focuses navigable 175 only when the
+  quest details are hidden and the mastery is completed. While in progress the panel cannot be
+  focused. `OnSelected` 0x173B4B0 shows the focus cursor on `acknowledgeButton`.
+  `HandleSubmitInput` 0x173AE20 (clean prologue) invokes it on Cross: online it acknowledges and
+  the server teleports; offline it teleports to MonolithHub. Both close the map without a prompt.
+  D-pad left or Circle return to the map.
+- Do not hook `HandleNavigateInput` or `OnSelected(Vector2Int)`, which share an empty `ret`
+  stub, or `TogglePanel`, which has a `jmp` at +5. Do not call `ShouldBeActive` from the mod.
+
+What the mod does:
+
+- `QuestSelectionReader` reads the Knowledge of Orobyss entry, which used to be silent because it
+  has no quest. The brief is its title (with n/5) and the panel's description. Once the mastery is
+  completed, the brief is the completion text plus "Derecha enfoca el panel y Cruz confirma y
+  viaja". The details (right stick up) list each point as "conseguido" or "pendiente".
+  `EpochMasteryReader` reads only what the visible panel shows.
+- Focusing the acknowledge button reads the whole completion text (`ElementAnnouncer`).
+- Cross on it says "Viajando" (prefix `EpochMasterySubmitPatch`).
+
+Tests: Waypoints 63, Quests 139, MenuReading 546; listening pending. Unverified: the prefab
+completion text and the online server path.
