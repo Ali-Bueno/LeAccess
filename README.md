@@ -127,10 +127,11 @@ records and paintings use the tome loop;
 shrines and the Nemesis use Last Epoch's own recordings and time rifts its rift loop
 ([mapping](reference/world-object-sounds.md)). Short repeating samples
 share playback time with each other; radar knocks and breaths never wait behind
-them. The radar knocks when a wall comes within about two metres and breathes only for a
-real passage (about six metres of walkable ground); stepping away from a wall you were
-following, even a diagonal one, stays silent, and the wall's real end breathes
-([details](reference/navigation-radar.md#passages-and-wall-following-2026-10-08)).
+them. The radar knocks when a wall comes within about two metres and breathes when it slips
+past a wall's edge into space that goes on (from about three metres, narrow and bending
+passages included; niches stay silent); stepping away from a wall you were following, even
+a diagonal one, stays silent, and the wall's real end breathes
+([details](reference/navigation-radar.md#dynamic-openings-2026-10-09)).
 Entering an area of another era names the era after the area
 ([eras](reference/zone-reading.md)). An opening breath that ends in a quick double pip leads toward an unexplored area. The sounds are embedded in the plugin; no separate audio installation
 is required.

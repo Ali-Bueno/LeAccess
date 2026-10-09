@@ -75,9 +75,19 @@ namespace UnityEngine
         }
         public static Vector3 operator +(Vector3 a, Vector3 b) => new(a.x + b.x, a.y + b.y, a.z + b.z);
         public static Vector3 operator *(Vector3 a, float b) => new(a.x * b, a.y * b, a.z * b);
+        public static Vector3 operator -(Vector3 a, Vector3 b) => new(a.x - b.x, a.y - b.y, a.z - b.z);
     }
 
-    internal readonly record struct Quaternion;
+    internal readonly record struct Quaternion(float Yaw)
+    {
+        public static Quaternion Euler(float x, float y, float z) => new(y);
+        // Unity's rotation about +Y: forward (0,0,1) turns toward +X.
+        public static Vector3 operator *(Quaternion q, Vector3 v)
+        {
+            float radians = q.Yaw * MathF.PI / 180f, cos = MathF.Cos(radians), sin = MathF.Sin(radians);
+            return new Vector3(v.x * cos + v.z * sin, v.y, -v.x * sin + v.z * cos);
+        }
+    }
     internal static class Mathf
     {
         public const float Epsilon = float.Epsilon;
@@ -108,6 +118,8 @@ namespace UnityEngine.AI
         public static int Rays;
         public static NavMeshBuildSettings GetSettingsByID(int type) => Settings;
         public static float Depth = 20;
+        // Optional geometry: the free depth for a ray from a point in a direction.
+        public static Func<Vector3, Vector3, float> DepthFor;
         public static bool OriginAvailable = true;
         public static bool ThrowOnQuery;
         public static int Queries;
@@ -132,8 +144,9 @@ namespace UnityEngine.AI
             var direction = new Vector3(target.x - position.x, 0, target.z - position.z);
             float length = MathF.Sqrt(direction.sqrMagnitude);
             direction.Normalize();
-            hit = new NavMeshHit { position = position + direction * Depth };
-            return Depth < length;
+            float depth = DepthFor?.Invoke(position, direction) ?? Depth;
+            hit = new NavMeshHit { position = position + direction * depth };
+            return depth < length;
         }
     }
 }

@@ -14,6 +14,7 @@ internal static class LifecycleTests
         PrimitiveFilterArgumentsPreserved();
         BodySizeSetsWarningReach();
         BodySizeJitterPreservesSettings();
+        ShortGapsNeedContinuation();
         BodySizeJitterStillAllowsCues();
         DiagnosticHeartbeatIsBounded();
         SampledOriginAnchorsReadings();
@@ -135,6 +136,28 @@ internal static class LifecycleTests
             "Filter changes are read from the current agent rather than a stale boxed filter");
     }
 
+    // A short gap (open 2, passage 4 for a 0.6 body) is a passage only if the space goes on near its far end.
+    private static void ShortGapsNeedContinuation()
+    {
+        ResetHost();
+        PlayerFinder.Player.Agent.radius = 0.3f;
+        var probe = new RadarWorldProbe();
+        bool FromOrigin(Vector3 from) => from.x == 0 && from.z == 0;
+        NavMesh.DepthFor = (from, direction) => FromOrigin(from) ? 3f : 0.5f;
+        NavMesh.Rays = 0;
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out var niche) &&
+            niche.Readings.All(reading => reading.Available && !reading.Continues) && NavMesh.Rays == 4 * 5,
+            "A short gap that closes around its far end is a niche: four branches tried per direction");
+        NavMesh.DepthFor = (from, direction) => FromOrigin(from) ? 3f : direction.x < -0.5f || direction.z < -0.5f ? 0.5f : 10f;
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out var passage) &&
+            passage.Readings.All(reading => reading.Continues), "A short gap whose space goes on along a branch is a passage");
+        NavMesh.DepthFor = (from, direction) => FromOrigin(from) ? 5f : 0.5f;
+        NavMesh.Rays = 0;
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out var deep) &&
+            deep.Readings.All(reading => reading.Continues) && NavMesh.Rays == 4, "A passage-deep gap needs no continuation rays");
+        NavMesh.DepthFor = null;
+    }
+
     private static void ResetHost()
     {
         ReactiveRadar.Cleanup();
@@ -153,6 +176,7 @@ internal static class LifecycleTests
         NavMesh.Queries = 0;
         NavMesh.Filters.Clear();
         NavMesh.TargetSample = null;
+        NavMesh.DepthFor = null;
         NavMesh.Settings = new NavMeshBuildSettings { agentRadius = float.NaN, agentClimb = float.NaN };
         LE.UI.LoadingScreen.IsVisible = false;
         RadarAudioOutput.Played = 0;

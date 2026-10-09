@@ -24,22 +24,20 @@ internal static class EngineTests
     private static void ScaleSettings()
     {
         var original = RadarSettings.FromBodyWidth(3);
-        Near(original.OpenDepth, 20, "An opening is a passage as deep as D2's probe reach.");
-        Near(original.CloseDepth, 7, "The knock keeps D2's closing distance.");
-        Near(original.ReachDepth, 40, "The probe looks one passage beyond the threshold.");
+        Near(original.OpenDepth, 10, "A short opening keeps D2's open depth.");
+        Near(original.CloseDepth, 7, "Closing leaves one body-width of hysteresis.");
+        Near(original.PassageDepth, 20, "A passage-deep opening needs no continuation check (D2 reach).");
+        Near(original.ReachDepth, 40, "The probe looks twice the passage depth.");
+        Near(original.EdgeJump, 3, "An edge is a body width of depth within one poll.");
         Near(original.BoundaryRange, 20, "The wall neighbourhood keeps D2's reach.");
         Near(original.ConfirmDistance, 1, "Confirmation scales with body width.");
         var scaled = RadarSettings.FromBodyWidth(0.9f);
-        Near(scaled.OpenDepth, 6, "A Last Epoch body (0.9) needs six metres for an opening.");
+        Near(scaled.OpenDepth, 3, "A Last Epoch body (0.9) opens from three metres when the space goes on.");
         Near(scaled.CloseDepth, 2.1f, "The Last Epoch knock stays at 2.1.");
+        Near(scaled.PassageDepth, 6, "Six metres open by themselves.");
         Near(scaled.ReachDepth, 12, "The Last Epoch probe reaches twelve metres.");
-        var legacy = RadarSettings.FromBodyWidth(3, RadarRun.LegacyOpenDepthInBodyWidths);
-        Near(legacy.OpenDepth, 10, "The former open depth is still configurable.");
-        Near(legacy.CloseDepth, 7, "A short open depth keeps one body width of hysteresis.");
-        var shortest = RadarSettings.FromBodyWidth(3, 2);
-        Check(shortest.CloseDepth >= 3 && shortest.CloseDepth < shortest.OpenDepth, "The shortest open depth keeps a valid band.");
         var tuned = RadarSettings.FromBodyWidth(3, 8);
-        Check(tuned.ReachDepth >= tuned.OpenDepth + 3, "Reach exceeds configurable open depth.");
+        Check(tuned.ReachDepth >= tuned.OpenDepth + 3 && tuned.PassageDepth >= tuned.OpenDepth, "Reach exceeds configurable open depth.");
         try { RadarSettings.FromBodyWidth(float.NaN); Check(false, "Invalid width must be rejected."); }
         catch (ArgumentOutOfRangeException) { Check(true, "Invalid width is rejected."); }
     }
@@ -90,11 +88,21 @@ internal static class EngineTests
             Silent(run.Step(depth), "A committed wall stays blocked inside the hysteresis band.");
         Check(run.Engine.States[0] == RadarState.Blocked, "Jitter never clears the committed obstacle.");
         Silent(run.Step(10), "The open threshold starts a candidate.");
-        Check(run.Step(10, Vector2.UnitY)[0] == RadarState.Open, "Traversable depth confirms open.");
+        Silent(run.Step(10, Vector2.UnitY), "A wall that only recedes, with no edge passed, opens silently.");
+        Check(run.Engine.States[0] == RadarState.Open && run.Engine.SuppressedRetreats == 1, "Gradual clearance still commits open.");
         Silent(run.Step(8), "Open remains open inside the hysteresis band.");
         Check(run.Engine.States[0] == RadarState.Open, "Mid-band depth preserves open.");
         Silent(run.Step(7), "The closing threshold starts a wall candidate.");
         Check(run.Step(7, Vector2.UnitY * 2)[0] == RadarState.Blocked, "Closing threshold confirms a wall.");
+        var edge = new RadarRun(5);
+        Silent(edge.Step(12), "Slipping past a wall's edge starts an opening candidate.");
+        Check(edge.Step(12, Vector2.UnitY)[0] == RadarState.Open, "An opening past an edge sounds.");
+        var niche = new RadarRun(5);
+        Silent(niche.Step(12, continues: false), "A niche that closes around its far end stays a wall.");
+        Silent(niche.Step(12, Vector2.UnitY, continues: false), "A niche never confirms open.");
+        Check(niche.Engine.States[0] == RadarState.Blocked, "A niche keeps the wall.");
+        Silent(niche.Step(21, Vector2.UnitY * 2, continues: false), "A passage-deep gap needs no continuation; it starts a candidate.");
+        Check(niche.Step(21, Vector2.UnitY * 3, continues: false)[0] == RadarState.Open, "Passage depth opens by itself after an edge.");
         var midBand = new RadarRun(8);
         Check(midBand.Engine.States[0] == RadarState.Open, "Initial mid-band baseline is a verdict, not unknown.");
     }

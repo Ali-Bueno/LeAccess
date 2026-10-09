@@ -24,7 +24,7 @@ directory when LeAccess loads. The entries are:
 |---|---|---|---|
 | Reactive radar | Enabled | true | Enable obstacle/open-ground transition cues |
 | Reactive radar | Volume | 100 | Percentage of the original radar cue level |
-| Reactive radar | PassageDepthInBodyWidths | 6.6666667 | Straight walkable depth needed to call a direction open (a passage); replaces `OpenDepthInBodyWidths` (2026-10-08) |
+| Reactive radar | OpenDepthInBodyWidths | 3.3333333 | Shortest walkable depth that can sound open when the space goes on beyond it (2026-10-09: see "Dynamic openings") |
 | Reactive radar | AudioBufferMilliseconds | 100 | Output buffering; 50–300 ms, applies on next game launch |
 | Navigation audio | ContinuousWallSonar | false | Also enable the previous continuous wall tones |
 | World object sounds | Enabled | true | Category cue for the current or nearest available world object |
@@ -394,6 +394,8 @@ unchanged breath, walls unmarked). Not heard in game: check knock timing near NP
 
 ## Passages and wall following (2026-10-08)
 
+Superseded on 2026-10-09 by "Dynamic openings" below; kept as the record of the evidence.
+
 User report: stepping a little away from a wall made the radar say "open" again, so the user walked back to the
 same spot looking for an exit that was not there. Today's log: of about 3,340 cues that turned a direction from
 Blocked to Open, 3,031 came within 20 log lines (one or two seconds) of the Blocked cue in that direction; 243
@@ -425,3 +427,23 @@ followed then left, a doorway after a long wall, a wall's real end, invalid fram
 10/3-width depth (open 10, close 7, reach 20) through `RadarRun.LegacyOpenDepthInBodyWidths`. Listening pending:
 walking along and away from walls (no breath), side doorways and corridor ends (breath), the wall-end breath, and how
 much rarer "open" became; compare `retreats=` with the cues heard.
+
+## Dynamic openings (2026-10-09)
+
+The fixed 6 m passage above (same night) was too strict for very narrow or quickly bending passages, at the user's
+report. It is replaced by two dynamic tests; the 6 m depth (D2 reach) remains only as the depth that opens by itself.
+- **Edge rule (engine).** An opening counts only when the probe slipped past a wall's edge: its tip (position along
+  the axis plus depth) jumps away by at least one body width (`RadarSettings.EdgeJump`) between two 50 ms polls while
+  the direction is Blocked; a jump back toward the player (an edge closing) cancels it. Backing away and sliding
+  along a diagonal wall move the tip gradually, so they commit Open silently (`retreats=`). After such a silent
+  retreat the same wall is followed for D2's reach; an edge jump held for two polls (the wall really ended) sounds open.
+  This replaces the projection memory and its margin.
+- **Continuation (probe).** A depth from the D2 open depth (10/3 widths, 3 m) up to the passage depth needs the space
+  to go on: from one body width short of the far wall, four branches at ±45° and ±90° are cast for one open depth; any
+  clear branch means a passage (also narrow, bending or diagonal ones), none means a niche. Passage-deep or unblocked
+  probes skip it. `RadarReading.Continues` carries the result.
+- `OpenDepthInBodyWidths` is the setting again (D2 default); the probe reaches twice the passage depth (12 m).
+
+Tests: Navigation 834 checks (edge vs. gradual, niche vs. passage, passage depth without continuation, the probe's
+branch rays, plus the diagonal, retreat, doorway and wall-end cases above). Listening pending: narrow side passages
+and bends should breathe, niches and receding walls should not; report doorways that stay silent.

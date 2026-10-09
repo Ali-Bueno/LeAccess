@@ -52,9 +52,10 @@ se dicen al subir de nivel y al tener un punto nuevo.
 Oro: manten Create y pulsa Triangulo (teclado: Ctrl+G). Tambien se dice al abrir
 el inventario o un vendedor y despues de comprar o vender, y al recoger oro se
 dice la cantidad, por ejemplo "50 de oro".
-Radar de paredes: un golpe cuando una pared queda a unos 2 metros y un soplo solo
-cuando hay paso de verdad (unos 6 metros libres); al alejarte de una pared que
-seguias, aunque sea en diagonal, no suena, y cuando la pared termina si.
+Radar de paredes: un golpe cuando una pared queda a unos 2 metros y un soplo
+cuando pasas el borde de una pared y detras el espacio sigue (desde unos 3 metros,
+tambien pasajes estrechos o que tuercen; los nichos no suenan). Al alejarte de una
+pared que seguias, aunque sea en diagonal, no suena, y cuando la pared termina si.
 Al entrar en una zona de otra era se dice la era despues del nombre de la zona.
 Escaner: manten Create y mueve el stick derecho; arriba y abajo cambian de
 categoria, izquierda y derecha recorren sus elementos. El stick derecho solo es

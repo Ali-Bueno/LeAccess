@@ -12,11 +12,14 @@ public readonly struct RadarReading
 {
     public float Depth { get; }
     public bool Available { get; }
+    /// <summary>False when the space a short opening leads to closes around its far end: a niche, not a passage.</summary>
+    public bool Continues { get; }
 
-    public RadarReading(float depth, bool available)
+    public RadarReading(float depth, bool available, bool continues = true)
     {
         Depth = depth;
         Available = available;
+        Continues = continues;
     }
 }
 
@@ -32,14 +35,18 @@ public sealed class RadarSettings
     private const float SourceBodyWidth = 3f;
     private const float SourceOpenDepth = 10f;
     private const float SourceReachDepth = 20f;
-    // An opening is a passage as deep as D2's probe reach; a nearer wall is not an exit (reference/navigation-radar.md).
-    public const float DefaultOpenDepthInBodyWidths = SourceReachDepth / SourceBodyWidth;
-    // The probe looks as far again, so a wall's end can be told from the same wall seen farther away.
-    private const float ProbeDepthInOpenDepths = 2f;
+    public const float DefaultOpenDepthInBodyWidths = SourceOpenDepth / SourceBodyWidth;
+    // The probe looks twice D2's reach, so a far wall still counts as the space going on.
+    private const float ProbeDepthInPassageDepths = 2f;
 
+    /// <summary>Shortest walkable depth that can be an opening, when the space goes on beyond it.</summary>
     public float OpenDepth { get; init; }
     public float CloseDepth { get; init; }
+    /// <summary>A depth that is an opening by itself, without the continuation check.</summary>
+    public float PassageDepth { get; init; }
     public float ReachDepth { get; init; }
+    /// <summary>A depth step within one poll that means the probe slipped past a wall's edge.</summary>
+    public float EdgeJump { get; init; }
     public float ConfirmDistance { get; init; }
     public float BoundaryRange { get; init; }
     public float TeleportDistance { get; init; }
@@ -54,15 +61,16 @@ public sealed class RadarSettings
 
         // Ratios port D2's three-subtile human footprint; they do not infer LE world units.
         float open = bodyWidth * openDepthInBodyWidths;
-        // The knock keeps D2's closing distance, one body width inside its open depth, whatever the passage depth.
-        float close = Math.Max(bodyWidth, Math.Min(bodyWidth * (SourceOpenDepth - SourceBodyWidth) / SourceBodyWidth,
-            open - bodyWidth));
         float neighbourhood = bodyWidth * SourceReachDepth / SourceBodyWidth;
+        float passage = Math.Max(open, neighbourhood);
         return new RadarSettings
         {
             OpenDepth = open,
-            CloseDepth = close,
-            ReachDepth = open * ProbeDepthInOpenDepths,
+            CloseDepth = Math.Max(bodyWidth, open - bodyWidth),
+            PassageDepth = passage,
+            ReachDepth = passage * ProbeDepthInPassageDepths,
+            // One body width: walking or sliding along a wall moves the probe tip far less in one 50 ms poll.
+            EdgeJump = bodyWidth,
             ConfirmDistance = bodyWidth / SourceBodyWidth,
             BoundaryRange = neighbourhood,
             TeleportDistance = neighbourhood

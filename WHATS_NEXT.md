@@ -1,3 +1,13 @@
+# Handoff — 2026-10-09: dynamic radar openings
+
+User: 6 m may be too much; there are very narrow passages; make it dynamic. Openings now need (1) an edge passed:
+the probe tip jumps a body width away within one poll (receding and diagonal walls are gradual and stay silent;
+a followed wall's real end still breathes) and (2) for depths from 3 m (D2 open depth) up to 6 m, the space to go
+on: four branch rays (±45°, ±90°) from one body width short of the far wall, any clear for 3 m. 6 m or unblocked
+opens by itself. Config key back to `OpenDepthInBodyWidths` ([details](reference/navigation-radar.md#dynamic-openings-2026-10-09)).
+Check: narrow side passages and bends breathe; niches, recesses and stepping away from walls do not; tell me which
+real openings stay silent.
+
 # Handoff — 2026-10-08 late night: radar passages, other levels, eras
 
 User: the radar says "open" again after stepping a little away from a wall, so they walked back looking for an exit;

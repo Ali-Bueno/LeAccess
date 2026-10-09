@@ -45,9 +45,8 @@ public static class ReactiveRadar
             "Announce changes between obstacles and open ground with directional sounds.");
         _volume = config.Bind(ConfigSection, "Volume", 100,
             new ConfigDescription("Percent of the Diablo 2 radar cue volume.", new AcceptableValueRange<int>(0, 100)));
-        // A new key: configs saved with the former 3.3-width default would otherwise keep false openings.
-        _openDepth = config.Bind(ConfigSection, "PassageDepthInBodyWidths", RadarSettings.DefaultOpenDepthInBodyWidths,
-            new ConfigDescription("How far a direction must stay walkable to sound open (a passage), in player body widths; the wall knock distance does not change.",
+        _openDepth = config.Bind(ConfigSection, "OpenDepthInBodyWidths", RadarSettings.DefaultOpenDepthInBodyWidths,
+            new ConfigDescription("Shortest walkable depth, in player body widths, that can sound open when the space goes on beyond it.",
                 new AcceptableValueRange<float>(MinimumOpenDepthInBodyWidths, MaximumOpenDepthInBodyWidths)));
         _audioBuffer = config.Bind(ConfigSection, "AudioBufferMilliseconds", DefaultAudioBufferMilliseconds,
             new ConfigDescription("Audio buffer duration. Larger values give playback more tolerance for scheduling delays. Restart the game after changing this.",

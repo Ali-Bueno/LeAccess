@@ -124,7 +124,9 @@ internal sealed class RadarWorldProbe
             Vector3 target = origin.position + direction * _settings.ReachDepth;
             bool blocked = NavMesh.RaycastFilter(origin.position, target, out var hit, agentTypeId, areaMask);
             float depth = blocked ? HorizontalDistance(origin.position, hit.position) : _settings.ReachDepth;
-            _readings[i] = new RadarReading(depth, float.IsFinite(depth) && depth >= 0f);
+            bool continues = !blocked || depth < _settings.OpenDepth || depth >= _settings.PassageDepth ||
+                Continues(hit.position, direction, agentTypeId, areaMask);
+            _readings[i] = new RadarReading(depth, float.IsFinite(depth) && depth >= 0f, continues);
         }
 
         snapshot = new RadarWorldSnapshot(
@@ -138,6 +140,21 @@ internal sealed class RadarWorldProbe
         _hasOrigin = true;
         UnavailableReason = null;
         return true;
+    }
+
+    // Diagonal and side branches; a passage that bends or narrows goes on along one of them.
+    private static readonly float[] ContinuationAngles = { -90f, -45f, 45f, 90f };
+
+    // From one body width short of the far wall, a passage goes on for an opening's depth some way; a niche closes in.
+    private bool Continues(Vector3 farWall, Vector3 direction, int agentTypeId, int areaMask)
+    {
+        Vector3 from = farWall - direction * _bodyWidth;
+        foreach (float angle in ContinuationAngles)
+        {
+            Vector3 branch = Quaternion.Euler(0f, angle, 0f) * direction;
+            if (!NavMesh.RaycastFilter(from, from + branch * _settings.OpenDepth, out _, agentTypeId, areaMask)) return true;
+        }
+        return false;
     }
 
     // Samples the target onto the player's NavMesh, then casts from the last captured origin to that point.
