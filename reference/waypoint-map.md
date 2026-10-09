@@ -118,7 +118,8 @@ session folder, not kept):
 
 What the mod does (`MapLocationList`, prefix `MapNavigatePatch`):
 
-- With `questPanel.questsHidden`, D-pad up/down walk the current era's `waypointsInMenu`.
+- With `questPanel.questsHidden`, D-pad up/down walk the current era's travel points in `waypointsInMenu`
+  (unlocked and not a `noWaypointInScene` marker; see the counts section below).
   Regions come in `regionsInMenu` order, each with its own `waypointsInRegion` order, and places
   in no region come last. Each step zooms in first if the map is in the region band, centres the
   map on the place and selects it, exactly like the recentre above. Cross then travels natively.
@@ -127,10 +128,9 @@ What the mod does (`MapLocationList`, prefix `MapNavigatePatch`):
   nothing focused, up/down start from either end. The list never wraps; at an end the current
   place repeats. Presses during an era crossfade or a zoom tween are swallowed.
 - With the quests shown, LB/RB and the D-pad behave natively.
-- `MapSelectionAnnouncer` speaks the era when the displayed `mapTitle` text changes, because
-  `OpenEra` sets it only after its crossfade. It adds the era's position among the `eras` tabs,
-  says "Misiones ocultas/visibles" when Square toggles them, and adds the hidden state to the
-  first reading after opening.
+- `MapSelectionAnnouncer` speaks the era as soon as `CurrentEra` changes, with its position among the
+  `eras` tabs (naming: see the counts section below). It says "Misiones ocultas/visibles" when Square
+  toggles the quests, and adds the hidden state to the first reading after opening.
 - `CheckSnap` logs `[World map] snapped selection X was replaced by 'Y'` when the game's next
   check did not keep the snapped place. That would happen if the `ScrollRect` cannot centre an
   icon near the map edge.
@@ -182,3 +182,29 @@ What the mod does:
 
 Tests: Waypoints 63, Quests 139, MenuReading 546; listening pending. Unverified: the prefab
 completion text and the online server path.
+
+### Counts, era and region names (2026-10-09, user report "2 de 15 with about 5 places"; eras silent)
+
+Prefab dump of `assets_5aa78568bec82d5c.bundle` (UnityPy):
+
+| Era | Waypoints | Regions |
+|---|---|---|
+| Ancient | 20 | none |
+| Divine | 63 | Maj'elka has 15: 8 waypoints plus 7 `WaypointInMenuNoWaypoint` markers |
+| Imperial | 37 | |
+| Ruined | 41 | six inactive twins |
+| End of Time | 15 | none; 12 `MonolithHub` islands share one scene |
+
+Across eras, 55 entries are markers with no waypoint. The list therefore keeps only unlocked
+travel points; locked places and markers stay reachable with the stick and are read by the
+selection poller. The current entry is tracked by identity, so the islands step one by one.
+
+`UIEra.mapTitle` holds plain English strings ("Eterra - Ruined Era"). `OpenEra` copies one into
+`mapTitle` with no localization; its completion lambda 0x178A040 only drives the dissolve. The poller
+now detects the era from `CurrentEra` change, not the displayed text, and speaks even in a frame
+where something else spoke. It names the era with `ZoneEra.Name` (`Era_Name_*`) and falls back
+to the tab string for the End of Time.
+
+Region names come from `Localization.GetText("Region_Name_" + regioniName)`, which is what
+`UIWaypointRegion.UpdateLabel` 0x181E980 sets. A label whose icon was never enabled still holds
+English prefab text. Map speech is logged as `[World map]` / `[World map list]`.

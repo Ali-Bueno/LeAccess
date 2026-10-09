@@ -55,7 +55,7 @@ internal sealed class UIWaypointController : Component
 }
 internal sealed class MapPanel : Component
 {
-    internal sealed class UIEra : NativeObject { internal SceneList.Era era; internal UIWaypointController waypointController; }
+    internal sealed class UIEra : NativeObject { internal SceneList.Era era; internal string mapTitle; internal UIWaypointController waypointController; }
     internal QuestPanel questPanel;
     internal WorldMapArrow worldMapArrow;
     internal WorldMapZoom mapZoom;
@@ -79,3 +79,18 @@ namespace Il2CppSystem.Collections.Generic
     }
 }
 namespace LE.UI.PanelSystem { internal sealed class WorldMapPanel : Component { internal MapPanel _mapPanel; } }
+namespace LeAccess.Accessibility.Zones
+{
+    internal static class ZoneEra
+    {
+        internal static Func<SceneList.Era, string> Names = _ => null;
+        internal static string Name(SceneList.Era era) => Names(era);
+    }
+}
+namespace LeAccess.Accessibility.Map
+{
+    internal static class MapRegionName
+    {
+        internal static string Get(UIWaypointRegion region) => region?.regionLabel?.text;
+    }
+}

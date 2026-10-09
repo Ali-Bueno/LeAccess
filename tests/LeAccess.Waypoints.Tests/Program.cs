@@ -118,8 +118,19 @@ Check(ScreenReader.Messages.Count == count + 1, "quest-driven change is not repe
 count = ScreenReader.Messages.Count;
 map.selectedLocationLabel.text = "Nueva"; ScreenReader.SpokeThisFrame = true; MapSelectionAnnouncer.Update(map, false);
 Check(ScreenReader.Messages.Count == count, "focus path speech in the same frame is not doubled");
-map.CurrentEra = SceneList.Era.Divine; map.mapTitle.text = "Era Divina"; Frame();
-Check(ScreenReader.Messages[^1].Text.StartsWith(map.mapTitle.text + "."), "era change speaks the new map title");
+map.eras.Add(new MapPanel.UIEra { era = SceneList.Era.Divine, mapTitle = "Era Divina", waypointController = controller });
+map.CurrentEra = SceneList.Era.Divine; Frame();
+Check(ScreenReader.Messages[^1].Text.StartsWith(J(map.eras[1].mapTitle, ModText.Format("list.position", 2, 2)) + "."),
+    "an era change speaks the tab's own title at once, before the crossfade updates the displayed one");
+count = ScreenReader.Messages.Count;
+map.CurrentEra = SceneList.Era.Ancient; ScreenReader.SpokeThisFrame = true; MapSelectionAnnouncer.Update(map, false);
+Check(ScreenReader.Messages.Count == count + 1, "an era change speaks even when something else spoke in the same frame");
+LeAccess.Accessibility.Zones.ZoneEra.Names = era => era == SceneList.Era.Divine ? "Era divina" : null;
+map.CurrentEra = SceneList.Era.Divine; Frame();
+Check(ScreenReader.Messages[^1].Text.StartsWith(J("Era divina", ModText.Format("list.position", 2, 2)) + "."),
+    "the game's localized era name replaces the tab's English title");
+LeAccess.Accessibility.Zones.ZoneEra.Names = _ => null;
+map.CurrentEra = SceneList.Era.Ancient; Frame();
 count = ScreenReader.Messages.Count;
 mapObject.Active = false; Frame(); mapObject.Active = true; Frame();
 Check(ScreenReader.Messages.Count == count + 1, "closing the map resets so reopening announces again");
@@ -185,7 +196,9 @@ UIWaypointRegion Area(string name, params UIWaypoint[] members)
 var aldea = Place(ancient, "Aldea", "A"); var bosque = Place(ancient, "Bosque", "B");
 var costa = Place(ancient, "Costa", "C"); var desierto = Place(ancient, "Desierto", "D");
 var templo = Place(divine, "Templo", "E");
-var north = Area("Norte", bosque, aldea);
+var cerrado = Place(ancient, "Cerrado", "L").Also(w => w.isActive = false);
+var marca = Place(ancient, "Marca", "M").Also(w => w.noWaypointInScene = true);
+var north = Area("Norte", bosque, cerrado, aldea, marca);
 var south = Area("Sur", costa);
 north.regionLabel.gameObject.Active = false;
 UIWaypoint.Selected = w =>
@@ -221,6 +234,8 @@ Check(Nav(Direction.LEFT) is null && Nav(Direction.RIGHT) is null, "LB and RB ke
 listMap.focusedSceneID = null;
 Check(Nav(Direction.DOWN) == J("Norte", "Bosque", Level(), Pos(1, 2)) && centered[^1] == bosque.gameObject &&
     listMap.focusedSceneID == bosque.sceneName, "Down with nothing focused centres and selects the first region's first place, naming the region even with its label hidden");
+Check(!MapLocationList.IsTravelPoint(cerrado) && !MapLocationList.IsTravelPoint(marca),
+    "locked waypoints and markers without a waypoint are neither listed nor counted");
 MapSelectionAnnouncer.Update(listMap, false);
 Check(ScreenReader.Messages.Count == 1, "the selection poller does not repeat the list's own speech");
 aldea.playerIsHere = true;
@@ -241,7 +256,11 @@ listMap.mapTransitionBlocked = false; listMap.mapZoom.manualZoomScrollBlocked = 
 Check(Nav(Direction.DOWN) == "" && centered.Count == snaps, "a zoom tween swallows the press without moving");
 listMap.mapZoom.manualZoomScrollBlocked = false;
 listMap.CurrentEra = SceneList.Era.Divine; listMap.focusedSceneID = null;
-Check(Nav(Direction.DOWN) == J(templo.locationLabel.text, Level()), "only the current era's places are listed");
+var island = Place(divine, "Isla del este", "Hub"); var otherIsland = Place(divine, "Isla del oeste", "Hub");
+Check(Nav(Direction.DOWN) == J(templo.locationLabel.text, Level(), Pos(1, 3)), "only the current era's places are listed");
+Check(Nav(Direction.DOWN) == J(island.locationLabel.text, Level(), Pos(2, 3)) &&
+    Nav(Direction.DOWN) == J(otherIsland.locationLabel.text, Level(), Pos(3, 3)),
+    "islands sharing one scene are stepped through one by one");
 listMap.CurrentEra = SceneList.Era.Ancient;
 Check(MapLocationList.Step(4, -1, true) == 0 && MapLocationList.Step(4, -1, false) == 3 &&
     MapLocationList.Step(4, 3, true) == -1 && MapLocationList.Step(4, 0, false) == -1, "steps start from either end and never wrap");
