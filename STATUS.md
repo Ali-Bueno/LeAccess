@@ -186,6 +186,7 @@ requested. No release or new ZIP has been requested.
 
 ## Validation and references
 
+- 2026-10-09 12:12: friend ZIP `LeAccess-Steam-1.5.1-prueba-20261009-121206.zip` (repo root, ignored by git), SHA-256 `2D28DD062CF401CD76F0D7010396E4FD748941EBE3E6E6AFEC7AFF60286CF7A7`, 264 files; replaces 20261009-071254 with the world-map list (whole map, eras, islands), the epoch mastery panel and the inventory refresh fix (Leeme updated). Its `LeAccess.dll` (`C2A54EF91E45BD96…`) is the installed copy. Package 242.
 - 2026-10-09 11:58: whole-map list installed (`LeAccess.dll` `C2A54EF91E45BD96…`, game closed); Waypoints 75, Localization 1198.
 - 2026-10-09 11:48: locked waypoints listed again and era name queued before the settled place; installed `LeAccess.dll` `5EAA9C7080481D88…` (game closed); Waypoints 69.
 - 2026-10-09 11:27: map list/era fixes and the inventory refresh fix installed (`LeAccess.dll` `E4F0653BC8E25806…`, game closed); DynamicObjectives 90, Inventory 378, ItemTooltipModel 111, MenuReading 546, QuestUpdates 117, Quests 139, ScreenReader 41, Waypoints 67, Localization 1188. No friend ZIP.
