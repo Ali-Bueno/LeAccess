@@ -21,6 +21,9 @@ public static class ScreenReader
 
     internal static bool SpokeThisFrame => _lastSpeechFrame == UnityEngine.Time.frameCount;
 
+    /// <summary>Accepted outputs so far, so a reader can tell whether anything else was said since its own speech.</summary>
+    internal static int SpeechCount { get; private set; }
+
     public static string DetectedScreenReader { get; private set; } = "None";
 
     /// <summary>
@@ -92,6 +95,7 @@ public static class ScreenReader
             if (Tolk.Output(text, interrupt))
             {
                 _lastSpeechFrame = UnityEngine.Time.frameCount;
+                SpeechCount++;
                 _lastFailure = null;
                 return true;
             }

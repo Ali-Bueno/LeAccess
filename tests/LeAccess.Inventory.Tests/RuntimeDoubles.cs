@@ -418,12 +418,13 @@ namespace LeAccess.Accessibility
         public static bool Available = true;
         public static bool OutputAccepted = true;
         public static bool SpokeThisFrame { get; set; }
+        public static int SpeechCount { get; private set; }
         public static bool IsAvailable() => Available;
         public static void Speak(string text, bool interrupt) => TrySpeak(text, interrupt);
         public static bool TrySpeak(string text, bool interrupt)
         {
             if (!Available || !OutputAccepted) return false;
-            Messages.Add(text); return true;
+            Messages.Add(text); SpeechCount++; return true;
         }
     }
 }

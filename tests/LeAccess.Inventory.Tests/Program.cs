@@ -422,4 +422,5 @@ NavigationTests.Run(Check);
 IdolTests.Run(Check);
 GoldNoticeTests.Run(Check);
 ComparisonModeTests.Run(Check);
+RefreshTests.Run(Check);
 Console.WriteLine($"Inventory tests passed: {checks} checks.");

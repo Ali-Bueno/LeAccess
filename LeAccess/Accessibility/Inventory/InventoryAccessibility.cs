@@ -48,7 +48,7 @@ internal static class InventoryAccessibility
         {
             ObserveGold();
             var container = GetFocusedContainer();
-            if (!IsAlive(container)) { Reset(); _container = IntPtr.Zero; GridLead.Clear(); return; }
+            if (!IsAlive(container)) { Release(); _container = IntPtr.Zero; GridLead.Clear(); return; }
             InventoryDropFocus.Guard(container);
             bool known = InventorySelectionReader.TryGetEntry(container, out var entry);
             string slotName = EquipmentSlotText.Read(container.identifier) ?? IdolGrid.SlotName(container) ??
@@ -150,20 +150,21 @@ internal static class InventoryAccessibility
             var currentContainer = GetFocusedContainer();
             if (!IsAlive(currentContainer) || currentContainer.Pointer != container.Pointer ||
                 selectedData is not null && !InventorySelectionReader.OwnsSelection(selectedData, container))
-            { Reset(); return; }
+            { Release(); return; }
             if (requestDetails && hasTooltip && slotName != null)
                 requestedText = ScreenContentTracker.Combine(new[] { slotName, requestedText });
             if (!requestDetails && AnnounceComparison(selectedData, key, text, spokenIdentity)) return;
-            bool announced = Announcements.Observe(key, text,
-                ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame, out string announcement, acknowledge: false, spokenIdentity);
+            bool announced = Announcements.Observe(key, text, ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame,
+                out string announcement, acknowledge: false, spokenIdentity, ScreenReader.SpeechCount);
+            if (Announcements.Resumed) Plugin.Log.LogInfo("[Inventory] same item after a refresh; not repeated");
             if (requestDetails && !string.IsNullOrWhiteSpace(requestedText))
             {
-                Announcements.Observe(key, text, false, out _, acknowledge: false, spokenIdentity);
+                Announcements.Observe(key, text, false, out _, acknowledge: false, spokenIdentity, ScreenReader.SpeechCount);
                 announcement = requestedText;
             }
             else if (!announced) return;
             if (!ScreenReader.TrySpeak(announcement, interrupt: true)) return;
-            Announcements.Acknowledge(key, text);
+            Announcements.Acknowledge(key, text, ScreenReader.SpeechCount);
             if (!requestDetails) LeadSpoken(key);
             _detailsKey = null;
             Plugin.Log.LogInfo($"[{(requestDetails ? "Inventory details" : "Inventory")}] {announcement}");
@@ -185,8 +186,8 @@ internal static class InventoryAccessibility
         if (!ScreenReader.TrySpeak(announcement, interrupt: true)) return true;
         Comparison.Acknowledge(1, comparison);
         LeadSpoken(key);
-        Announcements.Observe(key, brief, false, out _, acknowledge: false, identity);
-        Announcements.Acknowledge(key, brief);
+        Announcements.Observe(key, brief, false, out _, acknowledge: false, identity, ScreenReader.SpeechCount);
+        Announcements.Acknowledge(key, brief, ScreenReader.SpeechCount);
         Plugin.Log.LogInfo($"[Inventory comparison] {announcement}");
         return true;
     }
@@ -257,7 +258,14 @@ internal static class InventoryAccessibility
 
     internal static void Reset()
     {
-        Announcements.Reset(); Comparison.Reset(); _lastFailure = null;
+        Release();
+        Announcements.Reset();
+    }
+
+    // Losing the grid keeps the last spoken item: an online refresh briefly takes the focus away from the same item.
+    private static void Release()
+    {
+        Announcements.Interrupt(); Comparison.Reset(); _lastFailure = null;
         _contextKey = _context = _position = null; _nextContextRead = 0;
         _detailsKey = null;
     }

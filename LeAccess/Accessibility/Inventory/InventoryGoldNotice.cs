@@ -3,7 +3,7 @@ using LeAccess.I18n;
 namespace LeAccess.Accessibility.Inventory;
 
 /// <summary>"Oro: N" before the first item read after the inventory or a shop opens, and again when gold changes
-/// while a shop is open (a purchase or sale); kept until spoken, then dropped when the selection moves.</summary>
+/// while a shop is open (a purchase or sale); kept until spoken, then dropped once another selection is spoken.</summary>
 /// <remarks>See reference/vitals-api.md#gold-2026-10-05.</remarks>
 internal sealed class InventoryGoldNotice
 {

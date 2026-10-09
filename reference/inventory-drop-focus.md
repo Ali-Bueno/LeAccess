@@ -118,3 +118,46 @@ Also, a change of only "N de M" on the same item (a drop or pickup elsewhere) is
 (`InventoryAnnouncementState.Observe(..., identity)`); a changed name, slot, actions or price still speaks,
 and the deliberate repeat at a list end (`RepeatCurrent`) is unchanged. Tests: Inventory 322. Listening
 pending: drop/equip online, then R3 on another item must not be interrupted.
+
+## Refresh after an online sync (2026-10-09)
+
+User report (online, log of 2026-10-09 confirms `Offline Mode: False`, `isOnline: True`): after a drop or an equip the
+pad rumbles a few seconds later and the focused item is read again, cutting R3/L3 readings. The 10-08 id key did not help.
+
+Evidence (`BepInEx/LogOutput.log`): each drop (`No valid destination container found in opened panels`, logged by
+`PanelSystem.TryQuickMove` before the drop) is followed by the nearest item and, once, a byte-identical repeat before the
+next drop: lines 3125, 3130, 3136, 3142, 3147, 3150, 3154, 3159, 5570, 5574, 8002 (3130 and 3159 cut the details just
+started at 3129 and 3157); equip swaps repeat too (4708–4712). Drops less than 1.7 s apart never repeat (3103–3121), consistent with a deferred sync. Opening the
+inventory repeated "Oro: N. item" two or three times (1787–1790, 3643–3646): the lead survived, so the reader was reset
+without seeing another selection key, i.e. the grid itself was missing for those frames. Some repeats at "1 de 2" or
+"3 de 3" may be the deliberate list-end repeat; the log cannot tell them apart.
+
+Native path, build 25764382 (same RVAs as above; V = verified in disassembly, I = inferred):
+
+- V `PlayerActorSync.HandleMessageSyncItemContainerContents` 0x27DAF80 → `ItemContainersManager.receiveContainerContents`
+  0x1415870, online client only: `IItemContainer.Deserialize` (slot 36) → `ItemContainer.DeserializeFromBuffer` 0x13F0670
+  removes every entry, then adds `new ItemDataUnpacked(idBytes)` for each server item (new wrappers, same id bytes).
+- V Each removal runs `Container_ItemRemoved` 0x1423A20: `currentlySelectedItem = GetEntryAt(currentFocusSlot)`, null once
+  the focused entry is gone; `Container_ItemAdded` 0x1423570 never restores it.
+- V Then, with the controller active and an `ItemContainerUI` selected, `INavigable.OnSelected()` (slot 4):
+  `ItemContainerUI.OnSelected()` 0x1429230 starts `SelectAtTheEndOfFrame` for the backpack (navigable id 3); its
+  `Select()` 0x142B250 re-runs `InventoryPanelUI.OpenInventoryPanel` 0x179BC00 (tab re-selection, which may call
+  `NavigationManager.SelectNavigable`) and `CloseInventoryChildPanels`, then `SetFocusItem(GetEntryAt(currentFocusSlot))`.
+- I So for the rest of that frame the grid has no selection (or another navigable), which the mod read as an unspoken
+  empty slot or a lost grid; `InventoryAnnouncementState` reset its spoken text on any selection change, and the
+  container-null path called `Reset()`, so the same item was spoken again when the selection came back.
+- I The rumble: `OneSlotItemContainerWithCharacterRequirements.TryAddItem` 0x144BAF0 plays haptic 6 for a re-added equipped
+  item unless its context is 1, and `TooltipSystem.OnUpdateTick` plays one for the re-shown tooltip. Not pinned down.
+
+Fix: the announcement state keeps the last spoken selection across unspoken selections, and a lost grid only interrupts
+it (`InventoryAccessibility.Release`, `InventoryAnnouncementState.Interrupt`). When the same selection returns with the
+same text or identity and `ScreenReader.SpeechCount` shows nothing was said since the mod's last inventory speech, it is
+taken silently and logged once as `[Inventory] same item after a refresh; not repeated`. Anything said in between, a
+different item, a changed name, another spoken item, the post-drop move to the nearest item and `RepeatCurrent` still
+speak. `LeadingNotice` (gold, panel and idol-grid leads) now ends when another selection is spoken, not when one is merely
+observed, so an unspoken refresh frame no longer drops it. Tests: Inventory 378 (22 in `RefreshTests`).
+
+Unverified: whether the mod's update sees the empty-selection frame or a lost grid (both handled); id bytes identical
+across the sync (if not, the key changes and the item is still read, without the log line above); the rumble's source.
+Side effect: returning to the grid after it lost focus with nothing spoken meanwhile (for example an alt-tab) stays
+silent. Listening pending: drop and equip online, then R3 on the focused item must not be interrupted.
