@@ -1,6 +1,6 @@
 namespace UnityEngine.SceneManagement
 {
-    internal struct Scene { internal int handle; internal bool isLoaded; }
+    internal struct Scene { internal int handle; internal bool isLoaded; internal string name; internal bool IsValid() => handle != 0; }
     internal static class SceneManager
     {
         internal static Scene Active = new() { handle = 1, isLoaded = true };
@@ -159,7 +159,19 @@ internal sealed class HoverTagOnMouseOver : UnityEngine.Behaviour
     internal string hoverText, localizationKey;
     internal TransitionOrGateInteraction sceneInteraction, dungeonTransitionInteraction;
 }
-internal sealed class TransitionOrGateInteraction : UnityEngine.Behaviour { internal string sceneName; }
+internal class TransitionOrGateInteraction : UnityEngine.Behaviour { internal string sceneName; }
+internal sealed class UsePlayerSpawnInteraction : TransitionOrGateInteraction { internal string ToScene; }
+internal sealed class CaveLobbyExitInteraction : UnityEngine.Behaviour { }
+namespace LE.PCG
+{
+    internal sealed class Level : UnityEngine.Behaviour { internal UnityEngine.SceneManagement.Scene ParentScene; }
+    internal static class LevelUtility
+    {
+        internal static readonly Dictionary<int, Level> Levels = new();
+        internal static bool TryGetLevel(UnityEngine.SceneManagement.Scene scene, out Level level) =>
+            Levels.TryGetValue(scene.handle, out level);
+    }
+}
 namespace Networking.Multiplayer.Interactables.Portals
 {
     internal sealed class PortalVisualController : UnityEngine.Behaviour
@@ -187,6 +199,16 @@ namespace LeAccess.Accessibility.Utils
 
 internal sealed class Shrine : UnityEngine.Behaviour { }
 internal sealed class ShrineSync : UnityEngine.Behaviour { }
+internal sealed class ShrineVisualsCreator : UnityEngine.Behaviour { }
+internal sealed class ShrinesManager : UnityEngine.Behaviour
+{
+    internal static readonly Dictionary<string, ShrinesManager> Scenes = new();
+    internal readonly NativeList<UnityEngine.GameObject> Objects = new();
+    internal static bool TryGetForScene(string sceneName, out ShrinesManager manager) =>
+        Scenes.TryGetValue(sceneName ?? "", out manager);
+    internal NativeList<UnityEngine.GameObject> GetAllShrineObjects() => Objects;
+}
+namespace UnityEngine { internal static class Time { internal static double unscaledTimeAsDouble; } }
 internal sealed class TimeRiftInteraction : UnityEngine.Behaviour { }
 internal sealed class ActivateTimeRift : UnityEngine.Behaviour { }
 internal sealed class TimeBeastRift : UnityEngine.Behaviour { }

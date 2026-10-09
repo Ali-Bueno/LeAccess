@@ -9,7 +9,7 @@ void Check(bool result, string message)
 const int Rate = WorldLoopBank.SampleRate;
 bool Throws(Action action) { try { action(); return false; } catch (ArgumentOutOfRangeException) { return true; } }
 
-// Every supplied loop decodes whole, peak-normalized with D2R's level trims; LE one-shots fill the mix headroom.
+// Every supplied loop decodes whole, peak-normalized with D2R's level trims; one-shot clicks fill the mix headroom.
 foreach (var kind in new[] { NaturalCueKind.Gold, NaturalCueKind.Equipment, NaturalCueKind.Chest,
     NaturalCueKind.Stash, NaturalCueKind.Portal, NaturalCueKind.ZoneTransition, NaturalCueKind.Potion, NaturalCueKind.Tome,
     NaturalCueKind.MagicEquipment, NaturalCueKind.RareEquipment, NaturalCueKind.LegendaryEquipment, NaturalCueKind.Rune,
@@ -18,9 +18,12 @@ foreach (var kind in new[] { NaturalCueKind.Gold, NaturalCueKind.Equipment, Natu
     var clip = WorldLoopBank.Get(kind);
     Check(clip.Length > 0 && WorldLoopBank.Has(kind), $"{kind} loop loads");
     float peak = clip.Max(Math.Abs);
-    bool oneShot = kind is NaturalCueKind.Gold or NaturalCueKind.Potion or NaturalCueKind.Tome;
+    bool oneShot = kind is NaturalCueKind.Gold or NaturalCueKind.Potion or NaturalCueKind.Tome or
+        NaturalCueKind.Rune or NaturalCueKind.Gem or NaturalCueKind.Scroll;
     float expected = oneShot ? 1 / WorldLoopSelection.MixGainLimit
-        : 0.9f * MathF.Pow(10, (kind == NaturalCueKind.Chest ? 4 : kind == NaturalCueKind.Stash ? -4 : 0) / 20f);
+        : 0.9f * MathF.Pow(10, (kind == NaturalCueKind.Chest ? 4 : kind == NaturalCueKind.Stash ? -4 :
+            kind is NaturalCueKind.Equipment or NaturalCueKind.MagicEquipment or NaturalCueKind.RareEquipment or
+            NaturalCueKind.LegendaryEquipment ? -3 : 0) / 20f);
     Check(Math.Abs(peak - expected) < 1e-3, $"{kind} loop peaks at its trimmed level");
 }
 Check(WorldLoopBank.Get(NaturalCueKind.Portal).Length > 9 * Rate, "The portal loop is the whole recording, not a 300 ms excerpt");

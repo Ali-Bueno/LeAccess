@@ -39,6 +39,7 @@ internal static class WorldCueIdentityReader
             if (IsAlive(transition) && transition.gameObject.scene.handle == listener.gameObject.scene.handle &&
                 !string.IsNullOrWhiteSpace(transition.sceneName)) return NaturalCueKind.ZoneTransition;
         }
+        if (UntaggedTransitions.ReadDestination(listener) is not null) return NaturalCueKind.ZoneTransition;
 
         if (Available(listener.GetComponent<ChestSync>()) ||
             Available(listener.GetComponent<MonolithChestInteraction>()) ||

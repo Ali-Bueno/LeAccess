@@ -14,7 +14,10 @@ public static class RadarCueSynthesizer
     private const double BreathDuration = 0.180;
     private const double Attack = 0.003;
     private const double Release = 0.015;
-    private const double Level = 0.17;
+    private const double D2RLevel = 0.17;
+    // User request 2026-10-09: the radar was hard to hear under Last Epoch combat (spinning hammers), +3 dB.
+    private const double BoostDb = 3;
+    private static readonly double Level = D2RLevel * Math.Pow(10, BoostDb / 20);
     private const double WallFrequency = 260;
     private const double WallHarmonic = 1.5;
     private const double HarmonicLevel = 0.2;

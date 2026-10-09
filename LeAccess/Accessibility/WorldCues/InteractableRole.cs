@@ -9,11 +9,13 @@ internal enum InteractableRole { None, Shrine, TimeRift, Nemesis, Cache }
 // Interactables recognized by their game components; sound and fallback name follow the role.
 internal static class InteractableRoles
 {
-    // Shrines, time rifts, the Nemesis altar and caches, by the game components on the listener or its owner.
+    // Shrines, time rifts, the Nemesis altar and caches, by the game components on the listener or its owner;
+    // shrines also by the objects their manager placed.
     internal static InteractableRole Read(WorldObjectClickListener listener)
     {
         if (!Available(listener)) return InteractableRole.None;
-        if (Available(listener.GetComponentInParent<Shrine>()) || Available(listener.GetComponentInParent<ShrineSync>()))
+        if (Available(listener.GetComponentInParent<Shrine>()) || Available(listener.GetComponentInParent<ShrineSync>()) ||
+            Available(listener.GetComponentInParent<ShrineVisualsCreator>()) || ShrineObjects.Contains(listener))
             return InteractableRole.Shrine;
         if (Available(listener.GetComponentInParent<NemesisEncounterInteractableObject>())) return InteractableRole.Nemesis;
         if (Available(listener.GetComponentInParent<TimeRiftInteraction>()) ||

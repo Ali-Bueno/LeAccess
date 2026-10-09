@@ -146,8 +146,17 @@ door, lever and lore object beep from `LoopRange`.
 | Nemesis (`NemesisEncounterInteractableObject`) | `nemesis` | LE `Environmental` `sfx_ui_nemesis_corpse_loop` (22 s) |
 | Time rift, Monolith/Shattered Road portal (`TimeRiftInteraction`, `ActivateTimeRift`, `TimeBeastRift`, `MonolithPortal`, `ShatteredRoadPortalInteractable`) | `portal` | LE time-rift loop (unchanged) |
 | One-shot cache | `chest` | D2R `chest` |
+| Generated cave entrance/exits without a tag (`UsePlayerSpawnInteraction`, `CaveLobbyExitInteraction`) | `zone_transition` | exit loop; see [generated caves](exploration-mode.md#generated-caves-2026-10-09) |
 
-`InteractableRoles.Read` finds these components on the listener or its ancestors. Shrines and the Nemesis are
+`InteractableRoles.Read` finds these components on the listener or its ancestors. `Shrine` is the shrine's
+activated effect and `ShrineSync` its network object, so neither need sit above the clickable listener; shrines are
+also recognized by `ShrineVisualsCreator` above the listener and by the objects the scene's `ShrinesManager` placed
+(`GetAllShrineObjects`, listener inside or above one, looked up again every 5 s). `ShrineObjects` holds that list for
+sounds, landmarks and the scanner (before 2026-10-09 only the scanner had it).
+
+**Voices per kind (2026-10-09).** In the loot pass of `WorldLoopSelection`, the nearest object of each loot kind takes
+a voice before the rest fill by distance: in the 2026-10-09 log, 14-15 loop candidates competed for 8 voices and runes,
+glyphs and shards got one only once they were the nearest objects. Shrines and the Nemesis are
 landmarks (voices first, `LoopRange`). Names: `InteractableRoles.Name` takes the hover tag's text, resolved through
 `Localization.GetText` when it has a `localizationKey`, and only then the mod's `exploration.shrine`,
 `exploration.time_rift`, `exploration.nemesis`. The nearby-landmark announcement and the scanner use it, so key-only

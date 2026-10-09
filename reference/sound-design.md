@@ -37,6 +37,18 @@ mix instead: peak `1 / MixGainLimit` (+6.9 dB over 0.9), so even every voice
 peaking together stays within full scale. Gold and tomes may still sound
 quieter than equipment; check that by listening.
 
+The D2R rune, gem and scroll clicks (runes, glyphs, affix shards; 0.20-0.32 s,
+added 2026-10-08) were left at the 0.9 peak. User report 2026-10-09: "runas,
+fragmentos, glifos siguen sin sonidos"; the log showed their loops playing.
+Loudest 400 ms at equal peak, against the D2R equipment loop: rune -9.7 dB,
+scroll -11.3 dB, gem -14.7 dB (gold -11.1, tome -8.9, quest item -1.0). They now
+take the one-shot headroom too; the gem stays about 8 dB under equipment, so a
+louder glyph sample is the next step if it is still hard to hear.
+
+Same evening the user asked for equipment a little quieter and the radar a little louder (a spinning-hammer build
+masked the radar): all four equipment loops -3 dB (`EquipmentLevelDb`), radar cues +3 dB over D2R's level
+(`RadarCueSynthesizer.BoostDb`). Further steps of the same size if asked.
+
 `tools/import_audio.py` decodes the samples with vgmstream-cli (a development
 tool only; FFmpeg cannot decode FSB5 Vorbis) and records each bank's SHA-256 in
 `provenance.json`. The assets are embedded like the D2R recordings.

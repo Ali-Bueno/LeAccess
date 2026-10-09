@@ -72,7 +72,8 @@ internal static class LootAndRoleTests
 
         // Interactable identities.
         var listener = new WorldObjectClickListener();
-        Behaviour Own(Behaviour component) { component.gameObject = listener.gameObject; listener.gameObject.Components.Add(component); return component; }
+        Behaviour Own(Behaviour component, WorldObjectClickListener owner = null)
+        { owner ??= listener; component.gameObject = owner.gameObject; owner.gameObject.Components.Add(component); return component; }
         Check(InteractableRoles.Read(listener) == InteractableRole.None, "A plain interactable has no role");
         var shrine = Own(new Shrine());
         Check(WorldCueIdentityReader.ReadKind(listener) == NaturalCueKind.Shrine, "A shrine component selects the shrine loop");
@@ -80,6 +81,30 @@ internal static class LootAndRoleTests
         Check(WorldCueIdentityReader.ReadKind(listener) == null, "A disabled shrine has no identity");
         Own(new ShrineSync());
         Check(InteractableRoles.Read(listener) == InteractableRole.Shrine, "ShrineSync also identifies a shrine");
+        var visualShrine = new WorldObjectClickListener();
+        var shrineRoot = new ShrineVisualsCreator();
+        visualShrine.gameObject.Parent = shrineRoot.gameObject;
+        Check(WorldCueIdentityReader.ReadKind(visualShrine) == NaturalCueKind.Shrine, "The shrine's visuals creator identifies its listener");
+
+        // Shrines placed by the scene's manager, whatever component the listener carries.
+        ShrineObjects.Reset();
+        UnityEngine.SceneManagement.SceneManager.Names[1] = "Z10";
+        var manager = new ShrinesManager();
+        ShrinesManager.Scenes["Z10"] = manager;
+        var placed = new UnityEngine.GameObject();
+        var inside = new WorldObjectClickListener(); inside.gameObject.Parent = placed;
+        var above = new WorldObjectClickListener(); placed.Parent = above.gameObject;
+        var apart = new WorldObjectClickListener();
+        Time.unscaledTimeAsDouble = 100;
+        Check(InteractableRoles.Read(inside) == InteractableRole.None, "An empty manager names no shrine");
+        manager.Objects.Add(placed);
+        Check(InteractableRoles.Read(inside) == InteractableRole.None, "Placed shrines are looked up again only at the refresh pace");
+        Time.unscaledTimeAsDouble = 106;
+        Check(WorldCueIdentityReader.ReadKind(inside) == NaturalCueKind.Shrine && InteractableRoles.Read(above) == InteractableRole.Shrine &&
+            InteractableRoles.Read(apart) == InteractableRole.None, "A listener inside or above a placed shrine is a shrine; others are not");
+        manager.Objects.WasCollected = true; Time.unscaledTimeAsDouble = 112;
+        Check(InteractableRoles.Read(inside) == InteractableRole.None, "A collected shrine list is never read");
+        ShrinesManager.Scenes.Clear(); ShrineObjects.Reset();
         var foreign = new WorldObjectClickListener();
         foreach (var (component, expected) in new (Behaviour, NaturalCueKind)[]
         {
@@ -99,6 +124,34 @@ internal static class LootAndRoleTests
         Check(WorldCueIdentityReader.ReadKind(foreign) == null, "Unrelated listeners stay unclassified");
         var note = new WorldObjectClickListener { Readable = true };
         Check(WorldCueIdentityReader.ReadKind(note) == NaturalCueKind.Tome, "A note, lore record or painting loops the tome");
+
+        // Generated caves: entrance and exits without a hover tag sound like the exits they are.
+        var caveEntrance = new WorldObjectClickListener();
+        var spawn = (UsePlayerSpawnInteraction)Own(new UsePlayerSpawnInteraction { ToScene = "PCG_Cave" }, caveEntrance);
+        Check(UntaggedTransitions.ReadDestination(caveEntrance) == "PCG_Cave" &&
+            WorldCueIdentityReader.ReadKind(caveEntrance) == NaturalCueKind.ZoneTransition, "A cave entrance is an exit to the cave");
+        spawn.ToScene = " "; spawn.sceneName = "PCG_Cave";
+        Check(UntaggedTransitions.ReadDestination(caveEntrance) == "PCG_Cave", "The base transition scene is the fallback");
+        spawn.sceneName = null;
+        Check(UntaggedTransitions.ReadDestination(caveEntrance) == null && WorldCueIdentityReader.ReadKind(caveEntrance) == null,
+            "A transition without a destination is not an exit");
+        spawn.ToScene = "PCG_Cave"; spawn.isActiveAndEnabled = false;
+        Check(UntaggedTransitions.ReadDestination(caveEntrance) == null, "A disabled transition leads nowhere");
+        var lobby = new WorldObjectClickListener();
+        lobby.gameObject.scene = new UnityEngine.SceneManagement.Scene(7);
+        var lobbyExit = Own(new CaveLobbyExitInteraction(), lobby);
+        Check(UntaggedTransitions.ReadDestination(lobby) == null, "A lobby exit outside a generated level leads nowhere");
+        UnityEngine.SceneManagement.SceneManager.Names[3] = "B1S30";
+        LE.PCG.LevelUtility.Levels[7] = new LE.PCG.Level { ParentScene = new UnityEngine.SceneManagement.Scene(3) };
+        Check(UntaggedTransitions.ReadDestination(lobby) == "B1S30" &&
+            WorldCueIdentityReader.ReadKind(lobby) == NaturalCueKind.ZoneTransition, "The lobby exit leads back to the cave's parent scene");
+        lobbyExit.isActiveAndEnabled = false;
+        Check(UntaggedTransitions.ReadDestination(lobby) == null, "A disabled lobby exit leads nowhere");
+        LE.PCG.LevelUtility.Levels.Clear();
+        SceneList.Scenes["PCG_Cave"] = new SceneDetails { LocalizedName = " Cueva " };
+        Check(UntaggedTransitions.SceneName("PCG_Cave") == "Cueva" && UntaggedTransitions.SceneName("B1S30") == null &&
+            UntaggedTransitions.SceneName(null) == null, "Destinations take the game's localized scene name");
+        SceneList.Scenes.Clear();
 
         // Names: the game's own text first, the mod catalog only when the game gives none.
         var tag = new HoverTagOnMouseOver { hoverTargetType = HoverTagOnMouseOver.HoverTargetType.OTHER };

@@ -23,7 +23,7 @@ directory when LeAccess loads. The entries are:
 | Section | Key | Default | Meaning |
 |---|---|---|---|
 | Reactive radar | Enabled | true | Enable obstacle/open-ground transition cues |
-| Reactive radar | Volume | 100 | Percentage of the original radar cue level |
+| Reactive radar | Volume | 100 | Percentage of the radar cue level (D2R's 0.17 peak + 3 dB since 2026-10-09: hard to hear under spinning-hammer combat) |
 | Reactive radar | OpenDepthInBodyWidths | 3.3333333 | Shortest walkable depth that can sound open when the space goes on beyond it (2026-10-09: see "Dynamic openings") |
 | Reactive radar | AudioBufferMilliseconds | 100 | Output buffering; 50–300 ms, applies on next game launch |
 | Navigation audio | ContinuousWallSonar | false | Also enable the previous continuous wall tones |

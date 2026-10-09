@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Il2CppInterop.Runtime;
 using LeAccess.Accessibility.MapSections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 using NVector3 = System.Numerics.Vector3;
 
@@ -13,7 +14,7 @@ namespace LeAccess.Accessibility.Exploration;
 internal static class MinimapRoomReader
 {
     // Scenes without a manager (procedural maps, some campaign zones) are searched again at this pace in
-    // case it loads late; the search visits every loaded object, so it never runs per frame.
+    // case it loads late; the search walks the whole scene, so it never runs per frame.
     private const double SearchSeconds = 5;
     private static readonly List<(MinimapVolume Volume, NVector3 Centre, float Radius)> Volumes = new();
     private static MinimapVolumesManager _manager;
@@ -38,9 +39,8 @@ internal static class MinimapRoomReader
             Volumes.Clear();
             if (now < _nextSearch) return false;
             _nextSearch = now + SearchSeconds;
-            // The non-generic overload avoids depending on a generic instantiation in the game binary.
-            var found = UnityEngine.Object.FindAnyObjectByType(Il2CppType.Of<MinimapVolumesManager>())?.TryCast<MinimapVolumesManager>();
-            if (!IsAlive(found) || !found.gameObject.scene.isLoaded || !Capture(found)) return false;
+            var found = FindInScene(world.SceneHandle);
+            if (!IsAlive(found) || !Capture(found)) return false;
             _manager = found;
         }
         var statuses = _manager.Statuses;
@@ -52,6 +52,24 @@ internal static class MinimapRoomReader
             rooms.Add(new MinimapRoom(index, centre, radius, revealed));
         }
         return rooms.Count > 0;
+    }
+
+    // Only the active scene's manager: a generated cave keeps its parent scene loaded, rooms and all.
+    private static MinimapVolumesManager FindInScene(int sceneHandle)
+    {
+        var scene = SceneManager.GetActiveScene();
+        if (!scene.IsValid() || !scene.isLoaded || (int)scene.handle != sceneHandle) return null;
+        var roots = scene.GetRootGameObjects();
+        if (roots is null || roots.WasCollected) return null;
+        foreach (var root in roots)
+        {
+            // The non-generic overload avoids depending on a generic instantiation in the game binary.
+            var found = IsAlive(root)
+                ? root.GetComponentInChildren(Il2CppType.Of<MinimapVolumesManager>(), false)?.TryCast<MinimapVolumesManager>()
+                : null;
+            if (IsAlive(found)) return found;
+        }
+        return null;
     }
 
     // Keeps the manager's order, which the game's statuses follow; an unreadable volume stays as a gap.

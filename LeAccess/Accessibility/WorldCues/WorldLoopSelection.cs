@@ -22,7 +22,11 @@ internal static class WorldLoopSelection
     internal const float RearPitch = 0.94f;
     internal const float RearBlendMetres = 1f;
 
+    private static readonly HashSet<NaturalCueKind> Kinds = new();
+
     internal static bool IsLandmark(NaturalCueKind kind) => WorldCueReach.IsLandmark(kind);
+
+    private static bool IsLoot(NaturalCueKind kind) => !IsLandmark(kind) && kind != NaturalCueKind.Chest;
 
     /// <summary>Fills voices from candidates (sorted in place, nearest first) for one audible radius.</summary>
     internal static void Select(List<LoopCandidate> candidates, float range, float volume, List<LoopVoice> voices)
@@ -33,7 +37,10 @@ internal static class WorldLoopSelection
         float total = 0;
         Emit(candidates, c => IsLandmark(c.Kind), MaxVoices, range, voices, ref total);
         Emit(candidates, c => c.Kind == NaturalCueKind.Chest, MaxChestVoices, range, voices, ref total);
-        Emit(candidates, c => !IsLandmark(c.Kind) && c.Kind != NaturalCueKind.Chest, MaxVoices, range, voices, ref total);
+        // The nearest of each loot kind first, so a pile of gold or gear cannot hide a rune, glyph or shard.
+        Kinds.Clear();
+        Emit(candidates, c => IsLoot(c.Kind) && Kinds.Add(c.Kind), MaxVoices, range, voices, ref total);
+        Emit(candidates, c => IsLoot(c.Kind) && !voices.Exists(v => v.Id == c.Id), MaxVoices, range, voices, ref total);
         float scale = Math.Min(1, volume) * (total > MixGainLimit ? MixGainLimit / total : 1);
         for (int index = 0; index < voices.Count; index++)
             voices[index] = voices[index] with { Left = voices[index].Left * scale, Right = voices[index].Right * scale };

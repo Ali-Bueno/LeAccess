@@ -8,6 +8,7 @@ using LeAccess.Accessibility.MapSections;
 using LeAccess.Accessibility.Navigation.Guidance;
 using LeAccess.Accessibility.Players;
 using LeAccess.Accessibility.Utils;
+using LeAccess.Accessibility.WorldCues;
 using LeAccess.I18n;
 using UnityEngine.SceneManagement;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
@@ -73,8 +74,6 @@ internal static class ExplorationProbe
 
         int places = 0, unseen = 0;
         Unseen.Clear();
-        try { ExplorationClassifier.Refresh(scene, now); }
-        catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
         var listeners = WorldObjectClickListener.allListener;
         if (listeners is not null && !listeners.WasCollected)
         {
@@ -83,7 +82,9 @@ internal static class ExplorationProbe
                 try
                 {
                     var listener = listeners[index];
-                    if (!ExplorationClassifier.TryDescribe(listener, out var place)) continue;
+                    // A generated cave keeps its parent scene's objects loaded, and the reverse.
+                    if (!IsAlive(listener) || (int)listener.gameObject.scene.handle != world.SceneHandle ||
+                        !ExplorationClassifier.TryDescribe(listener, out var place)) continue;
                     var position = GuidanceRouteProbe.Convert(listener.transform.position);
                     if (listener.controllerTargetingUsePlayerY) position.Y = player.Y;
                     string memory = ExplorationSeenMemory.Key(place.Category, place.Name, position);
@@ -294,7 +295,7 @@ internal static class ExplorationProbe
         Tracker.Clear();
         Arrival.Clear();
         MinimapRoomReader.Reset();
-        ExplorationClassifier.Reset();
+        ShrineObjects.Reset();
         Targets.Clear();
         Contacts.Clear();
         Others.Clear();

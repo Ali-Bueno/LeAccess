@@ -12,8 +12,10 @@ internal static class WorldLoopBank
     private const float PeakLevel = 0.9f;
     // D2RAccess user listening, 2026-09-26: the chest sat about 4 LU under the loot loops, the stash too loud.
     private const float ChestLevelDb = 4, StashLevelDb = -4;
-    // Last Epoch one-shots sit 6-11 dB under the loops at equal peak (reference/sound-design.md); they take
-    // all the mix headroom: the summed loop gain times their peak stays within full scale.
+    // User request 2026-10-09: equipment a little quieter so the radar carries through combat.
+    private const float EquipmentLevelDb = -3;
+    // One-shots (LE gold, potion, tome; D2R rune, gem, scroll clicks) sit 5-15 dB under the loops at equal peak
+    // (reference/sound-design.md); they take all the mix headroom: the summed loop gain times their peak stays within full scale.
     private static readonly float OneShotLevelDb = 20 * MathF.Log10(1 / (WorldLoopSelection.MixGainLimit * PeakLevel));
     // D2RAccess D2R_STASH_LOOP_SECONDS: recordings shorter than a second are padded to repeat once a second.
     private const double ShortLoopSeconds = 1;
@@ -58,7 +60,10 @@ internal static class WorldLoopBank
     {
         NaturalCueKind.Chest => ChestLevelDb,
         NaturalCueKind.Stash => StashLevelDb,
-        NaturalCueKind.Gold or NaturalCueKind.Potion or NaturalCueKind.Tome => OneShotLevelDb,
+        NaturalCueKind.Equipment or NaturalCueKind.MagicEquipment or NaturalCueKind.RareEquipment or
+            NaturalCueKind.LegendaryEquipment => EquipmentLevelDb,
+        NaturalCueKind.Gold or NaturalCueKind.Potion or NaturalCueKind.Tome or
+            NaturalCueKind.Rune or NaturalCueKind.Gem or NaturalCueKind.Scroll => OneShotLevelDb,
         _ => 0
     };
 

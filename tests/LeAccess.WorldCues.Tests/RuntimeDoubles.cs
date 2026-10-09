@@ -20,10 +20,18 @@ namespace UnityEngine
         internal GameObject Parent;
         internal bool activeInHierarchy = true;
         internal UnityEngine.SceneManagement.Scene scene = new(1);
-        internal Transform transform = new();
+        internal Transform transform;
+        internal GameObject() => transform = new Transform { Owner = this };
     }
     internal class Transform : Object
     {
+        internal GameObject Owner;
+        internal bool IsChildOf(Transform parent)
+        {
+            for (var current = Owner; current is not null; current = current.Parent)
+                if (ReferenceEquals(current.transform, parent)) return true;
+            return false;
+        }
         internal Vector3 position;
         internal Vector3 right = new(1, 0, 0), forward = new(0, 0, 1);
     }
@@ -58,8 +66,16 @@ namespace UnityEngine
 namespace UnityEngine.SceneManagement
 {
     internal readonly record struct Scene(int handle)
-    { internal bool isLoaded => handle != 0; internal bool IsValid() => handle != 0; }
-    internal static class SceneManager { internal static int Handle = 1; internal static Scene GetActiveScene() => new(Handle); }
+    {
+        internal bool isLoaded => handle != 0; internal bool IsValid() => handle != 0;
+        internal string name => SceneManager.Names.TryGetValue(handle, out var value) ? value : null;
+    }
+    internal static class SceneManager
+    {
+        internal static int Handle = 1;
+        internal static readonly Dictionary<int, string> Names = new();
+        internal static Scene GetActiveScene() => new(Handle);
+    }
 }
 internal sealed class Registry<T> : List<T> { internal bool WasCollected; }
 internal static class PlayerFinder
@@ -162,10 +178,37 @@ internal sealed class HoverTagOnMouseOver : UnityEngine.MonoBehaviour
     internal string hoverText, localizationKey;
     internal TransitionOrGateInteraction sceneInteraction, dungeonTransitionInteraction;
 }
-internal sealed class TransitionOrGateInteraction : UnityEngine.MonoBehaviour { internal string sceneName; }
+internal class TransitionOrGateInteraction : UnityEngine.MonoBehaviour { internal string sceneName; }
+internal sealed class UsePlayerSpawnInteraction : TransitionOrGateInteraction { internal string ToScene; }
+internal sealed class CaveLobbyExitInteraction : UnityEngine.MonoBehaviour { }
+internal sealed class SceneDetails : UnityEngine.Object { internal string LocalizedName; }
+internal static class SceneList
+{
+    internal static readonly Dictionary<string, SceneDetails> Scenes = new();
+    internal static bool TryGetNonDefaultSceneDetails(string name, out SceneDetails details) => Scenes.TryGetValue(name, out details);
+}
+namespace LE.PCG
+{
+    internal sealed class Level : UnityEngine.MonoBehaviour { internal UnityEngine.SceneManagement.Scene ParentScene; }
+    internal static class LevelUtility
+    {
+        internal static readonly Dictionary<int, Level> Levels = new();
+        internal static bool TryGetLevel(UnityEngine.SceneManagement.Scene scene, out Level level) =>
+            Levels.TryGetValue(scene.handle, out level);
+    }
+}
 internal sealed class ChestSync : UnityEngine.MonoBehaviour { }
 internal sealed class Shrine : UnityEngine.MonoBehaviour { }
 internal sealed class ShrineSync : UnityEngine.MonoBehaviour { }
+internal sealed class ShrineVisualsCreator : UnityEngine.MonoBehaviour { }
+internal sealed class ShrinesManager : UnityEngine.MonoBehaviour
+{
+    internal static readonly Dictionary<string, ShrinesManager> Scenes = new();
+    internal readonly Registry<UnityEngine.GameObject> Objects = new();
+    internal static bool TryGetForScene(string sceneName, out ShrinesManager manager) =>
+        Scenes.TryGetValue(sceneName ?? "", out manager);
+    internal Registry<UnityEngine.GameObject> GetAllShrineObjects() => Objects;
+}
 internal sealed class TimeRiftInteraction : UnityEngine.MonoBehaviour { }
 internal sealed class ActivateTimeRift : UnityEngine.MonoBehaviour { }
 internal sealed class TimeBeastRift : UnityEngine.MonoBehaviour { }

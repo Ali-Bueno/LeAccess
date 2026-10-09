@@ -103,6 +103,20 @@ internal static class ServiceTests
         altar.gameObject.Components.Clear();
         Add(altar.gameObject, new NemesisEncounterInteractableObject());
         Check(LandmarkProbe.TryRead(out result) && result.Name == "Némesis", "The Nemesis altar falls back to its mod name");
+        altar.gameObject.Components.Clear();
+        var shrineRoot = new GameObject();
+        altar.gameObject.transform.parent = shrineRoot.transform;
+        ShrinesManager.Scenes["Z10"] = new ShrinesManager();
+        ShrinesManager.Scenes["Z10"].Objects.Items.Add(shrineRoot);
+        var named = SceneManager.Active; named.name = "Z10"; SceneManager.Active = named;
+        altar.gameObject.scene = named;
+        LeAccess.Accessibility.WorldCues.ShrineObjects.Reset();
+        Check(LandmarkProbe.TryRead(out result) && result.Name == "santuario" && LandmarkProbe.LastStatus.Contains("role:Shrine"),
+            "A shrine object its manager placed is named without a shrine component on the listener");
+        ShrinesManager.Scenes.Clear(); LeAccess.Accessibility.WorldCues.ShrineObjects.Reset();
+        Check(!LandmarkProbe.TryRead(out _), "Without the manager's shrine the same listener stays unnamed");
+        Add(shrineRoot, new ShrineVisualsCreator());
+        Check(LandmarkProbe.TryRead(out result) && result.Name == "santuario", "The shrine's visuals creator names its listener");
         altar.Allowed = false;
         Check(!LandmarkProbe.TryRead(out _), "A role never bypasses native availability");
         // A note shares the NPC interaction but has no character model: the landmark names it from its dialogue.
@@ -117,6 +131,33 @@ internal static class ServiceTests
         var model = new GameObject(); model.transform.parent = noteGo.transform; noteGo.Children.Add(model);
         Add(model, new UnityEngine.SkinnedMeshRenderer());
         Check(!LandmarkProbe.TryRead(out _), "An NPC with a model is left to the NPC announcements");
+
+        // Generated caves: the entrance and exits carry no hover tag, only the scene they lead to.
+        WorldObjectClickListener.allListener = new();
+        var entranceGo = new GameObject();
+        var entrance = Add(entranceGo, new WorldObjectClickListener { interactionRange = 4 });
+        entrance.transform.position = new Vector3 { x = 1 };
+        WorldObjectClickListener.allListener.Items.Add(entrance);
+        var spawn = Add(entranceGo, new UsePlayerSpawnInteraction { ToScene = "PCG_Cave" });
+        Check(!LandmarkProbe.TryRead(out _), "A cave entrance to a scene without a game name stays unnamed");
+        SceneList.Scenes["PCG_Cave"] = new SceneDetails { LocalizedName = "Cueva" };
+        Check(LandmarkProbe.TryRead(out result) && result.Name == "Cueva" &&
+            LandmarkProbe.LastStatus.Contains("untagged_destination:PCG_Cave"), "A cave entrance is named after the cave");
+        spawn.ToScene = null; spawn.sceneName = "PCG_Cave";
+        Check(LandmarkProbe.TryRead(out result) && result.Name == "Cueva", "The base transition scene is the fallback");
+        spawn.enabled = false;
+        Check(!LandmarkProbe.TryRead(out _), "A disabled transition names nothing");
+        entranceGo.Components.Remove(spawn);
+        var lobbyExit = Add(entranceGo, new CaveLobbyExitInteraction());
+        Check(!LandmarkProbe.TryRead(out _), "A lobby exit outside a generated level stays unnamed");
+        LE.PCG.LevelUtility.Levels[SceneManager.Active.handle] = new LE.PCG.Level
+            { ParentScene = new Scene { handle = 30, isLoaded = true, name = "B1S30" } };
+        SceneList.Scenes["B1S30"] = new SceneDetails { LocalizedName = "Túnel abandonado" };
+        Check(LandmarkProbe.TryRead(out result) && result.Name == "Túnel abandonado",
+            "The cave lobby exit is named after the scene the cave was generated from");
+        lobbyExit.enabled = false;
+        Check(!LandmarkProbe.TryRead(out _), "A disabled lobby exit names nothing");
+        LE.PCG.LevelUtility.Levels.Clear();
         return checks;
     }
 }

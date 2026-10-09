@@ -95,6 +95,11 @@ internal static class LandmarkProbe
                         name = InteractableRoles.Name(role, hasTag ? tag : null);
                         nameStatus = $"role:{role}";
                     }
+                    else if (UntaggedTransitions.ReadDestination(listener) is { } toScene)
+                    {
+                        name = UntaggedTransitions.SceneName(toScene);
+                        nameStatus = $"untagged_destination:{toScene}";
+                    }
                     else if (WorldServiceReader.IsReadable(listener))
                     {
                         // Notes are no longer NPCs, so their dialogue name is announced here.

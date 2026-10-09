@@ -419,6 +419,30 @@ geometry). Not heard in game. Unverified: what advances the B10 objective (no qu
 path in the bundle; possibly a server event); the new status fields in a live log; the bundle-to-runtime
 height offset (spawn y -0.9 in the bundle, 6.16 at runtime), so the survey used flat distances only.
 
+## Generated caves (2026-10-09)
+
+User report: a rift (fisura) in Túnel abandonado (`B1S30`) led to a cave where the scanner listed only the hunter
+NPC and one room. Log 2026-10-09 21:51-21:53: the cave is `PCG_Cave`, the Primal Hunt nest of a rift beast
+(`LE.Gameplay.PrimalHunt.CaveManager`), loaded additively while `B1S30` stays loaded (only its `Visuals`/`Gameplay`
+are switched off). On arrival the player is in the cave lobby with Skarven (`HunterState.Lobby`); the beast room,
+eggs and `CaveTreasureChest` lie deeper in the generated cave.
+
+- **Rooms of the other scene.** `MinimapRoomReader` took the first `MinimapVolumesManager` loaded anywhere: in the
+  cave it read the tunnel's 63 volumes (`rooms=63 visited_rooms=0 room_gap=1434`) and offered "sala inexplorada 32,
+  1844 pasos". It now searches the active scene's roots only; a scene without a manager uses the frontier.
+- **Places of the other scene.** The scanner's listener pass skips listeners outside the active scene (the tunnel
+  listed the cave's chest at 1541 m, the cave the tunnel's Nemesis at 1447 m, as unseen).
+- **Untagged transitions.** The tunnel's cave entrance and the cave's lobby exit have no `HoverTagOnMouseOver`
+  (`[LandmarkStatus] candidate=…:no_tag:no_tag`, world cue `Interactable`), so nothing named them.
+  `UntaggedTransitions` reads `UsePlayerSpawnInteraction.ToScene` (else `sceneName`; `CaveEntranceLogic` and
+  `CaveExitLogic` use it) and, for `CaveLobbyExitInteraction`, `LevelUtility.TryGetLevel(scene).ParentScene`.
+  The scanner lists them as exits ("Salida hacia Cueva", the lobby exit as the way back), the landmark
+  announcement says the destination (status `untagged_destination:<scene>`), and world sounds use the exit loop.
+
+**Evidence and limits.** `LeAccess.LandmarkProbe.Tests` 108, `LeAccess.WorldCues.Tests` 254 checks; plugin
+builds against the installed interop. Unverified in game: that these interactions sit on or above their listener,
+that `ToScene` is filled for the entrance, and the final exit after the beast.
+
 ## Controller remap (2026-10-08)
 
 The scanner needs Create held: Create + right stick up/down = category, left/right = entry. Without Create the

@@ -423,6 +423,18 @@ Check(Math.Abs(WorldLoopSelection.Gain(0, 12) - 0.4f) < 1e-6 && Math.Abs(WorldLo
     "Gain falls with the square of the remaining proximity");
 Check(WorldLoopSelection.Pitch(1) == 1 && Math.Abs(WorldLoopSelection.Pitch(-0.5f) - 0.97f) < 1e-6 && WorldLoopSelection.Pitch(float.NaN) == 1,
     "Rear pitch blends across one metre behind the player");
+var pile = Enumerable.Range(1, 10).Select(i => new LoopCandidate(400 + i, NaturalCueKind.Gold, i * 0.3f, 0, 1)).ToList();
+pile.Add(new(500, NaturalCueKind.RareEquipment, 3.5f, 0, 1));
+pile.Add(new(501, NaturalCueKind.Rune, 4, 0, 1));
+pile.Add(new(502, NaturalCueKind.Scroll, 9, 0, 1));
+pile.Add(new(503, NaturalCueKind.Gem, 13, 0, 1));
+WorldLoopSelection.Select(pile, 12, 1, voices);
+Check(voices.Count == WorldLoopSelection.MaxVoices &&
+    new[] { NaturalCueKind.RareEquipment, NaturalCueKind.Rune, NaturalCueKind.Scroll }.All(k => voices.Any(v => v.Kind == k)) &&
+    voices.Where(v => v.Kind == NaturalCueKind.Gold).Select(v => v.Id).SequenceEqual(new[] { 401, 402, 403, 404, 405 }),
+    "Each loot kind in range keeps a voice before nearer gold fills the rest");
+Check(voices.All(v => v.Kind != NaturalCueKind.Gem) && voices.Select(v => v.Id).Distinct().Count() == voices.Count,
+    "A kind out of range gets no voice and no object sounds twice");
 var single = new List<LoopCandidate> { new(1, NaturalCueKind.Stash, 6, 0, 1) };
 WorldLoopSelection.Select(single, 12, 0.5f, voices);
 Check(Math.Abs(Scalar(voices.Single()) - 0.05f) < 1e-5, "Volume scales a single voice below the pile limit");

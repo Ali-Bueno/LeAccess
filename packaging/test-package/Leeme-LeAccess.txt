@@ -69,6 +69,7 @@ Radar de paredes: un golpe cuando una pared queda a unos 2 metros y un soplo
 cuando pasas el borde de una pared y detras el espacio sigue (desde unos 3 metros,
 tambien pasajes estrechos o que tuercen; los nichos no suenan). Al alejarte de una
 pared que seguias, aunque sea en diagonal, no suena, y cuando la pared termina si.
+El radar suena un poco mas alto que antes, para oirlo durante el combate.
 Al entrar en una zona de otra era se dice la era despues del nombre de la zona.
 Escaner: manten Create y mueve el stick derecho; arriba y abajo cambian de
 categoria, izquierda y derecha recorren sus elementos. El stick derecho solo es
@@ -114,9 +115,14 @@ sus bendiciones, las entradas a mazmorras, las votaciones de jefes, el arbol
 del Tejedor, las lineas temporales de los Caballeros Olvidados, las profecias
 del Observatorio, el Bazar, la clasificacion y los rituales de Morditas.
 Sonidos: el equipo y los idolos suenan segun su rareza (normal, magico, raro o
-exaltado, unico/conjunto/legendario); runas, glifos, fragmentos y otros
-materiales tienen su propio sonido; notas y registros suenan como un tomo; los
-santuarios, las fisuras temporales y la Nemesis suenan y se nombran al acercarte.
+exaltado, unico/conjunto/legendario), un poco mas bajo que antes; runas, glifos,
+fragmentos y otros materiales tienen su propio sonido, mas fuerte que antes, y en
+un monton de botin cada tipo conserva el suyo; notas y registros suenan como un
+tomo; los santuarios, las fisuras temporales y la Nemesis suenan y se nombran al
+acercarte.
+Cuevas de las bestias de la fisura: la entrada de la cueva y la salida de vuelta
+se nombran ("Salida hacia Cueva", "Salida hacia" la zona de origen) y suenan como
+salidas; dentro de la cueva el escaner solo muestra lo que hay en ella.
 Enemigos: los magicos, raros y campeones dicen su clase ("Gilgamesh el Corrupto,
 raro"); el raro o campeon mas cercano tiene un sonido propio y su vida se narra
 como la de un jefe.
