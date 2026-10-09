@@ -17,10 +17,10 @@ void Check(bool result, string message)
 }
 void MenuFrame() { ScreenReader.SpokeThisFrame = false; ControllerMenuAccessibility.Update(); }
 void ZoneFrame() { ScreenReader.SpokeThisFrame = false; ZoneAnnouncer.Update(); }
-void ChangeScene(int id, string key, string name)
+void ChangeScene(int id, string key, string name, SceneList.Era era = SceneList.Era.EndOfTime)
 {
     SceneManager.Current = new() { handle = id, name = key, isLoaded = true };
-    SceneList.Known[key] = new() { LocalizedName = name };
+    SceneList.Known[key] = new() { LocalizedName = name, era = era };
 }
 
 var first = new RadialMenuSector();
@@ -196,4 +196,24 @@ ZoneFrame();
 Check(ScreenReader.Messages.Last().Text == "Paused area", "Pending zone survives pause until gameplay resumes");
 ZoneAnnouncer.Reset();
 ControllerMenuAccessibility.Reset();
+// Eras: the game's own era name follows an area's name only when travel changes the era.
+Localization.Texts["Era_Name_Ruined"] = "Era en ruinas";
+Localization.Texts["Era_Name_Divine"] = "Era Divina";
+void Enter(int id, string key, string name, SceneList.Era era)
+{
+    ChangeScene(id, key, name, era);
+    for (int i = 0; i < 3; i++) ZoneFrame();
+}
+int before = ScreenReader.Messages.Count;
+Enter(301, "ruins", "Ruinas desmoronadas", SceneList.Era.Ruined);
+Check(ScreenReader.Messages.Last().Text == "Ruinas desmoronadas. Era en ruinas", "Entering a new era names it after the area");
+Enter(302, "camp2", "Campamento de los guardianes", SceneList.Era.Ruined);
+Check(ScreenReader.Messages.Last().Text == "Campamento de los guardianes", "The same era is not repeated");
+Enter(303, "eot", "Fin de los Tiempos", SceneList.Era.EndOfTime);
+Check(ScreenReader.Messages.Last().Text == "Fin de los Tiempos", "The End of Time has no era name");
+Enter(304, "divine", "Bosque", SceneList.Era.Divine);
+Check(ScreenReader.Messages.Last().Text == "Bosque. Era Divina", "Travel to another era names it");
+Enter(305, "unknown", "Lugar", SceneList.Era.Ancient);
+Check(ScreenReader.Messages.Last().Text == "Lugar", "An era without a game name is skipped");
+Check(ScreenReader.Messages.Count == before + 5, "Each area is announced once");
 Console.WriteLine($"Controller menu/zone tests passed: {checks} checks.");

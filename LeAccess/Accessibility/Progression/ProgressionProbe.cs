@@ -103,6 +103,6 @@ internal static class ProgressionProbe
         var scene = SceneManager.GetActiveScene();
         if (!scene.isLoaded || !SceneList.TryGetNonDefaultSceneDetails(scene.name, out var details) ||
             details is null || details.WasCollected) return null;
-        return TextUtils.CleanText(details.LocalizedName);
+        return ScreenContent.ScreenContentTracker.Combine(new[] { TextUtils.CleanText(details.LocalizedName), Zones.ZoneEra.Name(details.era) });
     }
 }

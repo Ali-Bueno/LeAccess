@@ -16,6 +16,8 @@ internal static class ZoneAnnouncer
     private static readonly ZoneAnnouncementState State = new();
     private static LocationNotificationManager _notification;
     private static int _notificationScene;
+    // The era last spoken; it is added to an area's name only when travel changes it, and survives resets.
+    private static SceneList.Era? _announcedEra;
     private static string _lastFailure;
     internal static bool HasPendingContent => State.HasPendingContent;
 
@@ -53,11 +55,14 @@ internal static class ZoneAnnouncer
                 string visible = ScreenContentReader.Read(_notification.holder, _notification.nameText, null);
                 if (!string.IsNullOrWhiteSpace(visible) && visible.StartsWith(name, StringComparison.Ordinal)) text = visible;
             }
+            if (details.era != _announcedEra && ZoneEra.Name(details.era) is { } era)
+                text = ScreenContentTracker.Combine(new[] { text, era });
             bool available = ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame &&
                 !NavigationAudioState.IsSuspended &&
                 !ScreenContentAnnouncer.HasActiveContent && !DialogueAnnouncer.HasActiveContent &&
                 !ControllerMenuAccessibility.HasActiveContent && GameplayInputState.OwnsInput();
             if (!State.Observe(text, available, out string announcement)) return;
+            _announcedEra = details.era;
             ScreenReader.Speak(announcement, interrupt: true);
             Plugin.Log.LogInfo($"[Zone] {announcement}");
         }

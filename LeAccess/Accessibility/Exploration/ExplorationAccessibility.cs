@@ -132,6 +132,7 @@ internal static class ExplorationAccessibility
         var right = GuidanceRouteProbe.Convert(camera.transform.right);
         // One step is the character's body width (D2R counts steps in its own footprint).
         float step = _world.BodyRadius > 0 ? (float)_world.BodyRadius * 2 : 1f;
+        if (ExplorationBeacon.TryGetWalkability(out _)) Catalog.LevelHeight = ExplorationBeacon.LevelHeight;
         ExplorationText text = ModText.Format;
         string sentence = command switch
         {

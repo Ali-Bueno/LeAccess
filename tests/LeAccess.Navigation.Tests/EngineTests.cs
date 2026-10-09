@@ -12,6 +12,8 @@ internal static class EngineTests
         Confirmation();
         Unavailable();
         RetreatAndDoorway();
+        DiagonalWall();
+        InvalidFrameKeepsWalls();
         BaselineWallRetreatAndDoorway();
         OpeningCooldown(false);
         OpeningCooldown(true);
@@ -22,15 +24,20 @@ internal static class EngineTests
     private static void ScaleSettings()
     {
         var original = RadarSettings.FromBodyWidth(3);
-        Near(original.OpenDepth, 10, "D2 body-width tuning retains the open ratio.");
-        Near(original.CloseDepth, 7, "Closing leaves one body-width of hysteresis.");
-        Near(original.ReachDepth, 20, "Reach retains the D2 ratio.");
+        Near(original.OpenDepth, 20, "An opening is a passage as deep as D2's probe reach.");
+        Near(original.CloseDepth, 7, "The knock keeps D2's closing distance.");
+        Near(original.ReachDepth, 40, "The probe looks one passage beyond the threshold.");
+        Near(original.BoundaryRange, 20, "The wall neighbourhood keeps D2's reach.");
         Near(original.ConfirmDistance, 1, "Confirmation scales with body width.");
-        var scaled = RadarSettings.FromBodyWidth(0.6f);
-        Near(scaled.OpenDepth, 2, "Unity width scales the open depth.");
-        Near(scaled.CloseDepth, 1.4f, "Unity width scales the close depth.");
-        Near(scaled.ReachDepth, 4, "Unity width scales reach.");
-        Near(scaled.ConfirmDistance, 0.2f, "Unity width scales confirmation.");
+        var scaled = RadarSettings.FromBodyWidth(0.9f);
+        Near(scaled.OpenDepth, 6, "A Last Epoch body (0.9) needs six metres for an opening.");
+        Near(scaled.CloseDepth, 2.1f, "The Last Epoch knock stays at 2.1.");
+        Near(scaled.ReachDepth, 12, "The Last Epoch probe reaches twelve metres.");
+        var legacy = RadarSettings.FromBodyWidth(3, RadarRun.LegacyOpenDepthInBodyWidths);
+        Near(legacy.OpenDepth, 10, "The former open depth is still configurable.");
+        Near(legacy.CloseDepth, 7, "A short open depth keeps one body width of hysteresis.");
+        var shortest = RadarSettings.FromBodyWidth(3, 2);
+        Check(shortest.CloseDepth >= 3 && shortest.CloseDepth < shortest.OpenDepth, "The shortest open depth keeps a valid band.");
         var tuned = RadarSettings.FromBodyWidth(3, 8);
         Check(tuned.ReachDepth >= tuned.OpenDepth + 3, "Reach exceeds configurable open depth.");
         try { RadarSettings.FromBodyWidth(float.NaN); Check(false, "Invalid width must be rejected."); }
@@ -159,9 +166,50 @@ internal static class EngineTests
         var lateral = new RadarRun(15);
         lateral.WarnWall();
         for (int x = 1; x <= 21; x++) Silent(lateral.Step(5, new Vector2(x, 10)), "Sidestepping along wall changes no state.");
-        Silent(lateral.Step(10, new Vector2(21, 5)), "Distant lateral opening starts a candidate.");
-        Check(lateral.Step(11, new Vector2(21, 4))[0] == RadarState.Open,
-            "A wall left outside the lateral neighbourhood no longer suppresses new openings.");
+        Silent(lateral.Step(10, new Vector2(21, 5)), "Stepping away after following a long wall starts a candidate.");
+        Silent(lateral.Step(11, new Vector2(21, 4)), "The wall followed all along is remembered: stepping away is no opening.");
+        Check(lateral.Engine.SuppressedRetreats > 0, "The retreat is counted for diagnostics.");
+
+        var passage = new RadarRun(15);
+        passage.WarnWall();
+        for (int x = 1; x <= 21; x++) Silent(passage.Step(5, new Vector2(x, 10)), "Following the wall stays quiet.");
+        Silent(passage.Step(20, new Vector2(22, 10)), "A doorway after a long wall starts a candidate.");
+        Check(passage.Step(20, new Vector2(23, 10))[0] == RadarState.Open, "A real doorway after a long wall still sounds open.");
+    }
+
+    // Last Epoch's camera sees most walls diagonally: walking along one changes its depth with every sidestep.
+    private static void DiagonalWall()
+    {
+        var run = new RadarRun(20, RadarSettings.FromBodyWidth(3));
+        Silent(run.Step(10, new Vector2(0, 4)), "A diagonal wall ahead starts a candidate.");
+        Silent(run.Step(6, new Vector2(0, 5)), "Coming within the closing depth starts a wall candidate.");
+        Check(run.Step(5, new Vector2(0, 6))[0] == RadarState.Blocked, "The knock warns at the closing depth.");
+        // Wall line y = 11 + x: each step right moves its Up intercept a quarter farther.
+        for (float x = 0.25f; x <= 20; x += 0.25f)
+            Silent(run.Step(5 + x, new Vector2(x, 6)), $"Sliding along a diagonal wall is no opening (x={x}).");
+        Check(run.Engine.States[0] == RadarState.Open && run.Engine.SuppressedRetreats > 0,
+            "The farther wall commits open silently.");
+        Silent(run.Step(40, new Vector2(20.25f, 6)), "The wall's end starts confirming.");
+        Check(run.Step(40, new Vector2(20.5f, 6))[0] == RadarState.Open, "The followed wall's real end sounds open.");
+        Silent(run.Step(40, new Vector2(21, 6)), "The end is announced once.");
+
+        var back = new RadarRun(20, RadarSettings.FromBodyWidth(3));
+        back.Step(10, new Vector2(0, 4)); back.Step(6, new Vector2(0, 5));
+        Check(back.Step(5, new Vector2(0, 6))[0] == RadarState.Blocked, "A wall ahead knocks.");
+        for (float y = 5.75f; y >= -40; y -= 0.25f)
+            Silent(back.Step(Math.Min(40, 11 - y), new Vector2(0, y)), $"Backing straight away from a wall never opens (y={y}).");
+    }
+
+    private static void InvalidFrameKeepsWalls()
+    {
+        var run = new RadarRun(15);
+        run.WarnWall();
+        ulong revision = run.Engine.Revision;
+        Silent(run.Step(position: new Vector2(float.NaN, 10)), "A bad frame is silent.");
+        Check(run.Engine.States.All(s => s == RadarState.Unknown) && run.Engine.Revision == revision && run.Engine.InvalidTicks == 1,
+            "A bad frame cancels queued audio without forgetting walls.");
+        Silent(run.Step(10, new Vector2(0, 5)), "Backing away after a bad frame starts a candidate.");
+        Silent(run.Step(11, new Vector2(0, 4)), "The wall remembered across the bad frame is no opening.");
     }
 
     private static void BaselineWallRetreatAndDoorway()
@@ -232,10 +280,14 @@ internal static class EngineTests
             Silent(run.Step(), $"{cause} does not replay previous cues.");
         }
         var invalid = new RadarRun();
-        Silent(invalid.Step(position: new Vector2(float.NaN, 0)), "Invalid player position resets safely.");
+        Silent(invalid.Step(position: new Vector2(float.NaN, 0)), "Invalid player position is skipped safely.");
         Check(invalid.Engine.States.All(s => s == RadarState.Unknown), "Invalid position exposes no usable states.");
-        Silent(invalid.Step(position: Vector2.Zero), "Valid position returns with silent baseline.");
+        Silent(invalid.Step(position: Vector2.Zero), "Valid position returns silently.");
         invalid.Axes[0] = Vector2.Zero;
-        Silent(invalid.Step(), "Missing camera direction resets safely.");
+        Silent(invalid.Step(), "Missing camera direction is skipped safely.");
+        invalid.Axes[0] = Vector2.UnitY;
+        for (int i = 0; i < 6; i++) invalid.Step(position: new Vector2(float.NaN, 0));
+        Silent(invalid.Step(position: Vector2.Zero), "A long run of bad frames ends in a silent baseline.");
+        Check(invalid.Engine.LastResetReason == RadarResetReason.PollGap, "A long invalid run counts as a poll gap.");
     }
 }

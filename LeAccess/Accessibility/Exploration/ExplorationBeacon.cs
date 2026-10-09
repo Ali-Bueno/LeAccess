@@ -57,6 +57,9 @@ internal static class ExplorationBeacon
         Plugin.Log.LogInfo("Exploration beacon configured (routes through explored NavMesh ground)");
     }
 
+    /// <summary>The baked agent height: one walkable floor.</summary>
+    internal static float LevelHeight => Walkability.LevelHeight;
+
     // The current player's NavMesh queries, shared with the scanner's line-of-sight test.
     internal static bool TryGetWalkability(out IWalkability nav)
     {

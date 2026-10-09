@@ -52,11 +52,16 @@ se dicen al subir de nivel y al tener un punto nuevo.
 Oro: manten Create y pulsa Triangulo (teclado: Ctrl+G). Tambien se dice al abrir
 el inventario o un vendedor y despues de comprar o vender, y al recoger oro se
 dice la cantidad, por ejemplo "50 de oro".
-Radar: manten Create y mueve el stick derecho; arriba y abajo cambian de
+Radar de paredes: un golpe cuando una pared queda a unos 2 metros y un soplo solo
+cuando hay paso de verdad (unos 6 metros libres); al alejarte de una pared que
+seguias, aunque sea en diagonal, no suena, y cuando la pared termina si.
+Al entrar en una zona de otra era se dice la era despues del nombre de la zona.
+Escaner: manten Create y mueve el stick derecho; arriba y abajo cambian de
 categoria, izquierda y derecha recorren sus elementos. El stick derecho solo es
 del juego: da ordenes a tus esbirros, y el mod dice "Esbirros: atacar a X" o
 "Esbirros: mover". Enemigo lista todos los enemigos en pantalla; ultima muerte
-lleva a donde moriste (no hay cuerpo que recoger).
+lleva a donde moriste (no hay cuerpo que recoger). Si el destino esta en otro
+piso se dice "en un nivel mas alto" o "mas bajo".
 Jugador dice el nombre de usuario y el nivel (y el personaje si es tu amigo);
 al acercarte a otro jugador se dicen esos mismos datos.
 Idolos equipados: en el equipo, ve a la columna derecha y pulsa Derecha (desde

@@ -78,11 +78,13 @@ internal sealed class RadialMenuSector : UnityEngine.Component
 }
 internal static class Localization
 {
-    public static string GetText(string key, string fallback = "") => key == "menu.inventory" ? "Inventario" : fallback;
+    public static readonly Dictionary<string, string> Texts = new() { ["menu.inventory"] = "Inventario" };
+    public static string GetText(string key, string fallback = "") => Texts.TryGetValue(key, out var text) ? text : fallback;
 }
-internal sealed class SceneDetails : NativeObject { public string LocalizedName; }
+internal sealed class SceneDetails : NativeObject { public string LocalizedName; public SceneList.Era era = SceneList.Era.EndOfTime; }
 internal static class SceneList
 {
+    public enum Era { Ancient, Divine, Imperial, Ruined, EndOfTime }
     public static readonly Dictionary<string, SceneDetails> Known = new();
     public static bool TryGetNonDefaultSceneDetails(string scene, out SceneDetails details) => Known.TryGetValue(scene, out details);
 }

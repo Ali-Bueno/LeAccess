@@ -425,3 +425,12 @@ The scanner needs Create held: Create + right stick up/down = category, left/rig
 right stick goes to the game, which uses it for minion commands ([details](minion-commands.md)). While Create is held
 the mod clears `EpochInputManager.canControllerMinionCommand` each frame so the game does not also issue a command.
 Keyboard unchanged. Earlier text above that says "right stick" for the scanner means Create + right stick.
+
+## Targets on another level (2026-10-08)
+
+The user confirmed the End of Time case above (Gaspar reached only with sighted help). Scanner entries now add "en un
+nivel más alto/más bajo" when the target is at least one floor above or below: `ExplorationCatalog.LevelHeight` is the
+baked NavMesh agent height (`NavMeshWalkability.LevelHeight`, the floor height the explored map already uses), set
+before each scanner command; distance and direction stay horizontal. "Arriba" is not used for height because it already
+means screen up. ExplorationCatalog 49 checks (the Gaspar geometry among them). Listening pending; a route to the
+other level is still the user's to find.

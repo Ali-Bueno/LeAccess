@@ -24,7 +24,7 @@ directory when LeAccess loads. The entries are:
 |---|---|---|---|
 | Reactive radar | Enabled | true | Enable obstacle/open-ground transition cues |
 | Reactive radar | Volume | 100 | Percentage of the original radar cue level |
-| Reactive radar | OpenDepthInBodyWidths | 3.3333333 | Straight walkable depth needed to confirm an opening |
+| Reactive radar | PassageDepthInBodyWidths | 6.6666667 | Straight walkable depth needed to call a direction open (a passage); replaces `OpenDepthInBodyWidths` (2026-10-08) |
 | Reactive radar | AudioBufferMilliseconds | 100 | Output buffering; 50–300 ms, applies on next game launch |
 | Navigation audio | ContinuousWallSonar | false | Also enable the previous continuous wall tones |
 | World object sounds | Enabled | true | Category cue for the current or nearest available world object |
@@ -391,3 +391,37 @@ speed-scaled depths, playback forecasts, new cue sounds) were not revisited.
 Navigation suite: 504 checks (57 new: quadrants, camera turn, range, staleness, mark sound,
 unchanged breath, walls unmarked). Not heard in game: check knock timing near NPCs and in fights
 (`max_wait_ms` should stay near the radar's own cue spacing) and whether the pips help or clutter.
+
+## Passages and wall following (2026-10-08)
+
+User report: stepping a little away from a wall made the radar say "open" again, so the user walked back to the
+same spot looking for an exit that was not there. Today's log: of about 3,340 cues that turned a direction from
+Blocked to Open, 3,031 came within 20 log lines (one or two seconds) of the Blocked cue in that direction; 243
+`InvalidInput` resets also wiped the wall memory.
+
+Causes. (1) The wall memory was one projection along the probe axis, taken only when the wall was confirmed, and
+expired 6 m (D2 reach) sideways from that point: after following a wall the user had left its neighbourhood.
+(2) Last Epoch's camera sees most walls diagonally, so every sidestep along a wall moved its intercept on the axis
+farther, past the 0.45 m margin. (3) "Open" meant 3 m of walkable ground (D2's 10-subtile opening), so a wall a
+little farther away, a recess or an alcove already counted. (4) A single non-finite frame reset the engine.
+
+Changes (`RadarEngine`, `RadarSettings`):
+- An opening is a passage: `PassageDepthInBodyWidths` defaults to D2's reach ratio (20/3 body widths, 6 m for the
+  0.9 m body); the knock keeps D2's closing distance (7/3 widths, 2.1 m). A new key, so configs saved with the old
+  default do not keep the old value. The probe now reaches twice the passage depth (12 m), so a wall's real end can
+  be told from the same wall seen farther away; the wall neighbourhood and teleport distance keep D2's reach (6 m),
+  and so does the camera-drift tolerance.
+- While a direction is Blocked and still hits within the closing band, the remembered wall follows the latest hit,
+  so walking along a wall and then stepping away from it is a retreat, not an opening. The retreat margin is half the
+  hysteresis band ((6 − 2.1) / 2 = 1.95 m), which absorbs a diagonal wall's growth during confirmation.
+- After a silent retreat the same wall is still followed while the direction is Open; when the probe reaches past its
+  line by the margin on two consecutive polls (the wall ended) the opening sounds once.
+- A non-finite position, time or camera axis skips the poll (queued cues cancelled) instead of resetting; a run
+  longer than the 250 ms poll gap ends in the usual silent baseline.
+- The status line adds `invalid=` (skipped polls) and `retreats=` (openings dropped as the same wall) per window.
+
+Tests: Navigation 821 checks (a 45° wall slid along for 20 units, straight retreat to beyond the probe, a long wall
+followed then left, a doorway after a long wall, a wall's real end, invalid frames). Mechanics tests keep the former
+10/3-width depth (open 10, close 7, reach 20) through `RadarRun.LegacyOpenDepthInBodyWidths`. Listening pending:
+walking along and away from walls (no breath), side doorways and corridor ends (breath), the wall-end breath, and how
+much rarer "open" became; compare `retreats=` with the cues heard.

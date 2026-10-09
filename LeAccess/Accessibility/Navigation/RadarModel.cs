@@ -32,7 +32,10 @@ public sealed class RadarSettings
     private const float SourceBodyWidth = 3f;
     private const float SourceOpenDepth = 10f;
     private const float SourceReachDepth = 20f;
-    public const float DefaultOpenDepthInBodyWidths = SourceOpenDepth / SourceBodyWidth;
+    // An opening is a passage as deep as D2's probe reach; a nearer wall is not an exit (reference/navigation-radar.md).
+    public const float DefaultOpenDepthInBodyWidths = SourceReachDepth / SourceBodyWidth;
+    // The probe looks as far again, so a wall's end can be told from the same wall seen farther away.
+    private const float ProbeDepthInOpenDepths = 2f;
 
     public float OpenDepth { get; init; }
     public float CloseDepth { get; init; }
@@ -51,15 +54,18 @@ public sealed class RadarSettings
 
         // Ratios port D2's three-subtile human footprint; they do not infer LE world units.
         float open = bodyWidth * openDepthInBodyWidths;
-        float reach = Math.Max(open + bodyWidth, bodyWidth * SourceReachDepth / SourceBodyWidth);
+        // The knock keeps D2's closing distance, one body width inside its open depth, whatever the passage depth.
+        float close = Math.Max(bodyWidth, Math.Min(bodyWidth * (SourceOpenDepth - SourceBodyWidth) / SourceBodyWidth,
+            open - bodyWidth));
+        float neighbourhood = bodyWidth * SourceReachDepth / SourceBodyWidth;
         return new RadarSettings
         {
             OpenDepth = open,
-            CloseDepth = Math.Max(bodyWidth, open - bodyWidth),
-            ReachDepth = reach,
+            CloseDepth = close,
+            ReachDepth = open * ProbeDepthInOpenDepths,
             ConfirmDistance = bodyWidth / SourceBodyWidth,
-            BoundaryRange = reach,
-            TeleportDistance = reach
+            BoundaryRange = neighbourhood,
+            TeleportDistance = neighbourhood
         };
     }
 }

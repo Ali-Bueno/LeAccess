@@ -3,15 +3,18 @@ using LeAccess.Accessibility.Navigation;
 
 internal sealed class RadarRun
 {
-    internal RadarEngine Engine { get; } = new(RadarSettings.FromBodyWidth(3));
+    // The former 10/3-width open depth keeps these mechanics tests on round numbers: open 10, close 7, reach 20.
+    internal const float LegacyOpenDepthInBodyWidths = 10f / 3f;
+    internal RadarEngine Engine { get; }
     internal Vector2[] Axes { get; } = { Vector2.UnitY, -Vector2.UnitX, Vector2.UnitX, -Vector2.UnitY };
     internal RadarReading[] Readings { get; } = Enumerable.Repeat(new RadarReading(20, true), 4).ToArray();
     internal Vector2 Position;
     internal double Time = 1;
     internal long Session = 1;
 
-    internal RadarRun(float baseline = 20)
+    internal RadarRun(float baseline = 20, RadarSettings settings = null)
     {
+        Engine = new RadarEngine(settings ?? RadarSettings.FromBodyWidth(3, LegacyOpenDepthInBodyWidths));
         Readings[0] = new RadarReading(baseline, true);
         Program.Silent(Step(dt: 0), "Initial baseline is silent.");
     }

@@ -13,6 +13,7 @@ var words = new Dictionary<string, string>
 {
     ["exploration.scanner.empty"] = "<nothing>", ["exploration.scanner.category_empty"] = "<no {0}>",
     ["exploration.boss"] = "{0} <boss>", ["exploration.entry_here"] = "{0} <here>",
+    ["exploration.on_level"] = "{0} [{1}]", ["exploration.level_higher"] = "<higher>", ["exploration.level_lower"] = "<lower>",
     ["exploration.steps_one"] = "<1 step>", ["exploration.steps_many"] = "<{0} steps>", ["exploration.entry"] = "{0}; {1}; {2}",
     ["guidance.direction.up"] = "<up>", ["guidance.direction.up_right"] = "<up-right>",
     ["guidance.direction.right"] = "<right>", ["guidance.direction.down_right"] = "<down-right>",
@@ -113,6 +114,20 @@ Equal(Line("Maeve", 2, "right"),
     ExplorationCatalog.Describe(Entry("n", "Maeve", ExplorationCategory.Npc, 4, 0), player, forward, right, 2f, text), "step length");
 Equal(Line("Maeve", 3, "right"), ExplorationCatalog.Describe(new ExplorationEntry("n", "Maeve", ExplorationCategory.Npc,
     new Vector3(3, 9, 0), 1), player, forward, right, step, text), "horizontal distance");
+
+// End of Time: Elder Gaspar stood 15.7 above the player on the central platform, 9 horizontally (reference/exploration-mode.md).
+const float floorHeight = 2f;
+var gaspar = new ExplorationEntry("g", "Gaspar", ExplorationCategory.Npc, new Vector3(2.18f, 15.69f, 9.12f), 1);
+Equal(text("exploration.on_level", Line("Gaspar", 9, "up"), text("exploration.level_higher")),
+    ExplorationCatalog.Describe(gaspar, player, forward, right, step, text, floorHeight), "a target on a platform above is on a higher level");
+Equal(text("exploration.on_level", text("exploration.entry_here", "Knight"), text("exploration.level_lower")),
+    ExplorationCatalog.Describe(new ExplorationEntry("k", "Knight", ExplorationCategory.Npc, new Vector3(0, -15.69f, 0.2f), 1),
+        player, forward, right, step, text, floorHeight), "a target right below says here, on a lower level");
+Equal(Line("Maeve", 3, "right"), ExplorationCatalog.Describe(new ExplorationEntry("n", "Maeve", ExplorationCategory.Npc,
+    new Vector3(3, 1.9f, 0), 1), player, forward, right, step, text, floorHeight), "a step or ramp below one floor is the same level");
+var levelled = new ExplorationCatalog { LevelHeight = floorHeight };
+Equal(Category(ExplorationCategory.Npc) + ". " + text("exploration.on_level", Line("Gaspar", 9, "up"), text("exploration.level_higher")),
+    levelled.StepCategory(1, new List<ExplorationEntry> { gaspar }, player, forward, right, step, text), "the scanner passes its floor height");
 
 // Non-finite entries are ignored.
 var broken = new List<ExplorationEntry> { new("x", "X", ExplorationCategory.Exit, new Vector3(float.NaN, 0, 0), 1) };

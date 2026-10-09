@@ -452,7 +452,7 @@ internal static class LifecycleTests
         PlayerFinder.Actor.Radius = 0.75f;
         Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out var enlarged), "Real body size change captures");
         Program.Check(!ReferenceEquals(initial.Settings, enlarged.Settings), "A real body size change updates radar settings");
-        Program.Near(enlarged.Settings.OpenDepth, 5f, "Actual larger body uses its authoritative warning range");
+        Program.Near(enlarged.Settings.OpenDepth, RadarSettings.FromBodyWidth(1.5f).OpenDepth, "Actual larger body uses its authoritative warning range");
         Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths + 1f, out var configured), "Configuration change captures");
         Program.Check(!ReferenceEquals(enlarged.Settings, configured.Settings), "User depth configuration changes still refresh settings");
     }

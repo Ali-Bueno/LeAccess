@@ -93,7 +93,8 @@ D2R's: exit, portal, waypoint, unexplored room, room, quest, NPC, player, last d
 last died; a destination only, nothing to pick up), stash, enemy (every enemy on screen), treasure (chests), shrine, object (levers, notes, the forge and
 other interactables) and item (loot on the ground). A category step says its name and then
 its nearest entry; each entry gives its name, distance in steps (one step is the character's
-width) and one of eight screen directions. Places are listed once you have seen them; quest
+width) and one of eight screen directions, plus "on a higher/lower level" when the target is
+a floor above or below you. Places are listed once you have seen them; quest
 markers, enemies and other players as the game shows them. Rooms are the game's minimap
 rooms: "room N" once entered, "unexplored room N" when you have glimpsed it but never
 entered (in maps without them, edges where unseen ground continues). As in D2R, the first
@@ -126,7 +127,12 @@ records and paintings use the tome loop;
 shrines and the Nemesis use Last Epoch's own recordings and time rifts its rift loop
 ([mapping](reference/world-object-sounds.md)). Short repeating samples
 share playback time with each other; radar knocks and breaths never wait behind
-them. An opening breath that ends in a quick double pip leads toward an unexplored area. The sounds are embedded in the plugin; no separate audio installation
+them. The radar knocks when a wall comes within about two metres and breathes only for a
+real passage (about six metres of walkable ground); stepping away from a wall you were
+following, even a diagonal one, stays silent, and the wall's real end breathes
+([details](reference/navigation-radar.md#passages-and-wall-following-2026-10-08)).
+Entering an area of another era names the era after the area
+([eras](reference/zone-reading.md)). An opening breath that ends in a quick double pip leads toward an unexplored area. The sounds are embedded in the plugin; no separate audio installation
 is required.
 The previous bright coin and equipment cues are preserved as playable WAVs in
 the [sound design reference](reference/sound-design.md). D2R recordings remain

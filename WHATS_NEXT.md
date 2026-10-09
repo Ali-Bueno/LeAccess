@@ -1,3 +1,19 @@
+# Handoff — 2026-10-08 late night: radar passages, other levels, eras
+
+User: the radar says "open" again after stepping a little away from a wall, so they walked back looking for an exit;
+the End of Time Gaspar case (on a platform, unreachable without sighted help); announce the era.
+- Radar: of ~3,340 Blocked→Open cues today, 3,031 followed the knock within a second or two. One axis projection
+  remembered only at confirmation, diagonal walls (LE's camera) and a 3 m "open" made false openings; invalid
+  frames wiped memory. Now open = passage (D2 reach ratio, about 6 m), the knock stays at 2.1 m, the wall memory
+  follows the wall while it blocks, a followed wall's real end still breathes, invalid frames are skipped; new
+  config key `PassageDepthInBodyWidths`; status `invalid=`/`retreats=` ([details](reference/navigation-radar.md#passages-and-wall-following-2026-10-08)).
+  Check: walk along walls (straight and diagonal) and away from them (silent), corridor side doorways and ends
+  (breath), how rare "open" became; tell me if 6 m is too strict.
+- Scanner entries say "en un nivel más alto/más bajo" for targets a floor above/below (baked agent height)
+  ([details](reference/exploration-mode.md#targets-on-another-level-2026-10-08)). Check Gaspar at the End of Time.
+- Eras: the area announcement adds the game's era name when travel changes the era; the status report too
+  ([details](reference/zone-reading.md)).
+
 # Handoff — 2026-10-08 night: idols, elites, scanner on Create + right stick, minion orders
 
 User (later the same evening): no way to find equipped idols; move the radar to Share + right stick because

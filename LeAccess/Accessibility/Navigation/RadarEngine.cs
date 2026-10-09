@@ -6,6 +6,8 @@ namespace LeAccess.Accessibility.Navigation;
 public sealed class RadarEngine
 {
     public const int DirectionCount = 4;
+    // Two polls past a followed wall's line confirm that it ended, as the two-observation stationary rule does.
+    private const int WallEndPolls = 2;
 
     private struct Sensor
     {
@@ -13,8 +15,9 @@ public sealed class RadarEngine
         public RadarState State, Candidate, Deferred, LastCue;
         public Vector2 CandidateOrigin, WallOrigin;
         public double CandidateSince, LastOpening;
-        public bool HasLastOpening, WallKnown;
+        public bool HasLastOpening, WallKnown, TrackingWall;
         public float WallProjection;
+        public int BeyondPolls;
     }
 
     private readonly Sensor[] _sensors = new Sensor[DirectionCount];
@@ -27,6 +30,10 @@ public sealed class RadarEngine
     public RadarSettings Settings { get; }
     public ulong Revision { get; private set; }
     public RadarResetReason LastResetReason { get; private set; }
+    /// <summary>Polls skipped for a non-finite position, time or camera axis.</summary>
+    public ulong InvalidTicks { get; private set; }
+    /// <summary>Openings dropped because the same remembered wall was only farther away.</summary>
+    public ulong SuppressedRetreats { get; private set; }
     public RadarState[] Events { get; } = new RadarState[DirectionCount];
     public RadarState[] States { get; } = new RadarState[DirectionCount];
 
@@ -60,7 +67,9 @@ public sealed class RadarEngine
         Array.Clear(Events, 0, Events.Length);
         if (!Finite(position) || !double.IsFinite(now) || !ValidAxes(axes))
         {
-            Reset(RadarResetReason.InvalidInput);
+            // A transient bad frame cancels queued audio but keeps remembered walls; a long one ends as a poll gap.
+            InvalidTicks++;
+            Array.Fill(States, RadarState.Unknown);
             return Events;
         }
 
@@ -95,6 +104,11 @@ public sealed class RadarEngine
             }
             RadarState observed = Classify(reading.Depth, sensor.State);
             Observe(ref sensor, observed, reading.Depth, position, _axes[i], now);
+            // Follow the wall while it holds the direction closed, so walking along it and then away is no opening.
+            if (sensor.State == RadarState.Blocked && observed == RadarState.Blocked && reading.Depth < Settings.ReachDepth)
+                RememberWall(ref sensor, reading.Depth, position, _axes[i]);
+            else if (sensor.State == RadarState.Open && sensor.TrackingWall)
+                TrackWall(ref sensor, reading.Depth, position, _axes[i]);
             States[i] = sensor.State;
             Events[i] = Deliver(ref sensor, reading.Depth, position, _axes[i], now);
         }
@@ -130,9 +144,36 @@ public sealed class RadarEngine
         {
             sensor.State = sensor.Deferred = observed;
             sensor.Candidate = RadarState.Unknown;
+            sensor.TrackingWall = false;
             if (observed == RadarState.Blocked)
                 RememberWall(ref sensor, depth, position, axis);
         }
+    }
+
+    // Half the hysteresis band: how far past a remembered wall's line a probe must reach to be another place.
+    private float RetreatMargin => (Settings.OpenDepth - Settings.CloseDepth) / 2;
+
+    private bool BeyondWall(in Sensor sensor, float depth, Vector2 position, Vector2 axis, out bool nearby)
+    {
+        Vector2 offset = position - sensor.WallOrigin;
+        nearby = Math.Abs(-offset.X * axis.Y + offset.Y * axis.X) <= Settings.BoundaryRange;
+        return Vector2.Dot(position, axis) + depth >= sensor.WallProjection + RetreatMargin;
+    }
+
+    // After a silent retreat the same wall is followed, so its real end still sounds open.
+    private void TrackWall(ref Sensor sensor, float depth, Vector2 position, Vector2 axis)
+    {
+        bool beyond = BeyondWall(sensor, depth, position, axis, out bool nearby);
+        if (!nearby) { sensor.TrackingWall = false; return; }
+        if (!beyond)
+        {
+            sensor.BeyondPolls = 0;
+            if (depth < Settings.ReachDepth) RememberWall(ref sensor, depth, position, axis);
+            return;
+        }
+        if (++sensor.BeyondPolls < WallEndPolls) return;
+        sensor.TrackingWall = false;
+        sensor.Deferred = RadarState.Open;
     }
 
     private static void RememberWall(ref Sensor sensor, float depth, Vector2 position, Vector2 axis)
@@ -148,18 +189,14 @@ public sealed class RadarEngine
         if (sensor.Deferred == RadarState.Unknown) return RadarState.Unknown;
         if (sensor.Deferred == RadarState.Open)
         {
-            if (sensor.WallKnown)
+            if (sensor.WallKnown && !BeyondWall(sensor, depth, position, axis, out bool nearby) && nearby)
             {
-                Vector2 offset = position - sensor.WallOrigin;
-                float lateral = Math.Abs(-offset.X * axis.Y + offset.Y * axis.X);
-                float reach = Vector2.Dot(position, axis) + depth;
-                float margin = (Settings.OpenDepth - Settings.CloseDepth) / 2;
-                if (lateral <= Settings.BoundaryRange && reach < sensor.WallProjection + margin)
-                {
-                    // Drop retreats: holding them makes later wall-following sound like an opening.
-                    sensor.Deferred = RadarState.Unknown;
-                    return RadarState.Unknown;
-                }
+                // Drop retreats: holding them makes later wall-following sound like an opening.
+                sensor.Deferred = RadarState.Unknown;
+                sensor.TrackingWall = true;
+                sensor.BeyondPolls = 0;
+                SuppressedRetreats++;
+                return RadarState.Unknown;
             }
             if (sensor.LastCue == sensor.Deferred)
             {
@@ -181,8 +218,8 @@ public sealed class RadarEngine
     {
         if (!_positioned) return false;
         for (int i = 0; i < DirectionCount; i++)
-            // Camera drift smaller than one confirmation step at the probe tip must not erase candidates.
-            if (Vector2.Distance(_axes[i], Vector2.Normalize(axes[i])) * Settings.ReachDepth
+            // Camera drift smaller than one confirmation step within the wall neighbourhood must not erase candidates.
+            if (Vector2.Distance(_axes[i], Vector2.Normalize(axes[i])) * Settings.BoundaryRange
                 >= Settings.ConfirmDistance) return true;
         return false;
     }

@@ -66,7 +66,7 @@ internal sealed class ExplorationCatalog
         _category = present[NextCategory(present, Math.Sign(delta) >= 0 ? 1 : -1)];
         var sorted = Sorted(entries, _category.Value, player);
         _selected = sorted[0].Key;
-        return text(CategoryKey(_category.Value)) + ". " + Describe(sorted[0], player, forward, right, stepLength, text);
+        return text(CategoryKey(_category.Value)) + ". " + Describe(sorted[0], player, forward, right, stepLength, text, LevelHeight);
     }
 
     internal string StepEntry(int delta, IReadOnlyList<ExplorationEntry> entries, Vector3 player,
@@ -82,11 +82,14 @@ internal sealed class ExplorationCatalog
         int index = sorted.FindIndex(entry => entry.Key == _selected);
         index = index < 0 ? 0 : Wrap(index + (Math.Sign(delta) >= 0 ? 1 : -1), sorted.Count);
         _selected = sorted[index].Key;
-        return Describe(sorted[index], player, forward, right, stepLength, text);
+        return Describe(sorted[index], player, forward, right, stepLength, text, LevelHeight);
     }
 
+    /// <summary>Height of one walkable floor; a target farther above or below is said to be on another level.</summary>
+    internal float LevelHeight { get; set; } = float.PositiveInfinity;
+
     internal static string Describe(ExplorationEntry entry, Vector3 player, Vector3 forward, Vector3 right,
-        float stepLength, ExplorationText text)
+        float stepLength, ExplorationText text, float levelHeight = float.PositiveInfinity)
     {
         string name = entry.Boss ? text("exploration.boss", entry.Name) : entry.Name;
         var delta = entry.Position - player;
@@ -94,9 +97,13 @@ internal sealed class ExplorationCatalog
         int steps = stepLength > 0 && float.IsFinite(distance)
             ? (int)Math.Round(distance / stepLength, MidpointRounding.AwayFromZero) : 0;
         string direction = GuidanceGeometry.Direction(delta, forward, right);
-        if (steps < 1 || direction == null) return text("exploration.entry_here", name);
-        string length = steps == 1 ? text("exploration.steps_one") : text("exploration.steps_many", steps);
-        return text("exploration.entry", name, length, text(direction));
+        string place = steps < 1 || direction == null ? text("exploration.entry_here", name)
+            : text("exploration.entry", name, steps == 1 ? text("exploration.steps_one") : text("exploration.steps_many", steps),
+                text(direction));
+        // Distance is horizontal; a target on a platform above sounds near while the way up may be long.
+        bool otherLevel = float.IsFinite(levelHeight) && levelHeight > 0 && float.IsFinite(delta.Y) && Math.Abs(delta.Y) >= levelHeight;
+        return otherLevel ? text("exploration.on_level", place, text(delta.Y > 0 ? "exploration.level_higher" : "exploration.level_lower"))
+            : place;
     }
 
     internal static string CategoryKey(ExplorationCategory category) => category switch
