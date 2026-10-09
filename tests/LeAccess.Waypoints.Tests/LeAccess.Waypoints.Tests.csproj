@@ -11,6 +11,8 @@
     <Compile Include="../../LeAccess/Accessibility/Map/MapTravelAnnouncer.cs" Link="MapTravelAnnouncer.cs" />
     <Compile Include="../../LeAccess/Accessibility/Map/MapLocationList.cs" Link="MapLocationList.cs" />
     <Compile Include="../../LeAccess/Accessibility/Map/EpochMasteryReader.cs" Link="EpochMasteryReader.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Map/MapIconReader.cs" Link="MapIconReader.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Map/MapIslandReader.cs" Link="MapIslandReader.cs" />
     <Compile Include="../UiReadingOrderStub.cs" Link="UiReadingOrderStub.cs" />
     <Compile Include="../LeAccess.Classes.Tests/RuntimeDoubles.cs" Link="RuntimeDoubles.cs" />
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentTracker.cs" Link="ScreenContentTracker.cs" />

@@ -201,6 +201,15 @@ var marca = Place(ancient, "Marca", "M").Also(w => w.noWaypointInScene = true);
 var north = Area("Norte", bosque, cerrado, aldea, marca);
 var south = Area("Sur", costa);
 north.regionLabel.gameObject.Active = false;
+GeneralTooltop Icon(GameObject parent, string title, string body)
+{
+    var icon = parent.Child().Add(new GeneralTooltop { title = title, body = body });
+    ancient.IconsInMenu.Add(icon);
+    return icon;
+}
+var arena = Icon(north.gameObject, "La Arena", "Combate por oleadas.");
+var rift = Icon(listObject, "Grieta temporal", "Lleva a la costa.");
+var dungeon = Icon(desierto.gameObject, "Mazmorra: Santuario", "Una mazmorra.");
 UIWaypoint.Selected = w =>
 {
     listMap.focusedSceneID = w.sceneName;
@@ -238,24 +247,30 @@ Check(Nav(Direction.DOWN) is null && centered.Count == 0, "with the quests shown
 listMap.questPanel.questsHidden = true;
 Check(Nav(Direction.LEFT) is null && Nav(Direction.RIGHT) is null, "LB and RB keep switching eras");
 listMap.focusedSceneID = null;
-Check(Nav(Direction.DOWN) == J("Norte", "Bosque", Level(), Pos(1, 3)) && centered[^1] == bosque.gameObject &&
+Check(Nav(Direction.DOWN) == J("Norte", "Bosque", Level(), Pos(1, 5)) && centered[^1] == bosque.gameObject &&
     listMap.focusedSceneID == bosque.sceneName, "Down with nothing focused centres and selects the first region's first place, naming the region even with its label hidden");
-Check(Nav(Direction.DOWN) == J("Cerrado", Level(), T("waypoint.locked"), Pos(2, 3)),
-    "locked waypoints are listed and say so; markers without a waypoint are neither listed nor counted");
 MapSelectionAnnouncer.Update(listMap, false);
 Check(ScreenReader.Messages.Count == 1, "the selection poller does not repeat the list's own speech");
+Check(Nav(Direction.DOWN) == J("Cerrado", Level(), T("waypoint.locked"), Pos(2, 5)), "locked waypoints are listed and say so");
 aldea.playerIsHere = true;
-Check(Nav(Direction.DOWN) == J("Aldea", Level(), T("waypoint.here"), Pos(3, 3)), "the next place in the region follows its order, with waypoint states");
-Check(Nav(Direction.DOWN) == J("Sur", "Costa", Level()), "entering another region names it; a single place has no position");
-Check(Nav(Direction.DOWN) == J("Desierto", Level()), "places in no region follow the regions, unnamed");
+Check(Nav(Direction.DOWN) == J("Aldea", Level(), T("waypoint.here"), Pos(3, 5)), "the next place in the region follows its order, with waypoint states");
+Check(Nav(Direction.DOWN) == J("Marca", Level(), T("waypoint.no_waypoint"), Pos(4, 5)),
+    "markers without a waypoint are listed and say so instead of locked");
+Check(Nav(Direction.DOWN) == J(arena.title, arena.body, Pos(5, 5)) && centered[^1] == arena.gameObject && listMap.focusedSceneID is null,
+    "an icon in the region follows its places with its tooltip; the map centres on it and leaves the last location");
+Check(Nav(Direction.DOWN) == J("Sur", "Costa", Level()), "from an icon the list goes on; another region is named, a single place has no position");
+Check(Nav(Direction.DOWN) == J("Desierto", Level(), dungeon.title, Pos(1, 2)),
+    "places in no region follow the regions, unnamed; a tooltip on the waypoint's own icon is read with it");
+Check(Nav(Direction.DOWN) == J(rift.title, rift.body, Pos(2, 2)), "icons in no region come last; one on a waypoint is not listed twice");
 int snaps = centered.Count;
-Check(Nav(Direction.DOWN) == J("Desierto", Level()) && centered.Count == snaps, "the last place repeats instead of wrapping");
-Check(Nav(Direction.UP) == J("Sur", "Costa", Level()), "Up walks back and names the region entered");
+Check(Nav(Direction.DOWN) == J(rift.title, rift.body, Pos(2, 2)) && centered.Count == snaps, "the last entry repeats instead of wrapping");
+Check(Nav(Direction.UP) == J("Desierto", Level(), dungeon.title, Pos(1, 2)), "Up walks back from an icon");
+Check(Nav(Direction.UP) == J("Sur", "Costa", Level()), "Up names the region entered");
 listMap.focusedSceneID = null;
-Check(Nav(Direction.UP) == J("Desierto", Level()), "Up with nothing focused starts from the last place");
+Check(Nav(Direction.UP) == J(rift.title, rift.body, Pos(2, 2)), "Up with nothing focused starts from the last entry");
 listMap.mapZoom.currentZoom = listMap.mapZoom.labelZoomRegionBreakpoint;
 Nav(Direction.UP);
-Check(listMap.mapZoom.currentZoom == listMap.mapZoom.regionZoomLevel, "zoomed out to regions, a snap first zooms in to where places can be focused");
+Check(listMap.mapZoom.currentZoom == listMap.mapZoom.regionZoomLevel, "zoomed out to regions, a snap to a place first zooms in to where places can be focused");
 snaps = centered.Count; listMap.mapTransitionBlocked = true;
 Check(Nav(Direction.DOWN) == "" && centered.Count == snaps, "an era crossfade swallows the press without moving");
 listMap.mapTransitionBlocked = false; listMap.mapZoom.manualZoomScrollBlocked = true;
@@ -263,14 +278,26 @@ Check(Nav(Direction.DOWN) == "" && centered.Count == snaps, "a zoom tween swallo
 listMap.mapZoom.manualZoomScrollBlocked = false;
 listMap.CurrentEra = SceneList.Era.Divine; listMap.focusedSceneID = null;
 var island = Place(divine, "Isla del este", "Hub"); var otherIsland = Place(divine, "Isla del oeste", "Hub");
+var islandInfo = island.gameObject.Add(new MonolithIslandInfo());
+islandInfo.IslandName = Label(island.gameObject, "Reino de los dragones");
+islandInfo.corruptionDisplay = island.gameObject.Child(); islandInfo.corruptionText = Label(islandInfo.corruptionDisplay, "120");
+islandInfo.harbinger = island.gameObject.Child(); islandInfo.harbinger.Add(new UnityEngine.UI.Button());
+islandInfo.empoweredTimelineLabel = island.gameObject.Child(); islandInfo.empoweredTimelineLabel.Active = false;
+var blessingSlot = island.gameObject.Child().Add(new BlessingContainerUI());
+island.monolithIslandInfo = islandInfo;
+MapItemName.Names = slot => slot == blessingSlot ? "Bendición del dragón" : null;
 Check(Nav(Direction.DOWN) == J(templo.locationLabel.text, Level(), Pos(1, 3)), "only the current era's places are listed");
-Check(Nav(Direction.DOWN) == J(island.locationLabel.text, Level(), Pos(2, 3)) &&
-    Nav(Direction.DOWN) == J(otherIsland.locationLabel.text, Level(), Pos(3, 3)),
-    "islands sharing one scene are stepped through one by one");
+Check(Nav(Direction.DOWN) == J(island.locationLabel.text, islandInfo.IslandName.text, ModText.Format("map.island.corruption", "120"),
+        T("map.island.harbinger"), ModText.Format("map.island.blessing", "Bendición del dragón"), Level(), Pos(2, 3)),
+    "an island says its name, corruption, harbinger and blessing; hidden banners stay silent");
+Check(Nav(Direction.DOWN) == J(otherIsland.locationLabel.text, Level(), Pos(3, 3)), "islands sharing one scene are stepped through one by one");
+MapItemName.Names = _ => null;
+Check(Nav(Direction.UP).Contains(T("map.island.no_blessing")), "an empty blessing slot says so");
 listMap.CurrentEra = SceneList.Era.Ancient;
 Check(MapLocationList.Step(4, -1, true) == 0 && MapLocationList.Step(4, -1, false) == 3 &&
     MapLocationList.Step(4, 3, true) == -1 && MapLocationList.Step(4, 0, false) == -1, "steps start from either end and never wrap");
 
+listMap.focusedSceneID = null;
 Nav(Direction.DOWN); MapLocationList.CheckSnap(listMap); MapLocationList.CheckSnap(listMap);
 Check(LeAccess.Plugin.Log.Warnings.Count == 0, "a snapped selection that holds logs nothing");
 Nav(Direction.DOWN); MapLocationList.CheckSnap(listMap); listMap.focusedSceneID = "elsewhere"; MapLocationList.CheckSnap(listMap);

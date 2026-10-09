@@ -12,6 +12,7 @@ internal class UIWaypoint : Component
     internal bool GetIsActive() => isActive;
     internal bool representsSceneInEra(string scene, SceneList.Era era) => sceneName == scene;
     internal bool GetIsPlayerHere() => playerIsHere;
+    internal MonolithIslandInfo monolithIslandInfo;
     internal static Action<UIWaypoint> Selected;
     internal void SelectSceneLocation() => Selected?.Invoke(this);
 }
@@ -28,6 +29,21 @@ internal sealed class WaypointDescriptionPopup : Component { internal TextMeshPr
 internal static class SceneList { internal enum Era { Ancient, Divine } }
 internal enum SubmitType { A_EX, X_SQUARE }
 internal enum Direction { UP, DOWN, LEFT, RIGHT }
+internal sealed class TooltipInfo : NativeObject { internal string nameText, mainText; }
+internal class InfoForTooltip : Component { internal TooltipInfo tooltipInfo = new(); internal virtual void SetText() { } }
+internal sealed class GeneralTooltop : InfoForTooltip
+{
+    internal string title, body;
+    internal override void SetText() { tooltipInfo.nameText = title; tooltipInfo.mainText = body; }
+}
+internal class ItemContainerUI : Component { }
+internal sealed class BlessingContainerUI : ItemContainerUI { }
+internal sealed class MonolithIslandInfo : Component
+{
+    internal TextMeshProUGUI IslandName, corruptionText;
+    internal TMP_Text alternateTimelineLabelText, empoweredTimelineLabelText;
+    internal GameObject alternateTimelineLabel, conqueredTimelineLabel, empoweredTimelineLabel, corruptionDisplay, harbinger;
+}
 internal sealed class EpochMasteryCheckboxUI : Component { internal TextMeshProUGUI label; internal bool IsComplete; }
 internal sealed class EpochMasteryUI : Component
 {
@@ -40,6 +56,7 @@ internal sealed class QuestPanel : Component { internal bool questsHidden; }
 internal sealed class WorldMapArrow : Component
 {
     internal readonly List<GameObject> Centered = new();
+    internal UIWaypoint FocusTarget;
     internal void CenterOnGameobject(GameObject target) => Centered.Add(target);
 }
 internal sealed class WorldMapZoom : Component
@@ -52,6 +69,7 @@ internal sealed class UIWaypointController : Component
 {
     internal Il2CppSystem.Collections.Generic.List<UIWaypoint> waypointsInMenu = new();
     internal Il2CppSystem.Collections.Generic.List<UIWaypointRegion> regionsInMenu = new();
+    internal Il2CppSystem.Collections.Generic.List<GeneralTooltop> IconsInMenu = new();
 }
 internal sealed class MapPanel : Component
 {
@@ -60,6 +78,7 @@ internal sealed class MapPanel : Component
     internal WorldMapArrow worldMapArrow;
     internal WorldMapZoom mapZoom;
     internal bool mapTransitionBlocked;
+    internal void DeselectCurrentLocation() => focusedSceneID = null;
     internal WaypointDescriptionPopup waypointDescriptionPopup;
     internal TextMeshProUGUI mapTitle, selectedLocationLabel, selectedLocationLevelLabel;
     internal SceneList.Era CurrentEra;
@@ -89,6 +108,11 @@ namespace LeAccess.Accessibility.Zones
 }
 namespace LeAccess.Accessibility.Map
 {
+    internal static class MapItemName
+    {
+        internal static Func<ItemContainerUI, string> Names = _ => null;
+        internal static string Of(ItemContainerUI slot) => Names(slot);
+    }
     internal static class MapRegionName
     {
         internal static string Get(UIWaypointRegion region) => region?.regionLabel?.text;

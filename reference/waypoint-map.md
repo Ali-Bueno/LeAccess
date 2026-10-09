@@ -119,7 +119,7 @@ session folder, not kept):
 What the mod does (`MapLocationList`, prefix `MapNavigatePatch`):
 
 - With `questPanel.questsHidden`, D-pad up/down walk the current era's travel points in `waypointsInMenu`
-  (locked ones included, not `noWaypointInScene` markers; see the counts section below).
+  (locked ones and `noWaypointInScene` markers included) plus standalone icons; see the sections below.
   Regions come in `regionsInMenu` order, each with its own `waypointsInRegion` order, and places
   in no region come last. Each step zooms in first if the map is in the region band, centres the
   map on the place and selects it, exactly like the recentre above. Cross then travels natively.
@@ -210,3 +210,33 @@ to the tab string for the End of Time.
 Region names come from `Localization.GetText("Region_Name_" + regioniName)`, which is what
 `UIWaypointRegion.UpdateLabel` 0x181E980 sets. A label whose icon was never enabled still holds
 English prefab text. Map speech is logged as `[World map]` / `[World map list]`.
+
+### The whole map as a sighted player sees it (2026-10-09, user request)
+
+"If they can see it, so should we." Everything the game's own cursor can focus is now in the list.
+`WorldMapArrow.MoveMap` tries waypoints, blessings, regions and icons, in that order.
+
+- Markers without a waypoint are listed and say "Sin punto de viaje" instead of "Bloqueado".
+- `GeneralTooltop` icons from `UIWaypointController.IconsInMenu` are listed. They cover dungeon
+  entrances and exits, faction icons, a time rift and alternate levelling paths (prefab dump:
+  Divine 9, Imperial 4, Ruined 6, none in Ancient or the End of Time).
+  - Icons under a `UIWaypointRegion` follow that region's waypoints; free ones follow the places
+    in no region.
+  - Each says its tooltip title and body, from `SetText`: `GetText(titleKey/bodyKey)` at 0x17DD0B0.
+  - A snap centres on the icon and calls `DeselectCurrentLocation`. The game then opens the
+    tooltip itself (`TryFocusOnAnyIcon` 0x1824310 → `InfoForTooltip.OnPointerEnter`).
+  - Tooltips on a waypoint's own children, such as a dungeon on its waypoint or the Bazaar, are
+    not listed again; their titles are read with the waypoint.
+- End of Time islands (`UIWaypoint.monolithIslandInfo`) read what the island shows: `IslandName`, the
+  alternate, conquered or empowered banner when shown, "Corrupción N", "Heraldo presente", and
+  the blessing slot's item (`BlessingContainerUI` under the island; 11 in the prefab, one per
+  timeline) or "Sin bendición".
+- The poller describes the arrow's `FocusTarget` when it is the focused scene, so an island
+  focused with the stick is described by its own info rather than the first island's.
+- After a snap, the snapped entry stays current while the focused scene is where the map settled.
+  This covers icons, which focus no location or the waypoint beside them, and islands.
+
+Not listed: region icons themselves (named on entry instead) and the connection lines (`MapConnection`,
+`MonolithBridgeInfo`). Unverified in game: whether region icons are focusable in the waypoint band,
+the localized titles, and the blessing item names. Waypoints 75 checks.
+

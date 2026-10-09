@@ -58,19 +58,29 @@ internal static class MapSelectionAnnouncer
         }
     }
 
-    internal static IEnumerable<string> Describe(MapPanel map, string scene, string region, string label)
+    /// <param name="known">The exact waypoint when the caller knows it; End of Time islands share one scene.</param>
+    internal static IEnumerable<string> Describe(MapPanel map, string scene, string region, string label, UIWaypoint known = null)
     {
         yield return label;
+        var waypoint = IsAlive(known) ? known : FocusTarget(map, scene) ?? FindWaypoint(map, scene);
+        if (IsAlive(waypoint))
+            foreach (string fragment in MapIslandReader.Read(waypoint.monolithIslandInfo)) yield return fragment;
         yield return WaypointReader.ReadLabel(map.selectedLocationLevelLabel);
-        var waypoint = FindWaypoint(map, scene);
         if (waypoint is not null)
         {
             foreach (string state in WaypointReader.WaypointStates(waypoint)) yield return state;
+            foreach (string title in MapIconReader.AttachedTitles(waypoint)) yield return title;
             yield break;
         }
         var focusedRegion = FindRegion(map, region);
         if (focusedRegion is null) yield break;
         foreach (string state in WaypointReader.RegionStates(focusedRegion)) yield return state;
+    }
+
+    private static UIWaypoint FocusTarget(MapPanel map, string scene)
+    {
+        var target = IsAlive(map.worldMapArrow) ? map.worldMapArrow.FocusTarget : null;
+        return IsAlive(target) && !string.IsNullOrEmpty(scene) && target.representsSceneInEra(scene, map.CurrentEra) ? target : null;
     }
 
     private static UIWaypoint FindWaypoint(MapPanel map, string scene)

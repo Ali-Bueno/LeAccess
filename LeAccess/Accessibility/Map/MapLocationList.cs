@@ -6,14 +6,17 @@ using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Map;
 
-/// <summary>With the quests hidden, D-pad up and down walk the era's destinations region by region instead of the quests.</summary>
+/// <summary>With the quests hidden, D-pad up and down walk everything on the era's map, region by region, instead of the quests.</summary>
 /// <remarks>Snapping mirrors the game's own recentre; see reference/waypoint-map.md.</remarks>
 internal static class MapLocationList
 {
-    internal readonly record struct Entry(UIWaypoint Waypoint, UIWaypointRegion Region, int Index, int Count);
+    /// <summary>A waypoint (markers without a waypoint included) or a standalone icon, with its place in its region.</summary>
+    internal readonly record struct Entry(UIWaypoint Waypoint, GeneralTooltop Icon, UIWaypointRegion Region, int Index, int Count);
 
-    private static UIWaypoint _snapped, _current;
-    private static int _pollsSinceSnap;
+    private static UIWaypoint _currentWaypoint;
+    private static GeneralTooltop _currentIcon;
+    private static string _settledScene;
+    private static int _pollsSinceSnap = -1;
     private static string _lastFailure;
 
     /// <returns>True when the move was handled here; false leaves it to the game.</returns>
@@ -33,7 +36,7 @@ internal static class MapLocationList
                 Speak(map, entries[current], withRegion: false);
                 return true;
             }
-            Snap(map, entries[next].Waypoint);
+            Snap(map, entries[next]);
             Speak(map, entries[next], withRegion: current < 0 || !Same(entries[current].Region, entries[next].Region));
             return true;
         }
@@ -50,47 +53,55 @@ internal static class MapLocationList
         return next >= 0 && next < count ? next : -1;
     }
 
-    /// <summary>The current era's waypoints, locked ones included, by region in the map's order; waypoints in no region come last.</summary>
-    /// <remarks>The map's markers without a waypoint stay reachable with the stick.</remarks>
+    /// <summary>Everything the current era's map shows, by region in the map's order (waypoints, then icons); the rest last.</summary>
     internal static List<Entry> Build(MapPanel map)
     {
         var entries = new List<Entry>();
         var controller = CurrentController(map);
         if (controller is null) return entries;
-        var remaining = new List<UIWaypoint>();
+        var waypoints = new List<UIWaypoint>();
         for (int i = 0; i < controller.waypointsInMenu.Count; i++)
-            if (IsTravelPoint(controller.waypointsInMenu[i])) remaining.Add(controller.waypointsInMenu[i]);
+            if (IsAlive(controller.waypointsInMenu[i])) waypoints.Add(controller.waypointsInMenu[i]);
+        var icons = new List<GeneralTooltop>();
+        var iconList = controller.IconsInMenu;
+        for (int i = 0; iconList is not null && i < iconList.Count; i++)
+            if (MapIconReader.IsStandalone(iconList[i])) icons.Add(iconList[i]);
         for (int r = 0; r < controller.regionsInMenu.Count; r++)
         {
             var region = controller.regionsInMenu[r];
-            if (!IsAlive(region) || region.waypointsInRegion is null) continue;
+            if (!IsAlive(region)) continue;
             var members = new List<UIWaypoint>();
-            for (int i = 0; i < region.waypointsInRegion.Count; i++)
+            for (int i = 0; region.waypointsInRegion is not null && i < region.waypointsInRegion.Count; i++)
             {
-                int index = remaining.FindIndex(w => Same(w, region.waypointsInRegion[i]));
+                int index = waypoints.FindIndex(w => Same(w, region.waypointsInRegion[i]));
                 if (index < 0) continue;
-                members.Add(remaining[index]);
-                remaining.RemoveAt(index);
+                members.Add(waypoints[index]);
+                waypoints.RemoveAt(index);
             }
-            Add(entries, members, region);
+            var regionIcons = icons.FindAll(icon => Same(icon.GetComponentInParent<UIWaypointRegion>(true), region));
+            icons.RemoveAll(regionIcons.Contains);
+            Add(entries, members, regionIcons, region);
         }
-        Add(entries, remaining, null);
+        Add(entries, waypoints, icons, null);
         return entries;
     }
 
-    /// <summary>Logs when a snapped selection did not survive the game's next per-frame focus check.</summary>
+    /// <summary>Notes where the map settled after a snap; logs when the game's focus check replaced a snapped waypoint.</summary>
     internal static void CheckSnap(MapPanel map)
     {
-        if (_snapped is null || ++_pollsSinceSnap < 2) return;
-        var snapped = _snapped;
-        _snapped = null;
-        if (!IsAlive(map) || !IsAlive(snapped) || snapped.representsSceneInEra(map.GetFocusedSceneID(), map.CurrentEra)) return;
-        Plugin.Log.LogWarning($"[World map] snapped selection {snapped.sceneName} was replaced by '{map.GetFocusedSceneID()}'");
+        if (_pollsSinceSnap < 0 || ++_pollsSinceSnap < 2) return;
+        _pollsSinceSnap = -1;
+        if (!IsAlive(map)) return;
+        _settledScene = map.GetFocusedSceneID();
+        if (IsAlive(_currentWaypoint) && !_currentWaypoint.representsSceneInEra(_settledScene, map.CurrentEra))
+            Plugin.Log.LogWarning($"[World map] snapped selection {_currentWaypoint.sceneName} was replaced by '{_settledScene}'");
     }
 
-    private static void Add(List<Entry> entries, List<UIWaypoint> members, UIWaypointRegion region)
+    private static void Add(List<Entry> entries, List<UIWaypoint> waypoints, List<GeneralTooltop> icons, UIWaypointRegion region)
     {
-        for (int i = 0; i < members.Count; i++) entries.Add(new Entry(members[i], region, i, members.Count));
+        int count = waypoints.Count + icons.Count;
+        for (int i = 0; i < waypoints.Count; i++) entries.Add(new Entry(waypoints[i], null, region, i, count));
+        for (int i = 0; i < icons.Count; i++) entries.Add(new Entry(null, icons[i], region, waypoints.Count + i, count));
     }
 
     private static UIWaypointController CurrentController(MapPanel map)
@@ -103,29 +114,32 @@ internal static class MapLocationList
         return null;
     }
 
-    internal static bool IsTravelPoint(UIWaypoint waypoint) => IsAlive(waypoint) && !waypoint.noWaypointInScene;
-
-    // The End of Time's islands share one scene, so the last snapped waypoint wins while it is still the focused scene.
+    // While the map stays where it settled after a snap, the snapped entry is current: islands share one scene, and an
+    // icon focuses no location (or the waypoint beside it).
     private static int IndexOf(List<Entry> entries, MapPanel map)
     {
         string scene = map.GetFocusedSceneID();
-        if (string.IsNullOrEmpty(scene)) return -1;
-        if (IsAlive(_current) && _current.representsSceneInEra(scene, map.CurrentEra))
+        if (scene == _settledScene && (IsAlive(_currentIcon) || IsAlive(_currentWaypoint)))
         {
-            int index = entries.FindIndex(e => Same(e.Waypoint, _current));
+            int index = entries.FindIndex(e => IsAlive(_currentIcon) ? Same(e.Icon, _currentIcon) : Same(e.Waypoint, _currentWaypoint));
             if (index >= 0) return index;
         }
-        return entries.FindIndex(e => e.Waypoint.representsSceneInEra(scene, map.CurrentEra));
+        if (string.IsNullOrEmpty(scene)) return -1;
+        return entries.FindIndex(e => IsAlive(e.Waypoint) && e.Waypoint.representsSceneInEra(scene, map.CurrentEra));
     }
 
     // Waypoint icons are inactive in the region zoom band, where the game cannot focus them.
-    private static void Snap(MapPanel map, UIWaypoint waypoint)
+    private static void Snap(MapPanel map, Entry entry)
     {
         var zoom = map.mapZoom;
-        if (IsAlive(zoom) && zoom.currentZoom <= zoom.labelZoomRegionBreakpoint) zoom.ZoomTo(zoom.regionZoomLevel);
-        if (IsAlive(map.worldMapArrow)) map.worldMapArrow.CenterOnGameobject(waypoint.gameObject);
-        waypoint.SelectSceneLocation();
-        _snapped = _current = waypoint;
+        var target = IsAlive(entry.Waypoint) ? entry.Waypoint.gameObject : entry.Icon.gameObject;
+        if (IsAlive(entry.Waypoint) && IsAlive(zoom) && zoom.currentZoom <= zoom.labelZoomRegionBreakpoint) zoom.ZoomTo(zoom.regionZoomLevel);
+        if (IsAlive(map.worldMapArrow)) map.worldMapArrow.CenterOnGameobject(target);
+        if (IsAlive(entry.Waypoint)) entry.Waypoint.SelectSceneLocation();
+        else map.DeselectCurrentLocation();
+        _currentWaypoint = entry.Waypoint;
+        _currentIcon = entry.Icon;
+        _settledScene = map.GetFocusedSceneID();
         _pollsSinceSnap = 0;
     }
 
@@ -133,12 +147,21 @@ internal static class MapLocationList
     {
         var parts = new List<string>();
         if (withRegion) parts.Add(MapRegionName.Get(entry.Region));
-        string label = WaypointReader.ReadLabel(map.selectedLocationLabel) ?? WaypointReader.ReadName(entry.Waypoint);
-        parts.AddRange(MapSelectionAnnouncer.Describe(map, map.GetFocusedSceneID(), map.GetFocusedRegionID(), label));
+        if (IsAlive(entry.Waypoint))
+        {
+            string label = WaypointReader.ReadLabel(map.selectedLocationLabel) ?? WaypointReader.ReadName(entry.Waypoint);
+            parts.AddRange(MapSelectionAnnouncer.Describe(map, map.GetFocusedSceneID(), map.GetFocusedRegionID(), label, entry.Waypoint));
+        }
+        else
+        {
+            var (title, body) = MapIconReader.Read(entry.Icon);
+            parts.Add(title);
+            parts.Add(body);
+        }
         if (entry.Count > 1) parts.Add(ModText.Format("list.position", entry.Index + 1, entry.Count));
         string text = ScreenContentTracker.Combine(parts);
         ScreenReader.Speak(text, interrupt: true);
-        Plugin.Log.LogInfo($"[World map list] {text} ({entry.Waypoint.sceneName})");
+        Plugin.Log.LogInfo($"[World map list] {text} ({(IsAlive(entry.Waypoint) ? entry.Waypoint.sceneName : "icon")})");
     }
 
     private static bool Same(UnityEngine.Object a, UnityEngine.Object b) =>

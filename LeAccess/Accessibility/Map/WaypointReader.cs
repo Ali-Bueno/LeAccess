@@ -34,12 +34,13 @@ internal static class WaypointReader
         return fragments;
     }
 
-    /// <summary>Here, locked and quest markers of a waypoint, without its name.</summary>
+    /// <summary>Here, locked (or no waypoint) and quest markers of a waypoint, without its name.</summary>
     internal static List<string> WaypointStates(UIWaypoint waypoint)
     {
         var states = new List<string>();
         if (waypoint.GetIsPlayerHere()) states.Add(ModText.Get("waypoint.here"));
-        if (!waypoint.GetIsActive()) states.Add(ModText.Get("waypoint.locked"));
+        if (waypoint.noWaypointInScene) states.Add(ModText.Get("waypoint.no_waypoint"));
+        else if (!waypoint.GetIsActive()) states.Add(ModText.Get("waypoint.locked"));
         var indicators = waypoint.questIndicators;
         if (IsAlive(indicators))
             AddQuests(states, indicators.hasActiveMainQuest, indicators.hasActiveSideQuest,
