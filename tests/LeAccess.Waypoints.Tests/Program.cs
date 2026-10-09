@@ -155,6 +155,102 @@ map.selectedLocationLabel.text = "Destino de misión";
 Check(MapSelectionAnnouncer.Update(map, true) && !ScreenReader.Messages[^1].Interrupt,
     "The quest's tweened location consumes the pending move and queues behind the brief");
 
+// List navigation with the quests hidden (D-pad up/down) and the era/quest-panel announcements.
+var listObject = new GameObject();
+var listMap = listObject.Add(new MapPanel
+{
+    mapTitle = Label(listObject, "Era Antigua"), selectedLocationLabel = Label(listObject, "Aldea"),
+    selectedLocationLevelLabel = Label(listObject, "Nivel 3"), focusedSceneID = "A",
+    questPanel = listObject.Add(new QuestPanel { questsHidden = true }),
+    worldMapArrow = listObject.Add(new WorldMapArrow()), mapZoom = listObject.Add(new WorldMapZoom())
+});
+var ancient = listObject.Add(new UIWaypointController());
+var divine = listObject.Add(new UIWaypointController());
+listMap.eras.Add(new MapPanel.UIEra { era = SceneList.Era.Ancient, waypointController = ancient });
+listMap.eras.Add(new MapPanel.UIEra { era = SceneList.Era.Divine, waypointController = divine });
+UIWaypointStandard Place(UIWaypointController owner, string name, string scene)
+{
+    var place = Waypoint(listObject.Child(), name).Also(w => w.sceneName = scene);
+    owner.waypointsInMenu.Add(place);
+    return place;
+}
+UIWaypointRegion Area(string name, params UIWaypoint[] members)
+{
+    var areaObject = listObject.Child();
+    var area = areaObject.Add(new UIWaypointRegion { regionLabel = Label(areaObject, name) });
+    foreach (var member in members) area.waypointsInRegion.Add(member);
+    ancient.regionsInMenu.Add(area);
+    return area;
+}
+var aldea = Place(ancient, "Aldea", "A"); var bosque = Place(ancient, "Bosque", "B");
+var costa = Place(ancient, "Costa", "C"); var desierto = Place(ancient, "Desierto", "D");
+var templo = Place(divine, "Templo", "E");
+var north = Area("Norte", bosque, aldea);
+var south = Area("Sur", costa);
+north.regionLabel.gameObject.Active = false;
+UIWaypoint.Selected = w =>
+{
+    listMap.focusedSceneID = w.sceneName;
+    listMap.selectedLocationLabel.text = ((UIWaypointStandard)w).locationLabel.text;
+};
+string Level() => listMap.selectedLocationLevelLabel.text;
+string Pos(int index, int total) => ModText.Format("list.position", index, total);
+void Poll() { ScreenReader.SpokeThisFrame = false; MapSelectionAnnouncer.Update(listMap, false); }
+
+Reset(); Poll();
+Check(ScreenReader.Messages.Single().Text == J(listMap.mapTitle.text, Pos(1, 2), T("map.quests_hidden"), "Aldea", Level()),
+    "opening with the quests hidden names the era tab, its position and the list mode");
+listMap.questPanel.questsHidden = false; Poll();
+Check(ScreenReader.Messages[^1].Text == T("map.quests_shown"), "showing the quests says so, without repeating the place");
+listMap.questPanel.questsHidden = true; Poll();
+Check(ScreenReader.Messages[^1].Text == T("map.quests_hidden"), "hiding the quests says the D-pad now walks the places");
+listMap.CurrentEra = SceneList.Era.Divine; listMap.mapTitle.text = "Era Divina"; Poll();
+Check(ScreenReader.Messages[^1].Text.StartsWith(J(listMap.mapTitle.text, Pos(2, 2))), "a new era tab says its title and position");
+listMap.CurrentEra = SceneList.Era.Ancient; listMap.mapTitle.text = "Era Antigua"; Poll();
+
+string Nav(Direction direction)
+{
+    ScreenReader.Messages.Clear(); ScreenReader.SpokeThisFrame = false;
+    return MapLocationList.TryNavigate(listMap, direction) ? ScreenReader.Messages.LastOrDefault().Text ?? "" : null;
+}
+var centered = listMap.worldMapArrow.Centered;
+listMap.questPanel.questsHidden = false;
+Check(Nav(Direction.DOWN) is null && centered.Count == 0, "with the quests shown the D-pad keeps changing the quest");
+listMap.questPanel.questsHidden = true;
+Check(Nav(Direction.LEFT) is null && Nav(Direction.RIGHT) is null, "LB and RB keep switching eras");
+listMap.focusedSceneID = null;
+Check(Nav(Direction.DOWN) == J("Norte", "Bosque", Level(), Pos(1, 2)) && centered[^1] == bosque.gameObject &&
+    listMap.focusedSceneID == bosque.sceneName, "Down with nothing focused centres and selects the first region's first place, naming the region even with its label hidden");
+MapSelectionAnnouncer.Update(listMap, false);
+Check(ScreenReader.Messages.Count == 1, "the selection poller does not repeat the list's own speech");
+aldea.playerIsHere = true;
+Check(Nav(Direction.DOWN) == J("Aldea", Level(), T("waypoint.here"), Pos(2, 2)), "the next place in the region follows its order, with waypoint states");
+Check(Nav(Direction.DOWN) == J("Sur", "Costa", Level()), "entering another region names it; a single place has no position");
+Check(Nav(Direction.DOWN) == J("Desierto", Level()), "places in no region follow the regions, unnamed");
+int snaps = centered.Count;
+Check(Nav(Direction.DOWN) == J("Desierto", Level()) && centered.Count == snaps, "the last place repeats instead of wrapping");
+Check(Nav(Direction.UP) == J("Sur", "Costa", Level()), "Up walks back and names the region entered");
+listMap.focusedSceneID = null;
+Check(Nav(Direction.UP) == J("Desierto", Level()), "Up with nothing focused starts from the last place");
+listMap.mapZoom.currentZoom = listMap.mapZoom.labelZoomRegionBreakpoint;
+Nav(Direction.UP);
+Check(listMap.mapZoom.currentZoom == listMap.mapZoom.regionZoomLevel, "zoomed out to regions, a snap first zooms in to where places can be focused");
+snaps = centered.Count; listMap.mapTransitionBlocked = true;
+Check(Nav(Direction.DOWN) == "" && centered.Count == snaps, "an era crossfade swallows the press without moving");
+listMap.mapTransitionBlocked = false; listMap.mapZoom.manualZoomScrollBlocked = true;
+Check(Nav(Direction.DOWN) == "" && centered.Count == snaps, "a zoom tween swallows the press without moving");
+listMap.mapZoom.manualZoomScrollBlocked = false;
+listMap.CurrentEra = SceneList.Era.Divine; listMap.focusedSceneID = null;
+Check(Nav(Direction.DOWN) == J(templo.locationLabel.text, Level()), "only the current era's places are listed");
+listMap.CurrentEra = SceneList.Era.Ancient;
+Check(MapLocationList.Step(4, -1, true) == 0 && MapLocationList.Step(4, -1, false) == 3 &&
+    MapLocationList.Step(4, 3, true) == -1 && MapLocationList.Step(4, 0, false) == -1, "steps start from either end and never wrap");
+
+Nav(Direction.DOWN); MapLocationList.CheckSnap(listMap); MapLocationList.CheckSnap(listMap);
+Check(LeAccess.Plugin.Log.Warnings.Count == 0, "a snapped selection that holds logs nothing");
+Nav(Direction.DOWN); MapLocationList.CheckSnap(listMap); listMap.focusedSceneID = "elsewhere"; MapLocationList.CheckSnap(listMap);
+Check(LeAccess.Plugin.Log.Warnings.Count == 1 && LeAccess.Plugin.Log.Warnings[0].Contains("elsewhere"), "a snapped selection the game replaced is logged");
+
 Console.WriteLine($"Waypoint tests passed: {checks} checks");
 
 static class Extensions { internal static T Also<T>(this T value, Action<T> action) { action(value); return value; } }

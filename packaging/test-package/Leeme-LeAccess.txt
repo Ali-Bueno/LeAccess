@@ -46,6 +46,13 @@ Como en las especializaciones, cada nodo de pasiva dice que nodo requiere, y el
 stick derecho arriba da la ruta y a que nodos lleva.
 El estandarte de especializaciones es una lista: arriba y abajo recorren los
 arboles, confirmar abre el elegido y derecha vuelve al arbol.
+Mapa del mundo: Cuadrado oculta o muestra las misiones (teclado: Mayus izquierda).
+Con las misiones ocultas, arriba y abajo en la cruceta saltan de un lugar a otro
+como en una lista, region por region: se dice la region al entrar, el lugar, su
+nivel, si estas aqui, si esta bloqueado, sus misiones y "N de M". Cruz viaja
+como siempre. Con las misiones visibles la cruceta sigue eligiendo misiones.
+LB y RB cambian de era y se dice su nombre y su posicion; Triangulo vuelve a tu
+ubicacion. El stick izquierdo sigue moviendo el mapa libremente.
 Nivel: manten Create y pulsa Circulo (teclado: Ctrl+L) para oir nivel, porcentaje de
 experiencia, puntos de pasiva y habilidades por mejorar, y la zona. Sin pulsar nada
 se dicen al subir de nivel y al tener un punto nuevo.

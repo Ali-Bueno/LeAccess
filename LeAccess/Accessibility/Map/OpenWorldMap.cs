@@ -14,7 +14,12 @@ internal static class OpenWorldMap
     /// <summary>Polls the open map's selection; a failure resets it so the rest of the frame still runs.</summary>
     internal static void AnnounceSelection()
     {
-        try { if (MapSelectionAnnouncer.Update(Find(), QuestAccessibility.MapMovePending)) QuestAccessibility.TakeMapMove(); }
+        try
+        {
+            var map = Find();
+            MapLocationList.CheckSnap(map);
+            if (MapSelectionAnnouncer.Update(map, QuestAccessibility.MapMovePending)) QuestAccessibility.TakeMapMove();
+        }
         catch (Exception ex)
         {
             MapSelectionAnnouncer.Reset();
