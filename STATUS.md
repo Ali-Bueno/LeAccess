@@ -189,7 +189,8 @@ requested. No release or new ZIP has been requested.
 
 ## Validation and references
 
-- 2026-10-09 night: ten-language catalogs installed (`LeAccess.dll` `612E546CC8F6B624…`, game closed; eight new catalogs copied); Localization 5692, package 250, and the 20 catalog-embedding suites pass. No friend ZIP.
+- 2026-10-09 17:59: friend ZIP `LeAccess-Steam-1.5.1-prueba-20261009-175923.zip` (repo root, ignored by git), SHA-256 `A9E78FF92A01DEC8266F1561DB41C771D354E3C6052D6E46A071F1C872154424`, 272 files; adds mod speech in all ten game languages (eight new catalogs, Leeme updated). Its `LeAccess.dll` (`DD8E397131F38A2E…`) is the installed copy (game closed). Package 250.
+- 2026-10-09 night: ten-language catalogs installed (eight new catalogs copied); Localization 5692, package 250, and the 20 catalog-embedding suites pass.
 - 2026-10-09 12:12: friend ZIP `LeAccess-Steam-1.5.1-prueba-20261009-121206.zip` (repo root, ignored by git), SHA-256 `2D28DD062CF401CD76F0D7010396E4FD748941EBE3E6E6AFEC7AFF60286CF7A7`, 264 files; replaces 20261009-071254 with the world-map list (whole map, eras, islands), the epoch mastery panel and the inventory refresh fix (Leeme updated). Its `LeAccess.dll` (`C2A54EF91E45BD96…`) is the installed copy. Package 242.
 - 2026-10-09 11:58: whole-map list installed (`LeAccess.dll` `C2A54EF91E45BD96…`, game closed); Waypoints 75, Localization 1198.
 - 2026-10-09 11:48: locked waypoints listed again and era name queued before the settled place; installed `LeAccess.dll` `5EAA9C7080481D88…` (game closed); Waypoints 69.
