@@ -287,3 +287,15 @@ puntos" then "Tiradora", and there was no telling which tree is open or that Cro
 
 Passive suite: 193 checks; Classes 113. Runtime unverified: the diamond order heard and the landing
 after Right.
+
+## Node requirements (2026-10-08)
+
+User request: say what passive nodes require, as in the specialization trees. Passive nodes are the same
+`SkillTreeNode` with `requirements` (`RequirementFromNode.node`/`.requirement`); the log had "Égida de acero …
+Requisitos no cumplidos" in column 1, a node held back by another node, without naming it. `PassiveTreeLinks` reuses
+the specialization wording (`SkillTreeLinks`): the brief adds "requiere X" ("requiere 1 punto en X, tiene 0" while the
+game's `requirementsMet` is false, replacing the bare "Requisitos no cumplidos"); the details gesture adds "Ruta: …"
+(first requirements, nearest last) and "Lleva a: …" (nodes of the tree's `nodeList` that require this one, in list
+order). Names come from `NodeTooltipContentBuilder.GetNodeTooltipInfo(node, false).Name`, the source the reader already
+trusts; the result is cached per node, requirement state, unspent points and locale. Required nodes without points are
+skipped. Passives 196 checks; listening pending.

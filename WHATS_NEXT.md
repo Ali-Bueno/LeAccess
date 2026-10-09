@@ -19,6 +19,9 @@ took long to kill and had no life narration; keep looking for bugs. Installed af
   interaction but have no skinned model; now the tome loop, the scanner's object category and "Cerca: Nota"
   ([details](reference/natural-world-sounds.md#notes-lore-records-and-paintings-2026-10-08)). Check a note and that
   NPCs keep their own cue.
+- Passive nodes now say what they require ("requiere 1 punto en X, tiene 0" instead of "Requisitos no cumplidos")
+  and the details add "Ruta"/"Lleva a", as in the specialization trees ([details](reference/passive-reading.md#node-requirements-2026-10-08)).
+  Check "Égida de acero" in the Sentinel tree.
 - Bug sweep of the log: remaining Unity errors are the game's own (decals, ability list on load, level customization).
 
 # Handoff — 2026-10-08 evening: loot by rarity, shrines/rifts/Nemesis, re-reads and online quests

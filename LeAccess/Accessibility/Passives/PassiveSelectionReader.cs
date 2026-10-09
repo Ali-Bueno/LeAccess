@@ -25,6 +25,7 @@ internal static class PassiveSelectionReader
     private static SkillTreeNode _node;
     private static NodeTooltipInfo _fallback;
     private static string _revision;
+    private static string _linksKey, _requires, _links;
     private static readonly GroupEntryTracker Columns = new();
     private static double _nextFallbackRetry;
     // Match the existing inventory/skill refresh rate while native text becomes available.
@@ -44,6 +45,7 @@ internal static class PassiveSelectionReader
         _node = null;
         _fallback = null;
         _revision = null;
+        _linksKey = _requires = _links = null;
         _nextFallbackRetry = 0;
         HasPendingModel = false;
     }
@@ -201,13 +203,15 @@ internal static class PassiveSelectionReader
         }
         // Only what keeps Cross from adding a point is spoken; a locked column's label already gives its numbers.
         string threshold = PassiveTreeReader.ReadNodeThreshold(node, state.Index, state.Points);
-        string locked = threshold == null ? node.requirementsMet ? null : ModText.Get("node.locked")
+        ReadLinks(node);
+        // A node held back by another node says which one instead of a bare "locked".
+        string locked = threshold == null ? node.requirementsMet || _requires != null ? null : ModText.Get("node.locked")
             : node.masteryRequirement != columnThreshold ? threshold : columnLabel == null ? ModText.Get("passive.node_locked") : null;
         var shown = state.Context?.TryCast<PassivePanelManager>();
         string notice = IsAlive(shown) ? PassiveTreeState.Describe(key,
             new PassiveTreeState.State(state.Key, state.Points, shown.activeTree.unspentPoints), PassiveTreeNavigation.ColumnThresholds()) : null;
         string summary = ScreenContentTracker.Combine(new[] { columnLabel, name,
-            ModText.Format("node.points", info.PointsAllocated, info.MaxPoints), locked, notice, position });
+            ModText.Format("node.points", info.PointsAllocated, info.MaxPoints), locked, _requires, notice, position });
         var fragments = new List<string> { TextUtils.CleanText(info.Description) };
         if (info.Modifiers is not null && !info.Modifiers.WasCollected)
             foreach (var modifier in info.Modifiers)
@@ -224,9 +228,27 @@ internal static class PassiveSelectionReader
                     if (!string.IsNullOrWhiteSpace(text)) fragments.Add(ModText.Format(requirement.IsMet ?
                         "node.requirement_met" : "node.requirement_unmet", text));
                 }
+        fragments.Add(_links);
         selection = new PassiveSelection(key, root, summary,
             ScreenContentTracker.Combine(fragments), state.Key, state.Context, state.Index);
         return true;
+    }
+
+    // Rebuilt when the node or its tree's spending changes; names come from the game's own tooltip model.
+    private static void ReadLinks(SkillTreeNode node)
+    {
+        string locale = global::Localization.Locale;
+        string key = $"{node.Pointer}:{node.requirementsMet}:{node.tree.unspentPoints}:{locale}";
+        if (key == _linksKey) return;
+        _linksKey = key;
+        PassiveTreeLinks.Read(node, NodeName, out _requires, out _links);
+    }
+
+    private static string NodeName(SkillTreeNode node)
+    {
+        var info = NodeTooltipContentBuilder.GetNodeTooltipInfo(node, false);
+        string name = info is null || info.WasCollected ? null : TextUtils.CleanText(info.Name);
+        return string.IsNullOrWhiteSpace(name) ? TextUtils.CleanText(node.nodeName) : name;
     }
 
     /// <summary>The spoken name, points and role of the selection's tree.</summary>

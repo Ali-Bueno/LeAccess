@@ -42,6 +42,8 @@ nodo dice que nodo requiere; stick derecho arriba da la ruta desde el inicio de
 la rama y a que nodos lleva.
 En las pasivas solo se sale de la cuadricula desde la primera columna; cada
 columna dice los puntos que pide, y confirmar sin efecto explica el motivo.
+Como en las especializaciones, cada nodo de pasiva dice que nodo requiere, y el
+stick derecho arriba da la ruta y a que nodos lleva.
 El estandarte de especializaciones es una lista: arriba y abajo recorren los
 arboles, confirmar abre el elegido y derecha vuelve al arbol.
 Nivel: manten Create y pulsa Circulo (teclado: Ctrl+L) para oir nivel, porcentaje de

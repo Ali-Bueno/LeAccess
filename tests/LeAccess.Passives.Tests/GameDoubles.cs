@@ -33,7 +33,8 @@ internal sealed class SkillnodeTooltip : Component
     internal int Exits;
     internal void EmulateOnPointerExit() => Exits++;
 }
-internal class Tree : Component { internal int unspentPoints; }
+internal class Tree : Component { internal int unspentPoints; internal NativeArray<SkillTreeNode> nodeList; }
+internal sealed class RequirementFromNode : NativeObject { internal SkillTreeNode node; internal int requirement; }
 internal sealed class CharacterTree : Tree { internal NativeArray<GameObject> masteries; }
 internal sealed class PassivePanelManager : Component
 {
@@ -68,7 +69,8 @@ internal sealed class SkillTreeNode : Component
     internal Tree tree;
     internal int pointsAllocated, maxPoints = 5, mastery, masteryRequirement;
     internal bool requirementsMet, Passive = true;
-    internal string Name = "Localized passive", Description = "Game description";
+    internal string Name = "Localized passive", Description = "Game description", nodeName = "Passive";
+    internal NativeArray<RequirementFromNode> requirements;
     internal bool inPassiveTree() => Passive;
     internal bool RespecMode;
     internal bool relevantPanelIsInRespecMode() => RespecMode;
@@ -198,6 +200,8 @@ namespace LeAccess.I18n
             ["passive.column_locked"] = "Column {0} locked, needs {1}, you have {2}", ["passive.node_locked"] = "Locked node",
             ["passive.column_unlocked"] = "Column {0} unlocked", ["passive.column_relocked"] = "Column {0} relocked",
             ["skill.learned"] = "Learned", ["skill.not_learned"] = "Not learned",
+            ["skill.requires"] = "requires {0}", ["skill.requires_point"] = "1 point in {1}, has {2}",
+            ["skill.requires_points"] = "{0} points in {1}, has {2}", ["skill.path"] = "Path: {0}", ["skill.leads_to"] = "Leads to: {0}",
         };
         internal static string Get(string key) => Text[key];
         internal static string Format(string key, params object[] args) => string.Format(Text[key], args);

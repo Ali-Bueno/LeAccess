@@ -112,6 +112,16 @@ Check(PassiveSelectionReader.TryRead(out read), "modern fullscreen delegates to 
 Check(read.Summary.Contains("Localized passive") && read.Summary.Contains(F("node.points", first.pointsAllocated, first.maxPoints)) &&
     read.Summary.Contains(T("node.locked")) && !read.Summary.Contains("Game description"), "brief selection contains points and status only");
 Check(read.Details.Contains("Game description") && read.Details.Contains("Localized modifier"), "full native details retained");
+var anchor = new GameObject().Add(new SkillTreeNode { tree = first.tree, Name = "Valiente" });
+first.requirements = new(new[] { new RequirementFromNode { node = anchor, requirement = 1 } });
+first.tree.nodeList = new(new[] { anchor, first });
+PassiveSelectionReader.Reset();
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary.Contains(F("skill.requires", F("skill.requires_point", 1, anchor.Name, 0))) &&
+    !read.Summary.Contains(T("node.locked")), "A node held back by another names it and the points it lacks: " + read.Summary);
+Check(read.Details.Contains(F("skill.path", anchor.Name)), "Details give the route to the node");
+PassiveTreeLinks.Read(anchor, node => node.Name, out string anchorRequires, out string anchorLinks);
+Check(anchorRequires == null && anchorLinks == F("skill.leads_to", first.Name), "A node names what it leads to");
+first.requirements = null; first.tree.nodeList = null; PassiveSelectionReader.Reset();
 fullscreen.Enabled = false;
 Check(!PassiveSelectionReader.TryRead(out _), "disabled modern panel rejected");
 fullscreen.Enabled = true; fullscreen.gameObject.Active = false;

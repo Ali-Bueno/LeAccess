@@ -9,5 +9,6 @@
     <Compile Include="../../LeAccess/Accessibility/Navigation/GroupedGridOrder.cs" Link="GroupedGridOrder.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/GroupEntryTracker.cs" Link="GroupEntryTracker.cs" />
     <Compile Include="../../LeAccess/Accessibility/Utils/TextUtils.cs" Link="TextUtils.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Skills/SkillTreeLinks.cs" Link="SkillTreeLinks.cs" />
   </ItemGroup>
 </Project>
