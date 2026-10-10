@@ -26,6 +26,16 @@ internal static class StickFlick
     }
 }
 
+// PlayStation pads open the game's controller menu with the touchpad, leaving Create free; on other
+// pads Back/View opens that menu, so L3 (the visual-only overlay map) becomes the mod button.
+internal enum ModifierButton { Back, LeftStick }
+
+internal static class ModifierChoice
+{
+    internal static ModifierButton For(bool playStationPad, bool leftStickOnOtherPads) =>
+        !playStationPad && leftStickOnOtherPads ? ModifierButton.LeftStick : ModifierButton.Back;
+}
+
 // Without the Create modifier the right stick belongs to the game (minion commands).
 internal static class ScannerGate
 {

@@ -366,6 +366,7 @@
   "exploration.scanner.empty": "这里什么也没有",
   "exploration.scanner.category_empty": "这里没有{0}",
   "exploration.scanner.no_selection": "请用Create键和右摇杆选择目的地",
+  "exploration.scanner.no_selection_l3": "请用L3键和右摇杆选择目的地",
   "exploration.scanner.unavailable": "扫描器目前不可用",
   "exploration.boss": "{0}，首领",
   "exploration.entry": "{0}，{1}，{2}",

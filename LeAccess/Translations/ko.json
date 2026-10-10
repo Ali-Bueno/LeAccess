@@ -366,6 +366,7 @@
   "exploration.scanner.empty": "여기에는 아무것도 없습니다",
   "exploration.scanner.category_empty": "여기에는 {0} 없음",
   "exploration.scanner.no_selection": "Create 버튼과 오른쪽 스틱으로 목적지를 고르세요",
+  "exploration.scanner.no_selection_l3": "L3와 오른쪽 스틱으로 목적지를 고르세요",
   "exploration.scanner.unavailable": "지금은 탐지기를 사용할 수 없습니다",
   "exploration.boss": "{0}, 보스",
   "exploration.entry": "{0}, {1}, {2}",

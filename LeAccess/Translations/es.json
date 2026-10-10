@@ -366,6 +366,7 @@
   "exploration.scanner.empty": "aquí no hay nada",
   "exploration.scanner.category_empty": "aquí no hay {0}",
   "exploration.scanner.no_selection": "Elige un destino con Crear y el stick derecho",
+  "exploration.scanner.no_selection_l3": "Elige un destino con L3 y el stick derecho",
   "exploration.scanner.unavailable": "El explorador no está disponible ahora",
   "exploration.boss": "{0}, jefe",
   "exploration.entry": "{0}, {1}, {2}",

@@ -27,6 +27,15 @@ interrumpe la preparacion. Los siguientes inicios suelen ser mas rapidos.
 No necesitas instalar .NET por separado: el runtime viene en la carpeta dotnet.
 Steam y el juego conservan sus propios requisitos de instalacion.
 
+BOTON DEL MOD
+En DualSense y DualShock 4 es Create (Share). En mandos Xbox y otros, el boton
+View/Select abre el menu del mando del juego, asi que el boton del mod es L3
+(pulsar el stick izquierdo). En esos mandos L3 ya no abre el mapa superpuesto
+durante el juego (es un mapa solo visual); en los menus L3 sigue comparando
+objetos y funcionando en la forja. Donde este texto dice Create, en esos mandos
+usa L3. Para volver a View/Select, en BepInEx/config/LeAccess.cfg cambia
+LeftStickOnOtherPads = true por false.
+
 USO Y PRUEBAS
 Navega con el mando como en el juego. Pulsa el stick derecho hacia arriba para
 leer los detalles o tooltips del elemento seleccionado en menus compatibles.

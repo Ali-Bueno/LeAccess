@@ -41,6 +41,12 @@ foreach (var flick in Enum.GetValues<ExplorationCommand>())
     Check(ScannerGate.Controller(false, flick) == ExplorationCommand.None, $"Create up drops {flick}");
 }
 
+// Create stays the mod button on PlayStation pads; other pads use L3 unless the option is off.
+Check(ModifierChoice.For(true, true) == ModifierButton.Back, "DualSense/DualShock keep Create with the option on");
+Check(ModifierChoice.For(true, false) == ModifierButton.Back, "DualSense/DualShock keep Create with the option off");
+Check(ModifierChoice.For(false, true) == ModifierButton.LeftStick, "Other pads use L3");
+Check(ModifierChoice.For(false, false) == ModifierButton.Back, "Other pads fall back to Back/View with the option off");
+
 // Suppression ledger with fakes.
 var enabled = new Dictionary<string, bool> { ["a"] = true, ["b"] = true, ["c"] = true, ["d"] = false };
 var held = new HashSet<string>();

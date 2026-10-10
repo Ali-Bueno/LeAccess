@@ -1,3 +1,13 @@
+# Handoff — 2026-10-10: L3 mod button, player README, forum post
+
+User: pads with only Start/Select cannot use the radar (Select opens the controller menu); use a game command that
+does not matter, only off the DualSense, and keep L3 in the inventory (compare, forge). L3 (overlay map, visual only)
+is now the mod button on non-PlayStation pads, its overlay-map binding off in gameplay only
+([details](reference/exploration-mode.md#l3-as-the-mod-button-on-non-playstation-pads-2026-10-10)). README rewritten in
+the style of Grimdark for the first public test release; forum post for the audiogames.net playtest room drafted (not
+posted). Check with an Xbox pad: L3 + right stick scans, L3 + X/A/Y/B give vitals/beacon/gold/level, L3 in the
+inventory compares, View still opens the controller menu, and the log line `L3 is the mod button`.
+
 # Handoff — 2026-10-09: dynamic radar openings
 
 User: 6 m may be too much; there are very narrow passages; make it dynamic. Openings now need (1) an edge passed:

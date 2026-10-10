@@ -6,7 +6,7 @@ using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Exploration;
 
-// One exploration command per frame from Create + right stick, the keyboard and the Create modifier.
+// One exploration command per frame from Create (L3 on non-PlayStation pads) + right stick, the keyboard and that modifier.
 // While the modifier is held in gameplay the game bindings of every button are switched off, so
 // Square and Cross do not also cast or interact; each is restored once its button is up.
 internal static class ExplorationInput
@@ -22,13 +22,14 @@ internal static class ExplorationInput
 
     private struct Reading
     {
-        internal bool Modifier, Vitals, Lock, Gold, Status;
+        internal bool Modifier, Vitals, Lock, Gold, Status, LeftStickPad, PlayStationPad;
         internal ExplorationCommand Flick;
         internal string Signature;
     }
 
     private static ConfigEntry<bool> _scanner;
     private static ConfigEntry<bool> _modifierMenu;
+    private static ConfigEntry<bool> _leftStickOnOtherPads;
     private static readonly BindingSuppression<Suppressed> Ledger = new();
     private static bool _previousModifier, _active, _minionLogged;
     private static string _suppressionSignature;
@@ -37,13 +38,16 @@ internal static class ExplorationInput
     internal static ExplorationCommand Command { get; private set; }
     internal static bool MenuHeld { get; private set; }
     internal static bool MenuOpenedThisFrame { get; private set; }
+    internal static bool LeftStickIsModifier { get; private set; }
 
     internal static void Initialize(ConfigFile config)
     {
         _scanner = config.Bind("Exploration", "ControllerScanner", true,
             "Drive the exploration scanner with the controller right stick while Create is held during gameplay: up/down change category, left/right change entry. Without Create the right stick stays with the game (minion commands).");
         _modifierMenu = config.Bind("Exploration", "ModifierMenu", true,
-            "Hold the controller Create/Share button for the exploration menu (right stick = scanner, Square = vitals, Cross = lock, Triangle = gold, Circle = level and progress). The game button bindings are paused while it is held.");
+            "Hold the controller Create/Share button (L3 on other pads, see LeftStickOnOtherPads) for the exploration menu (right stick = scanner, Square = vitals, Cross = lock, Triangle = gold, Circle = level and progress). The game button bindings are paused while it is held.");
+        _leftStickOnOtherPads = config.Bind("Exploration", "LeftStickOnOtherPads", true,
+            "On pads other than DualSense/DualShock 4, whose Back/View button opens the game's controller menu, L3 is the mod button instead of Create. The game's L3 overlay map is switched off on those pads during gameplay only; menus keep L3 (item comparison, forge).");
         _previousModifier = _active = false;
         _controllerFailure = _suppressionFailure = _keyboardFailure = null;
     }
@@ -56,15 +60,19 @@ internal static class ExplorationInput
         if (_scanner is null) return;
         try
         {
-            var reading = ReadControllers(_scanner.Value, _modifierMenu.Value);
+            var reading = ReadControllers(_scanner.Value, _modifierMenu.Value, _leftStickOnOtherPads.Value);
             bool wentDown = reading.Modifier && !_previousModifier;
             _previousModifier = reading.Modifier;
+            LeftStickIsModifier = reading.LeftStickPad && !reading.PlayStationPad;
             if (!gameplay)
             {
                 RestoreAll("left gameplay");
+                LeftStickModifier.Release();
                 _active = false;
                 return;
             }
+            if (reading.LeftStickPad) LeftStickModifier.Hold(CurrentPlayer(), reading.Signature);
+            else LeftStickModifier.Release();
             if (!reading.Modifier) { _active = false; _minionLogged = false; }
             else if (wentDown)
             {
@@ -96,6 +104,7 @@ internal static class ExplorationInput
             _active = false;
             ReportFailure("Exploration input", ex, ref _controllerFailure);
             RestoreAll("input error");
+            LeftStickModifier.Release();
         }
     }
 
@@ -106,9 +115,10 @@ internal static class ExplorationInput
         MenuOpenedThisFrame = false;
         _active = false;
         RestoreAll("cleanup");
+        LeftStickModifier.Release();
     }
 
-    private static Reading ReadControllers(bool stick, bool modifier)
+    private static Reading ReadControllers(bool stick, bool modifier, bool leftStickOnOtherPads)
     {
         var reading = new Reading { Signature = "" };
         if (!stick && !modifier) return reading;
@@ -126,8 +136,16 @@ internal static class ExplorationInput
             if (template is null || template.WasCollected) continue;
             if (modifier)
             {
-                var back = template.back;
-                if (back is not null && !back.WasCollected && back.value) reading.Modifier = true;
+                bool playStation = LeftStickModifier.IsPlayStation(joystick);
+                reading.PlayStationPad |= playStation;
+                var button = template.back;
+                if (ModifierChoice.For(playStation, leftStickOnOtherPads) == ModifierButton.LeftStick)
+                {
+                    reading.LeftStickPad = true;
+                    var leftStick = template.leftStick;
+                    button = leftStick is null || leftStick.WasCollected ? null : leftStick.press;
+                }
+                if (button is not null && !button.WasCollected && button.value) reading.Modifier = true;
                 var square = template.actionTopRow1;
                 if (square is not null && !square.WasCollected && square.justPressed) reading.Vitals = true;
                 var cross = template.actionBottomRow1;

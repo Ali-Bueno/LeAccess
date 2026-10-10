@@ -366,6 +366,7 @@
   "exploration.scanner.empty": "nada encontrado aqui",
   "exploration.scanner.category_empty": "nenhum resultado de {0} aqui",
   "exploration.scanner.no_selection": "Escolha um destino com Criar e o analógico direito",
+  "exploration.scanner.no_selection_l3": "Escolha um destino com L3 e o analógico direito",
   "exploration.scanner.unavailable": "O escâner não está disponível agora",
   "exploration.boss": "{0}, chefe",
   "exploration.entry": "{0}, {1}, {2}",

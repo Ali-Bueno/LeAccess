@@ -366,6 +366,7 @@
   "exploration.scanner.empty": "hier nichts gefunden",
   "exploration.scanner.category_empty": "hier nichts gefunden bei {0}",
   "exploration.scanner.no_selection": "Wähle ein Ziel mit Erstellen und dem rechten Stick",
+  "exploration.scanner.no_selection_l3": "Wähle ein Ziel mit L3 und dem rechten Stick",
   "exploration.scanner.unavailable": "Der Scanner ist gerade nicht verfügbar",
   "exploration.boss": "{0}, Boss",
   "exploration.entry": "{0}, {1}, {2}",

@@ -366,6 +366,7 @@
   "exploration.scanner.empty": "rien trouvé ici",
   "exploration.scanner.category_empty": "aucun résultat pour {0} ici",
   "exploration.scanner.no_selection": "Choisissez une destination avec Créer et le stick droit",
+  "exploration.scanner.no_selection_l3": "Choisissez une destination avec L3 et le stick droit",
   "exploration.scanner.unavailable": "Le scanner n'est pas disponible pour le moment",
   "exploration.boss": "{0}, boss",
   "exploration.entry": "{0}, {1}, {2}",

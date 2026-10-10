@@ -366,6 +366,7 @@
   "exploration.scanner.empty": "ここには何もありません",
   "exploration.scanner.category_empty": "ここに{0}はありません",
   "exploration.scanner.no_selection": "クリエイトボタンと右スティックで目的地を選んでください",
+  "exploration.scanner.no_selection_l3": "L3と右スティックで目的地を選んでください",
   "exploration.scanner.unavailable": "現在、スキャナーは利用できません",
   "exploration.boss": "{0}、ボス",
   "exploration.entry": "{0}、{1}、{2}",

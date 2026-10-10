@@ -366,6 +366,7 @@
   "exploration.scanner.empty": "nic tu nie znaleziono",
   "exploration.scanner.category_empty": "{0}: tutaj nic nie ma",
   "exploration.scanner.no_selection": "Wybierz cel przyciskiem Utwórz i prawym drążkiem",
+  "exploration.scanner.no_selection_l3": "Wybierz cel przyciskiem L3 i prawym drążkiem",
   "exploration.scanner.unavailable": "Skaner jest teraz niedostępny",
   "exploration.boss": "{0}, boss",
   "exploration.entry": "{0}, {1}, {2}",

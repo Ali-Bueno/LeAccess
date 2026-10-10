@@ -147,7 +147,8 @@ internal static class ExplorationAccessibility
 
     private static string Lock()
     {
-        if (Catalog.Selected(Entries) is not { } entry) return ModText.Get("exploration.scanner.no_selection");
+        if (Catalog.Selected(Entries) is not { } entry)
+            return ModText.Get(ExplorationInput.LeftStickIsModifier ? "exploration.scanner.no_selection_l3" : "exploration.scanner.no_selection");
         _lastTarget = new ExplorationTarget(entry.Key, entry.Name, entry.Position, entry.ArrivalRadius);
         return ExplorationBeacon.Lock(_lastTarget.Value);
     }

@@ -1,174 +1,262 @@
 # LeAccess
 
-LeAccess is a screen-reader accessibility mod for **Last Epoch**, built as a
-BepInEx 6 IL2CPP plugin for Windows. The current target is Steam build
-**25690669**, with Unity **6000.4.8f1**.
+A screen-reader accessibility mod for Last Epoch.
 
-See [STATUS.md](STATUS.md) for confirmed behavior, pending listening checks and
-the latest installed build. Technical findings and reproduction notes live in
+Status: first public test release. I have played about 20 hours with it and have a level 23 Paladin. It has been
+tested with several characters, online and offline, including co-op with a friend, and the game is quite playable. It
+is not finished: some screens are still silent, and you will find rough edges.
+
+What changed recently is in [STATUS.md](STATUS.md); the technical notes behind each feature are in
 [reference/](reference/).
 
-## Accessibility features
+## Disclaimer
 
-- Menu focus, settings, character classes, mastery descriptions and notifications.
-- Visible dungeon entry/exit, boss confirmation and native modal instructions.
-- Skill and passive details, equipped-skill buttons, inventory actions, equipped idols (Right from
-  the equipment's right column; [idols](reference/idols.md)), the inventory's cosmetics tab
-  ([cosmetics](reference/cosmetics-reading.md)) and quest journal reading.
-- Forge affix actions, shard details, and localized rune/glyph names and quantities.
-- World map: with the quests hidden (Square), D-pad up/down walk everything the map shows (places, locked or without a waypoint, dungeon/faction/rift icons, End of Time islands with corruption, harbinger and blessing) region by region
-  ("N of M", region named on entry) and Cross travels; era tabs (LB/RB) say their title and position
-  ([details](reference/waypoint-map.md#list-navigation-with-the-quests-hidden-2026-10-09)); the epoch mastery
-  panel (Knowledge of Orobyss) reads its progress, timeline points and completion
-  ([panel](reference/waypoint-map.md#epoch-mastery-panel-knowledge-of-orobyss-2026-10-09)).
-- Endgame and faction panels: dungeon/arena tiers, Monolith echoes and blessings, echo rewards,
-  boss votes ([endgame](reference/endgame-panels.md)); faction choice and ranks, gamblers and special
-  vendors, item-service panels, loot-filter rules and mastery choice ([factions/vendors](reference/faction-vendor-panels.md)).
-- Visible dialogue, examination descriptions, NPC subtitles and cinematic text.
-- Nearby NPC, enemy, loot, destination and other-player names.
-- Health/mana/potion-charge feedback and directional navigation and world-object audio cues.
-- Boss and miniboss life narration by life steps ([details](reference/boss-life.md)).
-- Automatic quest progress updates and spoken/audio orientation toward visible quest markers or named exits.
-- Local map sections, supported physical places and generated-room information.
-- English and Spanish mod speech, following the game language, with editable
-  translation catalogs and per-key fallback.
+This is a hobby project, and it is a mod of a closed-source Unity game. Almost all of the code was written by Claude
+(Anthropic's AI) under my direction; I design the features, play, test and report what is wrong. Last Epoch updates
+itself through Steam, and any update can break part of the mod or all of it until I catch up. I fix things when I have
+time, so bugs will not always be fixed quickly.
 
-The startup guard retains an early online/offline button press until the game's
-loading transition has finished. Menu reading preserves native control mappings;
-HUD button hints remain silent during exploration.
+That said, it works well. It reads the menus, it lets you explore by sound, and you can fight, loot, craft, level up,
+travel and play online with other people. Just know what you are getting into.
 
-If screen-reader output is rejected, inventory, skill, passive and quest-journal readers retry
-the current selection after recovery. Dialogues, visible subtitles, popups and
-notices similarly retain current content until output is accepted. Hidden or
-replaced content is discarded; a failed manual inspection rebuilds details only
-while the same selection remains owned. See [recovery scope and limits](reference/screen-reader-lifecycle.md).
-Quest updates, vitals and automatic orientation also retain current information
-after rejected output; failed attempts do not consume announcement pacing.
+## What you need
 
-Menu navigation reads brief names and states. Push the **right stick up** to read
-the selected tooltip: inventory, skills, passive nodes, class/mastery/realm
-choices, quest details and supported ordinary menu descriptions. Return the stick
-to neutral before repeating. Skill inspection refreshes current displayed stats.
-Quests also announce their current objective and state during navigation.
-Earlier completed or failed objectives appear only in manual details, clearly
-labeled as that quest's history.
-Shared [menu visibility and focus checks](reference/menu-visibility.md) exclude
-hidden, faded and clipped labels, and reject retained background selection.
-Collected visual text follows screen rows, top to bottom and left to right;
-native controller navigation remains unchanged.
-Focused native [dungeon and warning windows](reference/dungeon-warning-reading.md)
-read their visible instructions and choices, including changes to tier information.
-During gameplay, new quests, current-objective changes (including counters) and
-completion are announced automatically. Saved quest history is initially silent;
-updates wait while menus or conversations own input.
-[Dynamic echo and encounter instructions](reference/dynamic-objectives.md)
-read their visible objective/modifier text and share pacing and turns with quest
-updates. Queued gameplay text yields to native notices while menus own input.
-The visible [Morditas abandonment countdown](reference/announcement-lifecycle.md)
-speaks its current instruction once per countdown or restart. It takes priority
-over ambient narration during gameplay and waits while menus or typing own input.
-Items announce their available actions with the button first; merchant items
-include purchase, sale or repurchase prices. Skills announce learned state and
-their declared level or passive-point requirement.
-[Equipped slots](reference/equipped-items.md) announce the localized slot and
-actual worn item, including changes made while focus stays on the same slot.
-An empty slot is distinguished from temporarily unavailable item data.
-Stash and shop reading verifies the item against the current tab or stock before
-announcing it. [Forge and filter controls](reference/crafting-reading.md) read the
-selected affix action, rendered tier and available shards; right-stick-up includes
-visible shard improvement details. Rune/glyph grids and selector flyouts read
-the native selected material's localized name and visible quantity, including
-empty stacks. Supported potential and affix-count filter
-bounds include their property name alongside the minimum or maximum value.
-Manual inspection of a selected forge control includes its visible preview and
-current forging potential, or the game's visible reason forging is unavailable.
-Item inspection can use the game's tooltip formatter when the visual tooltip is
-unavailable, including modifiers, lore and requirements.
-Character-name screen keyboards require an explicit click or submit on the name
-field; moving focus to it does not start editing.
-Settings announce the tab and each control's name/value, including sound sliders
-and visible challenge states when no button is available. Descriptions remain
-available with right-stick-up.
+- **Last Epoch for Windows 64-bit, Steam version.** I test on 1.5.1 (Steam build 25816319). Other stores are untested.
+- **A screen reader.** NVDA is what I use and test with. Speech goes through Tolk, which also talks to JAWS and a few
+  others and falls back to SAPI if no screen reader is running, but those are untested.
+- **A controller.** The mod is built around the game's controller mode; the keyboard only has a few mod shortcuts.
+  - DualSense (what I use) or DualShock 4: the **Create** (Share) button is the mod button.
+  - Xbox and other controllers: their View/Select button opens the game's controller menu, so **L3** (clicking the
+    left stick) is the mod button instead. On those pads L3 no longer toggles the game's overlay map during gameplay
+    (it is a purely visual map). In menus L3 still does what the game says: comparing items, forging and so on.
+- **Internet on the first launch**, so the loader can download some Unity files. You do not need to install .NET; it is
+  in the package.
 
-During gameplay the [exploration scanner](reference/exploration-mode.md) is Create (Share) held
-plus the right stick (the right stick alone still gives your minions orders). It is a port of the
-Diablo 2 mod's: push the stick up or down to change category and left or right to
-step through that category's entries, nearest first. The categories and their order are
-D2R's: exit, portal, waypoint, unexplored room, room, quest, NPC, player, last death (where you
-last died; a destination only, nothing to pick up), stash, enemy (every enemy on screen), treasure (chests), shrine, object (levers, notes, the forge and
-other interactables) and item (loot on the ground). A category step says its name and then
-its nearest entry; each entry gives its name, distance in steps (one step is the character's
-width) and one of eight screen directions, plus "on a higher/lower level" when the target is
-a floor above or below you. Places are listed once you have seen them; quest
-markers, enemies and other players as the game shows them. Rooms are the game's minimap
-rooms: "room N" once entered, "unexplored room N" when you have glimpsed it but never
-entered (in maps without them, edges where unseen ground continues). As in D2R, the first
-sighting of an exit, waypoint or the stash says "the radar has logged a new exit/place" with a
-chime, the nearest unentered room hums from its nearest point, and entering one plays a short
-cue. Keyboard: Ctrl+Numpad 8/2 and 4/6.
-With **Create** (Share) held you also get the mod menu: **Square** reads life, mana and potions, **Triangle**
-reads your gold (keyboard: Ctrl+G), **Circle** reads your level, experience percentage, unspent passive points, skills that can level up and the zone (keyboard: Ctrl+L), **Cross** starts the beacon toward the selected entry (again cancels). While Create is held the
-game's button actions pause, so Square and Cross do not cast or interact. The beacon pings
-toward the route through ground you have already explored, faster when closer, and refuses
-when no explored route exists (keyboard: Ctrl+B). In menus the right stick keeps reading
-details (no Create needed). Without a button,
-[enemy cues](reference/enemy-cues.md) growl for up to three
-nearby enemies in sight (a deeper swoop for a boss, a rising sweep for the nearest rare or
-champion enemy), panned on screen and faster when closer; `[Enemy cues]` in the configuration
-turns them off or adjusts them. Magic, rare and champion enemies add their class to their name,
-and rare and champion enemies have their life narrated like bosses ([classes](reference/enemy-class.md)).
-A right-stick minion order is spoken ("Esbirros: atacar a X" / "Esbirros: mover") when you have
-minions ([minion commands](reference/minion-commands.md)).
-Each gold pickup or gold reward is spoken with its amount ("50 de oro"), except at
-vendors, which announce the new total ([gold](reference/vitals-api.md#gold-pickups-2026-10-08));
-level ups and new passive points or skill points are announced as they happen
-([progression](reference/progression.md)).
+## Installation
 
-[Natural world sounds](reference/natural-world-sounds.md) reuse recordings from
-the D2R mod for loot and identified world interactions. Equipment and idols sound by
-rarity (normal, magic, rare/exalted, unique/set/legendary), and runes, glyphs, affix
-shards and other materials (keys, lenses, woven echoes) each have their own loop; notes, lore
-records and paintings use the tome loop;
-shrines and the Nemesis use Last Epoch's own recordings and time rifts its rift loop
-([mapping](reference/world-object-sounds.md)). Short repeating samples
-share playback time with each other; radar knocks and breaths never wait behind
-them. The radar knocks when a wall comes within about two metres and breathes when it slips
-past a wall's edge into space that goes on (from about three metres, narrow and bending
-passages included; niches stay silent); stepping away from a wall you were following, even
-a diagonal one, stays silent, and the wall's real end breathes
-([details](reference/navigation-radar.md#dynamic-openings-2026-10-09)).
-Entering an area of another era names the era after the area
-([eras](reference/zone-reading.md)). An opening breath that ends in a quick double pip leads toward an unexplored area. The sounds are embedded in the plugin; no separate audio installation
-is required.
-The previous bright coin and equipment cues are preserved as playable WAVs in
-the [sound design reference](reference/sound-design.md). D2R recordings remain
-the active sound set while those originals guide future, more realistic sounds.
+1. Close Last Epoch.
+2. In Steam, right click Last Epoch, then Manage, then Browse local files.
+3. Extract **everything** in the ZIP straight into that folder, next to `Last Epoch.exe`. Do not leave it inside an
+   extra folder. You should end up with `winhttp.dll`, `doorstop_config.ini` and the `BepInEx` and `dotnet` folders
+   next to `Last Epoch.exe`.
+4. Start NVDA before the game.
+5. Start the game from Steam as usual. There is no launcher or BAT file.
 
-Ambient NPC subtitles are read when their text is visible on screen or the NPC
-is within interaction range. Nearby world services, wagons, gateways and the
-statue of Eterra can be announced separately from the ground beneath the player.
-Supported camp tents are named only when the player is inside their verified
-canopy contour on the same walkable floor; leaving a tent receives a brief spoken
-confirmation. Being near a merchant does not establish a shop interior.
+The first launch can take several minutes while the loader (BepInEx) prepares itself. It is silent; let it finish and
+do not close the game. Later launches are fast. After a game update the next launch takes longer again for the same
+reason.
 
-## Requirements and build
+If you already use BepInEx or other mods, back up their files and `BepInEx/config` before mixing installations.
 
-- A local Last Epoch installation with the matching generated interop assemblies.
-- BepInEx **6.0.0-be.788**, IL2CPP Windows x64, and Il2CppInterop **1.5.3**.
-- A .NET SDK capable of building `net6.0`, plus the runtime required by the tests.
-- The existing speech dependencies in `references/tolk/`: `TolkDotNet.dll`,
-  `Tolk.dll` and `nvdaControllerClient64.dll`. NVDA is the tested screen reader.
+To turn the mod off, with the game closed, move `BepInEx/plugins/LeAccess` out of the `plugins` folder. To turn off the
+loader as well, rename `winhttp.dll` (that also turns off any other BepInEx mods). Your saves are never touched.
 
-The shared [engineering policy](PRINCIPLES.md) targets PRISM. This revision still
-uses the centralized Tolk/NVDA adapter; migration to PRISM remains outstanding.
-Game assemblies, decompiled game code, third-party DLLs and build outputs are
-excluded from this repository.
-The [speech connection](reference/screen-reader-lifecycle.md) retries automatically
-if a reader starts or restarts after the mod; failed outdated messages are not replayed.
+## Getting started
 
-Follow the [Steam port notes](reference/steam-port.md) to set up the loader and
-interop generation. The included `LeAccess.InteropRepair` preloader handles the
-documented Unity 6.4 generated-type issue and is built with the main plugin.
+Last Epoch is an action RPG in the style of Diablo: you run around, hit things, pick up loot and make your character
+stronger. Online and offline both work; the mod keeps whatever you choose on the first screen. Most of what the mod does
+happens on its own, by sound and speech, while you play with the game's normal controls:
+
+- The menus speak: the focused element with its value, state and position ("3 of 8"). Push the **right stick up** in a
+  menu to hear the details or tooltip of what is focused.
+- A wall radar: a knock when a wall comes within about two metres, and a breath when you slip past a wall's edge into
+  space that goes on (a doorway, a side passage, the end of a wall). A breath that ends in a quick double pip leads
+  toward somewhere you have not explored.
+- Things in the world have sounds: loot by rarity, gold, potions, chests, the stash, portals, waypoints, exits, shrines,
+  rifts, NPCs (wooden taps) and enemies (growls), all panned and faster or louder as you get closer.
+- An exploration scanner, ported from my Diablo II: Resurrected mod: hold the mod button and move the right stick to go
+  through exits, waypoints, rooms, NPCs, enemies, loot and more, nearest first, with distance and direction. Mod
+  button and Cross starts a beacon that leads you there through ground you have already explored.
+- Automatic speech for the things a sighted player sees at a glance: life and mana when they drop, potion charges, gold
+  you pick up, level ups and new points, quest updates, zone and era names, the names of NPCs and players you walk up
+  to, boss and elite life, dialogue and subtitles, notifications and minion orders.
+
+The basic flow: walk with the left stick and listen. The radar tells you about walls and openings. When you hear loot,
+walk toward it; Cross picks up or interacts with the nearest thing, and the D-pad up/down chooses which nearby thing
+Cross uses. Enemies growl as they come into sight; your abilities are on Square, Triangle, R1, L2 and R2, and the
+game's controller targeting aims them (I play with the game's auto-targeting). Circle dodges, L1 drinks a potion, R3
+opens a portal to town.
+
+When you do not know where to go, hold the mod button and flick the right stick up or down to pick a category (exit,
+waypoint, quest, unexplored room...), then left or right to step through it. Each entry says its name, how far it is in
+steps and one of eight screen directions. Mod button and Cross locks the beacon on it; follow the pings. The scanner
+learns places as you see them and remembers them per character.
+
+The game assumes you know what you are doing, so a few things are worth knowing:
+
+- Each class picks a mastery partway through the campaign. That choice screen is read, and so are the passive and
+  skill trees.
+- The scanner's "last death" category leads to where you last died; there is no corpse to pick up.
+- The controller menu (touchpad on PlayStation, View on Xbox) opens a wheel with the panels: inventory, skills,
+  passives, map, forge and the rest. The wheel is read as you move the right stick.
+- Holding the mod button alone plays a click and pauses the game's actions on the other buttons, so Square and Cross do
+  what the mod says instead of casting or interacting. Let go and they work again.
+- The right stick on its own still gives your minions orders, and the mod says them ("Minions: attack X").
+- The screen readers' keys (Ctrl, Shift, Alt, Insert, Caps Lock) do not throw the game out of controller mode, so you
+  can silence speech without losing your place in a menu.
+- Name fields (character name, usernames) open the game's screen keyboard with Cross. While it is open you can type on
+  your physical keyboard; Enter accepts and Escape leaves.
+- For co-op both characters must be online, in the same realm and mode (Normal or Hard), and neither can be on Solo
+  Loot. Your username for invitations is read in the Social panel. Careful: on the character creation screen, pressing
+  Normal or Hard always switches to the other mode.
+- Last Epoch has a lot of systems. The game's own guide (in the game menu, read by the mod) and online build guides
+  are your friends.
+
+## Controls
+
+The game's own bindings must stay at their defaults. The mod reads the standard controller layout and does not follow
+remapped buttons.
+
+PlayStation names are used below. On an Xbox pad: Cross is A, Circle is B, Square is X, Triangle is Y, L1/R1 are LB/RB,
+L2/R2 are LT/RT, Options is Menu and the touchpad is View. "Mod button" means Create on PlayStation pads and L3 on
+everything else.
+
+### Menus
+
+| Button | Description |
+|---|---|
+| D-pad or left stick | Move the focus. Grids (skills, passives, backpack, merchants) say the row, column or branch when you enter it, then "N of M"; they do not wrap |
+| Cross | Activate |
+| Circle | Back / close |
+| Right stick up | Details of the focused thing: item tooltip, skill or passive node, quest, class, setting description. Return the stick to neutral before repeating |
+| Options | Game menu |
+
+### The game's buttons in the world
+
+| Button | Description |
+|---|---|
+| Left stick | Move |
+| Cross | Interact / pick up the nearest thing |
+| D-pad up / down | Choose which nearby object Cross uses |
+| Square, Triangle, R1, L2, R2 | Abilities 1 to 5 |
+| Circle | Dodge |
+| L1 | Potion |
+| R3 | Town portal |
+| L3 | Overlay map (PlayStation pads only; on other pads it is the mod button) |
+| D-pad left | Minion AI on/off |
+| D-pad right | Dungeon ability |
+| Right stick | Minion orders (spoken) |
+| Touchpad (View on Xbox) | Controller menu wheel |
+| Options | Game menu |
+
+### The mod button (hold it)
+
+| Button | Description |
+|---|---|
+| Right stick up / down | Previous / next scanner category (says the category and its nearest entry) |
+| Right stick left / right | Previous / next entry in the category, nearest first |
+| Cross | Start the beacon toward the selected entry; again cancels it. It pings along a route through ground you have explored, faster as you get closer, and refuses if there is no explored route |
+| Square | Life, mana, potion charges and debuffs |
+| Triangle | Gold |
+| Circle | Level, experience percent, unspent passive points, skills that can take a point, and the zone |
+
+The scanner categories, in order: exit, portal, waypoint, unexplored room, room, quest, NPC, player, last death, stash,
+enemy (everything on screen), treasure (chests), shrine, object (levers, notes, the forge and other things you can use)
+and item (loot on the ground). Rooms are the game's minimap rooms: "room N" once you have been inside, "unexplored room
+N" when you have seen it but not entered. A target on another floor says "on a higher level" or "on a lower level".
+
+### Inventory, merchants and the forge
+
+| Button | Description |
+|---|---|
+| D-pad | Move item by item ("N of M"); up and down change rows. Items say their available actions with the button first |
+| Right stick up | Full item tooltip |
+| L3 (hold) | Compare with what you have equipped: the equipped item, the differences and changed lines |
+| R3 | Explanations of the item's modifiers; L3 then R3 adds the ranges |
+| Right, from the equipment's right column | Equipped idols (top row: the altar; second row: the idol grid) |
+
+The inventory and every merchant say your gold when they open and after a purchase or sale. Merchants read prices for
+buying, selling and buying back. The forge opens from the controller menu wheel; the focus starts on the inventory:
+Square sends an item to the forge, L2 goes into the forge and R2 goes back to the inventory. Forge actions read the
+affix, its tier and your shards; right stick up adds the preview and forging potential, or why you cannot forge.
+
+### Skills and passives
+
+- The Skills panel is a grid: the bar slots, the base class and each mastery are rows. Square carries the highlighted
+  skill into the slot you choose.
+- A skill's tree is a grid by branch. Up from the tree's root reaches Specialise and Respec. Each node says what it
+  requires; right stick up gives the route from the start of its branch and what it leads to. Spending or removing
+  points, and unspent points, are spoken.
+- Passive trees go by column: each column says the points it needs, and you can only leave the grid from the first
+  column. The mastery banner above them is a list: up and down move through the trees, Cross opens one.
+
+### World map
+
+- Square hides or shows the quests. With the quests hidden, D-pad up and down walk everything the map shows, region by
+  region, like a list: places (locked ones and ones without a waypoint too), dungeons, factions and rifts. Each says its
+  level, whether you are here, whether it is locked and its quests. Cross travels.
+- L1 / R1 change era, with its name. Triangle goes back to where you are.
+- The first quest entry, Knowledge of Orobyss, reads your epoch mastery progress.
+
+### Keyboard
+
+| Key | Description |
+|---|---|
+| R | Life, mana and potions (configurable, `Vitals.ReportKey`) |
+| Ctrl+G | Gold |
+| Ctrl+L | Level and progress |
+| Ctrl+Numpad 8 / 2 | Previous / next scanner category |
+| Ctrl+Numpad 4 / 6 | Previous / next scanner entry |
+| Ctrl+B | Start or cancel the beacon |
+
+## Configuration
+
+Options are in `BepInEx/config/LeAccess.cfg`, created on the first launch. Edit it with the game closed. The most
+useful ones:
+
+| Section | Option | What it does |
+|---|---|---|
+| Localization | `Language` | `auto` follows the game's text language; or force `en`, `es`, `fr`, `de`, `pt`, `pl`, `ru`, `ko`, `zh` or `ja` |
+| Exploration | `LeftStickOnOtherPads` | L3 as the mod button on non-PlayStation pads (default on) |
+| Reactive radar | `Enabled`, `Volume` | The wall radar |
+| Enemy cues | `Enabled`, `Bosses`, `Elites`, `Ordinary`, `Volume` | Enemy sounds |
+| World object sounds | `Enabled`, `Volume`, `Loops`, `LoopRange` | Loot, objects, portals, exits |
+| NPC sounds | `Enabled`, `AnnounceNames`, `Volume` | NPC taps and names |
+| Vitals | `AutomaticAnnouncements`, `AnnouncePotionCharges`, `AnnounceGoldPickups` | Automatic life, mana, potion and gold speech |
+| Combat feedback | `AnnounceBossLife`, `AnnounceEliteLife`, `AnnounceNearestEnemy` | Boss, elite and nearest-enemy speech |
+| Quests | `AutomaticUpdates` | Quest progress speech |
+
+## Language
+
+The mod's own speech follows the game's text language, and changes when you change it in the game's settings: English,
+Spanish, French, German, Brazilian Portuguese, Polish, Russian, Korean, Simplified Chinese and Japanese. Game text
+(items, skills, quests) is always the game's own. The Spanish texts are the ones I check by ear; the others use the
+game's own terms where possible but have not been reviewed by native speakers, so they may sound odd. Corrections are welcome: the texts are in
+`BepInEx/plugins/LeAccess/Translations/`.
+
+## Reporting bugs
+
+Open an issue on GitHub or post in the forum thread. Say what you were doing, and attach `BepInEx/LogOutput.log` from
+after you closed the game. Read the log before sharing it: it can contain your user name or folder paths. Never share
+saves, account folders or tokens.
+
+## Known limitations
+
+- Some screens and elements are still not read. Tell me which.
+- Attack telegraphs and other purely visual warnings (ground effects about to explode, for instance) are not conveyed.
+- Character lines that are audio-only have no text to read.
+- Place descriptions are partial: many areas name their sections and buildings, but not every room or street.
+- The radar is good, not perfect. Odd walls, slopes and big objects sometimes give a wrong knock or a missing breath.
+- Other screen readers than NVDA are untested.
+
+# Development
+
+LeAccess is a BepInEx 6 IL2CPP plugin (Unity 6000.4.8f1, IL2CPP metadata 39). Durable engineering rules are in
+[PRINCIPLES.md](PRINCIPLES.md); progress in [STATUS.md](STATUS.md) and [WHATS_NEXT.md](WHATS_NEXT.md).
+
+## Requirements
+
+- A local Last Epoch installation with generated interop assemblies.
+- BepInEx **6.0.0-be.788**, IL2CPP Windows x64, Il2CppInterop **1.5.3**. Setup and interop generation:
+  [Steam port notes](reference/steam-port.md).
+- A .NET SDK that builds `net6.0`.
+- The speech dependencies in `references/tolk/` (not in the repository): `TolkDotNet.dll`, `Tolk.dll` and
+  `nvdaControllerClient64.dll`. The shared policy targets [PRISM](https://github.com/ethindp/prism); this revision still
+  uses the centralized Tolk adapter, and the move to PRISM is outstanding.
+
+Game assemblies, decompiled game code, third-party DLLs and build outputs are not in the repository.
+
+## Building
 
 From the repository root, with the game closed:
 
@@ -176,65 +264,33 @@ From the repository root, with the game closed:
 dotnet build LeAccess/LeAccess.csproj
 ```
 
-The default game directory is `D:\games\steam\steamapps\common\Last Epoch`.
-Override it for another installation:
+This deploys the plugin and its dependencies to `BepInEx/plugins/LeAccess/` and the `LeAccess.InteropRepair` preloader
+(which repairs a Unity 6.4 generated-type issue) to `BepInEx/patchers/LeAccess.InteropRepair/`. The default game folder
+is `D:\games\steam\steamapps\common\Last Epoch`; override it with `-p:GameDir="..."`. To compile without deploying (for
+example while the game is running), add `-p:SkipPluginDeployment=true`.
+
+## Tests
+
+Standalone test projects under [tests/](tests/) cover state tracking, focus ownership, visibility, formatting,
+navigation geometry, localization and announcement order without the game:
 
 ```powershell
-dotnet build LeAccess/LeAccess.csproj -p:GameDir="D:\SteamLibrary\steamapps\common\Last Epoch"
+dotnet run --project tests/LeAccess.ExplorationInput.Tests -p:SkipPluginDeployment=true
 ```
 
-A normal build deploys the plugin and its existing dependencies to
-`BepInEx/plugins/LeAccess/`, and the repair preloader to
-`BepInEx/patchers/LeAccess.InteropRepair/`. To compile without deployment:
+The [native hook audit](tests/LeAccess.PatchSafety.Tests/) needs the local game installation. Host tests prove the
+tested logic, not what is heard in a running game. The optional Python map-extraction tools use UnityPy and Shapely
+with local game assets; see [map section data](reference/map-section-data.md).
 
-```powershell
-dotnet build LeAccess/LeAccess.csproj -p:SkipPluginDeployment=true
-```
+## Test package
 
-Settings are stored in `BepInEx/config/LeAccess.cfg`. Translation overrides are in
-the plugin's `Translations/` directory; builds preserve existing catalogs.
-See [localization instructions](reference/localization.md).
+`tools/build_test_package.ps1` builds the player ZIP from the pinned official BepInEx archive, the plugin, the repair
+preloader, the translations, the Spanish `Leeme-LeAccess.txt`, the licenses and a SHA-256 manifest. It contains no
+game files, saves or personal configuration. See [test packaging](reference/test-package.md).
 
-A complete copy-to-game-folder test ZIP can be assembled with the pinned loader,
-bundled runtime, plugin and repair preloader. See [test packaging](reference/test-package.md).
-Its first launch generates matching interop and may download Unity base libraries.
-It contains no saved games, account data or personal configuration.
-Generated test ZIPs are kept locally in the repository root and excluded from Git.
-Extract the package beside `Last Epoch.exe`, open NVDA, and launch through Steam;
-no BAT launcher is required.
+## Credits
 
-## Validation
-
-Standalone test projects under [tests/](tests/) exercise state tracking,
-ownership, visibility, formatting, navigation geometry and announcement order.
-For example:
-
-```powershell
-dotnet run --project tests/LeAccess.Dialogue.Tests -p:SkipPluginDeployment=true
-dotnet run --project tests/LeAccess.LoginTransition.Tests -p:SkipPluginDeployment=true
-```
-
-The [native hook audit](tests/LeAccess.PatchSafety.Tests/) also requires the local
-game installation. Some map tests use local game references; consult the linked
-feature notes for their fixtures. Host tests do not establish audible behavior
-in a running game.
-
-The optional Python map-extraction tools use UnityPy and Shapely with local game
-assets. Their decoder tests run with `python tests/MapSectionExtraction/test_navmesh.py`.
-These development tools are separate from the plugin's runtime dependencies.
-
-## Known limits
-
-This is an active development snapshot. The latest character-name typing and
-return fixes are user-confirmed. Other menu, manual inspection and ambient
-subtitle changes still need controller/listening checks.
-Speech events with authored text are readable; audio-only character vocalizations
-have no transcript. Other-player naming needs live online validation, and complete
-stash/vendor/crafting navigation remains an area for testing.
-
-Map descriptions are partial: the catalog covers 750 guarded sections across
-58 layouts, with additional runtime readers. This does not establish complete
-map coverage or names for every room, street or crossing. Map-entry summaries
-and generic ground descriptions default to off. See the
-[map coverage audit](reference/map-coverage-audit.md) and
-[current feature status](STATUS.md).
+Several sounds come from my Diablo II: Resurrected accessibility mod
+([d2r-access](https://github.com/Ali-Bueno/d2r-access)), so its players will feel at home; others are Last Epoch's own.
+Third-party components and their licenses are listed in
+[THIRD-PARTY-NOTICES.txt](packaging/test-package/THIRD-PARTY-NOTICES.txt).

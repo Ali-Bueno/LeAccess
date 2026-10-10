@@ -366,6 +366,7 @@
   "exploration.scanner.empty": "здесь ничего не найдено",
   "exploration.scanner.category_empty": "{0}: здесь ничего нет",
   "exploration.scanner.no_selection": "Выберите цель кнопкой Создать и правым стиком",
+  "exploration.scanner.no_selection_l3": "Выберите цель кнопкой L3 и правым стиком",
   "exploration.scanner.unavailable": "Сканер сейчас недоступен",
   "exploration.boss": "{0}, босс",
   "exploration.entry": "{0}, {1}, {2}",

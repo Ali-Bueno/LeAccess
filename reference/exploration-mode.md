@@ -458,3 +458,24 @@ baked NavMesh agent height (`NavMeshWalkability.LevelHeight`, the floor height t
 before each scanner command; distance and direction stay horizontal. "Arriba" is not used for height because it already
 means screen up. ExplorationCatalog 49 checks (the Gaspar geometry among them). Listening pending; a route to the
 other level is still the user's to find.
+
+## L3 as the mod button on non-PlayStation pads (2026-10-10)
+
+User report: on pads with only Start and Select, Select (Rewired template `back`, the button the mod reads as Create)
+opens the game's controller menu, so the scanner was unusable. On PlayStation pads the touchpad opens that menu and
+Create has no action (binding run, 2026-10-03). The user chose L3 and asked that it apply only off the DualSense and
+that L3 keep working in menus.
+
+- Pad kind: the game's own `EpochInputManager.REWIRED_DUALSENSEGUID` / `REWIRED_DUALSHOCK4GUID` compared with
+  Rewired `Joystick.hardwareTypeGuid` (`LeftStickModifier.IsPlayStation`). Both PlayStation pads keep `back`.
+- Other pads read `IGamepadTemplate.leftStick.press` as the modifier (`ModifierChoice`, config
+  `[Exploration] LeftStickOnOtherPads`, default true; false restores `back`).
+- The L3 press would toggle `InputActions.OverlayMap` (38, purely visual). While gameplay owns input (the existing
+  gate: `ControllerManager` on `DefaultMap`, no menu navigable), every enabled joystick `ActionElementMap` of those
+  pads with that action id is disabled, recorded in a `BindingSuppression` ledger and restored on leaving gameplay,
+  controller change, errors and cleanup. Menu maps (item comparison, forge) are never touched.
+- Log: `[Exploration input] L3 is the mod button; overlay map bindings off in gameplay: N` (once per change).
+  `N = 0` would mean the pad's layout has no overlay-map button binding.
+- "Choose a destination" hint names L3 on those pads (`exploration.scanner.no_selection_l3`).
+- Not verified with an Xbox pad; Steam Input presents PlayStation pads as XInput, which would make L3 the mod button.
+ExplorationInput 49 checks, Localization 5720.
