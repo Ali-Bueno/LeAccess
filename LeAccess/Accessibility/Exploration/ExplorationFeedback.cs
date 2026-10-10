@@ -31,7 +31,7 @@ internal static class ExplorationFeedback
     internal static void Initialize(ConfigFile config)
     {
         _roomSounds = config.Bind(ConfigSection, "RoomSounds", true,
-            "A loop at the nearest minimap room not yet entered and a cue on first entering one (Diablo 2 mod sounds).");
+            "A loop at the nearest minimap room not yet entered and a cue on first entering one (sounds from an unreleased Diablo 2 mod).");
         _discoveries = config.Bind(ConfigSection, "Discoveries", true,
             "Say \"the radar has logged a new exit/place\" with a sound when an exit, waypoint or the stash is first seen.");
     }

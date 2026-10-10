@@ -1,7 +1,7 @@
 # Enemy cues
 
 Diablo 1-style presence sounds for nearby enemies, so a ranged player can tell
-where enemies are before attacking. Ported from the same author's D2R mod
+where enemies are before attacking. Ported from the same author's unreleased Diablo 2 mod
 (`D:\code\c++\diablo 2 access project\d2r-access`: `docs/entity-cues.md`,
 `src/entity_cues.*`, `src/entity_cue_synth.cpp`, `src/entity_cue_service.cpp`).
 There, the user and a friend asked for these sounds after the

@@ -25,7 +25,7 @@ internal static class VitalsAccessibility
     internal static void Initialize(ConfigFile config)
     {
         _automatic = config.Bind("Vitals", "AutomaticAnnouncements", true,
-            "Announce health and mana percentage bands on loss and recovery, as in D2R Access.");
+            "Announce health and mana percentage bands on loss and recovery, as in the unreleased Diablo 2 mod.");
         _reportKey = config.Bind("Vitals", "ReportKey", KeyCode.R,
             "Read health and mana percentages during gameplay. Use None to disable the keyboard shortcut.");
         _controllerReport = config.Bind("Vitals", "ReportWithControllerView", true,

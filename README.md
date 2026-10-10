@@ -292,5 +292,8 @@ game files, saves or personal configuration. See [test packaging](reference/test
 
 ## Credits
 
+Some sounds were taken from Diablo IV. They are placeholders that I plan to replace; several of them (gold, potions,
+tomes, portals, waypoints, exits and shrines) already use Last Epoch's own sounds.
+
 Third-party components and their licenses are listed in
 [THIRD-PARTY-NOTICES.txt](packaging/test-package/THIRD-PARTY-NOTICES.txt).

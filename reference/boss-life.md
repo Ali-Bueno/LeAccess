@@ -1,6 +1,6 @@
 # Boss life narration
 
-Ported from the D2R mod (`docs/boss-life.md`). Config: `[Combat feedback] AnnounceBossLife = true`.
+Ported from the D2R mod, the author's unreleased Diablo 2 mod (`docs/boss-life.md`). Config: `[Combat feedback] AnnounceBossLife = true`.
 
 ## Behavior
 

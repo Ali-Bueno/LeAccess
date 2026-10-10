@@ -8,7 +8,7 @@ minimap icon and its edge arrow, see
 The user's rule: do not compute help the game does not give sighted players;
 build an exploration mode like the D2R mod's instead.
 
-## What the D2R mod does (`D:\code\c++\diablo 2 access project\d2r-access`)
+## What the D2R mod (the author's unreleased Diablo 2 mod) does (`D:\code\c++\diablo 2 access project\d2r-access`)
 
 There is no separate mode toggle: "exploration" is the default fairness policy of
 the right-stick scanner plus the beacon (`docs/entity-scan.md`, `docs/beacon.md`,

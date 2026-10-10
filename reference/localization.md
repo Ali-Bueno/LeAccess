@@ -51,7 +51,7 @@ resolves every game language; a name outside the table is passed on as a culture
 code and normally falls back to English. `Localization.LocaleChanged` also exists
 (raised after the new string tables load) but is not needed for detection.
 
-Selection and English fallback follow D2R Access's game-text-language policy, using
+Selection and English fallback follow the unreleased Diablo 2 mod's (D2R Access) game-text-language policy, using
 Last Epoch's direct locale API instead of D2R's translated-text probe.
 
 ## Translation files

@@ -8,7 +8,7 @@ applies to inventory, skills, passive nodes, creation classes/masteries/realms,
 quest details and ordinary menu controls with associated descriptions. Quests
 retain their current objective and state in the brief announcement.
 
-The gesture matches the local D2R mod's
+The gesture matches the local, unreleased Diablo 2 mod's
 `src/interaction_reader.cpp:ReadDetail`: assigned Rewired gamepad template
 `rightStick.value/valuePrev`, half normalized travel, upward dominant direction.
 Holding or rotating the stick does not repeat until neutral. No native mapping,

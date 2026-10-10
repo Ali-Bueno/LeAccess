@@ -1,6 +1,6 @@
 # Reactive navigation radar
 
-LeAccess adapts the reactive radar in `D:\code\c++\diablo 2 access project\d2r-access`.
+LeAccess adapts the reactive radar of the author's unreleased Diablo 2 mod, `D:\code\c++\diablo 2 access project\d2r-access`.
 This first port covers walkable ground and obstacles. It leaves movement under
 the player's control and needs no extra navigation buttons.
 

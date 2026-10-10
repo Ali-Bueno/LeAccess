@@ -458,7 +458,7 @@ pending.
 
 ## D2R reading behavior transferred
 
-The comparison used the local `d2r-access` sources: `game_text_reader.cpp` and
+The comparison used the local `d2r-access` sources (the unreleased Diablo 2 mod): `game_text_reader.cpp` and
 `plugin.cpp` for foreground ownership; `ui_text.cpp` for coherent body/selection
 readouts; `ui_notifications.cpp` for visible changes; and `ui_message_monitor.cpp`
 for modal population and noninterrupting closes. Its reader relies on UI ownership

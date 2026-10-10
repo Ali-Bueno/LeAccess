@@ -167,7 +167,7 @@ they cannot identify decorative buildings beside the path. Separately, the
 fixed catalogs still held the previous build hash and could not match this
 installed build; the catalog refresh is recorded in its own provenance.
 
-Read-only comparison with today's working D2R implementation:
+Read-only comparison with today's working D2R implementation (the unreleased Diablo 2 mod):
 `D:/code/c++/diablo 2 access project/d2r-access/docs/places.md:68` and
 `src/places.cpp:74`. Its useful change measures distance to the transformed
 **footprint**, not just an NPC/prefab origin. Walking distance and actual

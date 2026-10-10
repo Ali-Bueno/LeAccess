@@ -1,5 +1,9 @@
 # Natural world sounds
 
+> **Origin (user, 2026-10-10):** the recordings imported from the unreleased Diablo 2 mod (called "D2R" below) were
+> taken from Diablo IV. They are to be replaced over time; gold, potions, tomes, portals, waypoints, exits, shrines,
+> the Nemesis and time rifts already use Last Epoch's own sounds ([sound design](sound-design.md)).
+
 The mod now embeds short excerpts from the user's D2R sound collection and from
 Last Epoch's own FMOD banks ([user choice](sound-design.md#last-epoch-recordings-user-choice-2026-10-03)),
 and the whole recordings for the continuous world loop mixer
@@ -77,7 +81,7 @@ logic; no native hook or runtime dependency was added.
 
 ## Source and reproduction
 
-Source repository: `D:\code\c++\diablo 2 access project\d2r-access`.
+Source repository (the author's unreleased Diablo 2 mod): `D:\code\c++\diablo 2 access project\d2r-access`.
 Its last sound-asset commit at import was
 `6928fd2c874ef6e3a8cd9f618a103f20e2aeb51a`. The user explicitly authorized reuse
 in this task. The D2R project's `cmake/GroundItems.cmake` describes the recordings

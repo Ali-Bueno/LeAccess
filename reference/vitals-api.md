@@ -5,7 +5,7 @@ new dependencies or native hooks.
 
 ## Behavior and controls
 
-Automatic reading is enabled by default. Like the local D2R Access implementation
+Automatic reading is enabled by default. Like the local, unreleased Diablo 2 mod (D2R Access)
 (`src/vitals.h`, `vitals.cpp`, `vitals_service.cpp`), it samples every 100 ms and
 tracks percentage bands at 75, 50, 40, 30, 20, 10, 5, 4, 3, 2 and 1, plus zero.
 The first observation of each resource is silent. Falling into a lower band
