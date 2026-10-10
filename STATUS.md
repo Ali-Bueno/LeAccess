@@ -149,9 +149,8 @@ guidance from still-unmapped visual attack telegraphs. Rejected-output recovery
 now also covers quests, vitals and orientation; remaining general menu, zone,
 map and nearby-entity readers still need review.
 
-The older friend's ZIP remains local and unchanged; it does not include the new
-fixes. Source updates are to be pushed to GitHub after each verified batch, as
-requested. No release or new ZIP has been requested.
+Source updates are pushed to GitHub after each batch, as requested. Public test
+releases go to GitHub Releases with the asset name `LeAccess.zip` (see below).
 
 ## Feature status
 
