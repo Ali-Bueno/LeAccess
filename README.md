@@ -34,6 +34,9 @@ travel and play online with other people. Just know what you are getting into.
 
 ## Installation
 
+Download the latest version here (this link always points to the newest release):
+<https://github.com/Ali-Bueno/LeAccess/releases/latest/download/LeAccess.zip>
+
 1. Close Last Epoch.
 2. In Steam, right click Last Epoch, then Manage, then Browse local files.
 3. Extract **everything** in the ZIP straight into that folder, next to `Last Epoch.exe`. Do not leave it inside an
@@ -64,8 +67,7 @@ happens on its own, by sound and speech, while you play with the game's normal c
   toward somewhere you have not explored.
 - Things in the world have sounds: loot by rarity, gold, potions, chests, the stash, portals, waypoints, exits, shrines,
   rifts, NPCs (wooden taps) and enemies (growls), all panned and faster or louder as you get closer.
-- An exploration scanner, ported from my Diablo II: Resurrected mod: hold the mod button and move the right stick to go
-  through exits, waypoints, rooms, NPCs, enemies, loot and more, nearest first, with distance and direction. Mod
+- An exploration scanner: hold the mod button and move the right stick to go through exits, waypoints, rooms, NPCs, enemies, loot and more, nearest first, with distance and direction. Mod
   button and Cross starts a beacon that leads you there through ground you have already explored.
 - Automatic speech for the things a sighted player sees at a glance: life and mana when they drop, potion charges, gold
   you pick up, level ups and new points, quest updates, zone and era names, the names of NPCs and players you walk up
@@ -290,7 +292,5 @@ game files, saves or personal configuration. See [test packaging](reference/test
 
 ## Credits
 
-Several sounds come from my Diablo II: Resurrected accessibility mod
-([d2r-access](https://github.com/Ali-Bueno/d2r-access)), so its players will feel at home; others are Last Epoch's own.
 Third-party components and their licenses are listed in
 [THIRD-PARTY-NOTICES.txt](packaging/test-package/THIRD-PARTY-NOTICES.txt).
