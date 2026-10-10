@@ -1,4 +1,5 @@
 using LeAccess.Accessibility.Utils;
+using LE.UI.Controls;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -170,11 +171,32 @@ public static class TextDetector
         for (var current = controlGo.transform; current != null; current = current.parent)
         {
             if (IsScrollContent(current)) break;
-            var controls = current.GetComponentsInChildren<Selectable>(true);
-            if (controls.Length > 1) break;
-            if (controls.Length == 1) result = current;
+            int controls = CountControls(current);
+            if (controls > 1) break;
+            if (controls == 1) result = current;
         }
         return result;
+    }
+
+    // A dropdown is one control: the Toggles of its option template and open list are part of it.
+    private static int CountControls(Transform root)
+    {
+        int count = 0;
+        foreach (var control in root.GetComponentsInChildren<Selectable>(true))
+            if (!IsDropdownPart(control.transform, root) && ++count > 1) break;
+        return count;
+    }
+
+    // Only a dropdown inside root owns the control, so an open list's own item keeps itself as container.
+    private static bool IsDropdownPart(Transform control, Transform root)
+    {
+        if (control == root) return false;
+        for (var current = control.parent; current != null; current = current.parent)
+        {
+            if (current.GetComponent<TMP_Dropdown>() != null || current.GetComponent<ColoredIconDropdown>() != null) return true;
+            if (current == root) break;
+        }
+        return false;
     }
 
     /// <summary>

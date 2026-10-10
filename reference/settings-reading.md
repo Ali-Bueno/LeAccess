@@ -120,3 +120,23 @@ frames never rebuild the announcement and the final value of a burst is always h
 control still speaks label and value. The tab heading is remembered while the same
 `SettingsUIManager` stays visible, so dropdown lists and popups no longer repeat it;
 it resets on panel close, loading screen or window focus loss (`SettingsHeadingTracker`).
+
+## Untyped dropdown rows: language and region (2026-10-10, build 25816319)
+
+User report: the login screen's chat-language and region dropdowns, and the Settings
+interface-language dropdown, spoke only their value. None has a typed setting component,
+so the generic `FindSingleOptionContainer` applied, and it counted the inactive option
+template's `Toggle` and `Scrollbar` as further controls, so no row and no label was found.
+Installed hierarchies (scene_Login_unity / PermaLoad bundles):
+
+| Row | Label | Dropdown |
+|---|---|---|
+| Login `LandingZone/ChatLanguage` | `Label` TMP ("Chat Language"), the dropdown's parent | `Label/Textfield`, `TMP_Dropdown` (`LandingZonePanel.languageDropdown`) |
+| Login `LandingZone/RegionDropdownSelector` | sibling `Label` ("Region") | `Textfield`, `RegionSelectionDropdown` (caption, `Ping`) |
+| Settings `Gameplay-container/Dropdown - Language Selection` | sibling `dropdown-title` ("Language"); `Dropdown-explanation` | `Dropdown`, `LE.UI.Controls.ColoredIconDropdown` (a `Selectable`, not `TMP_Dropdown`) |
+| Settings `Dropdown - Region Selector` | `Label` ("Preferred region") inside the dropdown | `RegionDropdownSelector`, `RegionSelectionDropdown` |
+
+`CountControls` now treats a dropdown inside the examined level as one control (its template
+and open list are part of it); an open list's own item still keeps itself as container.
+`ColoredIconDropdown` supplies its `captionText` as the value and its `value` as the change
+signature. Menu reading tests reproduce the three first rows (549 checks). Confirmed by the user 2026-10-10.

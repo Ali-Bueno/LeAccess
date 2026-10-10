@@ -140,27 +140,20 @@ try
     Localization.Current = "en";
     GameLocale.Refresh();
     Equal("en", ModText.Language, "recover after exception");
-    Localization.Current = "game_spanish";
-    GameLocale.Refresh();
-    Equal("es", ModText.Language, "game language key mapping");
-    // Locale codes of the game's string-table bundles, e.g. "japanese(jp)" and "spanish(spain)(es-es)".
+    // Localization.Locale returns these LocaleNames; switching between them must change catalog each time.
     var gameLocales = new Dictionary<string, string>
     {
-        ["en"] = "en", ["es-ES"] = "es", ["fr"] = "fr", ["de"] = "de", ["pt"] = "pt",
-        ["pl"] = "pl", ["ru"] = "ru", ["ko"] = "ko", ["zh"] = "zh", ["jp"] = "ja"
+        ["Spanish (Spain) (es-ES)"] = "es", ["French (fr)"] = "fr", ["German (de)"] = "de", ["Portuguese (pt)"] = "pt",
+        ["Polish (pl)"] = "pl", ["Russian (ru)"] = "ru", ["Korean (ko)"] = "ko", ["Chinese (Simplified) (zh)"] = "zh",
+        ["Japanese (jp)"] = "ja", ["English (en)"] = "en"
     };
     foreach (var (locale, catalog) in gameLocales)
     {
         Localization.Current = locale;
-        GameLocale.Refresh();
-        Equal(bundled[catalog]["state.on"], ModText.Get("state.on"), "game locale " + locale);
+        Equal(true, GameLocale.Refresh(), "live switch to " + locale);
+        Equal(catalog, ModText.Language, "game locale " + locale);
+        Equal(bundled[catalog]["state.on"], ModText.Get("state.on"), "game locale text " + locale);
     }
-    LocaleNames.LanguageKeys["jp"] = LanguageKey.Japanese;
-    Localization.Current = "en";
-    GameLocale.Refresh();
-    Localization.Current = "jp";
-    GameLocale.Refresh();
-    Equal("ja", ModText.Language, "game key table before culture parsing");
     Console.WriteLine($"Passed {checks} localization checks.");
 }
 finally

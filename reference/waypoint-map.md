@@ -12,11 +12,13 @@ Waypoint (nearest `UIWaypoint` in the focused object's parents, visible):
    An unreadable label (hidden, alpha 0) returns false so the generic path runs; no object names.
 2. `waypoint.here` when `GetIsPlayerHere()`.
 3. `waypoint.locked` when `!GetIsActive()`.
-4. Quests from `questIndicators` (`WaypointQuestIndicators`): active main, active side,
-   available main (`hasPotentialMainQuest`), available side (`haPotentialSideQuest`, sic).
+4. Quests: active main is read live (`MainQuestPlaces`, [below](#main-quest-on-the-map-2026-10-10));
+   active side, available main (`hasPotentialMainQuest`) and available side
+   (`haPotentialSideQuest`, sic) from `questIndicators` (`WaypointQuestIndicators`).
 
 Region (`UIWaypointRegion`): `regionLabel`, `locationCountLabel` as displayed, here when
-`playerLocation` is visible, and the same four quest flags from the region.
+`playerLocation` is visible, live active main when any of `waypointsInRegion` holds it, and
+the other three quest flags from the region.
 
 Right-stick-up (`includeDetails`): adds `MapPanel.waypointDescriptionPopup.description` when
 visible. The map is found as an ancestor `MapPanel`, or via `WorldMapPanel._mapPanel`.
@@ -61,7 +63,8 @@ after `FlushPendingFocus`. `OpenWorldMap.Find()` resolves the map from the regis
   never focuses a `Selectable` on the map, so the poller is the path that speaks.
 - Whether the player's own waypoint reads locked; `noWaypointInScene` and monolith waypoints are not handled.
 - Whether `label`/`locationLabel` stays visible when `labelHidden` is set.
-- Whether quest flags are set while the indicators are hidden (`ShowIndicators(false)`).
+- Resolved (2026-10-10): quest flags stay readable while the indicators are hidden;
+  `ShowIndicators` only toggles `iconHolder`.
 - Whether the description popup is open for the focused waypoint on controller.
 
 ## Cross on the map: travel (2026-10-04)
@@ -239,4 +242,30 @@ English prefab text. Map speech is logged as `[World map]` / `[World map list]`.
 Not listed: region icons themselves (named on entry instead) and the connection lines (`MapConnection`,
 `MonolithBridgeInfo`). Unverified in game: whether region icons are focusable in the waypoint band,
 the localized titles, and the blessing item names. Waypoints 75 checks.
+
+## Main quest on the map (2026-10-10)
+
+User report: moving over places only ever said "active side quest", never the main quest.
+Static analysis, build 25816319 (V = verified in disassembly, I = inferred):
+
+- `WaypointQuestIndicators.DisplayWaypointQuests` (0x1822130) is the only writer of the four
+  flags. It walks `trackedQuestsInUI` of the local player's and stash player's
+  `StatefulQuestList`; a quest counts when `playerVisible`, its current step's
+  `questStateDuringThisStep` is Active, and an objective of that step (completed ones included)
+  has a `hostScene` the waypoint `representsScene`. `Quest.mainLineQuest` alone picks main
+  (gold icon) or side (silver). The main quest is not filtered out (V).
+- Its only callers are `WaypointQuestIndicators.OnEnable` and `UIWaypointRegion.CheckQuestStatus`
+  (0x181E0C0, from the region's `OnEnable`, ORing its indicators). Nothing recomputes the flags
+  when quests progress, and six prefab waypoints start inactive with all flags false (V).
+  What re-enables waypoints during play is I.
+
+So `MainQuestPlaces` derives active main live on each selection change:
+`PlayerFinder.getLocalPlayerStatefulQuestList().hasActiveMainQuest(out quest)`, then
+`getStatefulQuest(quest).currentStep` (Active, `playerVisible`), then any objective's
+`hostScene` against `UIWaypoint.representsScene` (era ignored, as in the game). Without a quest
+list it falls back to the game's flag. Side and "available" still come from the flags.
+The log records the main quest's step scenes once per change (`[World map] Main quest ...`):
+if the user hears no main quest anywhere, those scenes are not represented by any map place.
+Waypoint tests cover live, stale, finished, hidden and region cases (82 checks). Confirmed by
+the user 2026-10-10.
 

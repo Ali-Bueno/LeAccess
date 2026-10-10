@@ -25,20 +25,34 @@ BepInEx config reload; translation-file edits require restart.
 per existing `LateUpdate`, without new hooks or scene searches. Before the game
 localization is ready it uses English; a later language change updates the mod
 and refreshes normal focused-control speech. Transient API exceptions retain the
-last valid language. Standard locale strings are used directly; nonstandard game
-names can resolve through `LocaleNames.LanguageKeys` and its named `LanguageKey`
-values. All APIs are in the existing `LE.dll` reference.
+last valid language. All APIs are in the existing `LE.dll` reference.
 
-The game's locale codes are those of its string-table bundles in
-`StreamingAssets/aa/StandaloneWindows64/localization-string-tables-<language>(<code>)`:
-`en`, `es-es`, `fr`, `de`, `pt`, `pl`, `ru`, `ko`, `zh` and `jp` (the backend's
-supporter-pack texts use the same codes, with `es-ES`). `LocaleNames.LanguageKeys`
-is consulted first; `jp` is not an ISO code and .NET accepts it as an unknown
-culture, so it is mapped to `ja` explicitly. `es-ES` falls back to `es`.
+### Live language switching (verified, build 25816319, 2026-10-10)
 
-This follows D2R Access's game-text-language selection and English fallback
-policy. It uses Last Epoch's direct locale API instead of D2R's translated-text
-probe. Actual game locale strings and audible switching still need a live test.
+The game only changes text language in its own Settings, and does so live, without
+a restart. Static disassembly of the installed `GameAssembly.dll`:
+
+- `LocalizationSettingsPanelUI.OnOptionSelected` (RVA `0x1292D60`) finds the chosen
+  option in `LocalizationSettings.AvailableLocales` and calls
+  `LocalizationSettings.set_SelectedLocale` immediately.
+- `Localization.get_Locale` (`0x1265B00`) has no cache: each call reads
+  `LocalizationSettings.Instance`'s selected locale (falling back to `ProjectLocale`)
+  and returns its **`Locale.LocaleName`**, or `"Undefined"` when there is none.
+  It is not a culture code.
+- `LocaleNames.LanguageKeys` (filled by the class's static constructor, read by
+  `LocaleNames.GetLanguageKey`, `0x12601B0`) maps exactly the ten shipped names:
+  `English (en)`, `Spanish (Spain) (es-ES)`, `French (fr)`, `German (de)`,
+  `Portuguese (pt)`, `Polish (pl)`, `Russian (ru)`, `Korean (ko)`,
+  `Chinese (Simplified) (zh)`, `Japanese (jp)`. The string-table bundles are the
+  lowercased names (`localization-string-tables-japanese(jp)`).
+
+So the per-frame poll sees a Settings change on the next frame, and `LanguageKeys`
+resolves every game language; a name outside the table is passed on as a culture
+code and normally falls back to English. `Localization.LocaleChanged` also exists
+(raised after the new string tables load) but is not needed for detection.
+
+Selection and English fallback follow D2R Access's game-text-language policy, using
+Last Epoch's direct locale API instead of D2R's translated-text probe.
 
 ## Translation files
 
@@ -100,10 +114,9 @@ before the central speech sink, and arbitrary game strings are never used as
 translation keys. Coverage history is in the [menu](menu-reading-audit.md) and
 [tooltip](tooltip-reading-audit.md) audits.
 
-2026-10-09: the localization suite passes 5,692 checks: every catalog loads without
-warnings with complete key parity, each real game locale code (`en`, `es-ES`, `fr`, `de`,
-`pt`, `pl`, `ru`, `ko`, `zh`, `jp`) selects its catalog, and the game's `LanguageKeys`
-table wins over culture parsing. The package test verifies all ten catalogs in the friend
-ZIP. Build/deployment installed the eight new catalogs beside the existing en/es copies.
-Unheard: switch the game to French and Japanese, check a toggle, an empty inventory slot
-and the controller menu, then return to Spanish.
+2026-10-10: the localization suite passes 5,710 checks: every catalog loads without
+warnings with complete key parity, and switching `Localization.Locale` through the
+ten real game locale names (above) changes the mod language on each refresh and
+selects the matching catalog. The package test verifies all ten catalogs in the friend
+ZIP. 2026-10-10: the user confirmed that mod speech follows a language change made in
+Settings.

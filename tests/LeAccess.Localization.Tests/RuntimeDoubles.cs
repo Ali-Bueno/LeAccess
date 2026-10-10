@@ -19,7 +19,15 @@ public static class Localization
 public enum LanguageKey { English, Portuguese, Chinese, German, Polish, Korean, French, Spanish, Russian, Japanese }
 public static class LocaleNames
 {
-    public static Dictionary<string, LanguageKey> LanguageKeys = new() { ["game_spanish"] = LanguageKey.Spanish };
+    // Mirrors the game's static table (build 25816319), keyed by Unity LocaleName.
+    public static Dictionary<string, LanguageKey> LanguageKeys = new()
+    {
+        ["English (en)"] = LanguageKey.English, ["Portuguese (pt)"] = LanguageKey.Portuguese,
+        ["Chinese (Simplified) (zh)"] = LanguageKey.Chinese, ["German (de)"] = LanguageKey.German,
+        ["Polish (pl)"] = LanguageKey.Polish, ["Korean (ko)"] = LanguageKey.Korean, ["French (fr)"] = LanguageKey.French,
+        ["Spanish (Spain) (es-ES)"] = LanguageKey.Spanish, ["Russian (ru)"] = LanguageKey.Russian,
+        ["Japanese (jp)"] = LanguageKey.Japanese
+    };
 }
 
 namespace LeAccess

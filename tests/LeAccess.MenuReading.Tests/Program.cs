@@ -152,6 +152,29 @@ foreach (bool enumSetting in new[] { true, false })
     row.Active = false;
     Check(!ElementAnnouncer.TryReadDetails(control, out _), "Inactive dropdown cannot expose old row text");
 }
+// Untyped dropdown rows (scene_Login_unity / PermaLoad bundles): each option template holds its own Toggle and Scrollbar.
+void AddTemplate(GameObject dropdown) { var template = dropdown.Child("Template"); template.Active = false;
+    template.Child("Item").Add(new Toggle()); template.Child("Scrollbar").Add(new Selectable()); }
+Reset();
+var landing = new GameObject(); landing.Child("SettingsButton").Add(new Button());
+var chatLabel = landing.Child("ChatLanguage").Child("Label"); chatLabel.Add(new TextMeshProUGUI { text = "Idioma del chat" });
+var chatField = chatLabel.Child("Textfield"); chatField.Add(new TMP_Dropdown { captionText = Label(chatField, "English") }); AddTemplate(chatField);
+var regionRow = landing.Child("RegionDropdownSelector"); Label(regionRow, "Región");
+var regionField = regionRow.Child("Textfield"); regionField.Add(new TMP_Dropdown { captionText = Label(regionField, "US East") }); AddTemplate(regionField);
+ElementAnnouncer.AnnounceElement(chatField);
+Check(ScreenReader.Messages.Last().Text == "Idioma del chat: English", "Chat language names its row label, which contains the dropdown");
+Time.unscaledTime += 1;
+ElementAnnouncer.AnnounceElement(regionField);
+Check(ScreenReader.Messages.Last().Text == "Región: US East", "Region names its sibling label despite the option template");
+Reset();
+var gameplay = new GameObject().Child("Viewport").Child("Gameplay-container"); gameplay.Child("Header").Add(new TextMeshProUGUI { text = "Juego" });
+var languageRow = gameplay.Child("Dropdown - Language Selection");
+languageRow.Child("dropdown-title").Add(new TextMeshProUGUI { text = "Idioma" });
+languageRow.Child("Dropdown-explanation").Add(new TextMeshProUGUI { text = "Idioma de la interfaz" });
+var languageField = languageRow.Child("Dropdown");
+languageField.Add(new LE.UI.Controls.ColoredIconDropdown { captionText = Label(languageField, "Español") }); AddTemplate(languageField);
+ElementAnnouncer.AnnounceElement(languageField);
+Check(ScreenReader.Messages.Last().Text == "Idioma: Español", "The game's own dropdown reads its row title and shown value");
 var hiddenRow = settings.Child("Hidden row"); hiddenRow.Add(new CanvasGroup { alpha = 0 });
 Label(hiddenRow,"Invisible"); var hiddenControl = hiddenRow.Child().Add(new Toggle());
 string hiddenLabel = null, hiddenDescription = null;

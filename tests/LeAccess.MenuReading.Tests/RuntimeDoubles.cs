@@ -122,6 +122,10 @@ namespace TMPro
     public class TMP_InputField : UnityEngine.UI.Selectable { public string text; public UnityEngine.Component placeholder; }
     public class TMP_Dropdown : UnityEngine.UI.Selectable { public TMP_Text captionText; public int value; }
 }
+namespace LE.UI.Controls
+{
+    public class ColoredIconDropdown : UnityEngine.UI.Selectable { public TMPro.TMP_Text captionText; public int value; }
+}
 namespace UnityEngine.UI
 {
     public class Graphic : Component

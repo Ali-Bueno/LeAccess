@@ -135,6 +135,8 @@ public static class ElementAnnouncer
         if (toggle != null) return toggle.isOn ? 1 : 0;
         var dropdown = go.GetComponent<TMP_Dropdown>() ?? go.GetComponentInChildren<TMP_Dropdown>();
         if (dropdown != null) return dropdown.value;
+        var iconDropdown = go.GetComponent<LE.UI.Controls.ColoredIconDropdown>();
+        if (iconDropdown != null) return iconDropdown.value;
         var chatToggle = go.GetComponent<ChatToggleField>();
         return chatToggle != null ? (chatToggle.IsActive ? 1 : 0) : null;
     }
@@ -302,6 +304,8 @@ public static class ElementAnnouncer
         var chatToggle = go.GetComponent<ChatToggleField>() ?? go.GetComponentInParent<ChatToggleField>();
 
         var dropdown = go.GetComponent<TMP_Dropdown>() ?? go.GetComponentInParent<TMP_Dropdown>() ?? go.GetComponentInChildren<TMP_Dropdown>();
+        // The settings language row uses the game's own dropdown type, not TMP_Dropdown.
+        var iconDropdown = dropdown == null ? go.GetComponent<LE.UI.Controls.ColoredIconDropdown>() : null;
         var slider = go.GetComponent<Slider>() ?? go.GetComponentInParent<Slider>() ?? go.GetComponentInChildren<Slider>();
         var button = go.GetComponent<Button>() ?? go.GetComponentInParent<Button>();
         var inputField = go.GetComponent<TMP_InputField>() ?? go.GetComponentInParent<TMP_InputField>() ??
@@ -368,6 +372,11 @@ public static class ElementAnnouncer
                 value = TextUtils.CleanText(dropdown.captionText.text);
             DropdownReader.NoteSpoken(dropdown);
         }
+        else if (iconDropdown != null)
+        {
+            if (TextUtils.IsVisibleLabel(iconDropdown.captionText))
+                value = TextUtils.CleanText(iconDropdown.captionText.text);
+        }
         else if (toggle != null)
         {
             value = ModText.Get(toggle.isOn ? "state.on" : "state.off");
@@ -389,7 +398,7 @@ public static class ElementAnnouncer
         // Layer 3: Intelligent text search
         if (string.IsNullOrEmpty(label))
         {
-            var controlGo = dropdown?.gameObject ?? toggle?.gameObject ?? slider?.gameObject ?? go;
+            var controlGo = dropdown?.gameObject ?? iconDropdown?.gameObject ?? toggle?.gameObject ?? slider?.gameObject ?? go;
             TextDetector.FindLabelInImmediateContainer(controlGo, ref label, ref description, value);
         }
 

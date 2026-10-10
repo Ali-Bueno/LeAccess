@@ -68,6 +68,33 @@ Check(Read(regionRoot) == J(region.regionLabel.text, region.locationCountLabel.t
 region.regionLabel.alpha = 0;
 Check(Read(regionRoot) is null, "hidden region label falls back");
 
+// The main quest is read live from the player's current main-quest step; the waypoint flag is only a fallback.
+var liveRoot = new GameObject();
+var liveWaypoint = Waypoint(liveRoot, "Ruinas"); liveWaypoint.sceneName = "Z10";
+liveWaypoint.questIndicators = liveRoot.Add(new WaypointQuestIndicators { hasActiveSideQuest = true });
+var mainStep = new QuestStep();
+mainStep.objectives.Add(new Objective { hostScene = "Z99" }); mainStep.objectives.Add(new Objective { hostScene = "Z10" });
+PlayerFinder.QuestList = new StatefulQuestList { activeMain = new Quest { id = 7 } };
+PlayerFinder.QuestList.state.currentStep = mainStep;
+Check(Read(liveWaypoint.gameObject) == J("Ruinas", T("waypoint.quest_main_active"), T("waypoint.quest_side_active")),
+    "a current main-quest objective here is spoken although the activation-time flag is false");
+liveWaypoint.sceneName = "Z11"; liveWaypoint.questIndicators.hasActiveMainQuest = true;
+Check(Read(liveWaypoint.gameObject) == J("Ruinas", T("waypoint.quest_side_active")), "a stale main flag is not spoken");
+liveWaypoint.sceneName = "Z10"; mainStep.questStateDuringThisStep = QuestState.Completed;
+Check(Read(liveWaypoint.gameObject) == J("Ruinas", T("waypoint.quest_side_active")), "a finished step is not an active main quest");
+mainStep.questStateDuringThisStep = QuestState.Active; PlayerFinder.QuestList.activeMain.playerVisible = false;
+Check(Read(liveWaypoint.gameObject) == J("Ruinas", T("waypoint.quest_side_active")), "a hidden main quest is not spoken");
+PlayerFinder.QuestList.activeMain.playerVisible = true;
+var liveRegionRoot = new GameObject();
+var liveRegion = liveRegionRoot.Add(new UIWaypointRegion { regionLabel = Label(liveRegionRoot, "Valle"), locationCountLabel = Label(liveRegionRoot, "1/2") });
+liveRegion.waypointsInRegion.Add(new UIWaypoint { sceneName = "Z50" }); liveRegion.waypointsInRegion.Add(liveWaypoint);
+Check(Read(liveRegionRoot) == J("Valle", "1/2", T("waypoint.quest_main_active")), "a region holding the main-quest place says so");
+PlayerFinder.QuestList.activeMain = null; liveRegion.hasActiveMainQuest = true;
+Check(Read(liveRegionRoot) == J("Valle", "1/2"), "no active main quest overrides the region flag");
+PlayerFinder.QuestList = null;
+Check(Read(liveRegionRoot) == J("Valle", "1/2", T("waypoint.quest_main_active")), "without quest state the game's flag is used");
+liveRegion.hasActiveMainQuest = false;
+
 var mapRoot = new GameObject();
 var mapPanel = mapRoot.Add(new MapPanel { waypointDescriptionPopup = mapRoot.Child().Add(new WaypointDescriptionPopup()) });
 mapPanel.waypointDescriptionPopup.description = Label(mapPanel.waypointDescriptionPopup.gameObject, "Misión: Atrapado");

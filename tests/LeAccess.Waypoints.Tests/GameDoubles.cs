@@ -11,6 +11,7 @@ internal class UIWaypoint : Component
     internal string sceneName;
     internal bool GetIsActive() => isActive;
     internal bool representsSceneInEra(string scene, SceneList.Era era) => sceneName == scene;
+    internal bool representsScene(string scene) => sceneName == scene;
     internal bool GetIsPlayerHere() => playerIsHere;
     internal MonolithIslandInfo monolithIslandInfo;
     internal static Action<UIWaypoint> Selected;
@@ -24,6 +25,24 @@ internal sealed class UIWaypointRegion : Component
     internal GameObject playerLocation;
     internal Il2CppSystem.Collections.Generic.List<UIWaypoint> waypointsInRegion = new();
     internal bool hasActiveMainQuest, hasActiveSideQuest, hasPotentialMainQuest, haPotentialSideQuest;
+}
+internal enum QuestState { NotStarted, Active, Completed, Failed }
+internal sealed class Objective : UnityEngine.Object { internal string hostScene; }
+internal sealed class QuestStep : UnityEngine.Object
+{ internal QuestState questStateDuringThisStep = QuestState.Active; internal Il2CppSystem.Collections.Generic.List<Objective> objectives = new(); }
+internal sealed class Quest : UnityEngine.Object { internal int id; internal bool playerVisible = true; }
+internal sealed class StatefulQuest : NativeObject { internal QuestStep currentStep; }
+internal sealed class StatefulQuestList : NativeObject
+{
+    internal Quest activeMain;
+    internal StatefulQuest state = new();
+    internal bool hasActiveMainQuest(out Quest quest) { quest = activeMain; return quest is not null; }
+    internal StatefulQuest getStatefulQuest(Quest quest) => state;
+}
+internal static class PlayerFinder
+{
+    internal static StatefulQuestList QuestList;
+    internal static StatefulQuestList getLocalPlayerStatefulQuestList() => QuestList;
 }
 internal sealed class WaypointDescriptionPopup : Component { internal TextMeshProUGUI description; }
 internal static class SceneList { internal enum Era { Ancient, Divine } }
@@ -95,6 +114,7 @@ namespace Il2CppSystem.Collections.Generic
         internal int Count => _values.Count;
         internal T this[int index] => _values[index];
         internal void Add(T item) => _values.Add(item);
+        public System.Collections.Generic.List<T>.Enumerator GetEnumerator() => _values.GetEnumerator();
     }
 }
 namespace LE.UI.PanelSystem { internal sealed class WorldMapPanel : Component { internal MapPanel _mapPanel; } }

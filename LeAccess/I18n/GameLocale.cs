@@ -1,13 +1,10 @@
 using System;
-using System.Globalization;
 using BepInEx.Configuration;
 
 namespace LeAccess.I18n;
 
 internal static class GameLocale
 {
-    // The game's Japanese locale is "jp" (string-table bundle "japanese(jp)"), which runtimes accept as an unknown culture.
-    private const string GameJapaneseLocale = "jp";
     private static ConfigEntry<string> _language;
     private static string _lastGameLanguage = "en";
     private static bool _readFailureLogged;
@@ -51,28 +48,14 @@ internal static class GameLocale
         _readFailureLogged = false;
     }
 
+    // Localization.Locale is the selected Unity Locale's LocaleName, e.g. "Spanish (Spain) (es-ES)" (reference/localization.md).
     private static string ResolveGameLanguage(string locale)
     {
         var languageKeys = LocaleNames.LanguageKeys;
         if (languageKeys != null && languageKeys.TryGetValue(locale, out LanguageKey language) &&
             CatalogLanguage(language) is { } catalogLanguage)
             return catalogLanguage;
-        if (string.Equals(locale, GameJapaneseLocale, StringComparison.OrdinalIgnoreCase))
-            return CatalogLanguage(LanguageKey.Japanese);
-
-        string cultureCode = locale.Replace('_', '-');
-        try
-        {
-            CultureInfo culture = CultureInfo.GetCultureInfo(cultureCode);
-            // Some runtimes accept unknown names, including compact game codes, as cultures.
-            if (culture.TwoLetterISOLanguageName.Length is 2 or 3)
-                return cultureCode;
-        }
-        catch (CultureNotFoundException)
-        {
-        }
-
-        return cultureCode;
+        return locale.Replace('_', '-');
     }
 
     private static string CatalogLanguage(LanguageKey language) => language switch

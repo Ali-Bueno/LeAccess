@@ -34,7 +34,7 @@ internal static class WaypointReader
         return fragments;
     }
 
-    /// <summary>Here, locked (or no waypoint) and quest markers of a waypoint, without its name.</summary>
+    /// <summary>Here, locked (or no waypoint) and quest markers of a waypoint, without its name; the main quest is read live.</summary>
     internal static List<string> WaypointStates(UIWaypoint waypoint)
     {
         var states = new List<string>();
@@ -42,9 +42,11 @@ internal static class WaypointReader
         if (waypoint.noWaypointInScene) states.Add(ModText.Get("waypoint.no_waypoint"));
         else if (!waypoint.GetIsActive()) states.Add(ModText.Get("waypoint.locked"));
         var indicators = waypoint.questIndicators;
-        if (IsAlive(indicators))
-            AddQuests(states, indicators.hasActiveMainQuest, indicators.hasActiveSideQuest,
-                indicators.hasPotentialMainQuest, indicators.haPotentialSideQuest);
+        bool flags = IsAlive(indicators);
+        var mainScenes = MainQuestPlaces.CurrentScenes();
+        bool activeMain = mainScenes is null ? flags && indicators.hasActiveMainQuest : MainQuestPlaces.IsAt(waypoint, mainScenes);
+        AddQuests(states, activeMain, flags && indicators.hasActiveSideQuest,
+            flags && indicators.hasPotentialMainQuest, flags && indicators.haPotentialSideQuest);
         return states;
     }
 
@@ -54,8 +56,9 @@ internal static class WaypointReader
         var states = new List<string>();
         if (IsAlive(region.playerLocation) && UiVisibility.IsVisible(region.playerLocation))
             states.Add(ModText.Get("waypoint.here"));
-        AddQuests(states, region.hasActiveMainQuest, region.hasActiveSideQuest,
-            region.hasPotentialMainQuest, region.haPotentialSideQuest);
+        var mainScenes = MainQuestPlaces.CurrentScenes();
+        bool activeMain = mainScenes is null ? region.hasActiveMainQuest : MainQuestPlaces.IsIn(region, mainScenes);
+        AddQuests(states, activeMain, region.hasActiveSideQuest, region.hasPotentialMainQuest, region.haPotentialSideQuest);
         return states;
     }
 

@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/Map/WaypointReader.cs" Link="WaypointReader.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Map/MainQuestPlaces.cs" Link="MainQuestPlaces.cs" />
     <Compile Include="../../LeAccess/Accessibility/Map/MapSelectionAnnouncer.cs" Link="MapSelectionAnnouncer.cs" />
     <Compile Include="../../LeAccess/Accessibility/Map/MapTravelAnnouncer.cs" Link="MapTravelAnnouncer.cs" />
     <Compile Include="../../LeAccess/Accessibility/Map/MapLocationList.cs" Link="MapLocationList.cs" />
