@@ -1,3 +1,17 @@
+# Handoff — 2026-10-11 14:00: dead pad and Circle after the mod menu, version at startup
+
+A tester (XInput pad, also keyboard/NVDA) could not move after closing the mod menu; Circle in the mod menu closed the
+game's inventory; they asked for the version at startup. Their log: every close said `game input resumed`, yet the
+player never moved again and later opens counted 10 maps instead of 24. Cause and fix in
+[mod-menu.md](reference/mod-menu.md#while-open): maps restored by identity, controller mode frozen while blocked,
+`CurrentMap` = `defaultMap` while open and `UpdateMap` on closing, no more null selection. Released as `v0.2.1`.
+Verified by Claude in game with a virtual Xbox 360 pad (ViGEm, the user away): 0.2.0 reproduced the dead pad (Ctrl+F1,
+arrows and D-pad in the menu, close: no movement, next open 25 maps instead of 39) and Circle closing the inventory;
+0.2.1 walks after the same steps, keeps the inventory open with a working cursor, and Cross/Circle in the menu on the
+landing screen did not press Play ([evidence](reference/mod-menu.md#code)). Still unheard by a player: the DualSense
+chord (L1 with Create), the tester's own pad, the startup sentence (the dev install keeps old translation files, so
+its log warns `Invalid translation mod.loaded … keeping fallback`; a fresh ZIP has the new ones).
+
 # Handoff — 2026-10-11 afternoon: warm wall sounds, update check, every interactable in the scanner
 
 User: the wall tones were "ultra annoying", wanted softer and warmer, like Grimdark; a startup notice when a newer mod

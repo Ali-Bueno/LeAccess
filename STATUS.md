@@ -1,6 +1,13 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-11 afternoon (user report and requests): wall tones are now soft bands of air like Grimdark's
+**Updated:** 2026-10-11 14:00 (tester log, user report and request): the pad went dead after the mod menu when the
+controller mode changed while it was open (Ctrl+F1, arrows, Alt+Tab): the game reloaded the pad's maps, which came in off,
+and closing turned on the old objects. Maps now come back by identity, the mode stays frozen while the menu blocks input,
+and the game's controller map is held with `CurrentMap` = `defaultMap` instead of a null selection, whose Circle ran
+`UIBase.CloseAll` and closed the inventory ([menu](reference/mod-menu.md#while-open)). Startup speech says
+"LeAccess version 0.2.1 loaded". Verified in game with a virtual XInput pad: 0.2.0 reproduced both bugs, 0.2.1 fixes
+them. Released as `v0.2.1`.
+Earlier, 2026-10-11 afternoon (user report and requests): wall tones are now soft bands of air like Grimdark's
 loops (measured: band noise, not tones), warmer (800/450/250 Hz, nothing above about 2 kHz), same level, curve and pans
 ([warm sounds](reference/navigation-radar.md#warm-wall-sounds-2026-10-11)); a startup update check says when GitHub has
 a newer release (`Updates/CheckAtStartup`, on; the mod's version is now 0.2.0 and each release must be tagged `v<Version>`,
@@ -288,6 +295,7 @@ releases go to GitHub Releases with the asset name `LeAccess.zip` (see below).
 - 2026-10-11 08:57: settings menu and tester batch installed (`LeAccess.dll` `ECC6B942930F0B00…`, game closed). All 62 host suites pass (new ModMenu 262; Exploration 425, ExplorationCatalog 91, Localization 8410, WorldLoops 181); PatchSafety 84 declarations / 83 targets, no new hook. No friend ZIP or release.
 - 2026-10-10 22:47: player-report batch installed (`LeAccess.dll` `C517B9A5B6820E59…`, game closed; external catalogs kept, new keys are embedded). All 61 host suites pass (Inventory 390, Exploration 397, ExplorationCatalog 64, Skills 291, Passives 203, Dialogue 97, Classes 148, Localization 5750); PatchSafety 84 declarations / 83 targets, no new hook. No friend ZIP or release.
 - 2026-10-10: release announced in the audiogames.net Play testing room on the user's account, at their request: <https://forum.audiogames.net/topic/60577/>.
+- 2026-10-11 14:34: GitHub release `v0.2.1` carries `LeAccess-Steam-1.5.1-prueba-20261011-143427.zip` (repo root, ignored by git) as `LeAccess.zip`, SHA-256 `86E0A0B7EF35B32B113F94C944746960732868BFC8333CA66BB7D2970B50E3ED`, 272 files; its `LeAccess.dll` (`45D07344F5D771AD…`, 0.2.1) is the installed copy, run in game before packaging. All 63 host suites and package 250 pass. Fixes the dead pad and Circle after the mod menu; version at startup.
 - 2026-10-11: `v0.2.0` announced on the audiogames.net forum by the user (text drafted with highlights and the changelog link).
 - 2026-10-11 12:05: GitHub release `v0.2.0` (tag on `db59742`, DLL version 0.2.0) carries `LeAccess-Steam-1.5.1-prueba-20261011-120541.zip` (repo root, ignored by git) as `LeAccess.zip`, SHA-256 `9E3D8FFB09F62934BB89DD54D523F61E785CCC3CB1BD4F17C383CEFE92A81980`, 272 files; notes summarize [CHANGELOG.md](CHANGELOG.md). Package 250, all 63 host suites pass. Next release: bump `<Version>` and tag `v<Version>` ([rule](reference/updates.md#release-rule)).
 - 2026-10-10: GitHub release `v0.1.0` (first public test release) carries that ZIP as `LeAccess.zip`; every release must keep that asset name so <https://github.com/Ali-Bueno/LeAccess/releases/latest/download/LeAccess.zip> (README, forum post) stays valid, and must not be a prerelease (`latest` skips them).
