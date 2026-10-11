@@ -24,5 +24,6 @@ User request: every time the game starts, say when a newer version of the mod ex
 The running version is `<Version>` in `LeAccess/LeAccess.csproj` (`MyPluginInfo.PLUGIN_VERSION`). Every GitHub release
 must be tagged `v<Version>` of the DLL it ships, keep the `LeAccess.zip` asset name and not be a pre-release (see
 [STATUS.md](../STATUS.md)). If the tag is higher than the shipped DLL's version, everyone on that release hears the
-notice at every start. `v0.1.0` shipped a DLL that said 1.0.0 and has no check; the source moved to `0.2.0` on
+notice at every start. Each release also adds its days to [CHANGELOG.md](../CHANGELOG.md) ("day — version"
+headings, player-facing, from the commits), and the release notes summarize them. `v0.1.0` shipped a DLL that said 1.0.0 and has no check; the source moved to `0.2.0` on
 2026-10-11 as the next release's number.
