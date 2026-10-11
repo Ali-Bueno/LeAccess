@@ -515,3 +515,9 @@ mouse is idle, and every keyboard key held or released this frame is a screen-re
 stays "controller". Any other key or real mouse input switches as before (typing a name still
 works). The first kept frame logs `[Controller mode] kept while screen-reader keys were pressed`.
 Unverified: whether NVDA's numpad Insert reaches Rewired as Insert, and live behaviour.
+
+## Intro skipped by screen-reader keys (2026-10-10, user report)
+
+Pressing Ctrl to silence NVDA counted as the "any key" that skips the intro movie (`CharacterSelectionVideoManager`: first press shows `skipText`, second skips). `IntroSkipKeyPatch` is a postfix on `ButtonInputListenerManager.IsAnyKeyDown` (static, one caller; PatchSafety: native address, no aliases). `IntroSkipGuard.Review` sets `__result = false` when no mouse or gamepad button went down and every keyboard key that went down this frame is a screen-reader key (`ControllerModeKeys.OnlyScreenReaderKeys`); any other key or button still skips. Log: `[Intro] skip ignored: screen-reader key` (once per session).
+
+Unverified: that the intro really reads `IsAnyKeyDown` (its only caller is unknown from the stubs). If Ctrl still skips and the log line never appears, the movie reads `Input.anyKeyDown` directly; the fallback is a prefix on the private `CharacterSelectionVideoManager.EndOrSkip` that returns false while `player.isPlaying` and only screen-reader keys are down, never blocking the natural `Player_loopPointReached` end.
