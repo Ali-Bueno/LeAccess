@@ -24,11 +24,14 @@ public static class ReactiveRadar
     private static readonly RadarWorldProbe World = new();
     private static readonly RadarCueQueue Queue = new();
     private static readonly RadarDiagnostics Diagnostics = new();
+    private static readonly RadarTrace Trace = new();
     // Openings, walls, then marked (unexplored) openings, one per direction.
     private static readonly float[][] Cues = new float[RadarEngine.DirectionCount * 3][];
     private static System.Numerics.Vector2 _position;
     private static System.Numerics.Vector2[] _axes;
     private static RadarEngine _engine;
+    // Temporary diagnostic: the three-ray reading run silently beside the live one (RadarWorldProbe.Shadow.cs).
+    private static RadarEngine _shadow;
     private static RadarAudioOutput _audio;
     private static double _nextAudioRetry;
     private static string _lastAudioFailure;
@@ -86,11 +89,15 @@ public static class ReactiveRadar
                 {
                     ResetPlayback();
                     _engine = new RadarEngine(snapshot.Settings);
+                    _shadow = new RadarEngine(snapshot.Settings);
                 }
 
                 ulong revision = _engine.Revision;
                 var events = _engine.Tick(snapshot.Position, snapshot.Axes, snapshot.Readings, now, snapshot.Session);
                 Diagnostics.Observe(_engine, _engine.Revision != revision);
+                if (_engine.Revision != revision) Trace.ClearReadings();
+                Trace.Record(snapshot.Readings, snapshot.ShadowReadings, snapshot.EdgeDistance, snapshot.AgentRadius);
+                LogEvents(events, snapshot, now);
                 if (_engine.Revision != revision)
                 {
                     Queue.Clear();
@@ -104,7 +111,7 @@ public static class ReactiveRadar
                 Diagnostics.Pending(now, Queue.PendingCount > 0);
                 string status = Diagnostics.Report(now, snapshot, _engine, Queue.PendingCount,
                     static () => _audio == null ? "not initialized" : _audio.Diagnostics.ToString());
-                if (status != null) Plugin.Log.LogInfo(status);
+                if (status != null) Plugin.Log.LogInfo(FormattableString.Invariant($"{status} edge={snapshot.EdgeDistance:0.00} {Trace.Summary()}"));
                 _hasSnapshot = true;
                 _lastFailure = null;
                 if (_lastUnavailableReason != null)
@@ -129,7 +136,7 @@ public static class ReactiveRadar
             Queue.TryTake(out _, out _);
             _audio.Play(cue);
             Diagnostics.Submitted(now, Queue.PendingCount > 0);
-            Plugin.Log.LogInfo($"Reactive radar cue: direction={direction} state={state}{(marked ? " unexplored" : "")}");
+            Plugin.Log.LogInfo(FormattableString.Invariant($"Reactive radar cue: t={now:0.00} direction={direction} state={state}{(marked ? " unexplored" : "")}"));
             _nextCue = now + (double)cue.Length / (RadarCueSynthesizer.SampleRate * RadarCueSynthesizer.Channels)
                 + RadarCueSynthesizer.CueGapSeconds;
         }
@@ -140,6 +147,18 @@ public static class ReactiveRadar
             _lastFailure = ex.Message;
             Plugin.Log.LogWarning($"Reactive radar unavailable: {ex}");
         }
+    }
+
+    // Each generated cue with its recent readings; the shadow's cues are logged, never played.
+    private static void LogEvents(RadarState[] events, RadarWorldSnapshot snapshot, double now)
+    {
+        for (int i = 0; i < events.Length; i++)
+            if (events[i] != RadarState.Unknown)
+                Plugin.Log.LogInfo(Trace.Live(i, events[i], now, snapshot.Position, snapshot.EdgeDistance));
+        if (snapshot.ShadowReadings == null) return;
+        var shadow = _shadow.Tick(snapshot.Position, snapshot.Axes, snapshot.ShadowReadings, now, snapshot.Session);
+        for (int i = 0; i < shadow.Length; i++)
+            if (shadow[i] != RadarState.Unknown) Plugin.Log.LogInfo(Trace.Shadow(i, shadow[i], now));
     }
 
     private static bool EnsureAudio(double now)
@@ -206,6 +225,7 @@ public static class ReactiveRadar
         WorldAudioReservation.Cancel(WorldAudioSource.Terrain);
         Queue.Clear();
         _engine?.Reset();
+        _shadow?.Reset();
         if (_hasSnapshot) _audio?.Silence();
         _hasSnapshot = false;
         _nextCue = 0;
@@ -221,6 +241,8 @@ public static class ReactiveRadar
         _lastUnavailableReason = null;
         _lastFailure = null;
         _engine = null;
+        _shadow = null;
+        Trace.Reset();
         _enabled = null;
         _unexploredMark = null;
         _axes = null;

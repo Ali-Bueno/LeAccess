@@ -26,6 +26,39 @@ internal static class LifecycleTests
         StaleSceneAndInactiveCameraSuspendRadar();
         OwnedDetachedVisualsRemainPlayable();
         ClearanceFollowsThePush();
+        ShadowReadingLeavesTheTouchedWall();
+    }
+
+    // A wall along x = 8; a ray along it from its edge grazes the boundary and stops short.
+    private static void ShadowReadingLeavesTheTouchedWall()
+    {
+        foreach (float x in new[] { 8.02f, 8f })
+        {
+            ResetHost();
+            PlayerFinder.Player.transform.position = new(x, 1, 12);
+            NavMesh.EdgeFor = point => new Vector3(8, point.y, point.z);
+            NavMesh.DepthFor = (from, direction) => direction.x < -0.5f ? Math.Max(0, from.x - 8)
+                : direction.z > 0.5f && from.x < 8.03f ? 0.05f : 20;
+            var probe = new RadarWorldProbe();
+            Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out var snapshot), "Capture beside a wall");
+            var up = (int)RadarDirection.Up;
+            var left = (int)RadarDirection.Left;
+            Program.Check(snapshot.Readings[up].Depth < snapshot.Settings.CloseDepth, "The live ray along the wall grazes it");
+            Program.Check(snapshot.ShadowReadings[up].Depth >= snapshot.Settings.PassageDepth,
+                $"The shadow, moved off the wall, sees the way along it (edge {x - 8:0.00})");
+            Program.Check(snapshot.ShadowReadings[left].Available && snapshot.ShadowReadings[left].Depth < snapshot.Settings.CloseDepth,
+                "The touched wall stays blocked in the shadow");
+            Program.Near(snapshot.EdgeDistance, x - 8, "The edge distance is logged");
+        }
+        ResetHost();
+        var plain = new RadarWorldProbe();
+        Program.Check(plain.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out var open) && float.IsNaN(open.EdgeDistance)
+            && open.ShadowReadings.All(reading => reading.Available && reading.Depth >= open.Settings.PassageDepth),
+            "In the open the shadow agrees and an unknown edge is NaN");
+        Program.Check(plain.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out var originOnly, probeWalls: false)
+            && originOnly.ShadowReadings == null, "Origin-only captures carry no shadow");
+        NavMesh.DepthFor = null;
+        NavMesh.EdgeFor = null;
     }
 
     private static void ClearanceFollowsThePush()
@@ -135,7 +168,7 @@ internal static class LifecycleTests
         var agent = PlayerFinder.Player.Agent;
         agent.agentTypeID = 42;
         agent.areaMask = 8;
-        var probe = new RadarWorldProbe();
+        var probe = new RadarWorldProbe { ProbeShadowReadings = false };
         Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _),
             "Primitive filter route captures the world without constructing NavMeshQueryFilter");
         Program.Check(NavMesh.Filters.Count == 1 + RadarEngine.DirectionCount,
@@ -156,7 +189,7 @@ internal static class LifecycleTests
     {
         ResetHost();
         PlayerFinder.Player.Agent.radius = 0.3f;
-        var probe = new RadarWorldProbe();
+        var probe = new RadarWorldProbe { ProbeShadowReadings = false };
         bool FromOrigin(Vector3 from) => from.x == 0 && from.z == 0;
         NavMesh.DepthFor = (from, direction) => FromOrigin(from) ? 3f : 0.5f;
         NavMesh.Rays = 0;
@@ -192,6 +225,7 @@ internal static class LifecycleTests
         NavMesh.Filters.Clear();
         NavMesh.TargetSample = null;
         NavMesh.DepthFor = null;
+        NavMesh.EdgeFor = null;
         NavMesh.Settings = new NavMeshBuildSettings { agentRadius = float.NaN, agentClimb = float.NaN };
         LE.UI.LoadingScreen.IsVisible = false;
         RadarAudioOutput.Played = 0;
@@ -218,7 +252,7 @@ internal static class LifecycleTests
     private static void LineOfSightUsesSampledOrigin()
     {
         ResetHost();
-        var probe = new RadarWorldProbe();
+        var probe = new RadarWorldProbe { ProbeShadowReadings = false };
         Program.Check(probe.Sight(new Vector3(1, 0, 0)) == TerrainSight.Unknown, "No line of sight is claimed before a capture");
         PlayerFinder.Player.Agent.agentTypeID = 7;
         PlayerFinder.Player.Agent.areaMask = 5;
@@ -469,8 +503,13 @@ internal static class LifecycleTests
         NavMesh.Depth = 1;
         Tick(5.65);
         Tick(5.80);
-        Program.Check(LeAccess.Plugin.Log.Information.Any(line => line.Contains("radar cue: direction=Up state=Blocked")),
+        Program.Check(LeAccess.Plugin.Log.Information.Any(line => line.Contains("radar cue: t=5.80 direction=Up state=Blocked")),
             "Generated terrain cue submission is recorded independently of quiet heartbeats");
+        Program.Check(LeAccess.Plugin.Log.Information.Any(line => line.StartsWith("Reactive radar event: t=5.80 dir=Up state=Blocked")
+            && line.Contains(" depth=") && line.EndsWith("1.00,1.00")),
+            "The generated cue is logged with its recent depths, the shadow last");
+        Program.Check(reports[1].Contains("trace: live_events=0 live_flips=0") && reports[1].Contains("pressed_polls=0/"),
+            "The heartbeat carries the trace counts");
         ReactiveRadar.Cleanup();
     }
 

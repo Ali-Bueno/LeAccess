@@ -137,6 +137,15 @@ namespace UnityEngine.AI
             hit = new NavMeshHit { position = position + SampleOffset };
             return OriginAvailable && TargetSample == null;
         }
+        // Optional nearest walkable edge for a point; none by default.
+        public static Func<Vector3, Vector3?> EdgeFor;
+        public static bool FindClosestEdgeFilter(Vector3 position, out NavMeshHit hit, int type, int mask)
+        {
+            Filters.Add((type, mask));
+            var edge = EdgeFor?.Invoke(position);
+            hit = new NavMeshHit { position = edge ?? position };
+            return edge != null;
+        }
         public static bool RaycastFilter(Vector3 position, Vector3 target, out NavMeshHit hit, int type, int mask)
         {
             Filters.Add((type, mask));

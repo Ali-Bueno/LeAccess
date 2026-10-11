@@ -528,3 +528,34 @@ Assessment:
 
 Proposed next step if the user agrees: depth and agreement in each cue's log line first, then the three-ray reading.
 
+
+## Radar trace (2026-10-11)
+
+The user asked for a better diagnosis before any radar change: play a while, then change what the log shows. Added
+lines (numbers invariant, `t=` is `Time.unscaledTimeAsDouble`, the radar's own clock):
+
+- `Reactive radar event: t= dir= state= [flip=] pos=x,z edge= depth=… cont=… shadow=…` for every generated cue:
+  the last 8 polls (0.4 s) of that direction, oldest first, live depth, continuation flags and the shadow depth
+  (`-` = unknown). `flip=` gives the seconds since the opposite cue in the same direction when under 1.5 s.
+  `edge=` is the distance from the origin to the nearest NavMesh edge (`NavMesh.FindClosestEdgeFilter`).
+- `Reactive radar cue: t= direction= state=` as before, with the time: what was played.
+- `Reactive radar shadow: t= dir= state= [flip=]`: what the alternative reading would have played (never heard).
+- The five-second status ends with `edge= trace: live_events= live_flips= shadow_events= shadow_flips= pressed_polls=a/b`
+  (polls with the origin within the agent radius of an edge).
+
+**Shadow reading (temporary, `RadarWorldProbe.Shadow.cs`)**: the live rays, but from an origin moved off a touching
+wall (to one body radius from the nearest edge, away from it; on the edge itself, away from the live rays that read
+under a body radius), three parallel lanes per direction across the body width (centre, ±body radius; a lane whose
+start lies beyond a wall reads 0), merged by their median, depths measured along the axis from the player's origin,
+continuation checked at the median lane's hit. A second `RadarEngine` runs on it with the same settings. About 26
+extra NavMesh queries per 50 ms poll. Remove it, or make it the live reading, once a session's trace has been
+analysed.
+
+How to read a session: flips with `edge` near 0 and a `depth` series jumping between near 0 and far point to the
+grazing ray; dips below the 2.1 m knock for a few polls while `edge` is large point to small obstacles; values
+hovering around 2.1 or 3.0 to threshold chatter; a steady depth between 3 and 6 m with `cont` toggling to the
+continuation branches. Compare `live_flips` with `shadow_flips`, and check that the shadow still breathes at the
+doorways the live reading found.
+
+Tests: Navigation 904 checks (trace window and flips, shadow beside a wall with and without an edge direction,
+heartbeat and event lines).

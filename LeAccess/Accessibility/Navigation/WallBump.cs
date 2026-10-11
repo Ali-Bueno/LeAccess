@@ -87,7 +87,7 @@ public static class WallBump
             if (!_detector.Stalled) _stallLogged = false;
             else if (!contact && !_stallLogged)
             {
-                Plugin.Log.LogInfo($"[Wall bump] stopped without a wall within {snapshot.BodyRadius:0.00} (clearance {clearance:0.00})");
+                Plugin.Log.LogInfo(FormattableString.Invariant($"[Wall bump] stopped without a wall within {snapshot.BodyRadius:0.00} (clearance {clearance:0.00})"));
                 _stallLogged = true;
             }
             if (_detector.Pressing && _muteFootsteps.Value) FootstepMute.Mute();
@@ -109,7 +109,7 @@ public static class WallBump
         float pan = Vector3.Dot(push.normalized, right);
         _audio.Silence();
         _audio.Play(BumpCueSynthesizer.Synthesize(pan, _volume.Value / 100f));
-        Plugin.Log.LogInfo($"[Wall bump] bump pan={pan:0.00} clearance={clearance:0.00}");
+        Plugin.Log.LogInfo(FormattableString.Invariant($"[Wall bump] bump pan={pan:0.00} clearance={clearance:0.00}"));
     }
 
     private static bool EnsureAudio(double now)

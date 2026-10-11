@@ -19,9 +19,14 @@ internal readonly struct RadarWorldSnapshot
     public float BodyRadius { get; }
     public int AgentTypeId { get; }
     public int AreaMask { get; }
+    /// <summary>Temporary diagnostic: the three-ray reading the trace compares with the live one.</summary>
+    public RadarReading[] ShadowReadings { get; }
+    /// <summary>Horizontal distance from the origin to the nearest NavMesh edge; NaN when unknown.</summary>
+    public float EdgeDistance { get; }
 
     public RadarWorldSnapshot(NumericsVector2 position, NumericsVector2[] axes, RadarReading[] readings,
-        RadarSettings settings, long session, float agentRadius, float bodyRadius, int agentTypeId, int areaMask)
+        RadarSettings settings, long session, float agentRadius, float bodyRadius, int agentTypeId, int areaMask,
+        RadarReading[] shadowReadings = null, float edgeDistance = float.NaN)
     {
         Position = position;
         Axes = axes;
@@ -32,10 +37,12 @@ internal readonly struct RadarWorldSnapshot
         BodyRadius = bodyRadius;
         AgentTypeId = agentTypeId;
         AreaMask = areaMask;
+        ShadowReadings = shadowReadings;
+        EdgeDistance = edgeDistance;
     }
 }
 
-internal sealed class RadarWorldProbe
+internal sealed partial class RadarWorldProbe
 {
     private NavMeshAgent _agent;
     private Actor _actor;
@@ -129,9 +136,10 @@ internal sealed class RadarWorldProbe
             _readings[i] = new RadarReading(depth, float.IsFinite(depth) && depth >= 0f, continues);
         }
 
+        float edge = probeWalls && ProbeShadowReadings ? ProbeShadow(origin.position, bodyRadius, agentTypeId, areaMask) : float.NaN;
         snapshot = new RadarWorldSnapshot(
             new NumericsVector2(origin.position.x, origin.position.z), _axes, _readings, _settings, session,
-            agentRadius, bodyRadius, agentTypeId, areaMask);
+            agentRadius, bodyRadius, agentTypeId, areaMask, probeWalls && ProbeShadowReadings ? _shadowReadings : null, edge);
         _origin = origin.position;
         _originRadius = agentRadius;
         _originAgentType = agentTypeId;

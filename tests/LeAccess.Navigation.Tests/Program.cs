@@ -14,6 +14,7 @@ internal static class Program
             MarkTests.Run();
             LifecycleTests.Run();
             BumpTests.Run();
+            TraceTests.Run();
             Console.WriteLine($"Navigation tests passed: {_checks} checks.");
             return 0;
         }
