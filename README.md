@@ -37,6 +37,8 @@ travel and play online with other people. Just know what you are getting into.
 Download the latest version here (this link always points to the newest release):
 <https://github.com/Ali-Bueno/LeAccess/releases/latest/download/LeAccess.zip>
 
+What changed in each version, day by day: [CHANGELOG.md](CHANGELOG.md).
+
 1. Close Last Epoch.
 2. In Steam, right click Last Epoch, then Manage, then Browse local files.
 3. Extract **everything** in the ZIP straight into that folder, next to `Last Epoch.exe`. Do not leave it inside an
