@@ -44,6 +44,7 @@ internal static class ModMenu
                 if (chord) Open();
                 return;
             }
+            InputBlock.Hold();
             if (chord) { Close(); return; }
             if (_language != ModText.Language) Rebuild();
             if (_capturing is not null) { Capture(); return; }
@@ -76,7 +77,7 @@ internal static class ModMenu
         _language = ModText.Language;
         _heldBackBefore = ScreenReader.HeldBack;
         ModMenuInput.Reset();
-        InputBlock.Begin(ModMenuInput.CurrentPlayer());
+        InputBlock.Begin();
         ScreenReader.MenuOwnsSpeech = true;
         Say(_navigator.Opening());
         Plugin.Log.LogInfo("[Mod menu] opened");
@@ -86,6 +87,7 @@ internal static class ModMenu
     {
         _navigator = null;
         _capturing = null;
+        InputBlock.Close();
         SoundPreview.Stop();
         ScreenReader.MenuOwnsSpeech = false;
         ScreenReader.Speak(ModText.Get("menu.closed"));

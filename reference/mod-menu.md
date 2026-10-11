@@ -16,13 +16,16 @@ from the main menu or gameplay alike.
 
 ## While open
 
-- The game gets no input: the Rewired player stops playing (`Player.isPlaying = false`). It plays again only once
-  every pad button, key and mouse button is up, so the closing press is not delivered to the game as a new press.
+- The game gets no input: every enabled Rewired controller map (keyboard, mouse, each joystick) of every player,
+  the system player included, is turned off, re-checked each frame, and only those maps are turned back on once every
+  pad button, key and mouse button is up, so the closing press is not delivered to the game as a new press.
+  `Player.isPlaying = false` was tried first and blocks nothing (user report 2026-10-11: Cross activated game menus,
+  Circle dodged; log showed `game input paused`). In Rewired it only governs joystick auto-assignment.
 - The game keeps running (it is not a pause); the world sounds keep playing, so volume and distance changes are heard
   live.
 - Other mod speech is held back (dropped, not queued) so the menu is not talked over; the menu speaks through
   `ScreenReader`'s owned path.
-- The mod reads the pad through the gamepad template, which ignores `isPlaying`.
+- The mod reads the pad through the gamepad template, which reads the hardware and ignores controller maps.
 
 ## Controls
 
@@ -80,9 +83,10 @@ output start (their details say so).
 `InputBlock`), `ModMenu` (open/close, speech). Host suite `tests/LeAccess.ModMenu.Tests` also checks that every
 `.Bind(section, "Key")` in the source is in the catalog with both text keys.
 
-Log lines: `[Mod menu] opened`, `closed; other announcements held back: N`, `game input paused` / `resumed`,
+Log lines: `[Mod menu] opened`, `closed; other announcements held back: N`, `game input paused: N controller maps
+off` / `resumed: N controller maps on`, `maps turned back on by the game while open: N` (should not appear),
 `L1 bindings held back while a chord modifier is down: N`, `option without menu text: Section/Key`.
 
-Unverified live (2026-10-11): that `Player.isPlaying = false` silences every game input path (menus read Rewired
-through `EpochInputManager`; anything reading `UnityEngine.Input` directly is not blocked), the L1 element id from the
-template source on DualSense and Xbox pads, and the preview levels.
+Verified live (2026-10-11): the L1 guard (9 and 10 L1 bindings held back on a DualSense, no potion). Unverified: that
+turning the maps off silences every game input path (anything reading `UnityEngine.Input` directly is not blocked),
+the L1 guard on an Xbox pad, and the preview levels.

@@ -88,33 +88,99 @@ internal static class ShoulderGuard
     }
 }
 
-/// <summary>Stops the game's Rewired player while the menu is open; it plays again once nothing is held.</summary>
+/// <summary>Turns off every Rewired controller map of every player while the menu is open (Rewired's way to silence
+/// input; Player.isPlaying does not), and turns back on only those maps once nothing is held.</summary>
 internal static class InputBlock
 {
-    private static Player _player;
+    private static readonly List<ControllerMap> Disabled = new();
+    private static bool _open;
+    private static int _atOpen;
+    private static string _failure;
 
-    internal static void Begin(Player player)
+    internal static void Begin()
     {
-        if (_player is not null || player is null || !player.isPlaying) return;
-        player.isPlaying = false;
-        _player = player;
-        Plugin.Log.LogInfo("[Mod menu] game input paused");
+        _open = true;
+        Hold();
+        _atOpen = Disabled.Count;
+        Plugin.Log.LogInfo($"[Mod menu] game input paused: {Disabled.Count} controller maps off");
+    }
+
+    /// <summary>Each frame while open: a map the game turns on meanwhile goes off too.</summary>
+    internal static void Hold()
+    {
+        try
+        {
+            var players = ReInput.players;
+            if (players is null) return;
+            for (int index = 0; index < players.playerCount; index++) HoldPlayer(players.GetPlayer(index));
+            HoldPlayer(players.GetSystemPlayer());
+        }
+        catch (Exception ex) { Report(ex); }
+    }
+
+    internal static void Close()
+    {
+        _open = false;
+        // More maps than at opening means the game turned some back on while the menu was open.
+        if (Disabled.Count != _atOpen) Plugin.Log.LogInfo($"[Mod menu] maps turned back on by the game while open: {Disabled.Count - _atOpen}");
     }
 
     /// <summary>Waiting for release keeps the closing press from reaching the game as a new press.</summary>
     internal static void EndWhenIdle()
     {
-        if (_player is null || AnythingHeld()) return;
+        if (_open || Disabled.Count == 0) return;
+        if (AnythingHeld()) { Hold(); return; }
         End();
     }
 
     internal static void End()
     {
-        if (_player is null) return;
-        try { if (!_player.WasCollected) _player.isPlaying = true; }
-        catch (Exception ex) { Plugin.Log.LogWarning($"Mod menu could not resume game input: {ex.Message}"); }
-        _player = null;
-        Plugin.Log.LogInfo("[Mod menu] game input resumed");
+        _open = false;
+        if (Disabled.Count == 0) return;
+        int restored = 0;
+        foreach (var map in Disabled)
+        {
+            try { if (!map.WasCollected) { map.enabled = true; restored++; } }
+            catch (Exception ex) { Report(ex); }
+        }
+        Disabled.Clear();
+        Plugin.Log.LogInfo($"[Mod menu] game input resumed: {restored} controller maps on");
+    }
+
+    private static void HoldPlayer(Player player)
+    {
+        if (player is null || player.WasCollected) return;
+        var maps = player.controllers?.maps;
+        if (maps is null) return;
+        HoldMaps(maps.GetMaps(ControllerType.Keyboard, 0));
+        HoldMaps(maps.GetMaps(ControllerType.Mouse, 0));
+        var joysticks = player.controllers.Joysticks;
+        var collection = joysticks?.TryCast<Il2CppSystem.Collections.Generic.ICollection<Joystick>>();
+        for (int index = 0; collection is not null && index < collection.Count; index++)
+        {
+            var joystick = joysticks[index];
+            if (joystick is not null && !joystick.WasCollected) HoldMaps(maps.GetMaps(ControllerType.Joystick, joystick.id));
+        }
+    }
+
+    private static void HoldMaps(Il2CppSystem.Collections.Generic.IList<ControllerMap> maps)
+    {
+        int count = maps?.TryCast<Il2CppSystem.Collections.Generic.ICollection<ControllerMap>>()?.Count ?? 0;
+        for (int index = 0; index < count; index++)
+        {
+            var map = maps[index];
+            if (map is null || map.WasCollected || !map.enabled) continue;
+            map.enabled = false;
+            Disabled.Add(map);
+        }
+    }
+
+    private static void Report(Exception ex)
+    {
+        string failure = $"{ex.GetType().Name}: {ex.Message}";
+        if (_failure == failure) return;
+        _failure = failure;
+        Plugin.Log.LogWarning($"Mod menu input block unavailable: {failure}");
     }
 
     private static bool AnythingHeld()
