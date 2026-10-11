@@ -368,3 +368,10 @@ A single response (Messenger's "Pick up the letter") never changes focus, so `El
 ## Optional silence for NPC speech (2026-10-10, user report)
 
 Config `[Dialogue] SpeakNpcLines` (default true; only English is voiced). When false, `NpcLines.Speak` gates only NPC text: the conversation body in `DialogueAnnouncer.Update` (treated as delivered: no pending content, so response focus is not held back) and `VisibleSubtitleAnnouncer.Speak` (barks, submitted NPC messages, cinematic and intro-video subtitles; counted as delivered so they are not retried). Responses, the continue button, quest text and tutorials are unaffected. Unvoiced lines are silenced too.
+
+## Lone-response repeat only for one response (2026-10-11, user report)
+
+With several responses (Cronomante Lerinne: respec, leave) every push said the old response, then the new one twice:
+the game moves focus a frame after the push, so the "focus did not move" test passed on the push frame. The repeat now
+also needs exactly one visible `TextMeshProResponseButton` under the response root (`DialogueResponseRepeat.ShouldRepeat`
+takes the count). Dialogue suite: two-response and hidden-second-response cases.

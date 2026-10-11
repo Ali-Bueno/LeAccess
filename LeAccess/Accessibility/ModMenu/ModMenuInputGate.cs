@@ -88,11 +88,12 @@ internal static class ShoulderGuard
     }
 }
 
-/// <summary>Turns off every Rewired controller map of every player while the menu is open (Rewired's way to silence
-/// input; Player.isPlaying does not), and turns back on only those maps once nothing is held.</summary>
+/// <summary>Turns off every Rewired controller map of every player and the UI event system's navigation while the menu
+/// is open (Player.isPlaying silences nothing), and turns back on only what it turned off once nothing is held.</summary>
 internal static class InputBlock
 {
     private static readonly List<ControllerMap> Disabled = new();
+    private static readonly List<UnityEngine.EventSystems.EventSystem> Navigation = new();
     private static bool _open;
     private static int _atOpen;
     private static string _failure;
@@ -102,7 +103,7 @@ internal static class InputBlock
         _open = true;
         Hold();
         _atOpen = Disabled.Count;
-        Plugin.Log.LogInfo($"[Mod menu] game input paused: {Disabled.Count} controller maps off");
+        Plugin.Log.LogInfo($"[Mod menu] game input paused: {Disabled.Count} controller maps off, UI navigation off: {Navigation.Count}");
     }
 
     /// <summary>Each frame while open: a map the game turns on meanwhile goes off too.</summary>
@@ -116,6 +117,7 @@ internal static class InputBlock
             HoldPlayer(players.GetSystemPlayer());
         }
         catch (Exception ex) { Report(ex); }
+        HoldNavigation();
     }
 
     internal static void Close()
@@ -128,7 +130,7 @@ internal static class InputBlock
     /// <summary>Waiting for release keeps the closing press from reaching the game as a new press.</summary>
     internal static void EndWhenIdle()
     {
-        if (_open || Disabled.Count == 0) return;
+        if (_open || Disabled.Count == 0 && Navigation.Count == 0) return;
         if (AnythingHeld()) { Hold(); return; }
         End();
     }
@@ -136,6 +138,12 @@ internal static class InputBlock
     internal static void End()
     {
         _open = false;
+        foreach (var events in Navigation)
+        {
+            try { if (!events.WasCollected) events.sendNavigationEvents = true; }
+            catch (Exception ex) { Report(ex); }
+        }
+        Navigation.Clear();
         if (Disabled.Count == 0) return;
         int restored = 0;
         foreach (var map in Disabled)
@@ -145,6 +153,19 @@ internal static class InputBlock
         }
         Disabled.Clear();
         Plugin.Log.LogInfo($"[Mod menu] game input resumed: {restored} controller maps on");
+    }
+
+    // Unity UI modules (the login screen reads the pad through Unity's own input) send no move, submit or cancel then.
+    private static void HoldNavigation()
+    {
+        try
+        {
+            var events = UnityEngine.EventSystems.EventSystem.current;
+            if (events is null || events.WasCollected || !events.sendNavigationEvents) return;
+            events.sendNavigationEvents = false;
+            Navigation.Add(events);
+        }
+        catch (Exception ex) { Report(ex); }
     }
 
     private static void HoldPlayer(Player player)

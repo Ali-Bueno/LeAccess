@@ -192,8 +192,9 @@ internal static class DialogueAnnouncer
         int focusId = ElementAnnouncer.LastAnnouncedInstanceId;
         bool focusMoved = focusId != _lastFocusId;
         _lastFocusId = focusId;
-        if (!IsAlive(ResponseRoot()) || !DialogueResponseRepeat.ShouldRepeat(MenuDirectionInput.PushedThisFrame(),
-            focusMoved, ScreenReader.SpokeThisFrame)) return;
+        var root = ResponseRoot();
+        if (!IsAlive(root) || !DialogueResponseRepeat.ShouldRepeat(MenuDirectionInput.PushedThisFrame(),
+            VisibleResponses(root), focusMoved, ScreenReader.SpokeThisFrame)) return;
         var focused = ElementAnnouncer.FocusedElement;
         if (!IsAlive(focused) || !OwnsFocus(focused) || IsContinueButton(focused)) return;
         ElementAnnouncer.RepeatFocus(focused);
@@ -356,6 +357,14 @@ internal static class DialogueAnnouncer
         controls is not null && !controls.WasCollected && Visible(controls.line) &&
         !string.IsNullOrWhiteSpace(controls.line.text) &&
         (!IsAlive(controls.panel) || UiVisibility.IsVisible(controls.panel.gameObject));
+
+    private static int VisibleResponses(GameObject root)
+    {
+        int count = 0;
+        foreach (var button in root.GetComponentsInChildren<TextMeshProResponseButton>(false))
+            if (IsAlive(button) && button.visible) count++;
+        return count;
+    }
 
     private static GameObject ResponseRoot()
     {

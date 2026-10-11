@@ -55,6 +55,11 @@ namespace PixelCrushers.DialogueSystem.TextMeshPro
         public UnityEngine.UI.Button continueButton;
     }
 
+    internal sealed class TextMeshProResponseButton : UnityEngine.Component
+    {
+        public bool visible = true;
+    }
+
     internal sealed class TextMeshProResponseMenuControls
     {
         public bool WasCollected;

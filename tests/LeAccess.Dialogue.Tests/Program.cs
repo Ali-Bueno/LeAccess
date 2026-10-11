@@ -166,6 +166,7 @@ internal static class Program
         var responseRoot = ui.gameObject.Child();
         ui.dialogue.responseMenu = new TextMeshProResponseMenuControls { panel = responseRoot.Add(new Graphic()) };
         var only = responseRoot.Child(); only.Add(new TMP_Text { text = "Recoger la carta" });
+        only.Add(new TextMeshProResponseButton());
         ElementAnnouncer.Repeated.Clear(); ElementAnnouncer.LastAnnouncedInstanceId = 7; ElementAnnouncer.FocusedElement = only;
         DialogueAnnouncer.ShowResponses(ui);
         Tick(); Tick();
@@ -180,13 +181,21 @@ internal static class Program
         MenuDirectionInput.Pushed = true; ElementAnnouncer.FocusedElement = new GameObject(); Tick();
         Check(ElementAnnouncer.Repeated.Count == 1, "Focus outside the conversation is never repeated");
         ElementAnnouncer.FocusedElement = only;
+        // Two responses: the game moves focus a frame after the push, so the push itself repeats nothing.
+        var second = responseRoot.Child(); second.Add(new TextMeshProResponseButton());
+        MenuDirectionInput.Pushed = true; ElementAnnouncer.LastAnnouncedInstanceId = 8; Tick();
+        Check(ElementAnnouncer.Repeated.Count == 1, "With two responses a push repeats nothing");
+        second.Active = false;
+        MenuDirectionInput.Pushed = true; Tick();
+        Check(ElementAnnouncer.Repeated.Count == 2, "A hidden second response leaves the lone one repeatable");
         DialogueAnnouncer.HideResponses(ui);
         MenuDirectionInput.Pushed = true; Tick();
-        Check(ElementAnnouncer.Repeated.Count == 1, "Without a response menu a push repeats nothing");
+        Check(ElementAnnouncer.Repeated.Count == 2, "Without a response menu a push repeats nothing");
         MenuDirectionInput.Pushed = false;
         DialogueAnnouncer.Reset();
-        Check(DialogueResponseRepeat.ShouldRepeat(true, false, false) && !DialogueResponseRepeat.ShouldRepeat(false, false, false),
-            "Only an unmoved push repeats");
+        Check(DialogueResponseRepeat.ShouldRepeat(true, 1, false, false) && !DialogueResponseRepeat.ShouldRepeat(false, 1, false, false) &&
+            !DialogueResponseRepeat.ShouldRepeat(true, 2, false, false) && !DialogueResponseRepeat.ShouldRepeat(true, 0, false, false),
+            "Only an unmoved push on a lone response repeats");
     }
 
     private static void UnspokenNpcLines()

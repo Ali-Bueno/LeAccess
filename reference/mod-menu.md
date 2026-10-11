@@ -21,6 +21,9 @@ from the main menu or gameplay alike.
   pad button, key and mouse button is up, so the closing press is not delivered to the game as a new press.
   `Player.isPlaying = false` was tried first and blocks nothing (user report 2026-10-11: Cross activated game menus,
   Circle dodged; log showed `game input paused`). In Rewired it only governs joystick auto-assignment.
+- The current `EventSystem` also stops sending navigation (`sendNavigationEvents = false`), restored the same way: with
+  24 Rewired maps off, the landing screen still moved to "Play offline" and pressed it (user report, same day), so
+  that screen reads the pad through Unity's own UI input module.
 - The game keeps running (it is not a pause); the world sounds keep playing, so volume and distance changes are heard
   live.
 - Other mod speech is held back (dropped, not queued) so the menu is not talked over; the menu speaks through
@@ -84,7 +87,7 @@ output start (their details say so).
 `.Bind(section, "Key")` in the source is in the catalog with both text keys.
 
 Log lines: `[Mod menu] opened`, `closed; other announcements held back: N`, `game input paused: N controller maps
-off` / `resumed: N controller maps on`, `maps turned back on by the game while open: N` (should not appear),
+off, UI navigation off: N` / `resumed: N controller maps on`, `maps turned back on by the game while open: N` (should not appear),
 `L1 bindings held back while a chord modifier is down: N`, `option without menu text: Section/Key`.
 
 Verified live (2026-10-11): the L1 guard (9 and 10 L1 bindings held back on a DualSense, no potion). Unverified: that
