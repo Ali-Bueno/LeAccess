@@ -11,7 +11,7 @@ namespace LeAccess.Accessibility.Exploration;
 internal enum ExplorationCategory
 {
     Quest = 0, Exit = 1, Waypoint = 2, Npc = 3, Stash = 4, Enemy = 5, UnexploredRoom = 6, Portal = 7, Room = 8,
-    Player = 9, LastDeath = 10, Treasure = 11, Shrine = 12, Interactable = 13, Item = 14
+    Player = 9, LastDeath = 10, Treasure = 11, Shrine = 12, Interactable = 13, Item = 14, Breakable = 15
 }
 
 internal readonly record struct ExplorationEntry(string Key, string Name, ExplorationCategory Category,
@@ -31,7 +31,7 @@ internal sealed class ExplorationCatalog
         ExplorationCategory.UnexploredRoom, ExplorationCategory.Room, ExplorationCategory.Quest,
         ExplorationCategory.Npc, ExplorationCategory.Player, ExplorationCategory.LastDeath, ExplorationCategory.Stash,
         ExplorationCategory.Enemy, ExplorationCategory.Treasure, ExplorationCategory.Shrine,
-        ExplorationCategory.Interactable, ExplorationCategory.Item
+        ExplorationCategory.Interactable, ExplorationCategory.Breakable, ExplorationCategory.Item
     };
     private ExplorationCategory? _category;
     private string _selected;
@@ -85,6 +85,13 @@ internal sealed class ExplorationCatalog
         return Describe(sorted[index], player, forward, right, stepLength, text, LevelHeight, Ground);
     }
 
+    // Create+Circle: the selected entry again with the current distance and direction, or the empty-scanner line.
+    internal string RepeatSelected(IReadOnlyList<ExplorationEntry> entries, Vector3 player,
+        Vector3 forward, Vector3 right, float stepLength, ExplorationText text) =>
+        Selected(entries) is { } entry && GuidanceGeometry.Finite(entry.Position)
+            ? Describe(entry, player, forward, right, stepLength, text, LevelHeight, Ground)
+            : text("exploration.scanner.empty");
+
     /// <summary>Height of one walkable floor; a target farther above or below is said to be on another level.</summary>
     internal float LevelHeight { get; set; } = float.PositiveInfinity;
 
@@ -134,6 +141,7 @@ internal sealed class ExplorationCatalog
         ExplorationCategory.Treasure => "exploration.category.treasure",
         ExplorationCategory.Shrine => "exploration.category.shrine",
         ExplorationCategory.Interactable => "exploration.category.interactable",
+        ExplorationCategory.Breakable => "exploration.category.breakable",
         _ => "exploration.category.item"
     };
 

@@ -8,6 +8,7 @@
   <Import Project="../LocalizationSources.props" />
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/Landmarks/LandmarkAccessibility.cs" Link="LandmarkAccessibility.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Landmarks/ShrineEffectState.cs" Link="ShrineEffectState.cs" />
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentTracker.cs" Link="ScreenContentTracker.cs" />
   </ItemGroup>
 </Project>

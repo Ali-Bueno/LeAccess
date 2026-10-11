@@ -81,6 +81,15 @@ namespace LeAccess.Accessibility.Vitals
         internal static bool TryRead(out int gold) { gold = Amount ?? 0; return Amount.HasValue; }
     }
 }
+namespace LeAccess.Accessibility.Progression
+{
+    internal static class ProgressionProbe
+    {
+        internal static bool Available;
+        internal static ProgressionSnapshot Snapshot = new(1, 12, 100, 40, 100, 0, new List<SkillPoint>(), false, null);
+        internal static bool TryRead(out ProgressionSnapshot snapshot) { snapshot = Snapshot; return Available; }
+    }
+}
 namespace LeAccess.Accessibility
 {
     internal static class ScreenReader

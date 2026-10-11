@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using LeAccess.I18n;
 using UnityEngine;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
@@ -46,6 +47,29 @@ internal static class InteractableRoles
         if (!string.IsNullOrWhiteSpace(game)) return game;
         string key = NameKey(role);
         return key is null ? null : ModText.Get(key);
+    }
+
+    /// <summary>The name for a listener: shrines also search its ancestors and descendants for the hover tag, enabled or not.</summary>
+    internal static string Name(InteractableRole role, WorldObjectClickListener listener, HoverTagOnMouseOver tag)
+    {
+        if (role != InteractableRole.Shrine || !IsAlive(listener)) return Name(role, tag);
+        return ShrineName(new[] { tag, listener.GetComponentInParent<HoverTagOnMouseOver>(true),
+            listener.GetComponentInChildren<HoverTagOnMouseOver>(true) });
+    }
+
+    /// <summary>The first hover text the game gives any of the tags, else the mod's own word for a shrine.</summary>
+    internal static string ShrineName(IEnumerable<HoverTagOnMouseOver> tags) =>
+        GameShrineName(tags) ?? ModText.Get(NameKey(InteractableRole.Shrine));
+
+    /// <summary>The game's own shrine name from its tags, or null when none carries one.</summary>
+    internal static string GameShrineName(IEnumerable<HoverTagOnMouseOver> tags)
+    {
+        foreach (var tag in tags)
+        {
+            string game = IsAlive(tag) ? GameName(tag) : null;
+            if (!string.IsNullOrWhiteSpace(game)) return game;
+        }
+        return null;
     }
 
     private static string GameName(HoverTagOnMouseOver tag)

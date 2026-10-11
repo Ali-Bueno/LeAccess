@@ -7,6 +7,12 @@ internal readonly record struct VitalsChange(int HealthPercent, int ManaPercent,
     internal bool HasContent => HealthPercent >= 0 || ManaPercent >= 0;
 }
 
+/// <summary>Which meters announce automatically and the smallest change in percent worth a new band announcement.</summary>
+internal readonly record struct VitalsPolicy(bool Life, bool Mana, int LifeMinimumChange, int ManaMinimumChange)
+{
+    internal static VitalsPolicy Default => new(true, true, 0, 0);
+}
+
 internal sealed class VitalsAnnouncementState
 {
     // D2R src/vitals.h: Steps and CriticalPercent; retain its strict downward boundaries.
@@ -18,10 +24,13 @@ internal sealed class VitalsAnnouncementState
     // Running low on mana is routine for casters, not danger: no interrupts, few steps below ten.
     private readonly Meter _mana = new(routineLow: true);
 
-    internal VitalsChange Observe(int healthPercent, int manaPercent, bool acknowledge = true)
+    internal VitalsChange Observe(int healthPercent, int manaPercent, bool acknowledge = true, VitalsPolicy? policy = null)
     {
+        var rules = policy ?? VitalsPolicy.Default;
         int previousHealth = _health.Previous;
-        int health = _health.Observe(healthPercent, acknowledge), mana = _mana.Observe(manaPercent, acknowledge);
+        // Critical life and empty mana are never held back by a minimum change.
+        int health = _health.Observe(healthPercent, acknowledge, rules.Life, rules.LifeMinimumChange, CriticalPercent);
+        int mana = _mana.Observe(manaPercent, acknowledge, rules.Mana, rules.ManaMinimumChange, 0);
         bool interrupt = health >= 0 && health <= CriticalPercent && previousHealth > health;
         return new VitalsChange(health, mana, interrupt);
     }
@@ -59,10 +68,12 @@ internal sealed class VitalsAnnouncementState
 
         internal Meter(bool routineLow) => _routineLow = routineLow;
 
-        internal int Observe(int percent, bool acknowledge)
+        internal int Observe(int percent, bool acknowledge, bool enabled, int minimumChange, int alwaysSpeakAtOrBelow)
         {
             if (percent < 0) return -1;
             percent = Math.Min(percent, 100);
+            // A silenced meter still follows the value, so enabling it later does not replay old crossings.
+            if (!enabled) { Acknowledge(percent); return -1; }
             int band = Band(percent);
             bool baseline = _band < 0;
             bool unchanged = band == _band;
@@ -72,6 +83,8 @@ internal sealed class VitalsAnnouncementState
             bool routineLow = _routineLow && !baseline && percent < CriticalPercent &&
                 Previous < CriticalPercent && (percent > 0 || Previous == 0);
             quiet |= routineLow;
+            // Held back until the value has moved this far from the last accepted reading.
+            quiet |= minimumChange > 0 && !baseline && percent > alwaysSpeakAtOrBelow && Math.Abs(percent - Previous) < minimumChange;
             if (baseline || unchanged || !quiet && acknowledge) Acknowledge(percent);
             // Changed bands remain relative to accepted output after rejection.
             // The first live sample is always a silent baseline.

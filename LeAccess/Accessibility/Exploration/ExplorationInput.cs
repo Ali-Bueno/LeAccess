@@ -22,7 +22,7 @@ internal static class ExplorationInput
 
     private struct Reading
     {
-        internal bool Modifier, Vitals, Lock, Gold, Status, LeftStickPad, PlayStationPad;
+        internal bool Modifier, Vitals, Lock, Gold, Repeat, LeftStickPad, PlayStationPad;
         internal ExplorationCommand Flick;
         internal string Signature;
     }
@@ -45,7 +45,7 @@ internal static class ExplorationInput
         _scanner = config.Bind("Exploration", "ControllerScanner", true,
             "Drive the exploration scanner with the controller right stick while Create is held during gameplay: up/down change category, left/right change entry. Without Create the right stick stays with the game (minion commands).");
         _modifierMenu = config.Bind("Exploration", "ModifierMenu", true,
-            "Hold the controller Create/Share button (L3 on other pads, see LeftStickOnOtherPads) for the exploration menu (right stick = scanner, Square = vitals, Cross = lock, Triangle = gold, Circle = level and progress). The game button bindings are paused while it is held.");
+            "Hold the controller Create/Share button (L3 on other pads, see LeftStickOnOtherPads) for the exploration menu (right stick = scanner, Square = life, mana, level and experience, potions and effects, Triangle = gold, passive points, skills and zone, Cross = lock the beacon, Circle = repeat the selected scanner entry). The game button bindings are paused while it is held.");
         _leftStickOnOtherPads = config.Bind("Exploration", "LeftStickOnOtherPads", true,
             "On pads other than DualSense/DualShock 4, whose Back/View button opens the game's controller menu, L3 is the mod button instead of Create. The game's L3 overlay map is switched off on those pads during gameplay only; menus keep L3 (item comparison, forge).");
         _previousModifier = _active = false;
@@ -92,8 +92,7 @@ internal static class ExplorationInput
 
             var command = KeyboardCommand();
             if (command == ExplorationCommand.None && _active)
-                command = reading.Vitals ? ExplorationCommand.Vitals : reading.Lock ? ExplorationCommand.Lock
-                    : reading.Gold ? ExplorationCommand.Gold : reading.Status ? ExplorationCommand.Status : command;
+                command = FaceButtonCommand.For(reading.Vitals, reading.Lock, reading.Gold, reading.Repeat);
             Command = command != ExplorationCommand.None ? command : ScannerGate.Controller(_active, reading.Flick);
         }
         catch (Exception ex)
@@ -153,7 +152,7 @@ internal static class ExplorationInput
                 var triangle = template.actionTopRow2;
                 if (triangle is not null && !triangle.WasCollected && triangle.justPressed) reading.Gold = true;
                 var circle = template.actionBottomRow2;
-                if (circle is not null && !circle.WasCollected && circle.justPressed) reading.Status = true;
+                if (circle is not null && !circle.WasCollected && circle.justPressed) reading.Repeat = true;
             }
             if (stick && reading.Flick == ExplorationCommand.None)
             {
@@ -252,6 +251,7 @@ internal static class ExplorationInput
             if (Input.GetKeyDown(KeyCode.Keypad2)) return ExplorationCommand.CategoryNext;
             if (Input.GetKeyDown(KeyCode.Keypad4)) return ExplorationCommand.EntryPrevious;
             if (Input.GetKeyDown(KeyCode.Keypad6)) return ExplorationCommand.EntryNext;
+            if (Input.GetKeyDown(KeyCode.Keypad5)) return ExplorationCommand.RepeatEntry;
             if (Input.GetKeyDown(KeyCode.B)) return ExplorationCommand.Lock;
             if (Input.GetKeyDown(KeyCode.G)) return ExplorationCommand.Gold;
             if (Input.GetKeyDown(KeyCode.L)) return ExplorationCommand.Status;

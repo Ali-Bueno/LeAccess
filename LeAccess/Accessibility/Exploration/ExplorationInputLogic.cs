@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace LeAccess.Accessibility.Exploration;
 
-internal enum ExplorationCommand { None, CategoryPrevious, CategoryNext, EntryPrevious, EntryNext, Lock, Vitals, Gold, Status }
+internal enum ExplorationCommand { None, CategoryPrevious, CategoryNext, EntryPrevious, EntryNext, Lock, Vitals, Gold, Status, RepeatEntry }
 
 // Pure stick logic: no Unity or Rewired types so it can be unit tested.
 internal static class StickFlick
@@ -24,6 +24,14 @@ internal static class StickFlick
         if (ay >= ax) return y > 0 ? ExplorationCommand.CategoryPrevious : ExplorationCommand.CategoryNext;
         return x > 0 ? ExplorationCommand.EntryNext : ExplorationCommand.EntryPrevious;
     }
+}
+
+// The mod button's face buttons: Square vitals, Cross lock, Triangle gold and points, Circle repeats the scanner entry.
+internal static class FaceButtonCommand
+{
+    internal static ExplorationCommand For(bool square, bool cross, bool triangle, bool circle) =>
+        square ? ExplorationCommand.Vitals : cross ? ExplorationCommand.Lock : triangle ? ExplorationCommand.Gold
+        : circle ? ExplorationCommand.RepeatEntry : ExplorationCommand.None;
 }
 
 // PlayStation pads open the game's controller menu with the touchpad, leaving Create free; on other

@@ -172,6 +172,11 @@ internal static class ExplorationProbe
         try { items = AddItems(CanSeeHere, entries) + AddGold(CanSeeHere, entries); }
         catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
 
+        int breakables = 0;
+        try { breakables = BreakableProbe.Add(GameplayEnvironment.IsOnlineClient, CanSeeHere, entries); }
+        catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
+        if (BreakableProbe.LastFailure is { } breakableFailure) LastFailure ??= breakableFailure;
+
         bool death = AddDeathPlace(entries);
 
         int unexplored = 0, rooms = 0, visited = 0;
@@ -205,7 +210,7 @@ internal static class ExplorationProbe
         finally { Rooms.Clear(); }
 
         LastStatus = $"places={places} unseen={unseen} remembered={Seen.Count} quests={quests} enemies={enemies} " +
-            $"players={players} items={items} death={death} unexplored={unexplored} source={source} rooms={rooms} " +
+            $"players={players} items={items} breakables={breakables} death={death} unexplored={unexplored} source={source} rooms={rooms} " +
             $"visited_rooms={visited} room_gap={roomGap} frontier_pending={explored?.FrontierPending ?? 0} origin={hasOrigin} " +
             $"came_from={cameFrom ?? "none"} not_yet_seen=[{string.Join("; ", Unseen)}]";
         return true;
@@ -333,6 +338,7 @@ internal static class ExplorationProbe
         Arrival.Clear();
         MinimapRoomReader.Reset();
         ShrineObjects.Reset();
+        BreakableProbe.Reset();
         Targets.Clear();
         Contacts.Clear();
         Others.Clear();

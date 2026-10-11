@@ -117,4 +117,34 @@ Change(state.Observe(100,0), -1,0,false,"empty mana speaks once");
 Change(state.Observe(100,3), -1,-1,false,"regeneration below ten from empty is quiet");
 Change(state.Observe(100,11), -1,11,false,"recovery above ten speaks");
 Change(state.Observe(100,8), -1,8,false,"a new descent speaks its first low step again");
+// Independent meters and minimum changes.
+var manaOff = new VitalsPolicy(true, false, 0, 0);
+var quietMana = new VitalsAnnouncementState();
+quietMana.Observe(100, 100, policy: manaOff);
+Change(quietMana.Observe(60, 30, policy: manaOff), 60, -1, false, "life speaks while mana announcements are off");
+Change(quietMana.Observe(60, 30), -1, -1, false, "re-enabling mana does not replay the crossings it missed");
+Change(quietMana.Observe(60, 20), -1, 20, false, "re-enabled mana speaks its next crossing");
+var lifeOff = new VitalsPolicy(false, true, 0, 0);
+var quietLife = new VitalsAnnouncementState();
+quietLife.Observe(100, 100, policy: lifeOff);
+Change(quietLife.Observe(5, 60, policy: lifeOff), -1, 60, false, "mana speaks while life announcements are off, even for critical life");
+Change(new VitalsAnnouncementState().Observe(100, 100, policy: new VitalsPolicy(false, false, 0, 0)), -1, -1, false, "both off stay silent");
+
+var stepped = new VitalsAnnouncementState();
+var manaStep = new VitalsPolicy(true, true, 0, 30);
+stepped.Observe(100, 100, policy: manaStep);
+Change(stepped.Observe(100, 74, policy: manaStep), -1, -1, false, "a small mana drop across a band stays quiet");
+Change(stepped.Observe(100, 60, policy: manaStep), -1, 60, false, "the drop speaks once it is large enough");
+Change(new VitalsAnnouncementState().Observe(100, 74, policy: manaStep), -1, -1, false, "the first reading is still a baseline");
+var plain = new VitalsAnnouncementState();
+plain.Observe(100, 100);
+Change(plain.Observe(100, 74), -1, 74, false, "step zero keeps today's behaviour");
+
+var criticalStep = new VitalsAnnouncementState();
+var lifeStep = new VitalsPolicy(true, true, 20, 20);
+criticalStep.Observe(22, 12, policy: lifeStep);
+Change(criticalStep.Observe(18, 11, policy: lifeStep), -1, -1, false, "small changes above critical stay quiet");
+Change(criticalStep.Observe(9, 9, policy: lifeStep), 9, -1, true, "critical life ignores the minimum change");
+Change(criticalStep.Observe(9, 0, policy: lifeStep), -1, 0, false, "empty mana ignores the minimum change");
+
 Console.WriteLine($"Passed {checks} vitals state checks.");

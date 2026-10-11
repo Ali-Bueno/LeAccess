@@ -67,7 +67,8 @@ internal static class ExplorationAccessibility
             var command = ExplorationInput.Command;
             if (ExplorationInput.MenuOpenedThisFrame) ExplorationBeacon.PlayMenuClick();
             bool scannerCommand = command is ExplorationCommand.CategoryPrevious or ExplorationCommand.CategoryNext or
-                ExplorationCommand.EntryPrevious or ExplorationCommand.EntryNext or ExplorationCommand.Lock;
+                ExplorationCommand.EntryPrevious or ExplorationCommand.EntryNext or ExplorationCommand.Lock or
+                ExplorationCommand.RepeatEntry;
             if (gameplay && (now >= _nextRefresh || scannerCommand))
             {
                 _nextRefresh = now + RefreshSeconds;
@@ -145,6 +146,7 @@ internal static class ExplorationAccessibility
             ExplorationCommand.CategoryNext => Catalog.StepCategory(1, Entries, player, forward, right, step, text),
             ExplorationCommand.EntryPrevious => Catalog.StepEntry(-1, Entries, player, forward, right, step, text),
             ExplorationCommand.EntryNext => Catalog.StepEntry(1, Entries, player, forward, right, step, text),
+            ExplorationCommand.RepeatEntry => Catalog.RepeatSelected(Entries, player, forward, right, step, text),
             _ => Lock()
         };
         Speak(sentence, interrupt: true);

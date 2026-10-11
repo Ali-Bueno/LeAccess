@@ -92,7 +92,7 @@ internal static class LandmarkProbe
                     var role = InteractableRoles.Read(listener);
                     if (role != InteractableRole.None)
                     {
-                        name = InteractableRoles.Name(role, hasTag ? tag : null);
+                        name = InteractableRoles.Name(role, listener, hasTag ? tag : null);
                         nameStatus = $"role:{role}";
                     }
                     else if (UntaggedTransitions.ReadDestination(listener) is { } toScene)
