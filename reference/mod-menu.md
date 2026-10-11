@@ -9,9 +9,10 @@ from the main menu or gameplay alike.
 - Controller: L1 pressed while Create (PlayStation pads), L3 (every pad) or the mod button (Back/View on other pads
   when `Exploration/LeftStickOnOtherPads` is off) is held. The same chord closes it. Keyboard: Ctrl + `Mod menu/OpenKey`
   (F1 by default).
-- While a chord modifier is held, the game's own bindings of L1 on that pad are switched off (resolved through the
-  gamepad template's `GetElementTargets`), so the chord does not also drink a potion (gameplay L1) or change an era
-  (world map). They come back once L1 and the modifier are up.
+- While a chord modifier is held, the game's own bindings of L1 on that pad are switched off, so the chord does not
+  also drink a potion (gameplay L1) or change an era (world map). The pad's L1 element id comes from the template:
+  `leftShoulder1.source` (`IControllerTemplateButtonSource`) `.target.elementIdentifierId`; the interop has no usable
+  `GetElementTargets` on `IGamepadTemplate`. They come back once L1 and the modifier are up (`ShoulderGuard`).
 
 ## While open
 
@@ -38,8 +39,8 @@ from the main menu or gameplay alike.
 
 ## Pages
 
-The first page: master volume (an option), Sounds, Sound distances, then one page per config section in a fixed order,
-then Close. `World object sound volumes` and `World object sound ranges` appear only through Sounds and Sound distances.
+The first page: master volume (an option), Sounds, Sound distances, then one page per config section in the order of
+`ModMenuCatalog.Sections`, then Close. `World object sound volumes` and `World object sound ranges` appear only through Sounds and Sound distances.
 
 - **Sounds** (glossary and volumes): every distinct sound the mod plays. Cross or Square plays it centred at its
   configured level; left/right change that sound's volume (its own, or its group's where it has no own volume); details
@@ -66,6 +67,22 @@ output start (their details say so).
   distance), for each world kind: Gold, Equipment, MagicEquipment, RareEquipment, LegendaryEquipment, Potion, Tome,
   Rune, Glyph, AffixShard, QuestItem, Chest, Stash, Portal, ZoneExit, Shrine, Nemesis, UnexploredRoom. Volume applies to
   the loop and the repeated cue of that kind.
-- `[Enemy cues] BossVolume`, `EliteVolume`, `OrdinaryVolume` 0-200 (100).
+- `[Enemy cues] BossVolume`, `EliteVolume`, `OrdinaryVolume` 0-200 (100); `[Navigation audio] SonarVolume` 0-100 (100);
+  Discovery and RoomEntered have their own `[World object sound volumes]` keys (no range).
 - `SoundGlossary.Entries`: id, name and details keys (`sound.<id>`, `sound.<id>.details`) and the config entry that sets
   its volume. `SoundPreview.Play(id)` plays the sound centred at master x group x own level, at most about 2 s.
+
+## Code
+
+`LeAccess/Accessibility/ModMenu/`: `MenuModel` (navigator, items; pure), `SettingItem` (stepping and units; pure),
+`ModMenuCatalog` (order, units, steps; pure), `ModMenuPages` (config adapter, pages, options missing from the catalog),
+`ModMenuSoundPages` (glossary and distances), `ModMenuInput` and `ModMenuInputGate` (chord, commands, `ShoulderGuard`,
+`InputBlock`), `ModMenu` (open/close, speech). Host suite `tests/LeAccess.ModMenu.Tests` also checks that every
+`.Bind(section, "Key")` in the source is in the catalog with both text keys.
+
+Log lines: `[Mod menu] opened`, `closed; other announcements held back: N`, `game input paused` / `resumed`,
+`L1 bindings held back while a chord modifier is down: N`, `option without menu text: Section/Key`.
+
+Unverified live (2026-10-11): that `Player.isPlaying = false` silences every game input path (menus read Rewired
+through `EpochInputManager`; anything reading `UnityEngine.Input` directly is not blocked), the L1 element id from the
+template source on DualSense and Xbox pads, and the preview levels.
