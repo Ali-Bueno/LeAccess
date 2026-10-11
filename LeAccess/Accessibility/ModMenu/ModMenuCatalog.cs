@@ -73,6 +73,7 @@ internal static class ModMenuCatalog
             new("RoomSounds", "exploration_room_sounds"),
             new("Discoveries", "exploration_discoveries"),
             new("ControllerScanner", "exploration_scanner"),
+            new("RouteLegs", "exploration_route_legs", SettingUnit.None, 1, ZeroText: "menu.value.route_legs_off"),
             new("ModifierMenu", "exploration_modifier_menu"),
             new("LeftStickOnOtherPads", "exploration_left_stick"),
         }),

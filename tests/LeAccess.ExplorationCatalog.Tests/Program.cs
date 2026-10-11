@@ -17,6 +17,9 @@ var words = new Dictionary<string, string>
     ["exploration.steps_one"] = "<1 step>", ["exploration.steps_many"] = "<{0} steps>", ["exploration.entry"] = "{0}; {1}; {2}",
     ["exploration.route_steps_one"] = "<1 step by route>", ["exploration.route_steps_many"] = "<{0} steps by route>",
     ["exploration.route_heading"] = "<head {0}>", ["exploration.entry_unrouted"] = "{0} <no known route>",
+    ["exploration.route_leg"] = "[{0} {1}]", ["exploration.route_leg_then"] = "{0} <then> {1}",
+    ["exploration.route_leg_up"] = "{0} <climbing>", ["exploration.route_leg_down"] = "{0} <descending>",
+    ["exploration.route_legs_more_one"] = "{0} <+1 leg>", ["exploration.route_legs_more_many"] = "{0} <+{1} legs>",
     ["guidance.direction.up"] = "<up>", ["guidance.direction.up_right"] = "<up-right>",
     ["guidance.direction.right"] = "<right>", ["guidance.direction.down_right"] = "<down-right>",
     ["guidance.direction.down"] = "<down>", ["guidance.direction.down_left"] = "<down-left>",
@@ -191,6 +194,37 @@ Equal(RouteLine("Exit far", 31, "left"), routing.StepEntry(1, entries, player, f
 Equal(RouteLine("Exit far", 31, "left"), routing.DescribeEntry(routing.Selected(entries).Value, player, forward, right, step, text),
     "the selected entry is described by the same function");
 Equal(3, routedCount, "one route per readout");
+
+// Route legs (2026-10-11 tester report, optional): a detour reads its stretches by screen direction, joined when
+// consecutive ones share a direction, with floor changes, up to the chosen number and then how many are left.
+string Leg(string direction, int steps) => text("exploration.route_leg", text($"guidance.direction.{direction}"), Steps(steps));
+string Then(params string[] legs) => legs.Aggregate((spoken, leg) => text("exploration.route_leg_then", spoken, leg));
+string LegLine(string name, int steps, string legs) => text("exploration.entry", name, text("exploration.route_steps_many", steps), legs);
+var uCorners = new[] { player, new Vector3(0, 0, -5), new Vector3(0, 0, -10), new Vector3(20, 0, -10), new Vector3(20, 0, 0) };
+Func<ExplorationEntry, Vector3, ExplorationRoute?> uRoute = (_, from) => new ExplorationRoute(40, from + new Vector3(0, 0, -4), false, uCorners);
+Equal(LegLine("Exit", 40, Then(Leg("down", 10), Leg("right", 20), Leg("up", 10))),
+    ExplorationCatalog.Describe(exitRight, player, forward, right, step, text, route: uRoute, legs: 3),
+    "the legs replace the first heading; one direction is one leg");
+Equal(LegLine("Exit", 40, text("exploration.route_legs_more_one", Then(Leg("down", 10), Leg("right", 20)), 1)),
+    ExplorationCatalog.Describe(exitRight, player, forward, right, step, text, route: uRoute, legs: 2), "legs past the limit are counted");
+Equal(LegLine("Exit", 40, text("exploration.route_legs_more_many", Leg("down", 10), 2)),
+    ExplorationCatalog.Describe(exitRight, player, forward, right, step, text, route: uRoute, legs: 1), "one leg and the rest counted");
+Equal(RouteLine("Exit", 40, "down"), ExplorationCatalog.Describe(exitRight, player, forward, right, step, text, route: uRoute),
+    "with legs off the first heading is read");
+Equal(RouteLine("Exit", 46, "down"), ExplorationCatalog.Describe(exitRight, player, forward, right, step, text, route: detour, legs: 3),
+    "a route without corners reads the first heading");
+var jog = new[] { player, new Vector3(0, 0, -10), new Vector3(0.3f, 0, -10), new Vector3(0.3f, 0, -9.8f) };
+Equal(RouteLine("Exit", 40, "down"), ExplorationCatalog.Describe(exitRight, player, forward, right, step, text,
+    route: (_, from) => new ExplorationRoute(40, from + new Vector3(0, 0, -4), false, jog), legs: 3),
+    "stretches under a step are not legs; one leg left reads the first heading");
+var ramp = new[] { player, new Vector3(0, 0, -10), new Vector3(20, 3, -10), new Vector3(20, 3, 0) };
+Equal(LegLine("Exit", 40, Then(Leg("down", 10), text("exploration.route_leg_up", Leg("right", 20)), Leg("up", 10))),
+    ExplorationCatalog.Describe(exitRight, player, forward, right, step, text, floorHeight,
+        route: (_, from) => new ExplorationRoute(40, from + new Vector3(0, 0, -4), false, ramp), legs: 3),
+    "a leg that climbs a floor says so");
+var legged = new ExplorationCatalog { Route = uRoute, LegsSpoken = 3 };
+Equal(LegLine("Exit", 40, Then(Leg("down", 10), Leg("right", 20), Leg("up", 10))),
+    legged.DescribeEntry(exitRight, player, forward, right, step, text), "the scanner reads legs when they are set");
 
 // Landmarks and loot (shrines, gold, items) are listed when on screen; NPCs, chests and objects keep the seen-range rule.
 foreach (var landmark in new[] { ExplorationCategory.Shrine, ExplorationCategory.Portal, ExplorationCategory.Exit,

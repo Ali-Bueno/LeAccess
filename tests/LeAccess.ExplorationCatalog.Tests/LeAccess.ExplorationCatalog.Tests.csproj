@@ -8,6 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationCatalog.cs" Link="ExplorationCatalog.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Exploration/RouteLegs.cs" Link="RouteLegs.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationSeenMemory.cs" Link="ExplorationSeenMemory.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationSight.cs" Link="ExplorationSight.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/BreakableSelection.cs" Link="BreakableSelection.cs" />

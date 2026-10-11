@@ -100,8 +100,31 @@ internal sealed partial class ExploredMap
     private static bool Finish(List<Vector3> raw, bool onMesh, IWalkability nav,
         out IReadOnlyList<Vector3> path, out float length)
     {
+        var pulled = Pull(raw, Math.Min(raw.Count - 1, PullHorizon), onMesh, nav);
+        length = 0;
+        for (int index = 1; index < pulled.Count; index++) length += Vector3.Distance(pulled[index - 1], pulled[index]);
+        path = pulled;
+        return true;
+    }
+
+    /// <summary>A route's turning points: all of it straightened, a stretch shorter than a cell folded into the next.</summary>
+    internal IReadOnlyList<Vector3> Corners(IReadOnlyList<Vector3> path, IWalkability nav)
+    {
+        if (path is null || path.Count < 3 || nav is null) return path;
+        // The goal may lie off the mesh, so the last stretch is kept, as the route's own straightening does.
+        var pulled = Pull(path, path.Count - 1, false, nav);
+        var corners = new List<Vector3>(pulled.Count) { pulled[0] };
+        for (int index = 1; index < pulled.Count - 1; index++)
+            if (Horizontal(corners[^1], pulled[index]) >= CellSize) corners.Add(pulled[index]);
+        corners.Add(pulled[^1]);
+        return corners;
+    }
+
+    // Each point jumps to the farthest one ahead in a clear line, up to the horizon; past it the points stay.
+    private static List<Vector3> Pull(IReadOnlyList<Vector3> raw, int horizon, bool onMesh, IWalkability nav)
+    {
         var pulled = new List<Vector3>(raw.Count) { raw[0] };
-        int last = raw.Count - 1, horizon = Math.Min(last, PullHorizon), anchor = 0;
+        int last = raw.Count - 1, anchor = 0;
         while (anchor < horizon)
         {
             int next = anchor + 1;
@@ -110,10 +133,7 @@ internal sealed partial class ExploredMap
             anchor = next;
         }
         for (int index = anchor + 1; index <= last; index++) pulled.Add(raw[index]);
-        length = 0;
-        for (int index = 1; index < pulled.Count; index++) length += Vector3.Distance(pulled[index - 1], pulled[index]);
-        path = pulled;
-        return true;
+        return pulled;
     }
 
     private void Prepare()

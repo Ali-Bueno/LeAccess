@@ -166,10 +166,12 @@ internal sealed class BeaconState
         return offset;
     }
 
-    // The scanner's reading of a route, measured and aimed as Tick does; null when there is none.
-    internal static ExplorationRoute? Measure(BeaconRouter router, Vector3 player, ExplorationTarget target) =>
+    // The scanner's reading of a route, measured and aimed as Tick does, with corners when asked; null when there is none.
+    internal static ExplorationRoute? Measure(BeaconRouter router, Vector3 player, ExplorationTarget target,
+        Func<IReadOnlyList<Vector3>, IReadOnlyList<Vector3>> corners = null) =>
         router is not null && router(player, target, out var path, out _) && path is { Count: > 0 }
-            ? new ExplorationRoute(Follow(path, player, target.Position, out var aim), aim, path.Count == 2) : null;
+            ? new ExplorationRoute(Follow(path, player, target.Position, out var aim), aim, path.Count == 2, corners?.Invoke(path))
+            : null;
 
     // Remaining route from the player's nearest point on the path; aims LookAhead along it to turn corners early.
     internal static float Follow(IReadOnlyList<Vector3> path, Vector3 player, Vector3 target, out Vector3 aim)

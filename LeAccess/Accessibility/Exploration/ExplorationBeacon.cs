@@ -257,14 +257,17 @@ internal static class ExplorationBeacon
             out path, out length, target.Area);
     }
 
-    // The scanner's route to a target through explored ground, measured and aimed as the beacon would; null when none.
-    internal static ExplorationRoute? RouteFor(ExplorationTarget target, NVector3 player)
+    // The scanner's route to a target through explored ground, measured and aimed as the beacon would, with its
+    // corners when the scanner reads stretches; null when none.
+    internal static ExplorationRoute? RouteFor(ExplorationTarget target, NVector3 player, bool corners = false)
     {
         try
         {
-            var route = BeaconState.Measure(Router, player, target);
+            var map = _map;
+            var route = BeaconState.Measure(Router, player, target,
+                corners && map != null ? path => map.Corners(path, Walkability) : null);
             string found = route is { } known
-                ? string.Create(CultureInfo.InvariantCulture, $"route={known.Length:F1} direct={(known.Direct ? 1 : 0)} aim={known.Aim.X:F1},{known.Aim.Z:F1}")
+                ? string.Create(CultureInfo.InvariantCulture, $"route={known.Length:F1} direct={(known.Direct ? 1 : 0)} aim={known.Aim.X:F1},{known.Aim.Z:F1} corners={known.Corners?.Count ?? 0}")
                 : $"route=none failure={_map?.LastFailure ?? "no map"}";
             string line = string.Create(CultureInfo.InvariantCulture,
                 $"[Exploration] route name={target.Name} straight={ExploredMap.Horizontal(player, target.Position):F1} {found} {GoalText(target)}");

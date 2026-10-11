@@ -19,8 +19,10 @@ internal readonly record struct ExplorationEntry(string Key, string Name, Explor
 
 internal delegate string ExplorationText(string key, params object[] arguments);
 
-// A walking route through explored ground: its length, the point the beacon pans to, and whether it is one straight leg.
-internal readonly record struct ExplorationRoute(float Length, Vector3 Aim, bool Direct);
+// A walking route through explored ground: its length, the point the beacon pans to, whether it is one straight leg,
+// and its corners from the player to the goal when they were asked for.
+internal readonly record struct ExplorationRoute(float Length, Vector3 Aim, bool Direct,
+    IReadOnlyList<Vector3> Corners = null);
 
 // Category/entry cursor of the right-stick scanner. Entries are nearest first and wrap; as in D2R a
 // category step says the category's name, never a count. Readouts follow the explored route when one is known.
@@ -98,7 +100,7 @@ internal sealed class ExplorationCatalog
     /// <summary>The scanner's one readout of an entry, with this scanner's level height, ground and routes.</summary>
     internal string DescribeEntry(ExplorationEntry entry, Vector3 player, Vector3 forward, Vector3 right,
         float stepLength, ExplorationText text) =>
-        Describe(entry, player, forward, right, stepLength, text, LevelHeight, Ground, Route);
+        Describe(entry, player, forward, right, stepLength, text, LevelHeight, Ground, Route, LegsSpoken);
 
     /// <summary>Height of one walkable floor; a target farther above or below is said to be on another level.</summary>
     internal float LevelHeight { get; set; } = float.PositiveInfinity;
@@ -109,9 +111,12 @@ internal sealed class ExplorationCatalog
     /// <summary>The walking route from the player to an entry, or null when none is known; unset, routes are not spoken.</summary>
     internal Func<ExplorationEntry, Vector3, ExplorationRoute?> Route { get; set; }
 
+    /// <summary>How many stretches of a detour are read; 0 reads only the way to head now.</summary>
+    internal int LegsSpoken { get; set; }
+
     internal static string Describe(ExplorationEntry entry, Vector3 player, Vector3 forward, Vector3 right,
         float stepLength, ExplorationText text, float levelHeight = float.PositiveInfinity,
-        Func<Vector3, float?> ground = null, Func<ExplorationEntry, Vector3, ExplorationRoute?> route = null)
+        Func<Vector3, float?> ground = null, Func<ExplorationEntry, Vector3, ExplorationRoute?> route = null, int legs = 0)
     {
         string name = entry.Boss ? text("exploration.boss", entry.Name) : entry.Name;
         var delta = entry.Position - player;
@@ -122,7 +127,7 @@ internal sealed class ExplorationCatalog
                 text(direction));
         if (route is not null)
             place = route(entry, player) is { } known
-                ? Routed(known, name, steps, direction, player, forward, right, stepLength, text) ?? place
+                ? Routed(known, name, steps, direction, player, forward, right, stepLength, levelHeight, legs, text) ?? place
                 : text("exploration.entry_unrouted", place);
         // Distance is horizontal. Markers float above their floor, so levels compare sampled ground, never raw heights.
         float? difference = GroundDifference(entry.Position, player, ground);
@@ -131,19 +136,23 @@ internal sealed class ExplorationCatalog
             : place;
     }
 
-    // A detour speaks its walking length and the way to head now; a straight route keeps the plain readout.
+    // A detour speaks its walking length and the way to head now, or its stretches when they are asked for;
+    // a straight route keeps the plain readout.
     private static string Routed(ExplorationRoute route, string name, int straightSteps, string straightDirection,
-        Vector3 player, Vector3 forward, Vector3 right, float stepLength, ExplorationText text)
+        Vector3 player, Vector3 forward, Vector3 right, float stepLength, float levelHeight, int legs, ExplorationText text)
     {
         int steps = Steps(route.Length, stepLength);
         string heading = GuidanceGeometry.Direction(route.Aim - player, forward, right);
         if (route.Direct || steps < 1 || heading == null || steps == straightSteps && heading == straightDirection) return null;
+        string stretches = legs > 0 && route.Corners is { Count: > 2 } corners
+            ? RouteLegs.Describe(RouteLegs.From(corners, forward, right), legs, stepLength, levelHeight, text)
+            : null;
         return text("exploration.entry", name,
             steps == 1 ? text("exploration.route_steps_one") : text("exploration.route_steps_many", steps),
-            text("exploration.route_heading", text(heading)));
+            stretches ?? text("exploration.route_heading", text(heading)));
     }
 
-    private static int Steps(float distance, float stepLength) => stepLength > 0 && float.IsFinite(distance)
+    internal static int Steps(float distance, float stepLength) => stepLength > 0 && float.IsFinite(distance)
         ? (int)Math.Round(distance / stepLength, MidpointRounding.AwayFromZero) : 0;
 
     private static float? GroundDifference(Vector3 target, Vector3 player, Func<Vector3, float?> ground)

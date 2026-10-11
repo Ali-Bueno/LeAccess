@@ -19,6 +19,9 @@ internal static class ExplorationAccessibility
     private const double StatusSeconds = 10;
     private static ConfigEntry<bool> _enabled;
     private static ConfigEntry<float> _seenRange;
+    private static ConfigEntry<int> _routeLegs;
+    // A menu bound for the stretches read, not a game value: past it a route is better followed with the beacon.
+    private const int MaxRouteLegs = 10;
     private static readonly ExplorationCatalog Catalog = new();
     private static readonly List<ExplorationEntry> Entries = new();
     private static readonly List<System.Numerics.Vector2> UnexploredPositions = new();
@@ -36,6 +39,9 @@ internal static class ExplorationAccessibility
         _seenRange = config.Bind(ConfigSection, "SeenRange", 20f, new ConfigDescription(
             "A place is listed once it has been this close (world units) and in walkable line of sight.",
             new AcceptableValueRange<float>(5f, 60f)));
+        _routeLegs = config.Bind(ConfigSection, "RouteLegs", 0, new ConfigDescription(
+            "How many straight stretches of a detour the scanner reads, with climbs and descents; 0 reads only the way to head first.",
+            new AcceptableValueRange<int>(0, MaxRouteLegs)));
         ExplorationInput.Initialize(config);
         ExplorationBeacon.Initialize(config);
         ExplorationFeedback.Initialize(config);
@@ -140,8 +146,9 @@ internal static class ExplorationAccessibility
         }
         else Catalog.Ground = null;
         // Routes go through the explored ground of this scene session, computed only for the entry spoken.
+        Catalog.LegsSpoken = _routeLegs.Value;
         Catalog.Route = nav != null && ExplorationBeacon.CurrentMap(_world.Session) != null
-            ? (entry, from) => ExplorationBeacon.RouteFor(ExplorationTarget.From(entry), from) : null;
+            ? (entry, from) => ExplorationBeacon.RouteFor(ExplorationTarget.From(entry), from, Catalog.LegsSpoken > 0) : null;
         ExplorationText text = ModText.Format;
         string sentence = command switch
         {

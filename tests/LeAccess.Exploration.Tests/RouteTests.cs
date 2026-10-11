@@ -18,6 +18,9 @@ internal static class RouteTests
         ["exploration.steps_one"] = "<1 step>", ["exploration.steps_many"] = "<{0} steps>",
         ["exploration.route_steps_one"] = "<1 step by route>", ["exploration.route_steps_many"] = "<{0} steps by route>",
         ["exploration.route_heading"] = "<head {0}>", ["exploration.entry_unrouted"] = "{0} <no known route>",
+        ["exploration.route_leg"] = "[{0} {1}]", ["exploration.route_leg_then"] = "{0} <then> {1}",
+        ["exploration.route_leg_up"] = "{0} <climbing>", ["exploration.route_leg_down"] = "{0} <descending>",
+        ["exploration.route_legs_more_one"] = "{0} <+1 leg>", ["exploration.route_legs_more_many"] = "{0} <+{1} legs>",
         ["exploration.category.exit"] = "<exits>",
         ["guidance.direction.up"] = "<up>", ["guidance.direction.up_right"] = "<up-right>",
         ["guidance.direction.right"] = "<right>", ["guidance.direction.down_right"] = "<down-right>",
@@ -69,6 +72,22 @@ internal static class RouteTests
         Check(catalog.StepEntry(1, entries, player, Forward, Right, Step, Text) == routed, "the entry step speaks the route");
         Check(catalog.DescribeEntry(exit, player, Forward, Right, Step, Text) == routed, "one function describes an entry");
 
+        // Legs, when read: the U is down, right and up, its corners walkable and as long as the route.
+        var corners = map.Corners(BeaconPath(map, grid, player, exit), grid);
+        var legs = RouteLegs.From(corners, Forward, Right);
+        string spokenLegs = string.Join(",", legs.Select(leg => leg.Direction[(leg.Direction.LastIndexOf('.') + 1)..]));
+        Check(spokenLegs == "down,right,up", $"the U reads down, right, up ({spokenLegs})");
+        Check(Walkable(corners, grid) && MathF.Abs(legs.Sum(leg => leg.Length) - route.Value.Length) < 2 * Step,
+            $"the corners walk the route ({legs.Sum(leg => leg.Length)} of {route.Value.Length})");
+        catalog.Route = Scanner(map, grid, true);
+        catalog.LegsSpoken = 3;
+        Check(catalog.DescribeEntry(exit, player, Forward, Right, Step, Text).Contains("<down>") &&
+            catalog.DescribeEntry(exit, player, Forward, Right, Step, Text).EndsWith("<up> " + Text("exploration.steps_many",
+                (int)Math.Round(legs[^1].Length / Step, MidpointRounding.AwayFromZero)) + "]"),
+            $"the scanner reads the legs ({catalog.DescribeEntry(exit, player, Forward, Right, Step, Text)})");
+        catalog.LegsSpoken = 0;
+        catalog.Route = Scanner(map, grid);
+
         // The beacon pans to the same point: straight down the screen.
         var state = new BeaconState();
         state.Lock(ExplorationTarget.From(exit), player, 0, Router(map, grid));
@@ -118,6 +137,10 @@ internal static class RouteTests
             $"the route goes round to the pocket ({path[^1]}, {length})");
         Check(map.AtHand(pocket, listener, range, false, grid, out _), "in the pocket the entrance is at hand");
         Check(map.AtHand(goal.Point, listener, range, false, grid, out _), "the route's end is arrival");
+        // Read as legs, the ramp is a descent and the last leg runs along the pocket floor to the way in.
+        var legs = RouteLegs.From(map.Corners(path, grid), Forward, Right);
+        Check(legs.Any(leg => leg.Rise <= -FakeGrid.UpperHeight + FakeGrid.RampStep) && MathF.Abs(legs[^1].Rise) < FakeGrid.Climb,
+            $"the legs descend the ramp and end on the pocket floor ({string.Join("; ", legs)})");
 
         // The beacon holds arrival on the plateau and arrives in the pocket.
         var target = new ExplorationTarget("listener:1", "Storerooms", listener, range);
@@ -161,6 +184,13 @@ internal static class RouteTests
             "an area is entered across its radius");
     }
 
-    private static Func<ExplorationEntry, Vector3, ExplorationRoute?> Scanner(ExploredMap map, IWalkability nav) =>
-        (entry, player) => BeaconState.Measure(Router(map, nav), player, ExplorationTarget.From(entry));
+    private static Func<ExplorationEntry, Vector3, ExplorationRoute?> Scanner(ExploredMap map, IWalkability nav, bool corners = false) =>
+        (entry, player) => BeaconState.Measure(Router(map, nav), player, ExplorationTarget.From(entry),
+            corners ? path => map.Corners(path, nav) : null);
+
+    private static IReadOnlyList<Vector3> BeaconPath(ExploredMap map, IWalkability nav, Vector3 player, ExplorationEntry entry)
+    {
+        Check(Router(map, nav)(player, ExplorationTarget.From(entry), out var path, out _), "routed");
+        return path;
+    }
 }
