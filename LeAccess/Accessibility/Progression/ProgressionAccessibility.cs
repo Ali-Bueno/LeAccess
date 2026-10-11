@@ -8,7 +8,7 @@ using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Progression;
 
-/// <summary>Speaks level-ups and new passive/skill points, and the level report on Create+Circle or Ctrl+L.</summary>
+/// <summary>Speaks level-ups and new passive/skill points, and the level report on Ctrl+L (Square and Triangle carry it on the pad).</summary>
 internal static class ProgressionAccessibility
 {
     // Level-ups and HUD buttons last seconds; a quarter second is prompt and cheap.
@@ -22,7 +22,7 @@ internal static class ProgressionAccessibility
     internal static void Initialize(ConfigFile config)
     {
         _automatic = config.Bind("Progression", "AnnounceChanges", true,
-            "Say the new level, new passive points and skills that can level up. The report (Create+Circle, Ctrl+L) always works.");
+            "Say the new level, new passive points and skills that can level up. The readouts (Create+Square, Create+Triangle, Ctrl+L) always work.");
         Reset();
     }
 
