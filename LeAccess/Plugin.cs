@@ -118,6 +118,7 @@ public class Plugin : BasePlugin
         DynamicObjectiveAccessibility.Reset();
         EncounterGuidanceTargets.Reset();
         LeAccess.Accessibility.Zones.ZoneAnnouncer.Reset();
+        LeAccess.Accessibility.Zones.Transitions.ZoneTransitionAnnouncer.Reset();
         NotificationAnnouncer.Reset();
         ButtonPromptAnnouncer.Reset();
         CombatAccessibility.Cleanup();
