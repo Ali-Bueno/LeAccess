@@ -148,13 +148,14 @@ everything else.
 | Right stick up / down | Previous / next scanner category (says the category and its nearest entry) |
 | Right stick left / right | Previous / next entry in the category, nearest first |
 | Cross | Start the beacon toward the selected entry; again cancels it. It pings along a route through ground you have explored, faster as you get closer, and refuses if there is no explored route |
-| Square | Life, mana, potion charges and debuffs |
-| Triangle | Gold |
-| Circle | Level, experience percent, unspent passive points, skills that can take a point, and the zone |
+| Square | Life, mana, level and experience percent, potion charges and debuffs |
+| Triangle | Gold, unspent passive points, skills that can take a point, and the zone |
+| Circle | Repeat the selected scanner entry with its current distance and direction |
+| L1 | Open or close the settings menu (L3 + L1 also works on every pad) |
 
 The scanner categories, in order: exit, portal, waypoint, unexplored room, room, quest, NPC, player, last death, stash,
-enemy (everything on screen), treasure (chests), shrine, object (levers, notes, the forge and other things you can use)
-and item (loot on the ground). Rooms are the game's minimap rooms: "room N" once you have been inside, "unexplored room
+enemy (everything on screen), treasure (chests), shrine, object (levers, notes, the forge and other things you can use),
+breakable (barrels, crates and pots) and item (loot on the ground). Rooms are the game's minimap rooms: "room N" once you have been inside, "unexplored room
 N" when you have seen it but not entered. A target on another floor says "on a higher level" or "on a lower level".
 
 ### Inventory, merchants and the forge
@@ -197,27 +198,53 @@ affix, its tier and your shards; right stick up adds the preview and forging pot
 
 | Key | Description |
 |---|---|
-| R | Life, mana and potions (configurable, `Vitals.ReportKey`) |
-| Ctrl+G | Gold |
+| R | Life, mana, level and experience, potions and debuffs (configurable, `Vitals.ReportKey`) |
+| Ctrl+G | Gold, passive points, skills and the zone |
 | Ctrl+L | Level and progress |
 | Ctrl+Numpad 8 / 2 | Previous / next scanner category |
 | Ctrl+Numpad 4 / 6 | Previous / next scanner entry |
+| Ctrl+Numpad 5 | Repeat the selected scanner entry |
 | Ctrl+B | Start or cancel the beacon |
+| Ctrl+F1 | Open or close the settings menu (configurable, `Mod menu.OpenKey`) |
+
+### Settings menu
+
+Every mod option, with a glossary of the mod's sounds. It opens anywhere, from the main menu to gameplay, with L1 while
+Create or L3 is held (Ctrl+F1 on the keyboard); the same chord closes it. While it is open the game gets no input but
+keeps running, so open it somewhere safe. Changes are saved at once.
+
+| Button | Keyboard | Description |
+|---|---|---|
+| D-pad or left stick up / down | Up / Down | Previous / next entry (hold to repeat) |
+| D-pad or left stick left / right | Left / Right | Lower / raise the value |
+| Cross | Enter | Toggle, open a page, or play the sound |
+| Circle | Escape | Back; on the first page, close |
+| Triangle | Delete | Restore the default |
+| Square | P | Play the entry's sound |
+| Right stick up | I | What the option does, its default and its range |
+| Options | | Close |
+
+The first page has the master volume, then **Sounds** (every sound the mod plays: Cross plays it, left and right change
+its own volume), **Sound distances** (how far each kind of object carries; 0 follows the object distance) and one page
+per group of options.
 
 ## Configuration
 
-Options are in `BepInEx/config/LeAccess.cfg`, created on the first launch. Edit it with the game closed. The most
-useful ones:
+Every option is in the settings menu (see above). They are stored in `BepInEx/config/LeAccess.cfg`, created on the first
+launch; edit that file only with the game closed. The most useful ones:
 
 | Section | Option | What it does |
 |---|---|---|
 | Localization | `Language` | `auto` follows the game's text language; or force `en`, `es`, `fr`, `de`, `pt`, `pl`, `ru`, `ko`, `zh` or `ja` |
 | Exploration | `LeftStickOnOtherPads` | L3 as the mod button on non-PlayStation pads (default on) |
+| Audio | `MasterVolume` | Volume of every mod sound (speech is not affected) |
+| World object sound volumes / ranges | One key per kind (`Gold`, `Rune`, `Shrine`, `ZoneExit`...) | Each object sound's own volume (0-200%) and distance (0 follows `LoopRange`) |
 | Reactive radar | `Enabled`, `Volume` | The wall radar |
-| Enemy cues | `Enabled`, `Bosses`, `Elites`, `Ordinary`, `Volume` | Enemy sounds |
+| Enemy cues | `Enabled`, `Bosses`, `Elites`, `Ordinary`, `Volume`, `BossVolume`, `EliteVolume`, `OrdinaryVolume` | Enemy sounds |
 | World object sounds | `Enabled`, `Volume`, `Loops`, `LoopRange` | Loot, objects, portals, exits |
 | NPC sounds | `Enabled`, `AnnounceNames`, `Volume` | NPC taps and names |
-| Vitals | `AutomaticAnnouncements`, `AnnouncePotionCharges`, `AnnounceGoldPickups` | Automatic life, mana, potion and gold speech |
+| Vitals | `AutomaticAnnouncements`, `AnnounceLifeChanges`, `AnnounceManaChanges`, `LifeMinimumChange`, `ManaMinimumChange`, `AnnouncePotionCharges`, `AnnounceGoldPickups` | Automatic life, mana, potion and gold speech. Life and mana speak when they cross a band (75, 50, 40, 30, 20, 10, 5...); the minimum-change options hold a band back until the value has moved that many percent (critical life and empty mana always speak) |
+| Landmarks | `AnnounceShrineEffects` | Say a shrine's name and effect after you use it |
 | Combat feedback | `AnnounceBossLife`, `AnnounceEliteLife`, `AnnounceNearestEnemy` | Boss, elite and nearest-enemy speech |
 | Quests | `AutomaticUpdates` | Quest progress speech |
 | Dialogue | `SpeakNpcLines` | NPC lines, barks and cinematic subtitles (default on). Turn it off if you play in English and hear the voices; lines the game does not voice are silenced too |
