@@ -1,6 +1,9 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-11 11:40: the user confirms the wall bump and silent footsteps offline too (earlier game; that
+**Updated:** 2026-10-11: optional route legs: with `Exploration/RouteLegs` above 0 (mod menu, off by default) a detour's
+scanner readout lists its stretches by direction with climbs and descents, the last one the way in
+([legs](reference/exploration-mode.md#route-legs-2026-10-11-optional)); committed 8465b53, unheard.
+Earlier, 2026-10-11 11:40: the user confirms the wall bump and silent footsteps offline too (earlier game; that
 log was overwritten, so the `Actor` source line is unseen) and chooses to keep the radar as it is.
 Earlier, 2026-10-11 11:20: second trace (235 cues, 95 flips): the flips are mostly real pillars, props and gaps
 passed at about 6 m/s; neither shadow variant removed most of them and both lost real openings, so the live radar is

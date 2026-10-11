@@ -1,3 +1,13 @@
+# Handoff — 2026-10-11: route legs (optional)
+
+The release tester wants the path, not only the line: barriers, level changes, the side an entrance is entered from.
+Added `Exploration/RouteLegs` (mod menu, Exploration page, 0 = off by default): a detour reads its stretches
+([design](reference/exploration-mode.md#route-legs-2026-10-11-optional)). Live checks: set it to 4, scan an exit
+behind a detour (Burning Forest at Grael; the Fortress Walls Storerooms from the plateau once the pocket is explored):
+the stretches should match the walk, the ramp say "going down", the last stretch run along the pocket floor;
+`[Exploration] route … corners=N`. Too many short diagonal stretches at doorways would mean the folding needs a
+wider threshold. Not yet in any test package (v0.1.0 predates the route work).
+
 # Handoff — 2026-10-11 11:20: radar decision
 
 Second trace analysed ([decision](reference/navigation-radar.md#second-trace-and-decision-2026-10-11-1100)): no radar

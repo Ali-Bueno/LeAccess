@@ -564,3 +564,24 @@ with the other ground of fixed-layout scenes. Log: `[Exploration beacon] visited
 map T`. Tests: `VisitedRoomTests` (only visited rooms, not the floor above, spaced retries, bounded scan, a U-shaped
 detour that routes once its room is seeded). Unverified live: mesh copy cost on large maps (copied once per scene
 session) and how much room spheres reach past walls.
+
+## Route legs (2026-10-11, optional)
+
+The tester's report also asked for the path itself, as a sighted player plans it on the minimap: barriers, level
+changes and which side an entrance is entered from. Option `Exploration/RouteLegs` (mod menu, Exploration page,
+"Route stretches read"; 0 = off, the default, up to 10). When set, a detour's readout replaces "head down" with its
+stretches: "Exit, 260 steps by route, down 40 steps, then right 60 steps, going up, then up 30 steps", and past the
+limit "and 2 more stretches". The level phrase follows as before; a straight route keeps the plain readout.
+- Corners (`ExploredMap.Corners`): the whole route straightened with the beacon's own pulling (`Pull`, NavMesh-clear
+  lines) instead of only its first 32 points; a corner nearer than one cell to the previous one is grid noise and is
+  folded. The final stretch to the goal is always kept, since the goal may be off the mesh; it is the way in (the
+  Storerooms: along the pocket floor).
+- Legs (`RouteLegs`): one per stretch, named with the scanner's 8 screen directions; consecutive stretches in the
+  same direction join; a stretch under one step is not read; a stretch whose height changes by a floor (the NavMesh
+  agent height, as the level phrase) says "going up"/"going down". Fewer than two legs reads the first heading.
+- Only the spoken entry is routed and straightened, once per readout. Log: `[Exploration] route … corners=N`.
+
+Tests: ExplorationCatalog 99 (legs, joining, limit and remainder, sub-step stretches, climbs, off), Exploration 448
+(the U-shaped detour reads down, right, up with corners that walk the route; the Storerooms legs descend the ramp and
+end on the pocket floor). Unverified live: wording and length in game, and the corner count on real NavMesh routes
+(cell-sized jogs at doorways may still add short diagonal legs).
