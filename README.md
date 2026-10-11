@@ -65,9 +65,9 @@ happens on its own, by sound and speech, while you play with the game's normal c
 - A wall radar: a knock when a wall comes within about two metres, and a breath when you slip past a wall's edge into
   space that goes on (a doorway, a side passage, the end of a wall). A breath that ends in a quick double pip leads
   toward somewhere you have not explored.
-- Wall tones, off by default: an alternative or companion to the radar, in the Grimdark style. A soft steady tone per
-  direction grows louder as a wall comes closer: high ahead, low behind, mid in the left or right ear. Turn them on in
-  the mod menu (Wall tones page); turn the radar off there to use them instead of it.
+- Wall tones, off by default: an alternative or companion to the radar, in the Grimdark style. A soft, steady rush of
+  air per direction grows louder as a wall comes closer: high ahead, low behind, mid in the left or right ear. Turn
+  them on in the mod menu (Wall tones page); turn the radar off there to use them instead of it.
 - A wall bump: a dull thud from the side you push when you walk into a wall and stop, and your footsteps go quiet
   while you keep pushing, so you know you are no longer walking.
 - Things in the world have sounds: loot by rarity, gold, potions, chests, the stash, portals, waypoints, exits, shrines,

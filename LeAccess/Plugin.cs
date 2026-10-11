@@ -65,7 +65,7 @@ public class Plugin : BasePlugin
 
         // Initialize audio cues
         _continuousSonar = Config.Bind("Navigation audio", "ContinuousWallSonar", false,
-            "Wall tones: a steady tone per screen direction that grows louder as a wall comes closer; an alternative or companion to the reactive radar.");
+            "Wall tones: a soft, steady rush of air per screen direction that grows louder as a wall comes closer; an alternative or companion to the reactive radar.");
         SoundLevels.Initialize(Config);
         ReactiveRadar.Initialize(Config);
         WallBump.Initialize(Config);

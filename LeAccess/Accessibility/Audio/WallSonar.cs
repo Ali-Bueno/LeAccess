@@ -5,8 +5,8 @@ using UnityEngine;
 
 namespace LeAccess.Accessibility.Audio;
 
-/// <summary>Wall tones, an alternative or companion to the radar: a continuous tone per screen direction, louder as a wall
-/// comes closer (reference/navigation-radar.md#wall-tones-2026-10-11).</summary>
+/// <summary>Wall tones, an alternative or companion to the radar: a soft continuous sound per screen direction, louder as a
+/// wall comes closer (reference/navigation-radar.md#warm-wall-sounds-2026-10-11).</summary>
 public static class WallSonar
 {
     private const double AudioRetrySeconds = 5;

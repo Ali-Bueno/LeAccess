@@ -31,14 +31,17 @@ internal static class WallToneTests
     {
         float[] ahead = Steady(RadarDirection.Up), behind = Steady(RadarDirection.Down);
         float[] left = Steady(RadarDirection.Left), right = Steady(RadarDirection.Right);
-        Check(ahead.All(float.IsFinite) && ahead.Max(Math.Abs) <= WallToneSynth.ContactLevel * 1.5,
-            "A touching wall stays near the soft contact level.");
-        Check(Math.Abs(Energy(ahead, 0) - Energy(ahead, 1)) < Energy(ahead, 0) * 0.01, "The tone ahead is centred.");
+        double centred = Math.Sqrt(0.5) * WallToneSynth.ContactRms;
+        Check(ahead.All(float.IsFinite) && Math.Abs(Rms(ahead, 0) - centred) < centred * 0.1,
+            "A touching wall plays at the soft contact level.");
+        Check(Math.Abs(Energy(ahead, 0) - Energy(ahead, 1)) < Energy(ahead, 0) * 0.01, "The sound ahead is centred.");
         Check(Energy(left, 0) > Energy(left, 1) * 100 && Energy(right, 1) > Energy(right, 0) * 100,
-            "Side tones sit in their own ear.");
-        Check(Crossings(ahead) > Crossings(left) && Crossings(left) > Crossings(behind),
-            "Ahead is the highest tone, behind the lowest, the sides between.");
-        Check(Energy(behind, 0) > Energy(ahead, 0), "The low tone behind is lifted so it is heard as clearly.");
+            "Side sounds sit in their own ear.");
+        Check(Pitch(ahead) > Pitch(left) * 1.3 && Pitch(left) > Pitch(behind) * 1.3,
+            "Ahead is the highest band, behind the lowest, the sides between.");
+        Check(Energy(behind, 0) > Energy(ahead, 0), "The low band behind is lifted so it is heard as clearly.");
+        Check(Pitch(ahead) < 1200, "Even the band ahead stays warm: nothing bright above about 1.2 kHz.");
+        Check(Fluctuation(ahead) > 0.1, "The bands are soft air, not a steady tone.");
     }
 
     private static void Glide()
@@ -47,16 +50,15 @@ internal static class WallToneTests
         synth.SetTarget(RadarDirection.Up, 1);
         float[] start = new float[Rate / 100 * 2];
         synth.Read(start, 0, start.Length);
-        Check(Math.Abs(start[0]) < 1e-4 && Math.Abs(start[2]) < 1e-3, "A tone fades in instead of clicking.");
+        Check(Math.Abs(start[0]) < 1e-4 && Math.Abs(start[2]) < 1e-3, "A wall sound fades in instead of clicking.");
         float[] steady = new float[Rate / 5 * 2];
         synth.Read(steady, 0, steady.Length);
         synth.Silence();
         float[] fade = new float[Rate / 5 * 2];
         synth.Read(fade, 0, fade.Length);
-        float largestStep = 0;
-        for (int i = 2; i < fade.Length; i += 2) largestStep = Math.Max(largestStep, Math.Abs(fade[i] - fade[i - 2]));
-        Check(largestStep < WallToneSynth.ContactLevel * 0.5f, "Silencing glides out without a jump.");
-        Check(fade.Skip(fade.Length - 200).All(sample => Math.Abs(sample) < 1e-4), "After the glide the tone is silent.");
+        Check(Rms(fade.Take(Rate / 100 * 2).ToArray(), 0) > Rms(steady, 0) * 0.3,
+            "Silencing glides out without a jump.");
+        Check(fade.Skip(fade.Length - 200).All(sample => Math.Abs(sample) < 1e-4), "After the glide the sound is silent.");
         synth.SetTarget(RadarDirection.Up, float.NaN);
         float[] bad = new float[400];
         synth.Read(bad, 0, bad.Length);
@@ -80,7 +82,7 @@ internal static class WallToneTests
         float[] clip = WallToneSynth.Preview(RadarDirection.Right, 1, 1);
         Check(clip.Length == Rate * 2, "The preview lasts the asked time in stereo.");
         Check(Energy(clip, 1) > Energy(clip, 0) * 100, "The side preview plays in its ear.");
-        Check(Math.Abs(clip[^1]) < WallToneSynth.ContactLevel * 0.05f, "The preview fades out at its end.");
+        Check(Math.Abs(clip[^1]) < WallToneSynth.ContactRms * 0.05f, "The preview fades out at its end.");
         Check(WallToneSynth.Preview(RadarDirection.Up, 0, 1).Length == 0, "A silent level has no preview.");
     }
 
@@ -102,6 +104,21 @@ internal static class WallToneTests
         for (int i = channel; i < samples.Length; i += 2) sum += samples[i] * samples[i];
         return sum;
     }
+
+    private static double Rms(float[] samples, int channel) => Math.Sqrt(Energy(samples, channel) / (samples.Length / 2));
+
+    // Spread of the 20 ms loudness: a steady tone is near 0, a band of air (and Grimdark's loops) about 0.15-0.25.
+    private static double Fluctuation(float[] samples)
+    {
+        int window = Rate / 50;
+        var levels = Enumerable.Range(0, samples.Length / 2 / window)
+            .Select(w => Rms(samples.Skip(w * window * 2).Take(window * 2).ToArray(), 0)).ToArray();
+        double mean = levels.Average();
+        return Math.Sqrt(levels.Average(level => (level - mean) * (level - mean))) / mean;
+    }
+
+    // Mean frequency in Hz from the zero-crossing rate: two crossings per cycle.
+    private static double Pitch(float[] samples) => Crossings(samples) / 2.0 / (samples.Length / 2.0 / Rate);
 
     private static int Crossings(float[] samples)
     {

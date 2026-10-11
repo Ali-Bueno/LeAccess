@@ -621,3 +621,31 @@ keep their keys; the old tones (500/180/300 Hz, the game's `NavMeshHelper` from 
 
 Tests: RadarAudio 71 (curve, pitch order, pans, trim, glide in and out, levels, preview), Navigation 901 (lanes).
 Not heard: the level against game audio, and whether the high tone ahead is pleasant at length.
+
+## Warm wall sounds (2026-10-11)
+
+User report: the wall tones were "very, very strident, ultra annoying"; softer and warmer, not necessarily tones,
+like the Grim Dawn mod. Grimdark's loops (both banks in `assets/audio/walltones/`, from wotr-access, same author) were
+measured: none is a tone. Each is mono band-limited noise, hundreds of partials across a band, a Rayleigh envelope
+(20 ms loudness spread 0.14-0.24), about -20 to -23 dBFS RMS:
+
+| Bank | Ahead | Sides | Behind | Note |
+|---|---|---|---|---|
+| 1 (warm) | 780-1015 Hz, centroid 945 | 430-650 Hz, 528 | 160-340 Hz, 266 | Grimdark keeps it vendored, unused |
+| 2 (bright) | 860-1380 Hz, 1237 | 620-970 Hz, 840 | 300-550 Hz, 428 | Grimdark's live bank |
+
+Our 2026-10-11 11:18 version took bank 2's pitches as sines with a second and third harmonic (1265 Hz plus 2.5 and
+3.8 kHz), which is where the harshness came from. The loops themselves were not copied: wotr-access's licence is not
+published.
+
+- **Now** (`WallToneSynth`): per direction, deterministic white noise through two RBJ band-pass stages (Q 1.8, a band
+  about half an octave wide) and a one-pole low-pass at 1.8 kHz, scaled to unit RMS from the chain's impulse energy.
+  Centres 800 / 450 / 250 Hz (bank 1 lowered about 15 percent, as the user asked for warmer); behind +3 dB as in
+  Grimdark; equal-power pans, distance curve, lanes, poll and 25 ms glide unchanged.
+- Measured from the synth: centroids 845 / 483 / 271 Hz, 84 percent of the ahead band's energy within 500-1000 Hz,
+  nothing above 2 kHz, loudness spread 0.16-0.25 (as bank 1). 0.04 RMS at a touching wall (about -28 dBFS, the old
+  tones' RMS); with no energy at 2.5-4 kHz it sounds much softer at the same RMS.
+- Descriptions in the ten catalogs say "a soft rush of air" (`rumor de aire`), not "tone"; the option keeps its name.
+
+Tests: RadarAudio 73 (contact level, pans, band order, ahead below 1.2 kHz, loudness spread, glide, levels, preview).
+Not heard: whether the level against game audio and the 250 Hz band behind suit the user.
