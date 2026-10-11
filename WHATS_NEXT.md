@@ -63,7 +63,9 @@ template; check `menu selection held: True` and that Down + Cross on the landing
 selection is back after closing. Fourth version: Cross pressed Play through a `ButtonInputListener`; check
 `button listeners off: N` (N > 0 on the landing screen) and that Cross there does nothing.
 Fifth: Cross in the menu must not vibrate the pad or play a cursor sound (`game button holds cancelled while open: N`
-at closing shows the game had started holds). Inventory: left/right must step 1, 2, 3 … of N with no jump back.
+at closing shows the game had started holds).
+Sixth: on the landing screen Cross in the menu must log `[Mod menu] landing click ignored: online` and stay there;
+tell whether the pad still vibrates (its source is then still unknown). Inventory: left/right must step 1, 2, 3 … of N with no jump back.
 Dialogue with several responses: each push says the new response once.
 Pickup lines (gold, a potion count alone, the targeted ground item) now cut each other, and life, mana and combat lines
 cut them ([details](reference/announcement-lifecycle.md#pickup-lines-give-way-2026-10-11-user-report)); check that a
