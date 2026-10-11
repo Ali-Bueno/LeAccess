@@ -237,6 +237,14 @@ namespace LeAccess.Accessibility.Utils
     internal static class TextUtils { internal static string CleanText(string text) => text?.Trim(); }
 }
 internal sealed class VaultsOfUncertainFateChest : UnityEngine.MonoBehaviour { internal bool hasBeenOpened; }
+namespace LeAccess.Accessibility.Combat
+{
+    internal static class BossLifeProbe
+    {
+        internal static Func<UnityEngine.Vector3, bool> Screen = _ => false;
+        internal static bool OnScreen(UnityEngine.Camera camera, UnityEngine.Vector3 position) => Screen(position);
+    }
+}
 namespace LE.Gameplay.Monolith { internal sealed class MonolithChestInteraction : UnityEngine.MonoBehaviour { } }
 namespace LE.Gameplay.PrimalHunt { internal sealed class CaveTreasureChest : UnityEngine.MonoBehaviour { } }
 namespace LE.Gameplay.Tombs { internal sealed class TombRewardChestInteraction : UnityEngine.MonoBehaviour { } }

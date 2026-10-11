@@ -54,6 +54,7 @@ internal static class ExplorationBeacon
         _audioBuffer = config.Bind(ConfigSection, "AudioBufferMilliseconds", DefaultAudioBufferMilliseconds,
             new ConfigDescription("Audio buffer duration. Larger values give playback more tolerance for scheduling delays. Restart the game after changing this.",
                 new AcceptableValueRange<int>(MinimumAudioBufferMilliseconds, MaximumAudioBufferMilliseconds)));
+        TownExplored.Initialize(config, ConfigSection);
         Plugin.Log.LogInfo("Exploration beacon configured (routes through explored NavMesh ground)");
     }
 
@@ -181,6 +182,7 @@ internal static class ExplorationBeacon
             BeaconAudio.DropPing();
         }
         _map.Observe(player, Walkability);
+        TownExplored.Update(world, _map, Walkability);
         if (!MinimapRoomReader.HasRooms) _map.UpdateFrontier(Walkability);
         if (State.LockedKey == null || !TryAxes(out var forward, out var right)) return null;
         _last = State.Tick(player, target, forward, right, now, Router);
@@ -287,6 +289,7 @@ internal static class ExplorationBeacon
         State.Release();
         Memory.Clear();
         Walkability.Reset();
+        TownExplored.Cleanup();
         _map = null;
         _camera = null;
         _last = default;

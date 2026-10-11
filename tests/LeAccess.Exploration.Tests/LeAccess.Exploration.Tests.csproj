@@ -10,6 +10,7 @@
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExploredMap.cs" Link="ExploredMap.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExploredMapRouting.cs" Link="ExploredMapRouting.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Exploration/NavMeshSeed.cs" Link="NavMeshSeed.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExploredMemory.cs" Link="ExploredMemory.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExploredFrontier.cs" Link="ExploredFrontier.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/RoomTracker.cs" Link="RoomTracker.cs" />

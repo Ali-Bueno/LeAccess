@@ -479,3 +479,10 @@ that L3 keep working in menus.
 - "Choose a destination" hint names L3 on those pads (`exploration.scanner.no_selection_l3`).
 - Not verified with an Xbox pad; Steam Input presents PlayStation pads as XInput, which would make L3 the mod button.
 ExplorationInput 49 checks, Localization 5720.
+
+## 2026-10-10, user report: levels, towns, shrines, gold
+
+- Level phrase: `ExplorationCatalog.Describe` now compares NavMesh-sampled ground of player and target (`Ground`, set from the beacon walkability), never raw heights. The quest target is the minimap icon, which floats above its floor, so every objective said "higher level". If either sample fails no level is claimed. Quest entries are also snapped to the sampled ground Y (`ExplorationProbe.OnGround`); the first one logs `[Exploration] quest marker icon_y=.. ground_y=.. offset=..`.
+- Towns: `TownExplored` seeds the explored map from `NavMesh.CalculateTriangulation` (`NavMeshSeed` rasterizes walkable triangles onto map cells, 400 triangles per beacon tick, `MaxCells` respected) when `SceneList.IsTownZone(scene)`. Config `[Exploration beacon] TownFullyExplored` (default true). Log: `[Exploration beacon] town scene=.. seeding ..` then `seeded cells=..`. Seeded cells are saved with the other fixed-layout ground.
+- Off-mesh goals (NPC or stash behind a counter): the route ends at an explored cell within max(arrival radius, one cell), since a cell centre can sit a cell from the walkable edge.
+- On-screen listing: shrines, portals, exits, the stash and items are listed when the camera sees them (`ExplorationSight`, `BossLifeProbe.OnScreen`), besides the seen-range rule. Gold piles (`GroundGoldVisuals.all`) are Item entries named with the amount (`gold.pickup`), key `gold:{id}`.

@@ -152,6 +152,17 @@ internal static partial class Program
     {
         var edge = Select(new[] { At(1, 0, Range), At(2, 0, Range + 0.01f) });
         Check(edge.Count == 1 && edge[0].Id == 1, "The range edge is included and beyond it is excluded.");
+        // An enemy on screen is audible past the skill range; the cadence falls against the farthest of them.
+        var far = At(1, 0, 15) with { OnScreen = true };
+        var unseen = At(2, 0, 12);
+        var screen = Select(new[] { far, unseen, At(3, 0, 4) });
+        Check(screen.Select(cue => cue.Id).SequenceEqual(new[] { 3, 1 }), "An on-screen enemy past the range sounds; an off-screen one does not.");
+        Check(Math.Abs(screen[1].IntervalSeconds - EntityCueCadence.FarIntervalSeconds) < 1e-9 &&
+            screen[0].IntervalSeconds < screen[1].IntervalSeconds,
+            "The farthest on-screen enemy is the slowest pulse, never beyond the far interval.");
+        Check(Select(new[] { far }, sight: _ => TerrainSight.Blocked).Count == 0, "Line of sight still applies to on-screen enemies.");
+        Check(Select(new[] { At(1, 0, 4) }).Single().IntervalSeconds ==
+            EntityCueCadence.Interval(4, Range), "Without anything on screen the cadence uses the skill range.");
         Check(Select(new[] { new EnemyContact(1, null, EnemyClass.Normal, new Vector3(float.NaN, 0, 0)),
             new EnemyContact(2, null, EnemyClass.Normal, new Vector3(float.PositiveInfinity, 0, 0)) }).Count == 0,
             "Non-finite positions are ignored.");

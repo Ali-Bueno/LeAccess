@@ -43,6 +43,27 @@ internal sealed class NavMeshWalkability : IWalkability
         return _configured = true;
     }
 
+    // Hands the scene's walkable triangles to a seed; the whole mesh is copied once.
+    internal bool TryReadMesh(NavMeshSeed seed)
+    {
+        if (!_configured) return false;
+        var mesh = NavMesh.CalculateTriangulation();
+        var sourceVertices = mesh.vertices;
+        var sourceIndices = mesh.indices;
+        var sourceAreas = mesh.areas;
+        if (sourceVertices is null || sourceVertices.WasCollected || sourceIndices is null || sourceIndices.WasCollected ||
+            sourceAreas is null || sourceAreas.WasCollected) return false;
+        var vertices = new NVector3[sourceVertices.Length];
+        for (int i = 0; i < vertices.Length; i++)
+            vertices[i] = new NVector3(sourceVertices[i].x, sourceVertices[i].y, sourceVertices[i].z);
+        var indices = new int[sourceIndices.Length];
+        for (int i = 0; i < indices.Length; i++) indices[i] = sourceIndices[i];
+        var areas = new int[sourceAreas.Length];
+        for (int i = 0; i < areas.Length; i++) areas[i] = sourceAreas[i];
+        seed.Begin(vertices, indices, areas, _areaMask);
+        return true;
+    }
+
     public bool TrySample(NVector3 point, out NVector3 onMesh)
     {
         onMesh = default;

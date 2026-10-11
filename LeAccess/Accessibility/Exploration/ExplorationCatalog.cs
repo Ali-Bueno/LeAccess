@@ -66,7 +66,7 @@ internal sealed class ExplorationCatalog
         _category = present[NextCategory(present, Math.Sign(delta) >= 0 ? 1 : -1)];
         var sorted = Sorted(entries, _category.Value, player);
         _selected = sorted[0].Key;
-        return text(CategoryKey(_category.Value)) + ". " + Describe(sorted[0], player, forward, right, stepLength, text, LevelHeight);
+        return text(CategoryKey(_category.Value)) + ". " + Describe(sorted[0], player, forward, right, stepLength, text, LevelHeight, Ground);
     }
 
     internal string StepEntry(int delta, IReadOnlyList<ExplorationEntry> entries, Vector3 player,
@@ -82,14 +82,18 @@ internal sealed class ExplorationCatalog
         int index = sorted.FindIndex(entry => entry.Key == _selected);
         index = index < 0 ? 0 : Wrap(index + (Math.Sign(delta) >= 0 ? 1 : -1), sorted.Count);
         _selected = sorted[index].Key;
-        return Describe(sorted[index], player, forward, right, stepLength, text, LevelHeight);
+        return Describe(sorted[index], player, forward, right, stepLength, text, LevelHeight, Ground);
     }
 
     /// <summary>Height of one walkable floor; a target farther above or below is said to be on another level.</summary>
     internal float LevelHeight { get; set; } = float.PositiveInfinity;
 
+    /// <summary>Walkable ground height under a point, or null when unknown; without it no level is claimed.</summary>
+    internal Func<Vector3, float?> Ground { get; set; }
+
     internal static string Describe(ExplorationEntry entry, Vector3 player, Vector3 forward, Vector3 right,
-        float stepLength, ExplorationText text, float levelHeight = float.PositiveInfinity)
+        float stepLength, ExplorationText text, float levelHeight = float.PositiveInfinity,
+        Func<Vector3, float?> ground = null)
     {
         string name = entry.Boss ? text("exploration.boss", entry.Name) : entry.Name;
         var delta = entry.Position - player;
@@ -100,10 +104,18 @@ internal sealed class ExplorationCatalog
         string place = steps < 1 || direction == null ? text("exploration.entry_here", name)
             : text("exploration.entry", name, steps == 1 ? text("exploration.steps_one") : text("exploration.steps_many", steps),
                 text(direction));
-        // Distance is horizontal; a target on a platform above sounds near while the way up may be long.
-        bool otherLevel = float.IsFinite(levelHeight) && levelHeight > 0 && float.IsFinite(delta.Y) && Math.Abs(delta.Y) >= levelHeight;
-        return otherLevel ? text("exploration.on_level", place, text(delta.Y > 0 ? "exploration.level_higher" : "exploration.level_lower"))
+        // Distance is horizontal. Markers float above their floor, so levels compare sampled ground, never raw heights.
+        float? difference = GroundDifference(entry.Position, player, ground);
+        bool otherLevel = difference is { } dy && float.IsFinite(levelHeight) && levelHeight > 0 && Math.Abs(dy) >= levelHeight;
+        return otherLevel ? text("exploration.on_level", place, text(difference > 0 ? "exploration.level_higher" : "exploration.level_lower"))
             : place;
+    }
+
+    private static float? GroundDifference(Vector3 target, Vector3 player, Func<Vector3, float?> ground)
+    {
+        if (ground is null || ground(target) is not { } targetY || ground(player) is not { } playerY) return null;
+        float difference = targetY - playerY;
+        return float.IsFinite(difference) ? difference : null;
     }
 
     internal static string CategoryKey(ExplorationCategory category) => category switch

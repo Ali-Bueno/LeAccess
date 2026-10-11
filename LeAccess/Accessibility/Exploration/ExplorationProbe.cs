@@ -36,6 +36,7 @@ internal static class ExplorationProbe
     private static readonly List<ExplorationFind> Finds = new();
     private static readonly RoomTracker Tracker = new();
     private static readonly ExplorationArrival Arrival = new();
+    private static bool _offsetLogged;
     private const int UnseenLogged = 6;
     private const float MinimumArrival = 1.5f;
     // Right beside the player a place counts as seen even without walkable line of sight: the
@@ -69,8 +70,10 @@ internal static class ExplorationProbe
         Arrival.Observe(world.Session, player);
         Vector3 origin = default;
         bool hasOrigin = nav is not null && nav.TrySample(player, out origin);
-        bool CanSeeHere(Vector3 target, float interactionRange) =>
-            CanSee(player, origin, hasOrigin, target, nav, seenRange, interactionRange);
+        var view = UnityEngine.Camera.main;
+        bool CanSeeHere(Vector3 target, float interactionRange, ExplorationCategory category) =>
+            CanSee(player, origin, hasOrigin, target, nav, seenRange, interactionRange) ||
+            ExplorationSight.ListsOnScreen(category) && view != null && BossLifeProbe.OnScreen(view, ToUnity(target));
 
         int places = 0, unseen = 0;
         Unseen.Clear();
@@ -92,7 +95,7 @@ internal static class ExplorationProbe
                     if (!Seen.Contains(memory))
                     {
                         if (!Arrival.IsWayBack(place.Category, place.Destination, cameFrom, position, seenRange) &&
-                            !CanSeeHere(position, range))
+                            !CanSeeHere(position, range, place.Category))
                         {
                             if (unseen++ < UnseenLogged)
                                 Unseen.Add($"{place.Name} {ExploredMap.Horizontal(player, position):F0}m");
@@ -118,7 +121,7 @@ internal static class ExplorationProbe
             foreach (var target in Targets)
             {
                 entries.Add(new ExplorationEntry($"objective:{target.Id}", target.Name, ExplorationCategory.Quest,
-                    GuidanceRouteProbe.Convert(target.Position),
+                    OnGround(GuidanceRouteProbe.Convert(target.Position), nav),
                     target.ArrivalRadius > MinimumArrival ? target.ArrivalRadius : MinimumArrival));
                 quests++;
             }
@@ -166,7 +169,7 @@ internal static class ExplorationProbe
         finally { Others.Clear(); }
 
         int items = 0;
-        try { items = AddItems(CanSeeHere, entries); }
+        try { items = AddItems(CanSeeHere, entries) + AddGold(CanSeeHere, entries); }
         catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
 
         bool death = AddDeathPlace(entries);
@@ -208,6 +211,19 @@ internal static class ExplorationProbe
         return true;
     }
 
+    // A quest marker is the minimap icon, which floats above its floor; its ground point is where one walks.
+    private static Vector3 OnGround(Vector3 marker, IWalkability nav)
+    {
+        if (nav is null || !nav.TrySample(marker, out var ground)) return marker;
+        if (!_offsetLogged)
+        {
+            _offsetLogged = true;
+            Plugin.Log.LogInfo(string.Create(CultureInfo.InvariantCulture,
+                $"[Exploration] quest marker icon_y={marker.Y:F2} ground_y={ground.Y:F2} offset={marker.Y - ground.Y:F2}"));
+        }
+        return new Vector3(marker.X, ground.Y, marker.Z);
+    }
+
     // Kept per scene with the seen places until the next death there (D2R keeps the last death place per map).
     internal static void RecordDeath(Vector3 position)
     {
@@ -225,7 +241,7 @@ internal static class ExplorationProbe
     };
 
     // Loot the game labels and the loot filter shows, in sight now; never remembered.
-    private static int AddItems(Func<Vector3, float, bool> canSee, List<ExplorationEntry> entries)
+    private static int AddItems(Func<Vector3, float, ExplorationCategory, bool> canSee, List<ExplorationEntry> entries)
     {
         var all = GroundItemVisuals.all;
         if (all is null || all.WasCollected) return 0;
@@ -241,12 +257,33 @@ internal static class ExplorationProbe
             string name = TextUtils.CleanText(text.text);
             if (string.IsNullOrWhiteSpace(name)) continue;
             var position = GuidanceRouteProbe.Convert(item.transform.position);
-            if (!canSee(position, 0)) continue;
+            if (!canSee(position, 0, ExplorationCategory.Item)) continue;
             entries.Add(new ExplorationEntry($"item:{item.id}", name, ExplorationCategory.Item, position, MinimumArrival));
             count++;
         }
         return count;
     }
+
+    // Gold piles have their own registry and an optional label; the amount is the name.
+    private static int AddGold(Func<Vector3, float, ExplorationCategory, bool> canSee, List<ExplorationEntry> entries)
+    {
+        var all = GroundGoldVisuals.all;
+        if (all is null || all.WasCollected) return 0;
+        int count = 0;
+        for (int index = 0; index < all.Count; index++)
+        {
+            var gold = all[index];
+            if (!IsAlive(gold) || !gold.isActiveAndEnabled || gold.goldValue <= 0) continue;
+            var position = GuidanceRouteProbe.Convert(gold.transform.position);
+            if (!canSee(position, 0, ExplorationCategory.Item)) continue;
+            entries.Add(new ExplorationEntry($"gold:{gold.id}", ModText.Format("gold.pickup", gold.goldValue),
+                ExplorationCategory.Item, position, MinimumArrival));
+            count++;
+        }
+        return count;
+    }
+
+    private static UnityEngine.Vector3 ToUnity(Vector3 point) => new(point.X, point.Y, point.Z);
 
     private static bool AddDeathPlace(List<ExplorationEntry> entries)
     {
@@ -300,5 +337,6 @@ internal static class ExplorationProbe
         Contacts.Clear();
         Others.Clear();
         LastFailure = LastStatus = null;
+        _offsetLogged = false;
     }
 }

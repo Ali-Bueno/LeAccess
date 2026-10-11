@@ -13,6 +13,7 @@ internal static class Program
             KeyTests.Run();
             UnexploredTests.Run();
             ArrivalTests.Run();
+            TownTests.Run();
             Console.WriteLine($"Exploration tests passed: {_checks} checks.");
             return 0;
         }

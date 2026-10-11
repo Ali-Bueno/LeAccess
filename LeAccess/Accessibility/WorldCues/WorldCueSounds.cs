@@ -58,7 +58,7 @@ internal static class WorldCueSounds
             "loops, several at once; false restores one short repeated cue per kind (potions and tomes go silent).");
         _loopRange = config.Bind(ConfigSection, "LoopRange", DefaultLoopRangeMetres,
             new ConfigDescription("Metres from which looping objects (and, with loops off, portals, waypoints, exits and the stash) " +
-                "sound, quieter when far. 0 limits them to the game's own range.", new AcceptableValueRange<int>(0, MaxLoopRangeMetres)));
+                "sound, quieter when far; objects on screen sound beyond it. 0 limits them to the game's own range.", new AcceptableValueRange<int>(0, MaxLoopRangeMetres)));
         Plugin.Log.LogInfo("World sounds configured (coins, equipment, interactables; current or nearest per category)");
     }
 
@@ -94,7 +94,7 @@ internal static class WorldCueSounds
                 WorldAudioReservation.Cancel(WorldAudioSource.Object);
                 _session = World.Session;
             }
-            UpdateLoops(now, loopRange);
+            UpdateLoops(now, World.LoopReach);
             ReportStatus(found || LoopVoices.Count > 0 ? "targets available" : "no eligible targets", now);
             if (_playingTarget.HasValue && World.Targets[(int)_playingTarget.Value.Category]?.Key != _playingTarget.Value)
             {

@@ -33,7 +33,8 @@ internal sealed class EnemyCueProbe
         // The same range as the nearest-enemy announcement and the enemy scan.
         float range = ControllerTargetingParadigm._SkillTargetMaxDistance;
         if (!float.IsFinite(range) || range <= 0) return Unavailable("game skill targeting range unavailable");
-        if (!EnemyScanProbe.TryRead(GameplayEnvironment.IsOnlineClient, range, _contacts, out var origin, readNames: false))
+        if (!EnemyScanProbe.TryRead(GameplayEnvironment.IsOnlineClient, range, _contacts, out var origin, readNames: false,
+                view: UnityEngine.Camera.main))
             return Unavailable("hostile registry unavailable");
         var up = snapshot.Axes[(int)RadarDirection.Up];
         var right = snapshot.Axes[(int)RadarDirection.Right];
