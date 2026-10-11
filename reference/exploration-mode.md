@@ -486,3 +486,59 @@ ExplorationInput 49 checks, Localization 5720.
 - Towns: `TownExplored` seeds the explored map from `NavMesh.CalculateTriangulation` (`NavMeshSeed` rasterizes walkable triangles onto map cells, 400 triangles per beacon tick, `MaxCells` respected) when `SceneList.IsTownZone(scene)`. Config `[Exploration beacon] TownFullyExplored` (default true). Log: `[Exploration beacon] town scene=.. seeding ..` then `seeded cells=..`. Seeded cells are saved with the other fixed-layout ground.
 - Off-mesh goals (NPC or stash behind a counter): the route ends at an explored cell within max(arrival radius, one cell), since a cell centre can sit a cell from the walkable edge.
 - On-screen listing: shrines, portals, exits, the stash and items are listed when the camera sees them (`ExplorationSight`, `BossLifeProbe.OnScreen`), besides the seen-range rule. Gold piles (`GroundGoldVisuals.all`) are Item entries named with the amount (`gold.pickup`), key `gold:{id}`.
+
+## Route-aware directions and reachable goals (2026-10-11, tester report)
+
+Report: scanner readouts gave the straight line ("exit: 190 steps to the right" at Grael in the Burning Forest, where
+the walkable way runs down, right and up), and the beacon delivered the player "above and behind" the Storerooms
+entrance in the Fortress Walls (Z52), which is reachable only from below.
+
+**Storerooms cause** (survey of `scene_Z52_unity.bundle` and `sceneassets_Z52_unity.bundle`, scratch scripts not kept).
+The entrance listener (`Transitions Folder/TransitionExitWIP (2)/TransitionStandard/Logic`, path ID 37691) stands at
+(26.45, -5.00, -21.98) with `interactionRange` 9 and `controllerTargetingUsePlayerY` 0, off the NavMesh: 2.0 m on the
+map and 3.1 below the entrance pocket (Y -1.92, where the return spawn `from ( zone )` 236 stands), 1.84 m on the map and
+9.1 below a plateau at Y 4.08 that is a ~75 m walk away (one connected mesh, no local link). The old code made an off-mesh
+target its own goal, let any explored cell within the 9 m range end the route with no wall or floor test
+(`ExploredMapRouting.Reaches`), and declared arrival on the same flat 9 m radius (`BeaconState.Tick`). From the plateau
+the route ended on the plateau and arrival fired there. Of the 13 listeners in Z52 and Z22 this is the only one far
+off the mesh vertically; the others are on it or within 1.7 m at the same height.
+
+**Goal and arrival rule** (`ExploredGoal.cs`):
+- Areas (minimap rooms, unexplored rooms, frontier edges; `ExplorationTarget.Area`): unchanged, reached on entering the radius.
+- A point target on the mesh is its own goal. Off the mesh, the goal is its nearest walkable point in 3D within its
+  range (`IWalkability.TrySampleWithin`): the Storerooms pocket at 3.7 m, not the plateau at 9.3 m. Nothing walkable within
+  range keeps the old range-only rule (`goal=Unsampled`).
+- A route ends at an explored cell on the goal's floor (|dY| below the agent height) within max(range, 2 cells) and in a
+  clear NavMesh line to the goal; its last leg goes to the goal.
+- Arrival needs the flat range as before and the target at hand: the player's sampled ground on the goal's floor with a
+  clear NavMesh line to it (`BeaconState.AtHand`). Otherwise the lock stays and keeps pinging along the route.
+- The explored-ground rule is kept: from the plateau with the pocket never seen, the beacon now refuses and the scanner
+  says the route is unknown, instead of leading to the plateau.
+
+**Scanner speech** (`ExplorationCatalog.DescribeEntry`, the one readout for category steps, entry steps and any repeat of
+the current entry). Only the spoken entry is routed, with the beacon's router (`BeaconState.Measure`); entries are still
+sorted by straight distance.
+- A detour: "Exit, 260 steps by route, head down" (`exploration.route_steps_one/_many`, `exploration.route_heading`); the
+  direction is toward the beacon's look-ahead point, 4 units along the route.
+- A straight route (one leg, or the same steps and direction as the line) keeps "Exit, 12 steps, up".
+- No explored route: the straight readout plus "no known route" (`exploration.entry_unrouted`).
+- The level phrase follows as before. Until the beacon has resolved the scene's explored map, the old readout is spoken.
+
+**Log lines** (`BepInEx/LogOutput.log`):
+- `[Exploration] route name= straight= route=|route=none failure= direct= aim= goal=OnMesh|Approach|Area|Unsampled goal_at= goal_offset= goal_dy=`
+  for each spoken entry (an identical repeat is dropped).
+- `[Exploration beacon] locked ... goal=...` and `refused reason=... goal=...`.
+- `[Exploration beacon] arrival held name= blocked=wall|other level|player off NavMesh distance=` once per reason while
+  in range; `at hand ...` just before `released reason=arrived`.
+
+**Evidence and limits.** Exploration 425 checks (a U-shaped corridor for the Burning Forest case: "head down" and the
+beacon pans down; a Storerooms model: approach in the pocket, plateau refused, arrival held there and given in the
+pocket; a same-floor wall: the route goes round, arrival waits), ExplorationCatalog 77. With the old flat goal rule the
+wall test fails, without the approach point the Storerooms test fails. Unverified live: the runtime coordinates of the
+Storerooms geometry (bundle values; see the B10 height offset above), whether the game's interaction there uses the
+listener or the `to ( zone )` trigger (radius 7 at Y -2), whether arriving 9 m away in the pocket is close enough for
+Cross, the cost of a scanner route on a large saved map (the same capped A* as a lock), and the wording in game.
+Listeners flagged `controllerTargetingUsePlayerY` take the player's height (`ExplorationProbe`), so their approach is
+sampled from the player's floor; none in Z52 or Z22 are flagged. Routes still need explored ground; the game's minimap
+reveals whole room volumes while explored cells come from line of sight within 20 units, so a route a sighted player
+can see may still be "unknown" here (possible follow-up: seed explored cells from visited minimap rooms).

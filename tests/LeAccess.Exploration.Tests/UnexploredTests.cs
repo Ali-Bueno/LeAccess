@@ -55,7 +55,7 @@ internal static class UnexploredTests
         Check(entries.Count == 1 && entries[0].Name == UnexploredName(1), "an area keeps its number on the same map");
 
         var route = MapTests.Router(map, grid);
-        Check(route(new Vector3(30.5f, 0, 5f), entry.Position, entry.ArrivalRadius, out var path, out _) && path.Count >= 2,
+        Check(route(new Vector3(30.5f, 0, 5f), ExplorationTarget.From(entry), out var path, out _) && path.Count >= 2,
             "the beacon can route to the edge through explored ground");
     }
 

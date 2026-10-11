@@ -90,6 +90,15 @@ internal static class BeaconTests
         var high = Target("h", 0, 5);
         state.Lock(high, Vector3.Zero, 0, Router);
         Check(Tick(state, new Vector3(0, 3, 4), high, 0.1).Release == BeaconRelease.Arrived, "arrival is measured on the ground plane");
+
+        // Within range is not enough: the target must be at hand (no wall or other level between them).
+        var walled = new BeaconState { AtHand = (player, _) => player.X >= 0 };
+        var exit = Target("x", 0, 5, 3);
+        walled.Lock(exit, new Vector3(-10, 0, 0), 0, Router);
+        Check(Tick(walled, new Vector3(-1, 0, 4), exit, 0.1).Release == BeaconRelease.None && walled.LockedKey == "x",
+            "in range but not at hand is no arrival");
+        Check(Tick(walled, new Vector3(-9, 0, 0), exit, 0.15).Release == BeaconRelease.None, "out of range the hand is not asked");
+        Check(Tick(walled, new Vector3(1, 0, 4), exit, 0.2).Release == BeaconRelease.Arrived, "in range and at hand arrives");
     }
 
     private static void LostRoute()
@@ -194,13 +203,13 @@ internal static class BeaconTests
         _shape = null;
     }
 
-    private static bool Route(Vector3 from, Vector3 target, float arrival, out IReadOnlyList<Vector3> path, out float length)
+    private static bool Route(Vector3 from, ExplorationTarget target, out IReadOnlyList<Vector3> path, out float length)
     {
         _calls++;
         path = Array.Empty<Vector3>();
         length = 0;
         if (!_routes) return false;
-        var points = _shape ?? new[] { from, target };
+        var points = _shape ?? new[] { from, target.Position };
         for (int index = 1; index < points.Length; index++) length += Vector3.Distance(points[index - 1], points[index]);
         path = points;
         return true;

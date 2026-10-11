@@ -30,7 +30,7 @@ internal static class ExplorationBeacon
     private static ConfigEntry<int> _audioBuffer;
     private static readonly NavMeshWalkability Walkability = new();
     private static readonly ExploredMemory Memory = new(() => new ExploredMap(ExploredMap.DefaultCellSize, Walkability.LevelHeight));
-    private static readonly BeaconState State = new();
+    private static readonly BeaconState State = new() { AtHand = TargetAtHand };
     private static readonly BeaconRouter Router = RouteExplored;
     private static ExploredMap _map;
     private static Camera _camera;
@@ -39,7 +39,7 @@ internal static class ExplorationBeacon
     private static bool _active;
     private static double _nextTick, _nextStatus;
     private static int _refusals, _routeLosses;
-    private static string _lastFailure;
+    private static string _lastFailure, _heldLog, _routeLog;
 
     internal static string LockedKey => State.LockedKey;
     internal static float ExploreRadius => _exploreRadius?.Value ?? ExploredMap.DefaultExploreRadius;
@@ -86,11 +86,12 @@ internal static class ExplorationBeacon
             double now = Time.unscaledTimeAsDouble;
             _map.Observe(player, Walkability);
             string previous = State.Target.Name;
+            _heldLog = null;
             switch (State.Lock(target, player, now, Router))
             {
                 case BeaconLock.Refused:
                     _refusals++;
-                    Plugin.Log.LogInfo($"[Exploration beacon] refused reason={_map.LastFailure ?? "none"} name={target.Name} cells={_map.CellCount}");
+                    Plugin.Log.LogInfo($"[Exploration beacon] refused reason={_map.LastFailure ?? "none"} name={target.Name} cells={_map.CellCount} {GoalText(target)}");
                     return ModText.Format("exploration.beacon.refused", target.Name);
                 case BeaconLock.Cancelled:
                     return Cancelled(target.Name);
@@ -105,7 +106,7 @@ internal static class ExplorationBeacon
             BeaconAudio.Queue(BeaconSound.Locked);
             bool straight = ExploredMap.StraightClear(player, target.Position, Walkability);
             Plugin.Log.LogInfo(string.Create(CultureInfo.InvariantCulture,
-                $"[Exploration beacon] locked key={target.Key} name={target.Name} straight={(straight ? 1 : 0)} route={State.RouteLength:F1} cells={_map.CellCount}"));
+                $"[Exploration beacon] locked key={target.Key} name={target.Name} straight={(straight ? 1 : 0)} route={State.RouteLength:F1} cells={_map.CellCount} {GoalText(target)}"));
             return ModText.Format(straight ? "exploration.beacon.locked_straight" : "exploration.beacon.locked_around", target.Name);
         }
         catch (Exception ex)
@@ -238,12 +239,58 @@ internal static class ExplorationBeacon
         return forward.LengthSquared() > 0 && right.LengthSquared() > 0;
     }
 
-    private static bool RouteExplored(NVector3 from, NVector3 target, float arrivalRadius,
-        out IReadOnlyList<NVector3> path, out float length)
+    private static bool RouteExplored(NVector3 from, ExplorationTarget target, out IReadOnlyList<NVector3> path, out float length)
     {
         path = Array.Empty<NVector3>();
         length = 0;
-        return _map != null && _map.TryRoute(from, target, arrivalRadius, Walkability, out path, out length);
+        return _map != null && _map.TryRoute(from, target.Position, BeaconState.ArrivalRadius(target), Walkability,
+            out path, out length, target.Area);
+    }
+
+    // The scanner's route to a target through explored ground, measured and aimed as the beacon would; null when none.
+    internal static ExplorationRoute? RouteFor(ExplorationTarget target, NVector3 player)
+    {
+        try
+        {
+            var route = BeaconState.Measure(Router, player, target);
+            string found = route is { } known
+                ? string.Create(CultureInfo.InvariantCulture, $"route={known.Length:F1} direct={(known.Direct ? 1 : 0)} aim={known.Aim.X:F1},{known.Aim.Z:F1}")
+                : $"route=none failure={_map?.LastFailure ?? "no map"}";
+            string line = string.Create(CultureInfo.InvariantCulture,
+                $"[Exploration] route name={target.Name} straight={ExploredMap.Horizontal(player, target.Position):F1} {found} {GoalText(target)}");
+            if (line != _routeLog) Plugin.Log.LogInfo(_routeLog = line);
+            return route;
+        }
+        catch (Exception ex)
+        {
+            ReportFailure(ex);
+            return null;
+        }
+    }
+
+    // Arrival needs the target at hand, not only its range: a wall or another level between them holds it.
+    private static bool TargetAtHand(NVector3 player, ExplorationTarget target)
+    {
+        if (_map == null) return true;
+        bool atHand = _map.AtHand(player, target.Position, BeaconState.ArrivalRadius(target), target.Area, Walkability,
+            out string blocked);
+        string state = $"{target.Key}|{blocked ?? "none"}";
+        if (state == _heldLog) return atHand;
+        _heldLog = state;
+        Plugin.Log.LogInfo(string.Create(CultureInfo.InvariantCulture,
+            $"[Exploration beacon] {(atHand ? "at hand" : "arrival held")} name={target.Name} blocked={blocked ?? "none"} " +
+            $"distance={ExploredMap.Horizontal(player, target.Position):F1} {GoalText(target)}"));
+        return atHand;
+    }
+
+    // The goal a route takes for this target and why: on the mesh, its walkable approach, an area, or unsampled.
+    private static string GoalText(ExplorationTarget target)
+    {
+        if (_map == null) return "goal=none";
+        var goal = _map.ResolveGoal(target.Position, BeaconState.ArrivalRadius(target), target.Area, Walkability);
+        return string.Create(CultureInfo.InvariantCulture,
+            $"goal={goal.Kind} goal_at={goal.Point.X:F1},{goal.Point.Y:F1},{goal.Point.Z:F1} " +
+            $"goal_offset={ExploredMap.Horizontal(goal.Point, target.Position):F1} goal_dy={goal.Point.Y - target.Position.Y:F1}");
     }
 
     private static string Cancelled(string name)
@@ -297,7 +344,7 @@ internal static class ExplorationBeacon
         _lockSession = _mapSession = 0;
         _nextTick = _nextStatus = 0;
         _refusals = _routeLosses = 0;
-        _lastFailure = null;
+        _lastFailure = _heldLog = _routeLog = null;
         _volume = null;
         _exploreRadius = null;
         _audioBuffer = null;

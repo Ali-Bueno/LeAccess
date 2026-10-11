@@ -26,14 +26,16 @@ internal sealed class FakeGrid : IWalkability
 
     internal void ResetCounters() => Samples = Clears = 0;
 
-    public bool TrySample(Vector3 point, out Vector3 onMesh)
+    public bool TrySample(Vector3 point, out Vector3 onMesh) => TrySampleWithin(point, SampleRadius, out onMesh);
+
+    public bool TrySampleWithin(Vector3 point, float radius, out Vector3 onMesh)
     {
         Samples++;
         onMesh = default;
-        float best = SampleRadius;
+        float best = radius;
         bool found = false;
-        for (int z = Tile(point.Z - SampleRadius); z <= Tile(point.Z + SampleRadius); z++)
-            for (int x = Tile(point.X - SampleRadius); x <= Tile(point.X + SampleRadius); x++)
+        for (int z = Tile(point.Z - radius); z <= Tile(point.Z + radius); z++)
+            for (int x = Tile(point.X - radius); x <= Tile(point.X + radius); x++)
                 foreach (float height in Surfaces(x, z))
                 {
                     var candidate = new Vector3(Math.Clamp(point.X, x + Margin, x + 1 - Margin), height,
