@@ -1,3 +1,13 @@
+# Handoff — 2026-10-11 evening: radar trace before any radar change
+
+User: unsure about the radar proposals; asked for the best diagnostics, will play a while, and the radar changes
+follow from that log. Installed, nothing audible changed ([format and how to read it](reference/navigation-radar.md#radar-trace-2026-10-11)).
+Next session: take the new `LogOutput.log`, split on `Reactive radar event:` / `shadow:` / `cue:` and the status
+`trace:` counts; classify each live flip (grazing ray at the edge, small obstacle, threshold chatter, continuation
+toggling, real doorway) from its `depth`/`cont`/`edge` series; compare `live_flips` with `shadow_flips` and check the
+shadow kept the real doorway breaths. Then change the live reading accordingly and remove `RadarWorldProbe.Shadow.cs`,
+the shadow engine in `ReactiveRadar` and the `shadow=` field (keep the event lines if still useful).
+
 # Handoff — 2026-10-11 afternoon: wall bump and silent footsteps
 
 User: sometimes the radar feels inconsistent (brought another assistant's four proposals); wants to know when walking
