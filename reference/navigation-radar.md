@@ -534,20 +534,22 @@ Proposed next step if the user agrees: depth and agreement in each cue's log lin
 The user asked for a better diagnosis before any radar change: play a while, then change what the log shows. Added
 lines (numbers invariant, `t=` is `Time.unscaledTimeAsDouble`, the radar's own clock):
 
-- `Reactive radar event: t= dir= state= [flip=] pos=x,z edge= depth=… cont=… shadow=…` for every generated cue:
-  the last 8 polls (0.4 s) of that direction, oldest first, live depth, continuation flags and the shadow depth
-  (`-` = unknown). `flip=` gives the seconds since the opposite cue in the same direction when under 1.5 s.
+- `Reactive radar event: t= dir= state= [flip=] pos=x,z edge= depth=… cont=… origin=… lanes=…` for every generated
+  cue: the last 8 polls (0.4 s) of that direction, oldest first, live depth, continuation flags and each shadow
+  variant's depth (`-` = unknown). `flip=` gives the seconds since the opposite cue in the same direction when under 1.5 s.
   `edge=` is the distance from the origin to the nearest NavMesh edge (`NavMesh.FindClosestEdgeFilter`).
 - `Reactive radar cue: t= direction= state=` as before, with the time: what was played.
-- `Reactive radar shadow: t= dir= state= [flip=]`: what the alternative reading would have played (never heard).
-- The five-second status ends with `edge= trace: live_events= live_flips= shadow_events= shadow_flips= pressed_polls=a/b`
-  (polls with the origin within the agent radius of an edge).
+- `Reactive radar shadow origin|lanes: t= dir= state= [flip=]`: what each alternative reading would have played
+  (never heard).
+- The five-second status ends with `edge= trace: live_events= live_flips= origin_events= origin_flips= lanes_events=
+  lanes_flips= pressed_polls=a/b` (polls with the origin within the agent radius of an edge).
 
-**Shadow reading (temporary, `RadarWorldProbe.Shadow.cs`)**: the live rays, but from an origin moved off a touching
-wall (to one body radius from the nearest edge, away from it; on the edge itself, away from the live rays that read
+**Shadow readings (temporary, `RadarWorldProbe.Shadow.cs`)**: `origin` is the live ray from an origin moved off a
+touching wall; `lanes` adds two parallel lanes (since 10:00; at 09:30 only `lanes` existed, logged as `shadow=`). The
+live rays, but from an origin moved off a touching wall (to one body radius from the nearest edge, away from it; on the edge itself, away from the live rays that read
 under a body radius), three parallel lanes per direction across the body width (centre, ±body radius; a lane whose
 start lies beyond a wall reads 0), merged by their median, depths measured along the axis from the player's origin,
-continuation checked at the median lane's hit. A second `RadarEngine` runs on it with the same settings. About 26
+continuation checked at the median lane's hit. One `RadarEngine` per variant runs with the same settings. About 26
 extra NavMesh queries per 50 ms poll. Remove it, or make it the live reading, once a session's trace has been
 analysed.
 
@@ -557,5 +559,18 @@ hovering around 2.1 or 3.0 to threshold chatter; a steady depth between 3 and 6 
 continuation branches. Compare `live_flips` with `shadow_flips`, and check that the shadow still breathes at the
 doorways the live reading found.
 
-Tests: Navigation 904 checks (trace window and flips, shadow beside a wall with and without an edge direction,
+Tests: Navigation 909 checks (trace window and flips, both shadows beside a wall with and without an edge direction,
 heartbeat and event lines).
+
+### First trace (2026-10-11 09:45)
+
+The user tested other changes and walked little: 14 live events, 3 live flips, 12 shadow (`lanes`) events, 1 shadow
+flip, 145 of 1,425 polls pressed against an edge. Two of the three live flips are one grazing episode: Left at
+t=181.04-181.39 with `edge` 0.00-0.16 read `11.61,0.58,0.03,0.00,10.87,10.92,10.79,0.75,0.35,0.06` (Blocked, Open
+0.17 s later, Blocked 0.18 s later) while the shadow series fell smoothly `11.62 … 9.25`. The third flip (Up, 0.95 s)
+was shared by the shadow, at a wall approached head-on (depth falling 4.9 → 1.5). The shadow also kept the real
+opening at t=175 (Up, 0.04 → 12 m) and the blocks at walls. Too few events to change the live reading: the shadow
+was split to learn whether moving the origin alone suffices (the three lanes may hide passages narrower than two body
+radii, the user's 2026-10-09 concern).
+Wall bump in the same log: `push read from the Client state`, three bumps (pan 0.99, -0.95, -0.23), each with
+`footsteps silenced: 1 foot triggers, 0 collider triggers`; the user heard the bump and the footsteps stop.

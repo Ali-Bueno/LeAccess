@@ -4,6 +4,9 @@ using System.Text;
 
 namespace LeAccess.Accessibility.Navigation;
 
+/// <summary>Temporary alternative readings: the live ray from an origin moved off a touching wall, and three such lanes.</summary>
+public enum RadarShadowVariant { Origin, Lanes }
+
 /// <summary>Recent readings for each radar event's log line, and flips of the live and shadow readings
 /// (reference/navigation-radar.md#radar-trace-2026-10-11).</summary>
 public sealed class RadarTrace
@@ -12,11 +15,13 @@ public sealed class RadarTrace
     public const int Polls = 8;
     /// <summary>The previous cue in a direction reversed within this time counts as a flip (2026-10-10 log review window).</summary>
     public const double FlipSeconds = 1.5;
+    public const int ShadowVariants = 2;
 
     private readonly float[,] _live = new float[RadarEngine.DirectionCount, Polls];
-    private readonly float[,] _shadow = new float[RadarEngine.DirectionCount, Polls];
+    private readonly float[,,] _shadow = new float[ShadowVariants, RadarEngine.DirectionCount, Polls];
     private readonly bool[,] _continues = new bool[RadarEngine.DirectionCount, Polls];
-    private readonly Sequence _liveCues = new(), _shadowCues = new();
+    private readonly Sequence _liveCues = new();
+    private readonly Sequence[] _shadowCues = { new(), new() };
     private int _count, _next, _polls, _pressed;
 
     private sealed class Sequence
@@ -46,13 +51,14 @@ public sealed class RadarTrace
     }
 
     /// <summary>One poll; a missing shadow is NaN, and the edge within <paramref name="touching"/> counts as pressed.</summary>
-    public void Record(RadarReading[] live, RadarReading[] shadow, float edge, float touching)
+    public void Record(RadarReading[] live, RadarReading[][] shadow, float edge, float touching)
     {
         for (int i = 0; i < RadarEngine.DirectionCount; i++)
         {
             _live[i, _next] = live[i].Available ? live[i].Depth : float.NaN;
             _continues[i, _next] = live[i].Continues;
-            _shadow[i, _next] = shadow != null && shadow[i].Available ? shadow[i].Depth : float.NaN;
+            for (int variant = 0; variant < ShadowVariants; variant++)
+                _shadow[variant, i, _next] = shadow != null && shadow[variant][i].Available ? shadow[variant][i].Depth : float.NaN;
         }
         _next = (_next + 1) % Polls;
         if (_count < Polls) _count++;
@@ -72,32 +78,46 @@ public sealed class RadarTrace
         Series(line, _live, direction);
         line.Append(" cont=");
         for (int poll = 0; poll < _count; poll++) line.Append(_continues[direction, Index(poll)] ? '1' : '0');
-        line.Append(" shadow=");
-        Series(line, _shadow, direction);
+        for (int variant = 0; variant < ShadowVariants; variant++)
+        {
+            line.Append(' ').Append(Name((RadarShadowVariant)variant)).Append('=');
+            for (int poll = 0; poll < _count; poll++)
+            {
+                if (poll > 0) line.Append(',');
+                line.Append(F(_shadow[variant, direction, Index(poll)]));
+            }
+        }
         return line.ToString();
     }
 
-    public string Shadow(int direction, RadarState state, double now)
+    public string Shadow(RadarShadowVariant variant, int direction, RadarState state, double now)
     {
-        var line = new StringBuilder("Reactive radar shadow: ");
-        Head(line, direction, state, now, _shadowCues.Add(direction, state, now));
+        var line = new StringBuilder("Reactive radar shadow ").Append(Name(variant)).Append(": ");
+        Head(line, direction, state, now, _shadowCues[(int)variant].Add(direction, state, now));
         return line.ToString();
     }
 
     /// <summary>Counts since the previous summary, appended to the five-second status.</summary>
     public string Summary()
     {
-        string summary = $"trace: live_events={_liveCues.Events} live_flips={_liveCues.Flips} " +
-            $"shadow_events={_shadowCues.Events} shadow_flips={_shadowCues.Flips} pressed_polls={_pressed}/{_polls}";
-        _liveCues.Events = _liveCues.Flips = _shadowCues.Events = _shadowCues.Flips = _polls = _pressed = 0;
-        return summary;
+        var summary = new StringBuilder($"trace: live_events={_liveCues.Events} live_flips={_liveCues.Flips}");
+        _liveCues.Events = _liveCues.Flips = 0;
+        for (int variant = 0; variant < ShadowVariants; variant++)
+        {
+            string name = Name((RadarShadowVariant)variant);
+            summary.Append($" {name}_events={_shadowCues[variant].Events} {name}_flips={_shadowCues[variant].Flips}");
+            _shadowCues[variant].Events = _shadowCues[variant].Flips = 0;
+        }
+        summary.Append($" pressed_polls={_pressed}/{_polls}");
+        _polls = _pressed = 0;
+        return summary.ToString();
     }
 
     public void Reset()
     {
         ClearReadings();
         _liveCues.Reset();
-        _shadowCues.Reset();
+        foreach (var cues in _shadowCues) cues.Reset();
         _polls = _pressed = 0;
     }
 
@@ -107,6 +127,8 @@ public sealed class RadarTrace
             .Append(" dir=").Append((RadarDirection)direction).Append(" state=").Append(state);
         if (flip is { } seconds) line.Append(" flip=").Append(seconds.ToString("0.00", CultureInfo.InvariantCulture));
     }
+
+    private static string Name(RadarShadowVariant variant) => variant == RadarShadowVariant.Origin ? "origin" : "lanes";
 
     // Oldest to newest.
     private void Series(StringBuilder line, float[,] values, int direction)

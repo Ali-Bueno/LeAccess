@@ -19,14 +19,14 @@ internal readonly struct RadarWorldSnapshot
     public float BodyRadius { get; }
     public int AgentTypeId { get; }
     public int AreaMask { get; }
-    /// <summary>Temporary diagnostic: the three-ray reading the trace compares with the live one.</summary>
-    public RadarReading[] ShadowReadings { get; }
+    /// <summary>Temporary diagnostic: alternative readings by <see cref="RadarShadowVariant"/>, compared with the live one.</summary>
+    public RadarReading[][] ShadowReadings { get; }
     /// <summary>Horizontal distance from the origin to the nearest NavMesh edge; NaN when unknown.</summary>
     public float EdgeDistance { get; }
 
     public RadarWorldSnapshot(NumericsVector2 position, NumericsVector2[] axes, RadarReading[] readings,
         RadarSettings settings, long session, float agentRadius, float bodyRadius, int agentTypeId, int areaMask,
-        RadarReading[] shadowReadings = null, float edgeDistance = float.NaN)
+        RadarReading[][] shadowReadings = null, float edgeDistance = float.NaN)
     {
         Position = position;
         Axes = axes;

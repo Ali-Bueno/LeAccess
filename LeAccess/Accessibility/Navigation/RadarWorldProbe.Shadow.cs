@@ -9,13 +9,14 @@ namespace LeAccess.Accessibility.Navigation;
 internal sealed partial class RadarWorldProbe
 {
     private const int LaneCount = 3;
-    private readonly RadarReading[] _shadowReadings = new RadarReading[4];
+    private readonly RadarReading[][] _shadowReadings = { new RadarReading[4], new RadarReading[4] };
     private readonly float[] _laneDepths = new float[LaneCount];
     private readonly Vector3[] _laneHits = new Vector3[LaneCount];
     /// <summary>Off for the live probe's own query-count checks.</summary>
     internal bool ProbeShadowReadings { get; init; } = true;
 
-    // The live rays, but from an origin moved off a touching wall and three across the body width, merged by their median.
+    // The live rays from an origin moved off a touching wall: alone (Origin), and three across the body width merged by
+    // their median (Lanes).
     private float ProbeShadow(Vector3 origin, float bodyRadius, int agentTypeId, int areaMask)
     {
         float edge = float.NaN;
@@ -45,13 +46,18 @@ internal sealed partial class RadarWorldProbe
             Lane(0, origin, centre, centre, direction, agentTypeId, areaMask);
             Lane(1, origin, centre, centre + side, direction, agentTypeId, areaMask);
             Lane(2, origin, centre, centre - side, direction, agentTypeId, areaMask);
-            int median = MedianLane();
-            float depth = _laneDepths[median];
-            bool continues = depth >= _settings.ReachDepth || depth < _settings.OpenDepth || depth >= _settings.PassageDepth ||
-                Continues(_laneHits[median], direction, agentTypeId, areaMask);
-            _shadowReadings[i] = new RadarReading(depth, float.IsFinite(depth) && depth >= 0f, continues);
+            _shadowReadings[(int)RadarShadowVariant.Origin][i] = ShadowReading(0, direction, agentTypeId, areaMask);
+            _shadowReadings[(int)RadarShadowVariant.Lanes][i] = ShadowReading(MedianLane(), direction, agentTypeId, areaMask);
         }
         return edge;
+    }
+
+    private RadarReading ShadowReading(int lane, Vector3 direction, int agentTypeId, int areaMask)
+    {
+        float depth = _laneDepths[lane];
+        bool continues = depth >= _settings.ReachDepth || depth < _settings.OpenDepth || depth >= _settings.PassageDepth ||
+            Continues(_laneHits[lane], direction, agentTypeId, areaMask);
+        return new RadarReading(depth, float.IsFinite(depth) && depth >= 0f, continues);
     }
 
     // Depth along the axis measured from the player's origin; a lane whose start lies beyond a wall is blocked at once.

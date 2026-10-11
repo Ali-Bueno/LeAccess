@@ -44,16 +44,20 @@ internal static class LifecycleTests
             var up = (int)RadarDirection.Up;
             var left = (int)RadarDirection.Left;
             Program.Check(snapshot.Readings[up].Depth < snapshot.Settings.CloseDepth, "The live ray along the wall grazes it");
-            Program.Check(snapshot.ShadowReadings[up].Depth >= snapshot.Settings.PassageDepth,
-                $"The shadow, moved off the wall, sees the way along it (edge {x - 8:0.00})");
-            Program.Check(snapshot.ShadowReadings[left].Available && snapshot.ShadowReadings[left].Depth < snapshot.Settings.CloseDepth,
-                "The touched wall stays blocked in the shadow");
+            foreach (var shadow in snapshot.ShadowReadings)
+            {
+                Program.Check(shadow[up].Depth >= snapshot.Settings.PassageDepth,
+                    $"Each shadow, moved off the wall, sees the way along it (edge {x - 8:0.00})");
+                Program.Check(shadow[left].Available && shadow[left].Depth < snapshot.Settings.CloseDepth,
+                    "The touched wall stays blocked in each shadow");
+            }
             Program.Near(snapshot.EdgeDistance, x - 8, "The edge distance is logged");
         }
         ResetHost();
         var plain = new RadarWorldProbe();
         Program.Check(plain.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out var open) && float.IsNaN(open.EdgeDistance)
-            && open.ShadowReadings.All(reading => reading.Available && reading.Depth >= open.Settings.PassageDepth),
+            && open.ShadowReadings.Length == RadarTrace.ShadowVariants
+            && open.ShadowReadings.All(variant => variant.All(reading => reading.Available && reading.Depth >= open.Settings.PassageDepth)),
             "In the open the shadow agrees and an unknown edge is NaN");
         Program.Check(plain.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out var originOnly, probeWalls: false)
             && originOnly.ShadowReadings == null, "Origin-only captures carry no shadow");
