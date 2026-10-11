@@ -155,8 +155,10 @@ internal static class InputBlock
     internal static void End()
     {
         _open = false;
+        bool priorities = _priorities is not null;
         RestorePriorities();
         RestoreSelection();
+        if (priorities) ReevaluateMap();
         foreach (var listener in Listeners)
         {
             try { if (!listener.WasCollected) listener.enabled = true; }
@@ -264,6 +266,18 @@ internal static class InputBlock
             if (current is null || added is not null && current.Pointer == added.Pointer) owner.registeredPrioritizedNavigables = original;
         }
         catch (Exception ex) { Report("priorities restore", ex); }
+    }
+
+    // With no priority navigable the priority map hands over to ControllerMapsManager.UpdateMap and ends; once the list
+    // is back the game must choose its map again, or the screen keeps a map that does not serve it.
+    private static void ReevaluateMap()
+    {
+        try
+        {
+            ControllerMapsManager.UpdateMap();
+            Plugin.Log.LogInfo("[Mod menu] game controller map chosen again");
+        }
+        catch (Exception ex) { Report("map update", ex); }
     }
 
     // A menu panel with a hold action starts ControllerButtonHoldManager's hold on Cross before the selection is asked;

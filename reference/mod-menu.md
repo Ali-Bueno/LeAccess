@@ -45,7 +45,8 @@ from the main menu or gameplay alike.
   re-selects `NavigationManager.GetPriorityNavigable()` every frame before `ProcessDpadInput` (Capstone, MoveNext
   +0x177 → +0x24a → +0x259). That getter walks `registeredPrioritizedNavigables` (instance + 0x28). While open the
   manager gets an empty list; on closing the original comes back with anything registered meanwhile, minus destroyed
-  navigables.
+  navigables. With no priority navigable the map calls `ControllerMapsManager.UpdateMap` (+0x182 → +0x202) and ends,
+  so on closing the mod calls `UpdateMap` itself; without it every command stayed dead after closing (user report).
 - The current `EventSystem` also stops sending navigation (`sendNavigationEvents = false`), restored the same way: with
   24 Rewired maps off, the landing screen still moved to "Play offline" and pressed it (user report, same day), so
   that screen reads the pad through Unity's own UI input module.
