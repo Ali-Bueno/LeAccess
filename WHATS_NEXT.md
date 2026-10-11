@@ -1,3 +1,18 @@
+# Handoff — 2026-10-11 afternoon: warm wall sounds, update check, every interactable in the scanner
+
+User: the wall tones were "ultra annoying", wanted softer and warmer, like Grimdark; a startup notice when a newer mod
+version exists; everything interactable (Nemesis, Morditas, time rifts...) in the scanner. All three done, unheard.
+Live checks:
+- Wall tones on: Sounds page previews and a walk; judge the level against game audio and whether the low band behind
+  (250 Hz) is heard ([design](reference/navigation-radar.md#warm-wall-sounds-2026-10-11)).
+- Start the game online: `[Updates] up to date: running 0.2.0, latest release v0.1.0` in the log, nothing spoken. A
+  release tagged above 0.2.0 must be spoken after "mod loaded". Next release: tag `v0.2.0` with `<Version>` 0.2.0, or bump
+  both ([rule](reference/updates.md#release-rule)).
+- Scanner in a monolith echo, a Rage of Morditas event, a Nemesis and End of Time: the new objects are listed by name;
+  collect `[Exploration] unnamed interactable: …` lines to name what is still generic
+  ([details](reference/exploration-mode.md#every-interactable-in-the-scanner-2026-10-11-user-request)). Weaver altar and
+  rune prison are not covered (no listener found).
+
 # Handoff — 2026-10-11: low-life sound
 
 User request: Diablo IV's low-life start sound and heartbeat as an optional cue ([details](reference/vitals-api.md#low-life-sound-2026-10-11)).
