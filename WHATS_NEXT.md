@@ -2,8 +2,8 @@
 
 Second trace analysed ([decision](reference/navigation-radar.md#second-trace-and-decision-2026-10-11-1100)): no radar
 irregularity beyond a minor grazing artifact against walls; no change to the live reading; shadow removed, event lines
-kept. Open: offline wall bump (`push read from the Actor state`) still untested; if the user finds the radar too busy,
-offer the 1.35 m opening confirmation described there.
+kept. The user confirmed the wall bump offline too (11:40) and wants the radar left as it is; the 1.35 m opening
+confirmation described there stays an idea only, offer it only if the user finds the radar too busy.
 
 # Handoff — 2026-10-11 10:00: first trace, shadow variants
 
