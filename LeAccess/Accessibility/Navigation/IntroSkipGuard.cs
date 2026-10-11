@@ -5,30 +5,29 @@ using UnityEngine;
 
 namespace LeAccess.Accessibility.Navigation;
 
-/// <summary>Keeps screen-reader keys (Ctrl silences speech) from counting as "any key" that skips the intro movie.</summary>
+/// <summary>Keeps screen-reader keys (Ctrl silences speech) from arming the intro movie's two-press skip.</summary>
 /// <remarks>See reference/runtime-feedback.md#intro-skipped-by-screen-reader-keys-2026-10-10.</remarks>
 internal static class IntroSkipGuard
 {
     private static readonly List<KeyCode> PressedKeys = new();
+    private static bool _armed;
     private static string _lastFailure;
     private static bool _logged;
 
-    /// <summary>Turns the game's "a key went down" back when the only new input was screen-reader keys.</summary>
-    internal static void Review(ref bool anyKeyDown)
+    /// <summary>Polled after the game's Update: disarms a first press that was only screen-reader keys.</summary>
+    internal static void LateUpdate()
     {
-        if (!anyKeyDown) return;
         try
         {
-            var controllers = ReInput.controllers;
-            var keyboard = controllers?.Keyboard;
-            var mouse = controllers?.Mouse;
-            if (keyboard is null || keyboard.WasCollected || mouse is null || mouse.WasCollected) return;
-            if (mouse.GetAnyButtonDown() || AnyJoystickButtonDown(controllers)) return;
-            PressedKeys.Clear();
-            for (int i = 0; i < keyboard.buttonCount; i++)
-                if (keyboard.GetButtonDown(i)) PressedKeys.Add(keyboard.GetKeyCodeByButtonIndex(i));
-            if (!ControllerModeKeys.OnlyScreenReaderKeys(PressedKeys)) return;
-            anyKeyDown = false;
+            var video = CharacterSelectionVideoManager.instance;
+            bool armed = video is not null && !video.WasCollected && video.firstPressDone;
+            bool armedNow = armed && !_armed;
+            _armed = armed;
+            if (!armedNow || !OnlyScreenReaderKeysWentDown()) return;
+            video.firstPressDone = false;
+            _armed = false;
+            var prompt = video.skipText;
+            if (prompt is not null && !prompt.WasCollected) prompt.SetActive(false);
             if (_logged) return;
             _logged = true;
             Plugin.Log.LogInfo("[Intro] skip ignored: screen-reader key");
@@ -40,6 +39,19 @@ internal static class IntroSkipGuard
             _lastFailure = failure;
             Plugin.Log.LogWarning($"Intro skip guard unavailable: {ex}");
         }
+    }
+
+    private static bool OnlyScreenReaderKeysWentDown()
+    {
+        var controllers = ReInput.controllers;
+        var keyboard = controllers?.Keyboard;
+        var mouse = controllers?.Mouse;
+        if (keyboard is null || keyboard.WasCollected || mouse is null || mouse.WasCollected) return false;
+        if (mouse.GetAnyButtonDown() || AnyJoystickButtonDown(controllers)) return false;
+        PressedKeys.Clear();
+        for (int i = 0; i < keyboard.buttonCount; i++)
+            if (keyboard.GetButtonDown(i)) PressedKeys.Add(keyboard.GetKeyCodeByButtonIndex(i));
+        return ControllerModeKeys.OnlyScreenReaderKeys(PressedKeys);
     }
 
     private static bool AnyJoystickButtonDown(ReInput.ControllerHelper controllers)

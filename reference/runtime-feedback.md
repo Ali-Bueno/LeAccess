@@ -518,6 +518,16 @@ Unverified: whether NVDA's numpad Insert reaches Rewired as Insert, and live beh
 
 ## Intro skipped by screen-reader keys (2026-10-10, user report)
 
-Pressing Ctrl to silence NVDA counted as the "any key" that skips the intro movie (`CharacterSelectionVideoManager`: first press shows `skipText`, second skips). `IntroSkipKeyPatch` is a postfix on `ButtonInputListenerManager.IsAnyKeyDown` (static, one caller; PatchSafety: native address, no aliases). `IntroSkipGuard.Review` sets `__result = false` when no mouse or gamepad button went down and every keyboard key that went down this frame is a screen-reader key (`ControllerModeKeys.OnlyScreenReaderKeys`); any other key or button still skips. Log: `[Intro] skip ignored: screen-reader key` (once per session).
+Pressing Ctrl to silence NVDA counted as the "any key" that skips the intro movie. Native disassembly of
+`CharacterSelectionVideoManager.Update` (build 25816319, RVA 0x1702940, calls mapped through
+`MethodAddressToToken.db`): while `VideoPlayer.isPlaying`, it asks Rewired `Player.GetAnyButtonDown()`; the first
+press shows `skipText` (`GameObject.SetActive`) and sets `firstPressDone`, the next calls `EndOrSkip`. It never calls
+`ButtonInputListenerManager.IsAnyKeyDown`.
 
-Unverified: that the intro really reads `IsAnyKeyDown` (its only caller is unknown from the stubs). If Ctrl still skips and the log line never appears, the movie reads `Input.anyKeyDown` directly; the fallback is a prefix on the private `CharacterSelectionVideoManager.EndOrSkip` that returns false while `player.isPlaying` and only screen-reader keys are down, never blocking the natural `Player_loopPointReached` end.
+No hook: `Update`, `EndOrSkip` and `IsAnyKeyDown` all have a short `jcc` at +0x0d to +0x10 of their prologues (the
+[passive crash](#passive-navigation-crash-detoured-short-branch-prologue-2026-10-04) pattern). Instead
+`IntroSkipGuard.LateUpdate` (from `MenuAccessibility.LateUpdate`) disarms a first press made only of screen-reader
+keys: when `firstPressDone` turns true on a frame where no mouse or gamepad button and only screen-reader keys
+(`ControllerModeKeys.OnlyScreenReaderKeys`) went down, it clears `firstPressDone` and hides `skipText`. Any other
+key or button still arms and skips. Gap: after a real first press, Ctrl would complete the skip. Log:
+`[Intro] skip ignored: screen-reader key` (once per session).
