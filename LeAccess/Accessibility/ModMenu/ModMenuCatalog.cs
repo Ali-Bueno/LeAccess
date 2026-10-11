@@ -146,6 +146,7 @@ internal static class ModMenuCatalog
             new("ControllerShortcut", "mod_menu_controller"),
             new("OpenKey", "mod_menu_key"),
         }),
+        new("Updates", "updates", new SettingSpec[] { new("CheckAtStartup", "updates_check", Restart: true) }),
         new("Diagnostics", "diagnostics", new SettingSpec[] { new("ControllerInputLog", "diagnostics_controller_log") }),
     };
 }

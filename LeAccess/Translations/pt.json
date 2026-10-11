@@ -1,5 +1,6 @@
 {
   "mod.loaded": "Mod de acessibilidade de Last Epoch carregado",
+  "update.available": "Há uma nova versão do LeAccess: {0}. Você tem a {1}. Baixe-a na página do mod no GitHub.",
   "login.waiting": "Carregando. Sua seleção continuará quando o jogo estiver pronto.",
   "state.on": "Ativado",
   "state.off": "Desativado",
@@ -652,6 +653,7 @@
   "menu.section.character_sheet": "Ficha do personagem",
   "menu.section.language": "Idioma",
   "menu.section.mod_menu": "Menu de configurações",
+  "menu.section.updates": "Atualizações",
   "menu.section.diagnostics": "Diagnóstico",
   "menu.option.master_volume": "Volume geral",
   "menu.option.master_volume.details": "Volume de todos os sons do mod: radar, objetos, inimigos, NPCs, orientação e sonar. A fala não é afetada.",
@@ -779,6 +781,8 @@
   "menu.option.mod_menu_controller.details": "L1 enquanto Criar, L3 ou o botão do mod está pressionado abre e fecha este menu.",
   "menu.option.mod_menu_key": "Atalho do teclado",
   "menu.option.mod_menu_key.details": "Esta tecla junto com Ctrl abre e fecha este menu.",
+  "menu.option.updates_check": "Procurar atualizações ao iniciar",
+  "menu.option.updates_check.details": "Ao iniciar o jogo, o mod consulta o GitHub e avisa se há uma versão mais nova.",
   "menu.option.diagnostics_controller_log": "Registro do controle",
   "menu.option.diagnostics_controller_log.details": "Grava no registro cada pressionamento do controle e a ação do jogo por trás dele, para relatórios de erro.",
   "sound.RadarOpen": "Radar: terreno aberto",

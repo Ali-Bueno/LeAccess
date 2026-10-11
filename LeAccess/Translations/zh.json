@@ -1,5 +1,6 @@
 {
   "mod.loaded": "最后纪元无障碍模组已加载",
+  "update.available": "LeAccess 有新版本：{0}。当前版本：{1}。请从模组的 GitHub 页面下载。",
   "login.waiting": "正在加载。游戏准备好后将继续你的选择。",
   "state.on": "开",
   "state.off": "关",
@@ -652,6 +653,7 @@
   "menu.section.character_sheet": "角色面板",
   "menu.section.language": "语言",
   "menu.section.mod_menu": "设置菜单",
+  "menu.section.updates": "更新",
   "menu.section.diagnostics": "诊断",
   "menu.option.master_volume": "总音量",
   "menu.option.master_volume.details": "模组所有声音的音量：雷达、物体、敌人、NPC、引导和声呐。语音不受影响。",
@@ -779,6 +781,8 @@
   "menu.option.mod_menu_controller.details": "按住 Create 键、L3 或模组键时按 L1，可打开和关闭此菜单。",
   "menu.option.mod_menu_key": "键盘快捷键",
   "menu.option.mod_menu_key.details": "此按键与 Ctrl 一起按下，可打开和关闭此菜单。",
+  "menu.option.updates_check": "启动时检查更新",
+  "menu.option.updates_check.details": "游戏启动时，模组会在 GitHub 上检查是否有更新的版本并告知。",
   "menu.option.diagnostics_controller_log": "手柄日志",
   "menu.option.diagnostics_controller_log.details": "把手柄的每次按键及其对应的游戏操作写入日志，用于提交错误报告。",
   "sound.RadarOpen": "雷达：开阔地面",

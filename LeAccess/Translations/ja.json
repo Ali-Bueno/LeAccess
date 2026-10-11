@@ -1,5 +1,6 @@
 {
   "mod.loaded": "Last Epoch アクセシビリティMODを読み込みました",
+  "update.available": "LeAccess の新しいバージョンがあります: {0}。現在のバージョン: {1}。Mod の GitHub ページからダウンロードしてください。",
   "login.waiting": "読み込み中です。ゲームの準備ができ次第、選択を続行します。",
   "state.on": "オン",
   "state.off": "オフ",
@@ -652,6 +653,7 @@
   "menu.section.character_sheet": "キャラクターシート",
   "menu.section.language": "言語",
   "menu.section.mod_menu": "設定メニュー",
+  "menu.section.updates": "アップデート",
   "menu.section.diagnostics": "診断",
   "menu.option.master_volume": "全体音量",
   "menu.option.master_volume.details": "レーダー、オブジェクト、敵、NPC、ガイド、ソナーなど、MODのすべての音の音量です。読み上げには影響しません。",
@@ -779,6 +781,8 @@
   "menu.option.mod_menu_controller.details": "クリエイトボタン、L3、またはMODボタンを押しながらL1を押すと、このメニューを開閉します。",
   "menu.option.mod_menu_key": "キーボードのショートカット",
   "menu.option.mod_menu_key.details": "このキーとCtrlを同時に押すと、このメニューを開閉します。",
+  "menu.option.updates_check": "起動時にアップデートを確認",
+  "menu.option.updates_check.details": "ゲームの起動時に、Mod が GitHub で新しいバージョンがあるか確認し、知らせます。",
   "menu.option.diagnostics_controller_log": "パッドのログ",
   "menu.option.diagnostics_controller_log.details": "バグ報告用に、パッドの各操作とその裏にあるゲームの動作をログに書き込みます。",
   "sound.RadarOpen": "レーダー：開けた地面",

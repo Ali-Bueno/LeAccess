@@ -1,5 +1,6 @@
 {
   "mod.loaded": "라스트 에포크 접근성 모드가 로드되었습니다",
+  "update.available": "LeAccess 새 버전이 있습니다: {0}. 현재 버전: {1}. 모드의 GitHub 페이지에서 받으세요.",
   "login.waiting": "로딩 중입니다. 게임이 준비되면 선택한 항목이 이어집니다.",
   "state.on": "켜짐",
   "state.off": "꺼짐",
@@ -652,6 +653,7 @@
   "menu.section.character_sheet": "캐릭터 시트",
   "menu.section.language": "언어",
   "menu.section.mod_menu": "설정 메뉴",
+  "menu.section.updates": "업데이트",
   "menu.section.diagnostics": "진단",
   "menu.option.master_volume": "전체 음량",
   "menu.option.master_volume.details": "레이더, 오브젝트, 적, NPC, 안내, 소나 등 모드의 모든 소리의 음량입니다. 음성에는 영향이 없습니다.",
@@ -779,6 +781,8 @@
   "menu.option.mod_menu_controller.details": "Create 버튼, L3 또는 모드 버튼을 누른 상태에서 L1을 누르면 이 메뉴가 열리고 닫힙니다.",
   "menu.option.mod_menu_key": "키보드 단축키",
   "menu.option.mod_menu_key.details": "이 키를 Ctrl과 함께 누르면 이 메뉴가 열리고 닫힙니다.",
+  "menu.option.updates_check": "시작할 때 업데이트 확인",
+  "menu.option.updates_check.details": "게임을 시작할 때 모드가 GitHub에서 새 버전이 있는지 확인하고 알려 줍니다.",
   "menu.option.diagnostics_controller_log": "패드 로그",
   "menu.option.diagnostics_controller_log.details": "버그 신고를 위해 패드의 모든 입력과 그 뒤의 게임 동작을 로그에 기록합니다.",
   "sound.RadarOpen": "레이더: 열린 길",

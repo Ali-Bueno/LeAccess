@@ -1,5 +1,6 @@
 {
   "mod.loaded": "Мод специальных возможностей Last Epoch загружен",
+  "update.available": "Доступна новая версия LeAccess: {0}. Ваша версия: {1}. Скачайте её на странице мода на GitHub.",
   "login.waiting": "Загрузка. Ваш выбор будет продолжен, когда игра будет готова.",
   "state.on": "Включено",
   "state.off": "Выключено",
@@ -652,6 +653,7 @@
   "menu.section.character_sheet": "Лист персонажа",
   "menu.section.language": "Язык",
   "menu.section.mod_menu": "Меню настроек",
+  "menu.section.updates": "Обновления",
   "menu.section.diagnostics": "Диагностика",
   "menu.option.master_volume": "Общая громкость",
   "menu.option.master_volume.details": "Громкость всех звуков мода: радара, объектов, врагов, неигровых персонажей, наведения и сонара. Речь не затрагивается.",
@@ -779,6 +781,8 @@
   "menu.option.mod_menu_controller.details": "L1 при удержании Создать, L3 или кнопки мода открывает и закрывает это меню.",
   "menu.option.mod_menu_key": "Сочетание на клавиатуре",
   "menu.option.mod_menu_key.details": "Эта клавиша вместе с Ctrl открывает и закрывает это меню.",
+  "menu.option.updates_check": "Проверять обновления при запуске",
+  "menu.option.updates_check.details": "При запуске игры мод проверяет на GitHub, есть ли более новая версия, и сообщает об этом.",
   "menu.option.diagnostics_controller_log": "Журнал геймпада",
   "menu.option.diagnostics_controller_log.details": "Записывает в журнал каждое нажатие геймпада и стоящее за ним действие игры, для отчётов об ошибках.",
   "sound.RadarOpen": "Радар: свободный путь",

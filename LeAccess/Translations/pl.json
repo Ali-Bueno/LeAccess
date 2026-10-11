@@ -1,5 +1,6 @@
 {
   "mod.loaded": "Mod dostępności Last Epoch załadowany",
+  "update.available": "Dostępna jest nowa wersja LeAccess: {0}. Twoja wersja: {1}. Pobierz ją ze strony moda na GitHubie.",
   "login.waiting": "Ładowanie. Twój wybór będzie kontynuowany, gdy gra będzie gotowa.",
   "state.on": "Włączone",
   "state.off": "Wyłączone",
@@ -652,6 +653,7 @@
   "menu.section.character_sheet": "Karta postaci",
   "menu.section.language": "Język",
   "menu.section.mod_menu": "Menu ustawień",
+  "menu.section.updates": "Aktualizacje",
   "menu.section.diagnostics": "Diagnostyka",
   "menu.option.master_volume": "Głośność główna",
   "menu.option.master_volume.details": "Głośność wszystkich dźwięków moda: radaru, obiektów, wrogów, postaci niezależnych, prowadzenia i sonaru. Mowa nie jest zmieniana.",
@@ -779,6 +781,8 @@
   "menu.option.mod_menu_controller.details": "L1 przy przytrzymanym Utwórz, L3 lub przycisku moda otwiera i zamyka to menu.",
   "menu.option.mod_menu_key": "Skrót na klawiaturze",
   "menu.option.mod_menu_key.details": "Ten klawisz razem z Ctrl otwiera i zamyka to menu.",
+  "menu.option.updates_check": "Sprawdzaj aktualizacje przy starcie",
+  "menu.option.updates_check.details": "Przy starcie gry mod sprawdza na GitHubie, czy jest nowsza wersja, i o tym informuje.",
   "menu.option.diagnostics_controller_log": "Dziennik pada",
   "menu.option.diagnostics_controller_log.details": "Zapisuje w dzienniku każde naciśnięcie przycisku pada i stojącą za nim akcję gry, na potrzeby zgłoszeń błędów.",
   "sound.RadarOpen": "Radar: otwarty teren",

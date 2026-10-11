@@ -19,6 +19,12 @@ BepInEx/config antes de mezclar instalaciones. Este paquete incluye una
 configuracion nueva de diagnostico de BepInEx; no incluye preferencias de otro
 jugador. Las opciones de LeAccess se crean con sus valores predeterminados.
 
+ACTUALIZACIONES
+Al iniciar el juego, el mod consulta GitHub y avisa si hay una version nueva.
+Para actualizar, cierra el juego y extrae el ZIP nuevo igual que en la
+instalacion; tus opciones de LeAccess se conservan. El aviso se desactiva en el
+menu del mod, pagina Actualizaciones.
+
 PRIMER INICIO
 La primera ejecucion puede tardar varios minutos mientras BepInEx genera sus
 referencias de interoperabilidad. Puede necesitar Internet para descargar las

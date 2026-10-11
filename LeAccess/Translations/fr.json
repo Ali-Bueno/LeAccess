@@ -1,5 +1,6 @@
 {
   "mod.loaded": "Mod d'accessibilité de Last Epoch chargé",
+  "update.available": "Une nouvelle version de LeAccess est disponible : {0}. Vous avez la {1}. Téléchargez-la depuis la page GitHub du mod.",
   "login.waiting": "Chargement. Votre sélection se poursuivra quand le jeu sera prêt.",
   "state.on": "Activé",
   "state.off": "Désactivé",
@@ -652,6 +653,7 @@
   "menu.section.character_sheet": "Fiche du personnage",
   "menu.section.language": "Langue",
   "menu.section.mod_menu": "Menu des paramètres",
+  "menu.section.updates": "Mises à jour",
   "menu.section.diagnostics": "Diagnostic",
   "menu.option.master_volume": "Volume général",
   "menu.option.master_volume.details": "Volume de tous les sons du mod : radar, objets, ennemis, PNJ, guidage et sonar. La voix n'est pas concernée.",
@@ -779,6 +781,8 @@
   "menu.option.mod_menu_controller.details": "L1 tant que Créer, L3 ou le bouton du mod est maintenu ouvre et ferme ce menu.",
   "menu.option.mod_menu_key": "Raccourci clavier",
   "menu.option.mod_menu_key.details": "Cette touche avec Ctrl ouvre et ferme ce menu.",
+  "menu.option.updates_check": "Rechercher les mises à jour au démarrage",
+  "menu.option.updates_check.details": "Au démarrage du jeu, le mod interroge GitHub et annonce si une version plus récente existe.",
   "menu.option.diagnostics_controller_log": "Journal de la manette",
   "menu.option.diagnostics_controller_log.details": "Écrit dans le journal chaque appui de manette et l'action du jeu correspondante, pour les rapports de bogue.",
   "sound.RadarOpen": "Radar : terrain dégagé",

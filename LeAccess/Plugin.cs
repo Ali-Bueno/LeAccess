@@ -90,6 +90,7 @@ public class Plugin : BasePlugin
         ExplorationAccessibility.Initialize(Config);
         LeAccess.Accessibility.ModMenu.ModMenu.Initialize(Config);
         WallSonar.Initialize();
+        LeAccess.Accessibility.Updates.UpdateCheck.Initialize(Config);
         LeAccess.Accessibility.Forge.ForgeResultLog.Install();
         LeAccess.Accessibility.Social.SocialLog.Install();
 

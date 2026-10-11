@@ -1,5 +1,6 @@
 {
   "mod.loaded": "Last-Epoch-Barrierefreiheits-Mod geladen",
+  "update.available": "Eine neue Version von LeAccess ist verfügbar: {0}. Du hast {1}. Lade sie von der GitHub-Seite der Mod herunter.",
   "login.waiting": "Wird geladen. Deine Auswahl wird fortgesetzt, sobald das Spiel bereit ist.",
   "state.on": "An",
   "state.off": "Aus",
@@ -652,6 +653,7 @@
   "menu.section.character_sheet": "Charakterblatt",
   "menu.section.language": "Sprache",
   "menu.section.mod_menu": "Einstellungsmenü",
+  "menu.section.updates": "Updates",
   "menu.section.diagnostics": "Diagnose",
   "menu.option.master_volume": "Gesamtlautstärke",
   "menu.option.master_volume.details": "Lautstärke aller Klänge des Mods: Radar, Objekte, Gegner, NSCs, Führung und Sonar. Die Sprachausgabe bleibt unberührt.",
@@ -779,6 +781,8 @@
   "menu.option.mod_menu_controller.details": "L1, während Erstellen, L3 oder die Mod-Taste gehalten wird, öffnet und schließt dieses Menü.",
   "menu.option.mod_menu_key": "Tastaturkürzel",
   "menu.option.mod_menu_key.details": "Diese Taste zusammen mit Strg öffnet und schließt dieses Menü.",
+  "menu.option.updates_check": "Beim Start nach Updates suchen",
+  "menu.option.updates_check.details": "Beim Spielstart fragt die Mod bei GitHub nach, ob es eine neuere Version gibt, und sagt es an.",
   "menu.option.diagnostics_controller_log": "Controller-Protokoll",
   "menu.option.diagnostics_controller_log.details": "Schreibt jeden Controller-Druck und die dahinterliegende Spielaktion ins Protokoll, für Fehlerberichte.",
   "sound.RadarOpen": "Radar: offenes Gelände",

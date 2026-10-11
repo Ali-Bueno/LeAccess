@@ -51,6 +51,10 @@ reason.
 
 If you already use BepInEx or other mods, back up their files and `BepInEx/config` before mixing installations.
 
+When a newer version is published, the mod says so each time the game starts (it asks GitHub once per start; turn it
+off on the Updates page of the mod menu). To update, close the game and extract the new ZIP the same way; your LeAccess
+settings in `BepInEx/config/LeAccess.cfg` are kept.
+
 To turn the mod off, with the game closed, move `BepInEx/plugins/LeAccess` out of the `plugins` folder. To turn off the
 loader as well, rename `winhttp.dll` (that also turns off any other BepInEx mods). Your saves are never touched.
 
@@ -260,6 +264,7 @@ launch; edit that file only with the game closed. The most useful ones:
 | Quests | `AutomaticUpdates` | Quest progress speech |
 | Dialogue | `SpeakNpcLines` | NPC lines, barks and cinematic subtitles (default on). Turn it off if you play in English and hear the voices; lines the game does not voice are silenced too |
 | Menus | `AnnouncePositions` | "3 of 8" in lists and grids (default on) |
+| Updates | `CheckAtStartup` | Say at startup when a newer LeAccess release exists (default on) |
 | Tooltips | `ReadKeywordExplanations` | Status-effect and keyword explanations (the "more information" tooltip) in skill and passive details (default on) |
 | Character sheet | `ReadSummaryOnOpen` | Attributes, resistances and defences read when the character sheet opens (default on) |
 | Exploration beacon | `TownFullyExplored` | In towns the beacon routes to any NPC or the stash without walking there first (default on) |

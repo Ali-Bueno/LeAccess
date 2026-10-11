@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+  <Import Project="../LocalizationSources.props" />
+  <ItemGroup>
+    <Compile Include="../../LeAccess/Accessibility/Updates/UpdateRelease.cs" Link="UpdateRelease.cs" />
+  </ItemGroup>
+</Project>

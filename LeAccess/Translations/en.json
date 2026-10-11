@@ -1,5 +1,6 @@
 {
   "mod.loaded": "Last Epoch Accessibility mod loaded",
+  "update.available": "A new version of LeAccess is available: {0}. You have {1}. Download it from the mod's GitHub page.",
   "login.waiting": "Loading. Your selection will continue when the game is ready.",
   "state.on": "On",
   "state.off": "Off",
@@ -652,6 +653,7 @@
   "menu.section.character_sheet": "Character sheet",
   "menu.section.language": "Language",
   "menu.section.mod_menu": "Settings menu",
+  "menu.section.updates": "Updates",
   "menu.section.diagnostics": "Diagnostics",
   "menu.option.master_volume": "Master volume",
   "menu.option.master_volume.details": "Volume of every mod sound: radar, objects, enemies, NPCs, beacon and sonar. Speech is not affected.",
@@ -779,6 +781,8 @@
   "menu.option.mod_menu_controller.details": "L1 while Create, L3 or the mod button is held opens and closes this menu.",
   "menu.option.mod_menu_key": "Keyboard shortcut",
   "menu.option.mod_menu_key.details": "This key together with Ctrl opens and closes this menu.",
+  "menu.option.updates_check": "Check for updates at startup",
+  "menu.option.updates_check.details": "When the game starts, the mod asks GitHub whether a newer version exists and says so.",
   "menu.option.diagnostics_controller_log": "Controller log",
   "menu.option.diagnostics_controller_log.details": "Write each controller press and the game action behind it to the log, for bug reports.",
   "sound.RadarOpen": "Radar: open ground",
