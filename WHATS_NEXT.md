@@ -68,7 +68,7 @@ Sixth: on the landing screen Cross in the menu must log `[Mod menu] landing clic
 tell whether the pad still vibrates (its source is then still unknown).
 Seventh: priority list held too; on the landing screen D-pad and Cross in the menu must not move the focus, log
 `landing click ignored` or vibrate; after closing, Down/Cross work again in the landing screen.
-Eighth: after closing, `[Mod menu] game controller map chosen again` and the landing screen answers Down and Cross. Inventory: left/right must step 1, 2, 3 … of N with no jump back.
+Eighth: after closing, `[Mod menu] game controller map chosen again` and the landing screen answers Down and Cross. Confirmed by the user on the landing screen; still to check in game panels and gameplay. Inventory: left/right must step 1, 2, 3 … of N with no jump back.
 Dialogue with several responses: each push says the new response once.
 Pickup lines (gold, a potion count alone, the targeted ground item) now cut each other, and life, mana and combat lines
 cut them ([details](reference/announcement-lifecycle.md#pickup-lines-give-way-2026-10-11-user-report)); check that a
