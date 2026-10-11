@@ -75,6 +75,7 @@ public class Plugin : BasePlugin
         BossLifeAccessibility.Initialize(Config);
         LeAccess.Accessibility.CharacterSheet.CharacterSheetSummary.Initialize(Config);
         LandmarkAccessibility.Initialize(Config);
+        ShrineEffectAnnouncer.Initialize(Config);
         MapSectionAccessibility.Initialize(Config);
         NpcSounds.Initialize(Config);
         WorldCueSounds.Initialize(Config);
@@ -135,6 +136,7 @@ public class Plugin : BasePlugin
         ExplorationAccessibility.Cleanup();
         BossLifeAccessibility.Cleanup();
         LandmarkAccessibility.Cleanup();
+        ShrineEffectAnnouncer.Cleanup();
         MapSectionAccessibility.Cleanup();
         NpcSounds.Cleanup();
         LeAccess.Accessibility.Players.NearbyPlayerAccessibility.Reset();

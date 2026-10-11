@@ -77,4 +77,16 @@ ledger.Record("a"); ledger.Record("b"); enabled["a"] = enabled["b"] = false; hel
 ledger.ReleaseWhenUp(id => id == "a" ? throw new Exception("stale") : false, Enable);
 Check(ledger.Count == 0 && enabled["a"] && enabled["b"], "A button state read that throws is treated as released");
 
+// The mod button's face buttons: Square vitals, Triangle gold and points, Circle repeats the entry, Cross locks.
+Check(FaceButtonCommand.For(true, false, false, false) == ExplorationCommand.Vitals, "Square reads the vitals");
+Check(FaceButtonCommand.For(false, false, true, false) == ExplorationCommand.Gold, "Triangle reads gold and points");
+Check(FaceButtonCommand.For(false, false, false, true) == ExplorationCommand.RepeatEntry, "Circle repeats the scanner entry");
+Check(FaceButtonCommand.For(false, true, false, false) == ExplorationCommand.Lock, "Cross locks the beacon");
+Check(FaceButtonCommand.For(false, false, false, false) == ExplorationCommand.None, "no face button, no command");
+Check(FaceButtonCommand.For(true, true, true, true) == ExplorationCommand.Vitals &&
+    FaceButtonCommand.For(false, true, true, true) == ExplorationCommand.Lock &&
+    FaceButtonCommand.For(false, false, true, true) == ExplorationCommand.Gold, "several buttons in one frame resolve in a fixed order");
+Check(ScannerGate.Controller(false, ExplorationCommand.EntryNext) == ExplorationCommand.None &&
+    ScannerGate.Controller(true, ExplorationCommand.EntryNext) == ExplorationCommand.EntryNext, "the stick belongs to the scanner only while the modifier is held");
+
 Console.WriteLine($"Exploration input tests passed: {checks} checks.");

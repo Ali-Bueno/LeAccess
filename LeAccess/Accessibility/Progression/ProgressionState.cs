@@ -93,19 +93,30 @@ internal sealed class ProgressionState
         ? ModText.Format("progression.passive_points", points) : ModText.Get("progression.passive_point");
 
     /// <summary>The on-demand report: level, experience, unspent points, skills and zone.</summary>
-    internal static string StatusText(ProgressionSnapshot snapshot)
+    internal static string StatusText(ProgressionSnapshot snapshot) =>
+        string.Join(". ", new[] { LevelText(snapshot), PointsText(snapshot) }.Where(part => !string.IsNullOrEmpty(part)));
+
+    /// <summary>Level and the experience toward the next one (the vitals report).</summary>
+    internal static string LevelText(ProgressionSnapshot snapshot)
     {
         var parts = new List<string> { ModText.Format("progression.level", snapshot.Level) };
         if (snapshot.MaxLevel > 0 && snapshot.Level >= snapshot.MaxLevel) parts.Add(ModText.Get("progression.max_level"));
         else if (Percent(snapshot.Experience, snapshot.NextExperience) is int percent and >= 0)
             parts.Add(ModText.Format("progression.experience", percent));
+        return string.Join(". ", parts);
+    }
+
+    /// <summary>Unspent passive points, skills that can take a point and the zone (the gold report); null when none.</summary>
+    internal static string PointsText(ProgressionSnapshot snapshot)
+    {
+        var parts = new List<string>();
         if (snapshot.PassivePoints > 0) parts.Add(PassiveText(snapshot.PassivePoints));
         if (snapshot.Skills.Count == 1) parts.Add(ModText.Format("progression.skill_can_level", snapshot.Skills[0].Name));
         else if (snapshot.Skills.Count > 1)
             parts.Add(ModText.Format("progression.skills_can_level", string.Join(", ", snapshot.Skills.Select(skill => skill.Name))));
         if (snapshot.NewSkill) parts.Add(ModText.Get("progression.new_skill"));
         if (!string.IsNullOrWhiteSpace(snapshot.Zone)) parts.Add(ModText.Format("progression.zone", snapshot.Zone));
-        return string.Join(". ", parts);
+        return parts.Count == 0 ? null : string.Join(". ", parts);
     }
 
     /// <summary>Whole percent toward the next level, or -1 when the game gives no usable threshold.</summary>

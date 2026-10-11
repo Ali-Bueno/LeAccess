@@ -2,6 +2,7 @@ using BepInEx.Configuration;
 using LeAccess;
 using LeAccess.Accessibility;
 using LeAccess.Accessibility.Navigation;
+using LeAccess.Accessibility.Progression;
 using LeAccess.Accessibility.Vitals;
 using LeAccess.I18n;
 using UnityEngine;
@@ -19,6 +20,8 @@ void Start()
     LE.UI.LoadingScreen.IsVisible = NavigationAudioState.IsSuspended = VitalsProbe.Throw = false;
     EpochInputManager.instance.isInputFieldActive = ScreenKeyboardManager.Instance._enabled = false;
     VitalsProbe.Reads = VitalsInput.Calls = 0;
+    ProgressionProbe.Available = false;
+    VitalsEffectsProbe.Effects.Clear(); GoldReport.Amount = 1234;
     VitalsProbe.Snapshot = new(1,100,100,100,100,false);
     ScreenReader.Spoken.Clear(); Plugin.Log.Information.Clear(); Plugin.Log.Warnings.Clear();
     Time.unscaledTimeAsDouble = 0;
@@ -263,6 +266,54 @@ try
     EpochInputManager.instance.isInputFieldActive = true; VitalsInput.Gold = true; int spokenGold = ScreenReader.Spoken.Count; Tick(.07);
     Check(ScreenReader.Spoken.Count == spokenGold, "Typing never reads gold");
     EpochInputManager.instance.isInputFieldActive = false;
+
+    // Square: life, mana, level and experience, potions, effects. Triangle: gold, passive points, skills, zone.
+    var progress = new ProgressionSnapshot(1, 12, 100, 40, 100, 3, new List<SkillPoint> { new("a", "Fireball") }, false, "Ruins");
+    Start(); ProgressionProbe.Available = true; ProgressionProbe.Snapshot = progress;
+    VitalsProbe.Snapshot = new(1, 100, 100, 100, 100, false, 3, 4);
+    VitalsEffectsProbe.Effects.Add("Chill");
+    Tick(0);
+    Tick(.1, keyboard: true);
+    Last(Join(T("vitals.health", 100), T("vitals.mana", 100), ProgressionState.LevelText(progress), T("vitals.potions", 3, 4),
+        T("vitals.effects", "Chill")), true, "the vitals report puts level and experience after mana and before potions");
+    Check(ScreenReader.Spoken.Last().Text.Contains(T("progression.level", 12)) && ScreenReader.Spoken.Last().Text.Contains(T("progression.experience", 40)),
+        "the vitals report says the level and the experience percent");
+    Check(!ScreenReader.Spoken.Last().Text.Contains(T("progression.zone", "Ruins")), "the vitals report leaves the zone to the Triangle readout");
+    VitalsInput.Gold = true; Tick(.2);
+    Last(Join(T("gold.amount", 1234), ProgressionState.PointsText(progress)), true, "the gold readout adds passive points, skills and the zone");
+    Check(ScreenReader.Spoken.Last().Text.Contains(T("progression.passive_points", 3)) && ScreenReader.Spoken.Last().Text.Contains(T("progression.zone", "Ruins")) &&
+        !ScreenReader.Spoken.Last().Text.Contains(T("progression.level", 12)), "the gold readout has points and zone but not the level");
+    ProgressionProbe.Available = false; VitalsInput.Gold = true; Tick(.3);
+    Last(T("gold.amount", 1234), true, "without progression data the gold readout is gold alone");
+    ProgressionProbe.Available = true; Tick(.4, keyboard: true);
+    Check(!ScreenReader.Spoken.Last().Text.Contains(T("progression.passive_points", 3)), "the vitals report has no points");
+
+    // Independent life and mana announcements and minimum changes, read live.
+    Start(); Check(config.Get<bool>("AnnounceLifeChanges") && config.Get<bool>("AnnounceManaChanges") &&
+        config.Get<int>("LifeMinimumChange") == 0 && config.Get<int>("ManaMinimumChange") == 0, "life and mana announce by default, with no minimum change");
+    Tick(0);
+    config.Set("AnnounceManaChanges", false);
+    Values(60, 60); Tick(.1);
+    Last(T("vitals.health", 60), false, "mana announcements off: life alone speaks");
+    Values(60, 10); Tick(.2);
+    Check(ScreenReader.Spoken.Count == 1, "mana announcements off: a big mana drop is silent");
+    Tick(.3, keyboard: true);
+    Last(Join(T("vitals.health", 60), T("vitals.mana", 10)), true, "the manual report still reads mana");
+    config.Set("AnnounceManaChanges", true); Values(60, 11); Tick(.4);
+    Check(ScreenReader.Spoken.Count == 2, "turning mana back on does not replay what it missed");
+    config.Set("AnnounceLifeChanges", false); Values(30, 11); Tick(.5);
+    Check(ScreenReader.Spoken.Count == 2, "life announcements off: life is silent");
+    config.Set("AutomaticAnnouncements", false); config.Set("AnnounceLifeChanges", true); Values(10, 11); Tick(.6);
+    Check(ScreenReader.Spoken.Count == 2, "the master switch silences both meters");
+    Start(); Tick(0); config.Set("ManaMinimumChange", 30);
+    Values(100, 74); Tick(.1);
+    Check(ScreenReader.Spoken.Count == 0, "a mana minimum change holds back a small drop");
+    config.Set("ManaMinimumChange", 0); Values(100, 73); Tick(.2);
+    Last(T("vitals.mana", 73), false, "the minimum change is read live and 0 restores every band");
+    Start(); Tick(0); config.Set("LifeMinimumChange", 999); config.Set("ManaMinimumChange", -4);
+    Values(60, 60); Tick(.1);
+    Last(T("vitals.mana", 60), false, "out-of-range steps are clamped: a huge life step holds life, a negative mana step is zero");
+    Check(ScreenReader.Spoken.Count == 1, "only mana spoke under the clamped steps");
     Start();
     VitalsAccessibility.Cleanup(); int reads = VitalsProbe.Reads;
     Tick(.4,keyboard:true,controller:true);

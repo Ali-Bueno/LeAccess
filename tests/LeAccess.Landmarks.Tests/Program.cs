@@ -143,6 +143,45 @@ try
     Check(!LandmarkAccessibility.HasPendingContent,"cleanup clears pending");
     Tick(.84);
     Check(LandmarkProbe.Reads == reads && ScreenReader.Spoken.Count == 1,"cleanup disables polling");
+    // Shrine effects: a name and a buff pair into one announcement; text comes from the game's own strings.
+    ModText.Initialize(null, null);
+    ShrineBuff Haste(float remaining = 20) => new("True:9", "Haste", "Gain movement speed.", remaining);
+    var shrines = new ShrineEffectState();
+    Check(shrines.Observe(1, 0, new[] { Haste() }, "Shrine of Swiftness").Count == 0, "buffs already active are a silent baseline");
+    Check(shrines.Observe(1, 1, new[] { Haste(19) }, null).Count == 0, "a running timer is not news");
+    var none = Array.Empty<ShrineBuff>();
+    Check(shrines.Observe(1, 2, none, null).Count == 0, "an expired buff is not news");
+    var paired = shrines.Observe(1, 3, new[] { Haste() }, "Shrine of Swiftness");
+    Check(paired.Count == 1 && paired[0].Shrine == "Shrine of Swiftness" && paired[0].Buff?.Name == "Haste", "name and buff arriving together pair once");
+    Check(ShrineEffectState.Text(paired[0]) == ModText.Format("shrine.effect", "Shrine of Swiftness", "Haste. Gain movement speed."),
+        "the text is the shrine and the buff's name and description");
+    Check(shrines.Observe(1, 3.25, new[] { Haste(19.75f) }, null).Count == 0, "the same activation is not repeated");
+    Check(shrines.Observe(1, 4, new[] { Haste(20) }, null).Count == 0, "a timer jump within the refresh gain is not a second activation");
+    Check(shrines.Observe(1, 10, new[] { Haste(5) }, null).Count == 0 && shrines.Observe(1, 11, new[] { Haste(20) }, null).Count == 0,
+        "a refresh with no shrine name waits for the pairing window");
+    var refreshed = shrines.Observe(1, 11 + ShrineEffectState.PairSeconds, new[] { Haste(20) }, null);
+    Check(refreshed.Count == 1 && refreshed[0].Shrine == null, "using the shrine again announces the effect without a name after the window");
+    Check(ShrineEffectState.Text(refreshed[0]) == "Haste. Gain movement speed.", "an unnamed activation says the effect alone");
+
+    var early = new ShrineEffectState();
+    early.Observe(2, 0, none, null);
+    Check(early.Observe(2, 1, none, "Altar").Count == 0, "a name alone waits for its buff");
+    var late = early.Observe(2, 1.5, new[] { Haste() }, null);
+    Check(late.Count == 1 && late[0].Shrine == "Altar" && late[0].Buff.HasValue, "a buff arriving after the name pairs with it");
+    var lootShrine = new ShrineEffectState();
+    lootShrine.Observe(3, 0, none, null);
+    lootShrine.Observe(3, 1, none, "Altar of Gold");
+    var gold = lootShrine.Observe(3, 1 + ShrineEffectState.PairSeconds, none, null);
+    Check(gold.Count == 1 && gold[0].Buff is null && ShrineEffectState.Text(gold[0]) == ModText.Format("shrine.activated", "Altar of Gold"),
+        "an activation with no buff is still announced once, by name");
+    Check(lootShrine.Observe(3, 10, none, null).Count == 0, "and not again");
+    var sessions = new ShrineEffectState();
+    sessions.Observe(4, 0, none, null);
+    Check(sessions.Observe(5, 1, new[] { Haste() }, "Altar").Count == 0, "a new session re-baselines instead of announcing");
+    Check(ShrineEffectState.Text(new ShrineActivation("Altar", new ShrineBuff("k", "Haste", "haste", 5))) == ModText.Format("shrine.effect", "Altar", "Haste"),
+        "a description equal to the name is not said twice");
+    Check(ShrineEffectState.Text(new ShrineActivation(null, null)) == null && ShrineEffectState.Text(new ShrineActivation("", new ShrineBuff("k", " ", "Only text", 5))) == "Only text",
+        "empty parts compose to nothing or to what is left");
     Console.WriteLine($"Passed {checks} landmark service checks.");
 }
 finally { LandmarkAccessibility.Cleanup(); }

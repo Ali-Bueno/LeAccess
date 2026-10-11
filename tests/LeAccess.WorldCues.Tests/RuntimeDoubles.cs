@@ -17,7 +17,13 @@ namespace UnityEngine
     internal class GameObject : Object
     {
         internal readonly List<Behaviour> Components = new();
-        internal GameObject Parent;
+        private GameObject _parent;
+        internal readonly List<GameObject> Children = new();
+        internal GameObject Parent
+        {
+            get => _parent;
+            set { _parent?.Children.Remove(this); _parent = value; value?.Children.Add(this); }
+        }
         internal bool activeInHierarchy = true;
         internal UnityEngine.SceneManagement.Scene scene = new(1);
         internal Transform transform;
@@ -40,11 +46,22 @@ namespace UnityEngine
         internal GameObject gameObject = new();
         internal Behaviour() { gameObject.Components.Add(this); }
         internal T GetComponent<T>() where T : Behaviour => gameObject.Components.OfType<T>().FirstOrDefault();
-        internal T GetComponentInParent<T>() where T : Behaviour
+        internal T GetComponentInParent<T>(bool includeInactive = false) where T : Behaviour
         {
             for (var current = gameObject; current is not null; current = current.Parent)
             { var value = current.Components.OfType<T>().FirstOrDefault(); if (value is not null) return value; }
             return null;
+        }
+        internal T GetComponentInChildren<T>(bool includeInactive) where T : Behaviour
+        {
+            T Search(GameObject root)
+            {
+                var value = root.Components.OfType<T>().FirstOrDefault(c => includeInactive || c.isActiveAndEnabled);
+                if (value is not null) return value;
+                foreach (var child in root.Children) { value = Search(child); if (value is not null) return value; }
+                return null;
+            }
+            return Search(gameObject);
         }
         internal Transform transform => gameObject.transform;
         internal bool isActiveAndEnabled = true;

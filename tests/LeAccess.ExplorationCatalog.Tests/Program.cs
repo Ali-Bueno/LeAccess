@@ -42,7 +42,7 @@ Equal(string.Join(",", new[]
         ExplorationCategory.Exit, ExplorationCategory.Portal, ExplorationCategory.Waypoint, ExplorationCategory.UnexploredRoom,
         ExplorationCategory.Room, ExplorationCategory.Quest, ExplorationCategory.Npc, ExplorationCategory.Player,
         ExplorationCategory.LastDeath, ExplorationCategory.Stash, ExplorationCategory.Enemy, ExplorationCategory.Treasure,
-        ExplorationCategory.Shrine, ExplorationCategory.Interactable, ExplorationCategory.Item
+        ExplorationCategory.Shrine, ExplorationCategory.Interactable, ExplorationCategory.Breakable, ExplorationCategory.Item
     }), string.Join(",", ExplorationCatalog.Order), "D2R category order");
 Equal(Enum.GetValues<ExplorationCategory>().Length, ExplorationCatalog.Order.Distinct().Count(), "every category is in the order once");
 Equal(Enum.GetValues<ExplorationCategory>().Length,
@@ -148,7 +148,7 @@ Equal(Category(ExplorationCategory.Npc) + ". " + Line("Gaspar", 9, "up"),
 
 // Landmarks and loot (shrines, gold, items) are listed when on screen; NPCs, chests and objects keep the seen-range rule.
 foreach (var landmark in new[] { ExplorationCategory.Shrine, ExplorationCategory.Portal, ExplorationCategory.Exit,
-    ExplorationCategory.Stash, ExplorationCategory.Item })
+    ExplorationCategory.Stash, ExplorationCategory.Item, ExplorationCategory.Breakable })
     Equal(true, ExplorationSight.ListsOnScreen(landmark), $"{landmark} is listed on screen");
 foreach (var other in new[] { ExplorationCategory.Npc, ExplorationCategory.Treasure, ExplorationCategory.Interactable,
     ExplorationCategory.Waypoint, ExplorationCategory.Enemy })
@@ -173,6 +173,7 @@ var level = new List<ExplorationEntry>
     Entry("listener:2", "Chest", ExplorationCategory.Treasure, 5, 0),
     Entry("listener:3", "Shrine", ExplorationCategory.Shrine, 0, 5),
     Entry("listener:4", "Note", ExplorationCategory.Interactable, -5, 0),
+    Entry("breakable:1", "Barrel", ExplorationCategory.Breakable, 0, -2),
     Entry("item:9", "Sword", ExplorationCategory.Item, 1, 0),
 };
 var walk = new ExplorationCatalog();
@@ -184,6 +185,38 @@ for (int index = 0; index < level.Count; index++)
 }
 Equal(string.Join(",", ExplorationCatalog.Order.Where(category => level.Any(entry => entry.Category == category))),
     string.Join(",", visitedOrder), "categories walk in D2R order, skipping empty ones");
+
+// Breakables sit between objects and items, nearest first, and drop out of the list when broken.
+var props = new List<ExplorationEntry>
+{
+    Entry("listener:4", "Note", ExplorationCategory.Interactable, -5, 0),
+    Entry("breakable:far", "Crate", ExplorationCategory.Breakable, 0, 8),
+    Entry("breakable:near", "Barrel", ExplorationCategory.Breakable, 0, 2),
+    Entry("item:9", "Sword", ExplorationCategory.Item, 1, 0),
+};
+var breaker = new ExplorationCatalog();
+breaker.StepCategory(1, props, player, forward, right, step, text);
+Equal(ExplorationCategory.Interactable, breaker.Category.Value, "objects come first");
+Equal(Category(ExplorationCategory.Breakable) + ". " + Line("Barrel", 2, "up"),
+    breaker.StepCategory(1, props, player, forward, right, step, text), "the next category is the breakables, nearest first");
+Equal(Line("Crate", 8, "up"), breaker.StepEntry(1, props, player, forward, right, step, text), "the next breakable is the farther one");
+props.RemoveAll(entry => entry.Key == "breakable:far");
+Equal(Category(ExplorationCategory.Item) + ". " + Line("Sword", 1, "right"),
+    breaker.StepCategory(1, props, player, forward, right, step, text), "a broken breakable drops out and the walk goes on");
+Equal(true, BreakableSelection.Listed(standing: true, seen: true) && !BreakableSelection.Listed(false, true) &&
+    !BreakableSelection.Listed(true, false), "only a standing, seen prop is listed");
+Equal("Urn", BreakableSelection.Name("  Urn ", "<generic>"), "the game's own name wins");
+Equal("<generic>", BreakableSelection.Name("  ", "<generic>"), "without a game name the generic label is used");
+Equal("<generic>", BreakableSelection.Name(null, "<generic>"), "a missing game name uses the generic label");
+
+// Create+Circle repeats the selected entry with the current distance and direction.
+var repeater = new ExplorationCatalog();
+Equal(text("exploration.scanner.empty"), repeater.RepeatSelected(props, player, forward, right, step, text), "nothing selected says the scanner is empty");
+var moving = new List<ExplorationEntry> { Entry("exit", "Gate", ExplorationCategory.Exit, 0, 6) };
+Equal(Category(ExplorationCategory.Exit) + ". " + Line("Gate", 6, "up"), repeater.StepCategory(1, moving, player, forward, right, step, text), "select the gate");
+Equal(Line("Gate", 6, "up"), repeater.RepeatSelected(moving, player, forward, right, step, text), "repeat is what an entry step says");
+Equal(Line("Gate", 2, "up"), repeater.RepeatSelected(moving, new Vector3(0, 0, 4), forward, right, step, text), "the repeat uses the fresh position");
+Equal(text("exploration.scanner.empty"), repeater.RepeatSelected(new List<ExplorationEntry>(), player, forward, right, step, text), "a vanished selection says the scanner is empty");
 
 // Seen memory: places keyed by name and coarse position, NPCs by name; scenes are separate.
 var memory = new ExplorationSeenMemory();

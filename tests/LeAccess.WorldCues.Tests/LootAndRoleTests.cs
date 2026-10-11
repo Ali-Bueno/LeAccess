@@ -168,6 +168,23 @@ internal static class LootAndRoleTests
         tag.hoverText = null;
         Check(InteractableRoles.Name(InteractableRole.Nemesis, tag) == "Némesis", "An unresolved key without text uses the mod name");
         Check(InteractableRoles.Name(InteractableRole.None, tag) == null, "Without a role or game text there is no name");
+
+        // A shrine's name is found on a disabled tag, above or below the listener; the mod word is the last resort.
+        Localization.Texts["shrine_tag"] = "Santuario del viento";
+        var shrineListener = new WorldObjectClickListener();
+        Check(InteractableRoles.Name(InteractableRole.Shrine, shrineListener, null) == "santuario", "No tag anywhere: the mod word");
+        var ownerTag = new HoverTagOnMouseOver { localizationKey = "shrine_tag", isActiveAndEnabled = false };
+        ownerTag.gameObject = shrineListener.gameObject; shrineListener.gameObject.Components.Add(ownerTag);
+        Check(InteractableRoles.Name(InteractableRole.Shrine, shrineListener, null) == "Santuario del viento",
+            "A disabled hover tag still names the shrine");
+        var base_ = new WorldObjectClickListener(); var visual = new WorldObjectClickListener();
+        visual.gameObject.Parent = base_.gameObject;
+        var childTag = new HoverTagOnMouseOver { hoverText = "Altar de luz" };
+        childTag.gameObject = visual.gameObject; visual.gameObject.Components.Add(childTag);
+        Check(InteractableRoles.Name(InteractableRole.Shrine, base_, null) == "Altar de luz", "A tag on a descendant names the shrine");
+        Check(InteractableRoles.Name(InteractableRole.Shrine, visual, null) == "Altar de luz", "A tag on the listener's own object names the shrine");
+        Check(InteractableRoles.GameShrineName(new HoverTagOnMouseOver[] { null, new() }) == null, "No game text means no game name");
+        Localization.Texts.Clear();
         foreach (var kind in new[] { NaturalCueKind.Shrine, NaturalCueKind.Nemesis })
             Check(WorldCueReach.IsLandmark(kind), $"{kind} is a landmark: it claims a loop voice first and reaches the loop range");
         return checks;

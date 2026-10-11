@@ -196,3 +196,12 @@ View hardware mapping, negative mana and transformation mode. The game stayed
 closed. Tomorrow, compare spoken percentages with the game's actual resources,
 try R and View repeatedly/held, type R in a field, cross bands in both directions,
 and change character/zone to confirm a fresh silent baseline.
+
+## 2026-10-11, tester report: life and mana announcements and the new readouts
+
+Today's options (`[Vitals]`):
+- `AutomaticAnnouncements` (true): master switch. Life and mana speak when they cross a percentage band: 75, 50, 40, 30, 20, 10, 5, 4, 3, 2, 1 and empty (D2R steps). Recoveries speak only when they rise two or more bands. Life at 10 percent or less that is still falling interrupts. Mana below 10 percent speaks its first step and empty only. The first reading after a load is a silent baseline.
+- `AnnouncePotionCharges` (true): potion count changes. `ReportKey` (R) and `ReportWithControllerView` (Create + Square) are the manual readout and always include everything.
+- New: `AnnounceLifeChanges` / `AnnounceManaChanges` (true each) switch one meter off while the other and the master stay on; a silenced meter keeps following its value, so turning it on never replays old crossings. `LifeMinimumChange` / `ManaMinimumChange` (0-50, default 0 = today): a band crossing is spoken only once the value has moved at least this many percent from the last accepted reading, so a larger mana step means fewer mana announcements; critical life (10 percent and below) and empty mana always speak. All are read each poll (`VitalsPolicy`, `VitalsAnnouncementState.Observe`).
+- Readouts: the report (R, Square) is life, mana, level and experience percent (`ProgressionState.LevelText`), potions, debuffs. The gold readout (Ctrl+G, Triangle) is gold plus `ProgressionState.PointsText` (passive points, skills that can take a point, new skill, zone).
+- Unverified live: how often a typical caster crosses bands with a given step.

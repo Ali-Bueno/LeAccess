@@ -30,7 +30,7 @@ internal static class ExplorationClassifier
         if (service == "service.waypoint") return Place(ExplorationCategory.Waypoint, ModText.Get(service), out place);
         var role = InteractableRoles.Read(listener);
         if (role == InteractableRole.Shrine)
-            return Place(ExplorationCategory.Shrine, InteractableRoles.Name(InteractableRole.Shrine, Tag(listener)), out place);
+            return Place(ExplorationCategory.Shrine, InteractableRoles.Name(InteractableRole.Shrine, listener, Tag(listener)), out place);
         if (role is InteractableRole.TimeRift or InteractableRole.Nemesis)
             return Place(role == InteractableRole.TimeRift ? ExplorationCategory.Portal : ExplorationCategory.Interactable,
                 InteractableRoles.Name(role, Tag(listener)), out place);
