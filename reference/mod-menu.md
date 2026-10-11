@@ -31,6 +31,10 @@ from the main menu or gameplay alike.
   buttons included, past all of the above (user report: Cross still pressed Play with the selection held). Every
   enabled listener registered in `ButtonInputListenerManager._inputListeners` is disabled while open and re-enabled
   with the rest.
+- Panels with a hold action make the navigation map start `ControllerButtonHoldManager.StartHoldingButton` on Cross
+  before the selection is asked; `UpdateButtonsHold` then vibrates the pad (`ControllerHapticsManager.Play`) and fires
+  the hold feedback (user report: vibration and a cursor sound, nothing activated). While open, a hold in progress is
+  reset each frame (`ResetHoldingButton`, which also stops the haptics). Call targets checked with Capstone.
 - The current `EventSystem` also stops sending navigation (`sendNavigationEvents = false`), restored the same way: with
   24 Rewired maps off, the landing screen still moved to "Play offline" and pressed it (user report, same day), so
   that screen reads the pad through Unity's own UI input module.
@@ -97,7 +101,7 @@ output start (their details say so).
 `.Bind(section, "Key")` in the source is in the catalog with both text keys.
 
 Log lines: `[Mod menu] opened`, `closed; other announcements held back: N`, `game input paused: N controller maps
-off, UI navigation off: N, menu selection held: True, button listeners off: N` / `resumed: N controller maps on`, `maps turned back on by the game while open: N` (should not appear),
+off, UI navigation off: N, menu selection held: True, button listeners off: N` / `resumed: N controller maps on`, `maps turned back on by the game while open: N` (should not appear), `game button holds cancelled while open: N`,
 `L1 bindings held back while a chord modifier is down: N`, `option without menu text: Section/Key`.
 
 Verified live (2026-10-11): the L1 guard (9 and 10 L1 bindings held back on a DualSense, no potion). Unverified: that

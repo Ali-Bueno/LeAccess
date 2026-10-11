@@ -96,6 +96,7 @@ internal static class InputBlock
     private static readonly List<UnityEngine.EventSystems.EventSystem> Navigation = new();
     private static INavigable _selection;
     private static readonly List<ButtonInputListener> Listeners = new();
+    private static int _holdsCancelled;
     private static bool _open;
     private static int _atOpen;
     private static string _failure;
@@ -103,6 +104,7 @@ internal static class InputBlock
     internal static void Begin()
     {
         _open = true;
+        _holdsCancelled = 0;
         Hold();
         _atOpen = Disabled.Count;
         Plugin.Log.LogInfo($"[Mod menu] game input paused: {Disabled.Count} controller maps off, UI navigation off: {Navigation.Count}, " +
@@ -123,6 +125,7 @@ internal static class InputBlock
         HoldNavigation();
         HoldSelection();
         HoldListeners();
+        CancelButtonHold();
     }
 
     internal static void Close()
@@ -130,6 +133,7 @@ internal static class InputBlock
         _open = false;
         // More maps than at opening means the game turned some back on while the menu was open.
         if (Disabled.Count != _atOpen) Plugin.Log.LogInfo($"[Mod menu] maps turned back on by the game while open: {Disabled.Count - _atOpen}");
+        if (_holdsCancelled > 0) Plugin.Log.LogInfo($"[Mod menu] game button holds cancelled while open: {_holdsCancelled}");
     }
 
     /// <summary>Waiting for release keeps the closing press from reaching the game as a new press.</summary>
@@ -200,6 +204,20 @@ internal static class InputBlock
                 listener.enabled = false;
                 Listeners.Add(listener);
             }
+        }
+        catch (Exception ex) { Report(ex); }
+    }
+
+    // A menu panel with a hold action starts ControllerButtonHoldManager's hold on Cross before the selection is asked;
+    // its update then vibrates the pad and plays the hold feedback. Resetting stops both and clears the hold.
+    private static void CancelButtonHold()
+    {
+        try
+        {
+            var holds = ControllerButtonHoldManager.instance;
+            if (holds is null || holds.WasCollected || holds._currentlyHeldTemplateButton is null) return;
+            holds.ResetHoldingButton();
+            _holdsCancelled++;
         }
         catch (Exception ex) { Report(ex); }
     }
