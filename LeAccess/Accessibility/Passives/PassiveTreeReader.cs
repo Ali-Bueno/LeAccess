@@ -90,9 +90,9 @@ internal static class PassiveTreeReader
         else if (knownState) state = ModText.Get("skill.not_learned");
         string summary = ScreenContentTracker.Combine(new[] { name,
             ModText.Get(IsAlive(icon) && icon.isMasteryAbility ? "passive.mastery_ability" : "passive.ability"), state,
-            ModText.Format("list.position", index + 1, tooltips.Count) });
+            ListPosition.Text(index + 1, tooltips.Count) });
         selection = new PassiveSelection($"unlock:{tooltip.GetInstanceID()}", tooltip.gameObject, summary,
-            TextUtils.CleanText(localized.GetDescription(ability)));
+            TextUtils.CleanText(localized.GetDescription(ability)), Lead: name);
         return true;
     }
 

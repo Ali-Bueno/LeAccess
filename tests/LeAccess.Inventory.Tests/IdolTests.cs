@@ -135,8 +135,8 @@ internal static class IdolTests
         Observe();
         NavigationManager.currentlySelected = grid;
         Observe();
-        check(Last() == J(T("idols.grid"), T("idols.equipped_one"), T("idols.free_many", Free()), Name(a), T("idols.size", 1, 1),
-            T("list.position", 1, 1)), "A grid without locked slots does not mention them: " + Last());
+        check(Last() == J(T("idols.grid"), T("idols.equipped_one"), T("idols.free_many", Free()), Name(a), T("idols.size", 1, 1)),
+            "A grid without locked slots does not mention them: " + Last());
 
         // The altar slot above the grid is named and read like any item slot.
         var altarEntry = new ItemContainerEntry { data = new ItemDataUnpacked { Id = "altar", FullName = "Pyramidal altar", LocalisedBaseTypeName = "Ancient altar" } };

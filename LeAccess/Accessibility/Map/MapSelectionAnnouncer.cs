@@ -53,7 +53,7 @@ internal static class MapSelectionAnnouncer
             if (map.eras[i] is not { } era || era.era != map.CurrentEra) continue;
             string title = ZoneEra.Name(era.era) ?? TextUtils.CleanText(era.mapTitle);
             yield return string.IsNullOrWhiteSpace(title) && IsAlive(map.mapTitle) ? TextUtils.CleanText(map.mapTitle.text) : title;
-            if (map.eras.Count > 1) yield return ModText.Format("list.position", i + 1, map.eras.Count);
+            if (ListPosition.Text(i + 1, map.eras.Count) is { } position) yield return position;
             yield break;
         }
     }

@@ -75,23 +75,23 @@ internal static class PanelGridTests
         At(0, 1);
         SkillPanelGrid.Forget();
         check(SkillSelectionReader.TryRead(out var selection, includeDetails: false) && selection.Name == "Ráfaga" &&
-            selection.Context == "Pícara" && selection.Status.EndsWith(Speech.F("list.position", 1, 3)),
+            selection.Context == "Pícara" && selection.Position == Speech.F("list.position", 1, 3),
             "The first skill names its class row and its place in the row: " + selection.Status);
         check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && selection.Context == "Pícara",
             "The row name stays while the same skill is selected");
         Move(Direction.RIGHT);
         check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && selection.Context is null &&
-            selection.Status.EndsWith(Speech.F("list.position", 2, 3)), "A step inside the row does not repeat its name");
+            selection.Position == Speech.F("list.position", 2, 3), "A step inside the row does not repeat its name");
         Move(Direction.DOWN);
         check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && selection.Name == "Catarata sombría" &&
-            selection.Context == "Hojadanzante" && selection.Status.EndsWith(Speech.F("list.position", 1, 1)),
+            selection.Context == "Hojadanzante" && selection.Position is null,
             "Entering a mastery row names the mastery");
         At(1, 0);
         check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && selection.Name == Speech.T("skill.specialization_empty") &&
             selection.Context == Speech.T("skill.specialization_slots"), "An empty slot is named instead of staying silent");
         At(2, 0);
         check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && selection.Name == Speech.T("skill.specialization_locked") &&
-            selection.Status == Speech.Join("Nivel 20", Speech.F("list.position", 2, 2)), "A locked slot reads its unlock text");
+            selection.Status == "Nivel 20" && selection.Position == Speech.F("list.position", 2, 2), "A locked slot reads its unlock text");
         At(1, 0);
         check(SkillSelectionReader.TryRead(out selection, includeDetails: false) &&
             selection.Status.StartsWith(Speech.T("skill.slot_help")), "A free slot says confirming chooses a skill for it");

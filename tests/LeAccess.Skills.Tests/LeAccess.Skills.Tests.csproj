@@ -7,6 +7,7 @@
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/Skills/*.cs" Link="%(Filename)%(Extension)" />
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentTracker.cs" Link="ScreenContentTracker.cs" />
+    <Compile Include="../../LeAccess/Accessibility/ScreenContent/KeywordExplanation.cs" Link="KeywordExplanation.cs" />
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentReader.cs" Link="ScreenContentReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/UiVisibility.cs" Link="UiVisibility.cs" />
     <Compile Include="../UiScreenGeometryStub.cs" Link="UiScreenGeometryStub.cs" />

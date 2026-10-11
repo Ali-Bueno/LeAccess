@@ -16,6 +16,8 @@ internal static class SkillAccessibility
     private static double _nextBindingRefresh;
     private const double BindingRefreshSeconds = 0.2;
     private static bool _detailsRequested;
+    private static string _moreInfoSpoken;
+    private static double _nextMoreInfoPoll;
 
     internal static bool HasActiveContent { get; private set; }
     internal static bool HasPendingContent { get; private set; }
@@ -72,8 +74,11 @@ internal static class SkillAccessibility
                 catch (Exception ex) { ReportFailure(ex); }
             }
 
-            string brief = string.IsNullOrWhiteSpace(selection.Name) ? null :
-                ScreenContentTracker.Combine(new[] { selection.Context, selection.Name, _binding, selection.Status });
+            if (now >= _nextMoreInfoPoll && !selection.IsNode) { _nextMoreInfoPoll = now + BindingRefreshSeconds; SpeakExpandedInfo(selection.Key); }
+
+            string identity = string.IsNullOrWhiteSpace(selection.Name) ? null :
+                ScreenContentTracker.Combine(new[] { selection.Name, _binding, selection.Status });
+            string brief = identity == null ? null : ScreenContentTracker.Combine(new[] { selection.Context, identity, selection.Position });
             if (brief == null) _detailsRequested = false;
             HasPendingContent = Tracker.Observe(1, brief,
                 ScreenReader.IsAvailable() && !ScreenReader.SpokeThisFrame, out string announcement, acknowledge: false);
@@ -85,7 +90,9 @@ internal static class SkillAccessibility
                 if (!SkillSelectionReader.TryRead(out var details) || details.Key != selection.Key)
                 { ClearSelection(); return; }
                 Tracker.Observe(1, brief, false, out _, acknowledge: false);
-                announcement = ScreenContentTracker.Combine(new[] { brief, details.Details, details.LiveDetails });
+                if (details.MoreInfo != null) _moreInfoSpoken = $"{details.Key}|{details.MoreInfo}";
+                // A details request names the skill without its row or place.
+                announcement = ScreenContentTracker.Combine(new[] { identity, details.Details, details.LiveDetails });
             }
             if (announcement == null) return;
             if (!SkillSelectionReader.TryRead(out var current, includeDetails: false) || current.Key != selection.Key)
@@ -100,8 +107,21 @@ internal static class SkillAccessibility
         catch (Exception ex) { ClearSelection(); ReportFailure(ex); }
     }
 
+    // The extra tooltip stays only while Right Stick is held, so its text is spoken once as it appears.
+    private static void SpeakExpandedInfo(string key)
+    {
+        if (!KeywordExplanation.Enabled || ScreenReader.SpokeThisFrame || !ScreenReader.IsAvailable()) return;
+        if (!SkillSelectionReader.TryRead(out var full) || full.Key != key) return;
+        if (full.MoreInfo == null) { _moreInfoSpoken = null; return; }
+        string spoken = $"{key}|{full.MoreInfo}";
+        if (spoken == _moreInfoSpoken || !ScreenReader.TrySpeak(full.MoreInfo, interrupt: true)) return;
+        _moreInfoSpoken = spoken;
+        Plugin.Log.LogInfo($"[Skill keywords] {full.MoreInfo}");
+    }
+
     private static void ClearSelection()
     {
+        _moreInfoSpoken = null;
         Tracker.Reset();
         _selectionKey = null;
         _binding = null;

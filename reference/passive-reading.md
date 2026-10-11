@@ -299,3 +299,14 @@ game's `requirementsMet` is false, replacing the bare "Requisitos no cumplidos")
 order). Names come from `NodeTooltipContentBuilder.GetNodeTooltipInfo(node, false).Name`, the source the reader already
 trusts; the result is cached per node, requirement state, unspent points and locale. Required nodes without points are
 skipped. Passives 196 checks; listening pending.
+
+## Details request, list positions and keyword text (2026-10-10, user report)
+
+- The details request (`PassiveSelection.Text`) is `Lead` (name and points) plus `Details`; the column label, "locked"
+  and requirement notices and the "N of M" place stay in the brief `Summary` only.
+- "N of M" comes from `ListPosition.Text` (`I18n/ListPosition.cs`), config `[Menus] AnnouncePositions` (default true);
+  it returns null for off, a single entry or no place, so `ScreenContentTracker.Combine` drops it.
+- Keyword explanations (`Press Right Stick for more information`): `GetNodeTooltipInfo(node, true).AltText`, cleaned,
+  led by `node.more_info`, appended to the details; built once per node and locale. Config
+  `[Tooltips] ReadKeywordExplanations` (default true). Unverified: the log line `[Tooltips] keyword text: <text|empty>
+  (node <name>)` shows what the game returned. Passives 203 checks; listening pending.

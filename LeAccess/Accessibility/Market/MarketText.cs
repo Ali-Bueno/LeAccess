@@ -143,7 +143,7 @@ internal static class MarketText
     private static string Labeled(string key, string value) => string.IsNullOrWhiteSpace(value) ? null : ModText.Format(key, value);
 
     private static string Place(int position, int count) =>
-        count > 1 && position > 0 ? ModText.Format("list.position", position, count) : null;
+        ListPosition.Text(position, count);
 
     private static string Combine(params string[] parts) => ScreenContentTracker.Combine(parts);
 }

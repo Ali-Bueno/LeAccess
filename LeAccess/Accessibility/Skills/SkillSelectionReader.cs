@@ -15,7 +15,7 @@ internal enum SkillDetailsSource { Description, Tooltip, ExpandedTooltip }
 internal readonly record struct SkillSelection(string Key, GameObject Root, Ability Ability,
     AbilityBarIcon BarIcon, string Name, string Details,
     SkillDetailsSource DetailsSource = SkillDetailsSource.Description, string LiveDetails = null,
-    string Status = null, bool IsNode = false, string Context = null);
+    string Status = null, bool IsNode = false, string Context = null, string Position = null, string MoreInfo = null);
 
 /// <summary>Reads the game's current selection; never opens a tooltip or changes navigation.</summary>
 internal static class SkillSelectionReader
@@ -64,7 +64,7 @@ internal static class SkillSelectionReader
                 selection = selection with
                 {
                     Context = row,
-                    Status = ScreenContentTracker.Combine(new[] { selection.Status, ModText.Format("list.position", position, count) })
+                    Position = ListPosition.Text(position, count)
                 };
             return true;
         }
@@ -209,11 +209,13 @@ internal static class SkillSelectionReader
         }
 
         if (string.IsNullOrWhiteSpace(name)) return false;
+        // Held Right Stick already shows the explanation; otherwise read the ability's own alt text.
+        string keywords = includeDetails && moreInfo == null ? KeywordExplanation.Describe($"skill {name}", ability.altText) : null;
         string help = assignment == null ? null : ModText.Get(assignment.Stage == SkillAssignmentStage.AvailableSkills
             ? "skill.assignment_help" : "skill.hotbar_help");
         selection = new SkillSelection($"ability:{root.GetInstanceID()}:{ability.Pointer}", root, ability, bar,
-            name, ScreenContentTracker.Combine(new[] { definition, description, moreInfo, help }), detailsSource,
-            liveDetails, ScreenContentTracker.Combine(new[] { learningStatus, assignmentStatus }));
+            name, ScreenContentTracker.Combine(new[] { definition, description, moreInfo, keywords, help }), detailsSource,
+            liveDetails, ScreenContentTracker.Combine(new[] { learningStatus, assignmentStatus }), MoreInfo: moreInfo);
         return true;
     }
 
@@ -239,7 +241,7 @@ internal static class SkillSelectionReader
         if (string.IsNullOrWhiteSpace(name)) name = ModText.Get(fallback);
         string key = $"tree-button:{root.GetInstanceID()}";
         var notice = SkillTreeState.TryRead(panel, out var state) ? SkillTreeState.Describe(key, state) : default;
-        selection = new SkillSelection(key, root, null, null, name, null,
+        selection = new SkillSelection(key, root, null, null, name, state.Level,
             Status: ScreenContentTracker.Combine(new[] { status, notice.After }), Context: notice.Before);
         return true;
     }
@@ -270,7 +272,9 @@ internal static class SkillSelectionReader
         string status = ScreenContentTracker.Combine(new[] {
             node.maxPoints > 0 ? ModText.Format("node.points", node.pointsAllocated, node.maxPoints) : null,
             state.Respeccing && node.pointsAllocated > 0 && !node.getCouldBeRespecced() ? ModText.Get("skill.cannot_refund") : null,
-            notice.After, requires, placed ? ModText.Format("list.position", place, count) : null });
+            notice.After, requires });
+        string position = placed ? ListPosition.Text(place, count) : null;
+        string keywords = includeDetails ? KeywordExplanation.Describe($"skill node {name}", node.altText) : null;
         if (notice.Before != null) branch = ScreenContentTracker.Combine(new[] { notice.Before, branch });
         var detailsSource = SkillDetailsSource.Description;
         bool modernVisible = false;
@@ -279,8 +283,8 @@ internal static class SkillSelectionReader
         {
             if (!string.IsNullOrWhiteSpace(modernName)) name = modernName;
             selection = new SkillSelection(key, node.gameObject, tree.ability, null, name,
-                ScreenContentTracker.Combine(new[] { modernDetails, links }), SkillDetailsSource.Tooltip, Status: status, IsNode: true,
-                Context: branch);
+                ScreenContentTracker.Combine(new[] { state.Level, modernDetails, keywords, links }), SkillDetailsSource.Tooltip,
+                Status: status, IsNode: true, Context: branch, Position: position);
             return !string.IsNullOrWhiteSpace(name);
         }
         var tooltip = NodeTooltipManager.instance;
@@ -298,8 +302,8 @@ internal static class SkillSelectionReader
         }
         if (string.IsNullOrWhiteSpace(name)) return false;
         selection = new SkillSelection(key, node.gameObject,
-            tree.ability, null, name, ScreenContentTracker.Combine(new[] { description, points, links }), detailsSource,
-            Status: status, IsNode: true, Context: branch);
+            tree.ability, null, name, ScreenContentTracker.Combine(new[] { state.Level, description, points, keywords, links }),
+            detailsSource, Status: status, IsNode: true, Context: branch, Position: position);
         return true;
     }
 

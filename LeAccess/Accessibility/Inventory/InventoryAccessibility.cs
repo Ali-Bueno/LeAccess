@@ -113,7 +113,7 @@ internal static class InventoryAccessibility
                         ScreenContentTracker.Combine(InventoryActionReader.ReadForItem(selectedData, container))
                     });
                     _position = InventoryNavigation.TryGetPosition(container, entry, out int place, out int count)
-                        ? ModText.Format("list.position", place, count) : null;
+                        ? ListPosition.Text(place, count) : null;
                 }
                 spokenIdentity = ScreenContentTracker.Combine(new[] { text, _context });
                 text = ScreenContentTracker.Combine(new[] { text, _position, _context });

@@ -133,3 +133,9 @@ speech in listening tests before adding duplicate output.
    value and verify current outcome/details, then close the panel for silence.
 
 No production changes or new hooks were made by this audit.
+
+## Keyword explanations (2026-10-10, user report)
+
+The "more information" tooltip (`UITooltipAbility.moreInfoObj`, `NodeTooltip._altDescription`) exists only while
+Right Stick is held. The mod now appends the alt text to details requests and speaks the held tooltip once; see
+`passive-reading.md` and `skill-tree-navigation.md` for sources, config and the log line to confirm them.

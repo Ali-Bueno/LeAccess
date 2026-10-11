@@ -64,6 +64,10 @@ internal sealed class LocalTreeData : UnityEngine.Component
     internal CharacterClass characterClass;
     internal readonly HashSet<Ability> Specialised = new();
     internal bool isSpecialised(Ability ability) { Guard(); return Specialised.Contains(ability); }
+    internal readonly Dictionary<string, int> Experience = new();
+    internal byte Level;
+    internal bool isSpecialisedGetSlotAndXp(string id, out byte slot, out int xp) { slot = 0; return Experience.TryGetValue(id ?? "", out xp); }
+    internal byte getAbilityLevel(Ability ability) => Level;
 }
 internal sealed class CharacterClass : UnityEngine.Object { internal NativeArray<AbilityAndLevel> unlockableAbilities; }
 internal sealed class AbilityAndLevel : NativeObject { internal Ability ability; internal int level; }
@@ -127,7 +131,7 @@ internal sealed class SkillTreeNode : UnityEngine.Component
     internal bool getCouldBeRespecced() { Guard(); return CouldBeRespecced; }
     internal SkillTree tree;
     internal int id;
-    internal string nodeName, description;
+    internal string nodeName, description, altText;
     internal NativeArray<RequirementFromNode> requirements;
     internal bool requirementsMet = true;
     internal sealed class RequirementFromNode : NativeObject { internal SkillTreeNode node; internal byte requirement; }
@@ -208,3 +212,9 @@ internal sealed class SkillLocalization : NativeObject
 }
 namespace LeAccess.Accessibility.ControllerMenus
 { internal static class ControllerMenuAccessibility { internal static bool HasActiveContent; } }
+
+internal static class SpecialisedAbilityManager
+{
+    internal const int maxAbilityLevel = 20;
+    internal static int getAbilityXPLevelRequirement(int level) => level * 100;
+}

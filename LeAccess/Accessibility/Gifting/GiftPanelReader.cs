@@ -50,7 +50,7 @@ internal static class GiftPanelReader
         string text = Describe(panel, root);
         if (string.IsNullOrWhiteSpace(text)) return false;
         stop = new GiftStop($"{root.GetInstanceID()}",
-            ScreenContentTracker.Combine(new[] { text, ModText.Format("list.position", index + 1, stops.Count) }));
+            ScreenContentTracker.Combine(new[] { text, ListPosition.Text(index + 1, stops.Count) }));
         return true;
     }
 

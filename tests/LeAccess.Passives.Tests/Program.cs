@@ -20,7 +20,7 @@ var bareModel = new NodeTooltipInfo(first, false);
 bareModel.Refresh();
 Check(bareModel.Name is null && bareModel.Description is null, "native bare constructor and Refresh do not initialize strings");
 Check(PassiveSelectionReader.TryRead(out var read), "selected cell readable");
-Check(NodeTooltipContentBuilder.Builds == 1, "fallback uses populated native builder");
+Check(NodeTooltipContentBuilder.Builds == 2, "fallback and keyword text each use the populated native builder once");
 Check(read.Text.Contains("Localized passive") && read.Text.Contains(F("node.points", 0, 5)) &&
     read.Text.Contains("Game description") && read.Text.Contains("Localized modifier") &&
     read.Text.Contains("Localized requirement"), "full localized data");
@@ -105,7 +105,7 @@ NavigationManager.currentlySelected = null;
 Tick();
 NavigationManager.currentlySelected = owner;
 Tick();
-Check(NodeTooltipInfo.Refreshes == refreshes + 1, "reopen refreshes fallback despite unchanged node counts");
+Check(NodeTooltipInfo.Refreshes == refreshes + 2, "reopen refreshes fallback and keyword text despite unchanged node counts");
 var fullscreen = new GameObject().Add(new LE.UI.PanelSystem.FullScreenPanelPassiveTree { ActiveChildNavigable = owner });
 NavigationManager.currentlySelected = fullscreen;
 Check(PassiveSelectionReader.TryRead(out read), "modern fullscreen delegates to active passive child");
@@ -143,9 +143,21 @@ Check(ScreenReader.Messages.Count == spoken + 2 && !ScreenReader.Messages.Last()
     "Meeting the requirements speaks the brief once, now without a lock");
 Check(PassiveAccessibility.ReadCurrentDetails() && ScreenReader.Messages.Last().Text.Contains("Game description") &&
     ScreenReader.Messages.Last().Text.Contains("Localized modifier"), "manual gesture speaks native details");
+Check(!ScreenReader.Messages.Last().Text.Contains(F("list.position", 1, 1)) &&
+    ScreenReader.Messages.Last().Text.StartsWith("Localized passive"), "A node's details request starts at its name");
 spoken = ScreenReader.Messages.Count;
 Tick(); Tick();
 Check(ScreenReader.Messages.Count == spoken, "polling does not interrupt manual details");
+NodeTooltipContentBuilder.KeywordText = "<color=#fff>Chill</color> slows enemies.";
+PassiveSelectionReader.Reset(); KeywordExplanation.Reset();
+Check(PassiveSelectionReader.TryRead(out read) && read.Details.Contains(Join(T("node.more_info"), "Chill slows enemies.")),
+    "The keyword explanation joins the details, cleaned and led in");
+Check(LeAccess.Plugin.Log.Information.Any(line => line.StartsWith("[Tooltips] keyword text: Chill slows enemies.")), "What the game returned is logged");
+KeywordExplanation.Enabled = false; PassiveSelectionReader.Reset();
+Check(PassiveSelectionReader.TryRead(out read) && !read.Details.Contains("Chill"), "The keyword explanation can be switched off");
+KeywordExplanation.Enabled = true; NodeTooltipContentBuilder.KeywordText = null; PassiveSelectionReader.Reset(); KeywordExplanation.Reset();
+Check(PassiveSelectionReader.TryRead(out read) && !read.Details.Contains(T("node.more_info")) &&
+    LeAccess.Plugin.Log.Information.Any(line => line.StartsWith("[Tooltips] keyword text: empty")), "An empty alt text adds nothing and is logged");
 PassiveAccessibility.Reset();
 Tick();
 Check(PassiveAccessibility.HasPendingContent, "new brief pending before manual request");
@@ -174,7 +186,7 @@ Check(PassiveSelectionReader.TryRead(out read), "native Component cell resolves 
 int builds = NodeTooltipContentBuilder.Builds;
 first.Name = "Translated passive"; first.Description = "Translated description"; Localization.Locale = "en";
 Check(PassiveSelectionReader.TryRead(out read) && read.Summary.Contains("Translated passive") &&
-    read.Details.Contains("Translated description") && NodeTooltipContentBuilder.Builds == builds + 1,
+    read.Details.Contains("Translated description") && NodeTooltipContentBuilder.Builds == builds + 2,
     "locale revision rebuilds static localized strings as well as modifiers");
 PassiveAccessibility.Reset();
 NodeTooltipContentBuilder.ReturnNull = true;
@@ -236,7 +248,7 @@ Tick();
 NodeTooltipContentBuilder.ReturnNull = false;
 NavigationManager.currentlySelected = owner;
 Tick(); Tick();
-Check(PassiveAccessibility.HasActiveContent && NodeTooltipContentBuilder.Builds == builds + 1,
+Check(PassiveAccessibility.HasActiveContent && NodeTooltipContentBuilder.Builds == builds + 2,
     "closing the passive tree releases its pending model so reopening reads immediately");
 foreach (string gate in new[] { "popup", "dialogue", "radial menu", "loading", "focus", "selection" })
 {
@@ -386,6 +398,12 @@ fullscreen._masteryNameText = Label("Visible Paladin");
 fullscreen.ActiveChildNavigable = strip;
 Check(PassiveSelectionReader.TryRead(out read) && read.Summary == Join("Smite", T("passive.ability"), T("passive.ability_unlocked"), F("list.position", 1, 3)) &&
     read.Details == "Smite description", "Unlock strip reads the skill name, unlocked state and description");
+Check(read.Text == Join("Smite", "Smite description") && !read.Text.Contains(F("list.position", 1, 3)),
+    "A details request names the skill and describes it without repeating its place");
+LeAccess.I18n.ListPosition.Enabled = false;
+Check(PassiveSelectionReader.TryRead(out read) && read.Summary == Join("Smite", T("passive.ability"), T("passive.ability_unlocked")),
+    "With positions off the strip drops the place and keeps its structural labels");
+LeAccess.I18n.ListPosition.Enabled = true;
 var sprite = strip.ActiveAbilityTooltips[0].gameObject.Child();
 Check(PassiveAccessibility.TryHandleFocus(sprite), "The strip's sprite focus is owned instead of read as an object name");
 strip.SelectedIndex = 1;
@@ -530,7 +548,7 @@ Check((pageOwner._currentColumn, pageOwner._currentRow) == (5, 1) && pageOwner.N
     "Right from the last column keeps the cursor");
 Tick(); Tick();
 Check(ScreenReader.Messages.Count == beforeStay + 1 && ScreenReader.Messages.Last().Text.Contains(nodeE.Name) &&
-    ScreenReader.Messages.Last().Text.EndsWith(F("list.position", 1, 1)), "A move that cannot go further repeats the node and its place");
+    !ScreenReader.Messages.Last().Text.Contains(F("list.position", 1, 1)), "A move that cannot go further repeats the node, and a lone entry has no place");
 PassiveTreeNavigation.Navigate(pageOwner, Direction.DOWN);
 Check((pageOwner._currentColumn, pageOwner._currentRow) == (5, 1) && pageOwner.NativeSteps.Count == 0,
     "Down from the bottom of a later column keeps the cursor instead of leaving the grid");
@@ -724,7 +742,7 @@ Check(bannerNavigable._currentButton == diamonds[1].button, "Entering from the t
 var controllerStrip = new GameObject().Add(new PassiveTreeUnlockPanelNavigable { ActiveAbilityTooltips = new(new[] { Unlock("Shift", 10) }) });
 NavigationManager.currentlySelected = controllerStrip;
 Check(PassiveSelectionReader.TryRead(out read) &&
-    read.Summary == Join("Shift", T("passive.ability"), F("passive.ability_unlockable", 10, 3), F("list.position", 1, 1)),
+    read.Summary == Join("Shift", T("passive.ability"), F("passive.ability_unlockable", 10, 3)),
     "The controller strip uses the shown tree's points: " + read.Summary);
 NavigationManager.currentlySelected = masteryOwner;
 Tick(); Tick();

@@ -1,3 +1,6 @@
+using LeAccess.Accessibility;
+using LeAccess.Accessibility.ScreenContent;
+using LeAccess.I18n;
 using LeAccess.Accessibility.Skills;
 using UnityEngine;
 using MoveKind = LeAccess.Accessibility.Skills.SkillTreeOrder.MoveKind;
@@ -94,17 +97,17 @@ internal static class TreeNavigationTests
         panel.currentlySelectedNode = b1;
         SkillTreeNavigation.ForgetBranch();
         check(SkillSelectionReader.TryRead(out var selection, includeDetails: false) && selection.Name == "B1" &&
-            selection.Status.EndsWith(Speech.F("list.position", 1, 3)) && selection.Context == Speech.F("skill.branch", 3),
+            selection.Position == Speech.F("list.position", 1, 3) && selection.Context == Speech.F("skill.branch", 3),
             "A node entering a branch names it and states its place in the branch: " + selection.Status);
         check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && selection.Context == Speech.F("skill.branch", 3),
             "The branch name stays while the same node is selected, so the brief does not change");
         panel.currentlySelectedNode = b2;
         check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && selection.Context is null &&
-            selection.Status.EndsWith(Speech.F("list.position", 2, 3)), "A move inside the branch does not repeat its name");
+            selection.Position == Speech.F("list.position", 2, 3), "A move inside the branch does not repeat its name");
 
         // Connections: a node names what it requires (the root aside); details give the way to it and what it leads to.
         check(SkillSelectionReader.TryRead(out selection, includeDetails: false) &&
-            selection.Status.EndsWith(Speech.Join(Speech.F("skill.requires", "B1"), Speech.F("list.position", 2, 3))),
+            selection.Status.EndsWith(Speech.F("skill.requires", "B1")) && selection.Position == Speech.F("list.position", 2, 3),
             "A node says the node it requires before its place in the branch");
         panel.currentlySelectedNode = b1;
         check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && !selection.Status.Contains(Speech.F("skill.requires", "Raíz")),
@@ -181,6 +184,36 @@ internal static class TreeNavigationTests
         a2.CouldBeRespecced = true;
         check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && !selection.Status.Contains(Speech.T("skill.cannot_refund")),
             "A refundable node carries no mark");
+
+        // Skill level and keyword text join the tree's status and the details request, which drops branch and place.
+        skill.playerAbilityID = "desollar"; data.Experience["desollar"] = 350; data.Level = 3; a2.altText = "<b>Shock</b> chains.";
+        SkillTreeState.Reset(); SkillTreeNavigation.ForgetBranch(); panel.currentlySelectedNode = a2;
+        string level = Speech.F("skill.level", 3, 50);
+        check(SkillSelectionReader.TryRead(out selection, includeDetails: false) && selection.Status.Contains(level),
+            "A specialised tree opens with the skill's level and progress: " + selection.Status);
+        check(SkillSelectionReader.TryRead(out selection) && selection.Details.StartsWith(level) &&
+            selection.Details.Contains(Speech.Join(Speech.T("node.more_info"), "Shock chains.")), "Details carry the level and the keyword text");
+        SkillAccessibility.Update(readDetails: true);
+        string spoken = ScreenReader.Messages.Last().Text;
+        check(spoken.Contains("Shock chains.") && spoken.Contains(a2.nodeName) && !spoken.Contains(Speech.F("list.position", 2, 3)) &&
+            !spoken.Contains(Speech.F("skill.branch", 1)), "The details request names the node and describes it without branch or place: " + spoken);
+        KeywordExplanation.Enabled = false;
+        check(SkillSelectionReader.TryRead(out selection) && !selection.Details.Contains("Shock"), "Keyword text can be switched off");
+        KeywordExplanation.Enabled = true; a2.altText = null; data.Experience.Clear();
+        check(SkillTreeState.Changes(null, new SkillTreeState.State((IntPtr)1, true, 3, false, level)) ==
+            new SkillTreeState.Notice(null, Speech.Join(level, Speech.F("skill.tree_unspent", 3))), "A new tree speaks the level before the points");
+        var levelled = new SkillTreeState.State((IntPtr)1, true, 3, false, level);
+        check(SkillTreeState.Changes(levelled, levelled with { Level = Speech.F("skill.level_max", 4) }).After == Speech.F("skill.level_max", 4),
+            "A gained level is spoken");
+        check(SkillLevel.Percent(350, 300, 400) == 50 && SkillLevel.Percent(399, 300, 400) == 99 && SkillLevel.Percent(500, 300, 400) == 99 &&
+            SkillLevel.Percent(100, 300, 400) == 0 && SkillLevel.Percent(5, 0, 0) == 0, "Level progress is a clamped whole percent");
+        check(SkillLevel.Describe(20, 9999, 20, l => l) == Speech.F("skill.level_max", 20) &&
+            SkillLevel.Describe(2, 250, 20, l => l * 100) == Speech.F("skill.level", 2, 50), "The top level has no progress");
+        ListPosition.Enabled = false;
+        check(ListPosition.Text(2, 3) is null && Speech.Join("Name", ListPosition.Text(2, 3)) == "Name", "Positions off drop out of combined speech");
+        ListPosition.Enabled = true;
+        check(ListPosition.Text(2, 3) == Speech.F("list.position", 2, 3) && ListPosition.Text(1, 1) is null && ListPosition.Text(0, 3) is null,
+            "A position needs a place among several");
         panel.SkillsSpecialisationUIManager = null;
         root.maxPoints = 0;
         panel.currentlySelectedNode = root;

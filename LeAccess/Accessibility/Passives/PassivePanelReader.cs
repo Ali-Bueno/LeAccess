@@ -104,9 +104,9 @@ internal static class PassivePanelReader
         // Moving over the diamonds never changes the shown tree; Cross opens the focused one.
         string summary = ScreenContentTracker.Combine(new[] { tree,
             ModText.Get(index == manager.activeMastery ? "passive.tree_shown" : "passive.open_tree"),
-            ModText.Format("list.position", index + 1, ButtonCount(manager)) });
+            ListPosition.Text(index + 1, ButtonCount(manager)) });
         selection = new PassiveSelection($"banner:{button.Pointer}:{manager.activeMastery}", button.gameObject, summary,
-            MasteryReader.ReadDefinition(button));
+            MasteryReader.ReadDefinition(button), Lead: tree);
         return true;
     }
 
