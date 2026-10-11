@@ -56,7 +56,9 @@ from close up ([details](reference/exploration-mode.md#visited-minimap-rooms-cou
 `[Exploration beacon] visited rooms seeded: …` and that Burning Forest at Grael gives a route instead of "no known route".
 Mod menu input: Cross, Circle and the D-pad must do nothing in the game while it is open, and closing with Circle must
 not dodge (`[Mod menu] game input paused: N controller maps off`; `maps turned back on by the game while open` must
-not appear). The first version used `Player.isPlaying` and leaked every button.
+not appear). The first version used `Player.isPlaying` and leaked every button; the second left the landing screen's
+Unity UI navigation on (check the log line `UI navigation off: 1` and that Down + Cross there does nothing).
+Dialogue with several responses: each push says the new response once.
 Pickup lines (gold, a potion count alone, the targeted ground item) now cut each other, and life, mana and combat lines
 cut them ([details](reference/announcement-lifecycle.md#pickup-lines-give-way-2026-10-11-user-report)); check that a
 burst of gold and loot leaves only the last line and never delays a life warning.
