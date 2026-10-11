@@ -17,6 +17,7 @@ using LeAccess.Accessibility.Diagnostics;
 using LeAccess.Accessibility.Exploration;
 using LeAccess.Accessibility.Landmarks;
 using LeAccess.Accessibility.MapSections;
+using LeAccess.Accessibility.ScreenContent;
 using LeAccess.I18n;
 using System.IO;
 
@@ -38,6 +39,10 @@ public class Plugin : BasePlugin
         ModText.Initialize(Path.Combine(Path.GetDirectoryName(typeof(Plugin).Assembly.Location), "Translations"),
             message => Log.LogWarning(message));
         GameLocale.Initialize(Config);
+        ListPosition.Enabled = Config.Bind("Menus", "AnnouncePositions", true,
+            "Speak list positions such as \"3 of 8\" after menu, inventory, map and tree entries.").Value;
+        KeywordExplanation.Enabled = Config.Bind("Tooltips", "ReadKeywordExplanations", true,
+            "Read the status-effect explanations the game shows only while Right Stick is held, with a details request.").Value;
 
         // Initialize screen reader
         if (!ScreenReader.Initialize())

@@ -1,6 +1,7 @@
 <Project>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)../LeAccess/I18n/ModText.cs" Link="I18n/ModText.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)../LeAccess/I18n/ListPosition.cs" Link="I18n/ListPosition.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)../LeAccess/I18n/TranslationCatalog.cs" Link="I18n/TranslationCatalog.cs" />
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)../LeAccess/Translations/*.json"
                       LogicalName="LeAccess.Translations.%(Filename)%(Extension)" />

@@ -43,7 +43,7 @@ internal static class PanelText
     internal static string MerchantTokens(string amount) => ModText.Format("panels.merchant_tokens", amount);
 
     internal static string Position(int position, int count) =>
-        count > 1 && position > 0 ? ModText.Format("list.position", position, count) : null;
+        ListPosition.Text(position, count);
 
     private static string Combine(params string[] parts) => ScreenContentTracker.Combine(parts);
 

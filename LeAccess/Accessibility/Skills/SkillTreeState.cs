@@ -9,7 +9,7 @@ namespace LeAccess.Accessibility.Skills;
 /// <remarks>See reference/skill-tree-navigation.md#modifying-a-skill-with-a-controller-2026-10-04-static-analysis.</remarks>
 internal static class SkillTreeState
 {
-    internal readonly record struct State(IntPtr Tree, bool Specialised, int Unspent, bool Respeccing);
+    internal readonly record struct State(IntPtr Tree, bool Specialised, int Unspent, bool Respeccing, string Level = null);
     /// <summary>What to say before the selection (a new tree or mode) and after it (points left, a refused press).</summary>
     internal readonly record struct Notice(string Before, string After);
 
@@ -28,8 +28,10 @@ internal static class SkillTreeState
         var ability = tree.ability;
         if (!IsAlive(data) || !IsAlive(ability)) return false;
         var specialisation = panel.SkillsSpecialisationUIManager;
-        state = new State(tree.Pointer, data.isSpecialised(ability), Math.Max(0, tree.unspentPoints),
-            IsAlive(specialisation) && specialisation.Respeccing);
+        bool specialised = data.isSpecialised(ability);
+        state = new State(tree.Pointer, specialised, Math.Max(0, tree.unspentPoints),
+            IsAlive(specialisation) && specialisation.Respeccing,
+            specialised ? SkillLevel.Read(data, ability) : null);
         return true;
     }
 
@@ -50,7 +52,7 @@ internal static class SkillTreeState
         string unspent = ModText.Format("skill.tree_unspent", state.Unspent);
         if (previous is not State before || before.Tree != state.Tree)
             return state.Specialised
-                ? new Notice(state.Respeccing ? ModText.Get("skill.respec_mode") : null, unspent)
+                ? new Notice(state.Respeccing ? ModText.Get("skill.respec_mode") : null, ScreenContentTracker.Combine(new[] { state.Level, unspent }))
                 : new Notice(ModText.Get("skill.not_specialised"), null);
         string mode = null, after = null;
         if (state.Specialised != before.Specialised)
@@ -58,6 +60,7 @@ internal static class SkillTreeState
         if (state.Respeccing != before.Respeccing)
             mode = ScreenContentTracker.Combine(new[] { mode, ModText.Get(state.Respeccing ? "skill.respec_mode" : "skill.respec_mode_ended") });
         if (state.Specialised && (state.Unspent != before.Unspent || state.Specialised != before.Specialised)) after = unspent;
+        if (state.Specialised && state.Level != before.Level) after = ScreenContentTracker.Combine(new[] { state.Level, after });
         return new Notice(mode, after);
     }
 

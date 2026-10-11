@@ -3,6 +3,8 @@
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/Passives/*.cs" Link="%(Filename)%(Extension)" />
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentTracker.cs" Link="ScreenContentTracker.cs" />
+    <Compile Include="../../LeAccess/Accessibility/ScreenContent/KeywordExplanation.cs" Link="KeywordExplanation.cs" />
+    <Compile Include="../../LeAccess/I18n/ListPosition.cs" Link="ListPosition.cs" />
     <Compile Include="../../LeAccess/Accessibility/Announcements/UiVisibility.cs" Link="UiVisibility.cs" />
     <Compile Include="../UiScreenGeometryStub.cs" Link="UiScreenGeometryStub.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />

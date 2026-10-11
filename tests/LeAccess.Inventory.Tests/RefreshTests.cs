@@ -34,7 +34,7 @@ internal static class RefreshTests
         string Settle(string selection, string text, string identity) =>
             Frame(selection, text, identity) ?? Frame(selection, text, identity);
         string Item(string name, int place, int count) =>
-            ScreenContentTracker.Combine(new[] { name, ModText.Format("list.position", place, count) });
+            ScreenContentTracker.Combine(new[] { name, ListPosition.Text(place, count) });
         string empty = ModText.Get("inventory.empty_slot");
 
         check(Settle("sword", Item("Sword", 2, 5), "Sword") == Item("Sword", 2, 5), "The focused item is read once");
@@ -129,7 +129,7 @@ internal static class RefreshTests
             currentFocusSlot = new() { x = 0, y = 0 }, NearestSlot = new() { x = 2, y = 0 }, currentlySelectedItem = dropped
         };
         string Item(string name, int place, int count) =>
-            ScreenContentTracker.Combine(new[] { name, ModText.Format("list.position", place, count) });
+            ScreenContentTracker.Combine(new[] { name, ListPosition.Text(place, count) });
         ItemContainersManager.Instance = new ItemContainersManager();
         NavigationManager.currentlySelected = container;
         InventoryAccessibility.Reset(); ScreenReader.Messages.Clear();

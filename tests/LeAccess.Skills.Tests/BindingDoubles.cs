@@ -1,6 +1,6 @@
 internal sealed class Ability : UnityEngine.Object
 {
-    internal string abilityName;
+    internal string abilityName, altText, playerAbilityID;
     internal bool overridePrimaryAbility;
     internal AbilityRef customPrimaryAbility;
 }

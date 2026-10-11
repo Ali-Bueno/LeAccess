@@ -40,7 +40,7 @@ internal static class FactionTreeText
 
     internal static string Timeline(string island, string harbinger, bool defeated, int position, int count) =>
         Combine(island, harbinger, ModText.Get(defeated ? "weaver.timeline_defeated" : "weaver.timeline_pending"),
-            count > 1 && position > 0 ? ModText.Format("list.position", position, count) : null);
+            ListPosition.Text(position, count));
 
     internal static string TimelinesIntro(IEnumerable<string> gameLines, int defeated, int count) =>
         Combine(Combine(gameLines), count > 0 ? ModText.Format("weaver.timelines_done", defeated, count) : null);

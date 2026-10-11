@@ -53,7 +53,7 @@ internal static class EndgameText
         return ScreenContentTracker.Combine(new[]
         {
             text, chosen ? ModText.Get("endgame.chosen") : null,
-            total > 1 && position > 0 ? ModText.Format("list.position", position, total) : null
+            ListPosition.Text(position, total)
         });
     }
 
@@ -87,7 +87,7 @@ internal static class EndgameText
             },
             locked ? ModText.Get("endgame.locked") : tooltip ?? name ?? ModText.Get("endgame.slot_empty"),
             lockReason,
-            role == BlessingRole.Option && total > 1 && position > 0 ? ModText.Format("list.position", position, total) : null
+            role == BlessingRole.Option ? ListPosition.Text(position, total) : null
         });
 
     /// <summary>A dungeon or arena tier tab, which has no text of its own.</summary>
@@ -97,7 +97,7 @@ internal static class EndgameText
             ModText.Format("endgame.tier", tier),
             selected ? ModText.Get("endgame.selected") : null,
             locked ? ModText.Get("endgame.locked") : null,
-            total > 1 ? ModText.Format("list.position", position, total) : null
+            ListPosition.Text(position, total)
         });
 
     private static string State(VoteState state) => ModText.Get(state switch

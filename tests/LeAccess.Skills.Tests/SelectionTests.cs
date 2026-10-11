@@ -139,7 +139,7 @@ internal static class SelectionTests
         node.tree = new GameObject().Add(new SkillTree());
         check(!SkillSelectionReader.TryRead(out _), "A node from a previously opened tree is rejected");
 
-        fixture = Reset(); Tooltip(fixture);
+        fixture = Reset(); Tooltip(fixture); fixture.Tooltip.moreInfoObj.Active = false;
         BindingTests.Icon(fixture.Ability, "cast"); BindingTests.Bind("cast", EpochInputManager.InputActions.Ability1, "A");
         Tick();
         check(ScreenReader.Messages.Count == 0 && SkillAccessibility.HasPendingContent,
@@ -161,8 +161,12 @@ internal static class SelectionTests
             "Right stick requests current full details and assignment");
         int spoken = ScreenReader.Messages.Count;
         Tick(); Tick();
-        fixture.Tooltip.moreInfoObj.Active = true; Tick(); Tick();
-        check(ScreenReader.Messages.Count == spoken, "Automatic focus and native expansion cannot repeat manually spoken details");
+        fixture.Tooltip.moreInfoObj.Active = true; Tick(0.21); Tick();
+        check(ScreenReader.Messages.Count == spoken + 1 && ScreenReader.Messages.Last().Text == "Escala con inteligencia",
+            "The extra tooltip held open with Right Stick is spoken as it appears");
+        Tick(0.21); Tick(0.21);
+        check(ScreenReader.Messages.Count == spoken + 1, "The held extra tooltip is spoken once");
+        spoken = ScreenReader.Messages.Count;
         SkillAccessibility.Update(readDetails: true);
         check(ScreenReader.Messages.Last().Text.Contains("inteligencia"), "Manual request includes currently expanded details");
         fixture.Tooltip.content.Active = false;

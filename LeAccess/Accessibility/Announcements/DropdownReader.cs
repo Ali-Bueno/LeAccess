@@ -24,7 +24,7 @@ internal static class DropdownReader
     /// <summary>An option of an expanded list: its text, whether it is the chosen one and its place among the options.</summary>
     internal static string Option(string text, bool selected, int position, int count) =>
         ScreenContentTracker.Combine(new[] { text, selected ? ModText.Get("market.dropdown_selected") : null,
-            count > 1 && position > 0 ? ModText.Format("list.position", position, count) : null });
+            ListPosition.Text(position, count) });
 
     /// <summary>A collapsed dropdown (or field): its title and current value.</summary>
     internal static string Control(string title, string value)

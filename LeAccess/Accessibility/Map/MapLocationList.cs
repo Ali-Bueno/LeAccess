@@ -158,7 +158,7 @@ internal static class MapLocationList
             parts.Add(title);
             parts.Add(body);
         }
-        if (entry.Count > 1) parts.Add(ModText.Format("list.position", entry.Index + 1, entry.Count));
+        parts.Add(ListPosition.Text(entry.Index + 1, entry.Count));
         string text = ScreenContentTracker.Combine(parts);
         ScreenReader.Speak(text, interrupt: true);
         Plugin.Log.LogInfo($"[World map list] {text} ({(IsAlive(entry.Waypoint) ? entry.Waypoint.sceneName : "icon")})");

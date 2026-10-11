@@ -14,9 +14,10 @@ namespace LeAccess.Accessibility.Passives;
 
 /// <summary>A readable passive selection; Context is the panel whose tree TreeIndex names.</summary>
 internal readonly record struct PassiveSelection(string Key, GameObject Root, string Summary, string Details,
-    string TreeKey = null, Component Context = null, int TreeIndex = -1)
+    string TreeKey = null, Component Context = null, int TreeIndex = -1, string Lead = null)
 {
-    internal string Text => ScreenContentTracker.Combine(new[] { Summary, Details });
+    /// <summary>The details request: the lead (name and state, without position or column) then the details.</summary>
+    internal string Text => ScreenContentTracker.Combine(new[] { Lead ?? Summary, Details });
 }
 
 internal static class PassiveSelectionReader
@@ -26,6 +27,7 @@ internal static class PassiveSelectionReader
     private static NodeTooltipInfo _fallback;
     private static string _revision;
     private static string _linksKey, _requires, _links;
+    private static string _keywordsKey, _keywords;
     private static readonly GroupEntryTracker Columns = new();
     private static double _nextFallbackRetry;
     // Match the existing inventory/skill refresh rate while native text becomes available.
@@ -46,6 +48,7 @@ internal static class PassiveSelectionReader
         _fallback = null;
         _revision = null;
         _linksKey = _requires = _links = null;
+        _keywordsKey = _keywords = null;
         _nextFallbackRetry = 0;
         HasPendingModel = false;
     }
@@ -198,7 +201,7 @@ internal static class PassiveSelectionReader
         int columnThreshold = 0;
         if (PassiveTreeNavigation.TryGetPosition(owner, node, out int place, out int count, out int columnNumber, out columnThreshold))
         {
-            position = ModText.Format("list.position", place, count);
+            position = ListPosition.Text(place, count);
             if (Columns.Entered(key, $"{state.Key}:{columnNumber}")) columnLabel = ColumnLabel(columnNumber, columnThreshold, state.Points);
         }
         // Only what keeps Cross from adding a point is spoken; a locked column's label already gives its numbers.
@@ -210,8 +213,8 @@ internal static class PassiveSelectionReader
         var shown = state.Context?.TryCast<PassivePanelManager>();
         string notice = IsAlive(shown) ? PassiveTreeState.Describe(key,
             new PassiveTreeState.State(state.Key, state.Points, shown.activeTree.unspentPoints), PassiveTreeNavigation.ColumnThresholds()) : null;
-        string summary = ScreenContentTracker.Combine(new[] { columnLabel, name,
-            ModText.Format("node.points", info.PointsAllocated, info.MaxPoints), locked, _requires, notice, position });
+        string lead = ScreenContentTracker.Combine(new[] { name, ModText.Format("node.points", info.PointsAllocated, info.MaxPoints) });
+        string summary = ScreenContentTracker.Combine(new[] { columnLabel, lead, locked, _requires, notice, position });
         var fragments = new List<string> { TextUtils.CleanText(info.Description) };
         if (info.Modifiers is not null && !info.Modifiers.WasCollected)
             foreach (var modifier in info.Modifiers)
@@ -229,8 +232,9 @@ internal static class PassiveSelectionReader
                         "node.requirement_met" : "node.requirement_unmet", text));
                 }
         fragments.Add(_links);
+        fragments.Add(ReadKeywords(node));
         selection = new PassiveSelection(key, root, summary,
-            ScreenContentTracker.Combine(fragments), state.Key, state.Context, state.Index);
+            ScreenContentTracker.Combine(fragments), state.Key, state.Context, state.Index, lead);
         return true;
     }
 
@@ -242,6 +246,18 @@ internal static class PassiveSelectionReader
         if (key == _linksKey) return;
         _linksKey = key;
         PassiveTreeLinks.Read(node, NodeName, out _requires, out _links);
+    }
+
+    // Built once per node; the game shows the alt text only while Right Stick is held.
+    private static string ReadKeywords(SkillTreeNode node)
+    {
+        if (!KeywordExplanation.Enabled) return null;
+        string locale = global::Localization.Locale;
+        string key = $"{node.Pointer}:{locale}";
+        if (key == _keywordsKey) return _keywords;
+        var info = NodeTooltipContentBuilder.GetNodeTooltipInfo(node, true);
+        _keywordsKey = key;
+        return _keywords = KeywordExplanation.Describe($"node {node.nodeName}", info is null || info.WasCollected ? null : info.AltText);
     }
 
     private static string NodeName(SkillTreeNode node)

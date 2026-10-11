@@ -154,3 +154,18 @@ first requirements from the branch's first node) and "Lleva a: …" (every node 
 requirements, in reading order). Whether several requirements mean all or any is not established; each is named
 and the game's overall flag decides the wording. `SkillTreeLinks` (text), `SkillTreeNavigation.TryReadLinks`
 (data). Skills 280 checks; listening pending.
+
+## Details request, keyword text and skill level (2026-10-10, user report)
+
+- `SkillSelection.Position` carries the "N of M" place apart from `Status`; the details request speaks name, binding and
+  status plus details, without the row/branch label or the place.
+- Keyword text: tree nodes use `SkillTreeNode.altText`, ability controls `Ability.altText`, both via
+  `KeywordExplanation` (log `[Tooltips] keyword text: ... (skill node X|skill X)`). When Right Stick is held and the
+  tooltip's `moreInfoObj` shows, `SkillAccessibility.SpeakExpandedInfo` speaks `moreInfoDetailsText` once per hold
+  (log `[Skill keywords]`). Whether `altText` is filled without the tooltip is unverified.
+- Skill level: `SkillLevel.Read` uses `LocalTreeData.isSpecialisedGetSlotAndXp` and `getAbilityLevel`;
+  percent = (xp - requirement(level)) / (requirement(level+1) - requirement(level)), floored, capped at 99, and
+  "maximum level" at `SpecialisedAbilityManager.maxAbilityLevel`. Assumes `getAbilityXPLevelRequirement(n)` is the
+  experience at which level n starts; the game's own `_skillLevel` text is not used. Spoken with the new-tree notice
+  (`SkillTreeState.State.Level`), when the level changes, and first in the details of nodes and tree buttons.
+  Skills 291 checks; listening pending.

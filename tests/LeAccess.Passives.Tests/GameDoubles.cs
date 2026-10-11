@@ -142,14 +142,14 @@ namespace LE.UI.Tooltips
     {
         internal static int Refreshes;
         internal SkillTreeNode Node;
-        internal string Name, Description;
+        internal string Name, Description, AltText;
         internal int PointsAllocated => Node.pointsAllocated;
         internal int MaxPoints => Node.maxPoints;
         internal string PointBonusDescription;
         internal NativeArray<NodeTooltipModifierInfo> Modifiers = new(System.Array.Empty<NodeTooltipModifierInfo>());
         internal NativeArray<NodeTooltipModifierInfo> PointBonusModifiers = new(System.Array.Empty<NodeTooltipModifierInfo>());
         internal NativeArray<NodeTooltipRequirementInfo> Requirements = new(System.Array.Empty<NodeTooltipRequirementInfo>());
-        internal NodeTooltipInfo(SkillTreeNode node, bool showAltText) => Node = node;
+        internal NodeTooltipInfo(SkillTreeNode node, bool showAltText) { Node = node; if (showAltText) AltText = NodeTooltipContentBuilder.KeywordText; }
         internal void Refresh()
         {
             Refreshes++;
@@ -160,6 +160,7 @@ namespace LE.UI.Tooltips
     internal static class NodeTooltipContentBuilder
     {
         internal static int Builds;
+        internal static string KeywordText;
         internal static bool ReturnNull;
         internal static Action OnBuild;
         internal static NodeTooltipInfo GetNodeTooltipInfo(SkillTreeNode node, bool showAltText)
@@ -185,7 +186,7 @@ namespace LeAccess.I18n
     {
         private static readonly Dictionary<string, string> Text = new()
         {
-            ["node.locked"] = "Locked", ["node.full"] = "Full", ["node.no_points"] = "No points left",
+            ["node.locked"] = "Locked", ["node.more_info"] = "More information", ["node.full"] = "Full", ["node.no_points"] = "No points left",
             ["node.points"] = "{0} of {1} points allocated",
             ["node.requirement_met"] = "{0}, requirement met", ["node.requirement_unmet"] = "{0}, requirement not met",
             ["passive.tree"] = "{0}, {1} points", ["passive.tree_class"] = "Base class",
