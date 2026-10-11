@@ -1,3 +1,20 @@
+# Handoff — 2026-10-11 afternoon: wall bump and silent footsteps
+
+User: sometimes the radar feels inconsistent (brought another assistant's four proposals); wants to know when walking
+into a wall stops the character, offline and online, by silencing the footsteps or a short bump, since footsteps are
+very quiet in places. Done: a thud from the pushed side once per contact, and the footsteps silenced while pushing
+without advancing ([bump](reference/navigation-radar.md#wall-bump-2026-10-11)). No new hook. Radar unchanged: the
+proposals were assessed against the 2026-10-10 log ([review](reference/navigation-radar.md#review-of-outside-proposals-and-the-2026-10-10-log-2026-10-11));
+open question for the user: build the three-ray reading (after adding depth to each cue's log line)?
+Live checks, with log lines:
+- `[Wall bump] push read from the Client state` online, `… Actor state` offline (if neither appears, the stick
+  state is elsewhere and nothing bumps).
+- Straight push into a wall: one thud (`[Wall bump] bump pan=… clearance=…`), footsteps stop
+  (`footsteps silenced: N foot triggers, M collider triggers`; M > 0 means a second footstep path still sounds) and
+  return on the first real step. Sliding along a wall: no thud, footsteps go on. An enemy in the way: no thud
+  (`stopped without a wall within …`). A corner: turning the stick to the other side thuds again.
+- Mod menu, Sounds page: "Wall bump" plays; the three new radar options are listed.
+
 # Handoff — 2026-10-11: settings menu and a release tester's report
 
 A player asked for an in-game menu with every option, a glossary of the sounds and group or individual volume and
