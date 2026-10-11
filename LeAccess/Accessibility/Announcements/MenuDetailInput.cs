@@ -19,6 +19,11 @@ internal static class MenuDetailInput
     internal static bool IsDownPush(float x, float y, float previousX, float previousY) =>
         IsUpPush(x, -y, previousX, -previousY);
 
+    /// <summary>A stick moving from rest to a deliberate push in any direction.</summary>
+    internal static bool IsPush(float x, float y, float previousX, float previousY) =>
+        Math.Max(Math.Abs(previousX), Math.Abs(previousY)) < PushThreshold &&
+        Math.Max(Math.Abs(x), Math.Abs(y)) >= PushThreshold;
+
     internal static bool KeyPressed(KeyCode key) => key != KeyCode.None &&
         !Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.RightControl) &&
         !Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.RightAlt) &&
@@ -31,6 +36,20 @@ internal static class MenuDetailInput
         if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible) return false;
         // In gameplay the right stick belongs to the exploration scanner.
         if (GameplayInputState.OwnsInput()) return false;
+        return AnyGamepad(template =>
+        {
+            var stick = template.rightStick;
+            if (stick is null || stick.WasCollected) return false;
+            var value = stick.value;
+            var previous = stick.valuePrev;
+            return up ? IsUpPush(value.x, value.y, previous.x, previous.y)
+                : IsDownPush(value.x, value.y, previous.x, previous.y);
+        });
+    }
+
+    /// <summary>True when the test holds for any connected gamepad template.</summary>
+    internal static bool AnyGamepad(Func<IGamepadTemplate, bool> test)
+    {
         try
         {
             var manager = EpochInputManager.instance;
@@ -48,12 +67,7 @@ internal static class MenuDetailInput
                 if (joystick is null || joystick.WasCollected) continue;
                 var template = joystick.GetTemplate<IGamepadTemplate>();
                 if (template is null || template.WasCollected) continue;
-                var stick = template.rightStick;
-                if (stick is null || stick.WasCollected) continue;
-                var value = stick.value;
-                var previous = stick.valuePrev;
-                if (up ? IsUpPush(value.x, value.y, previous.x, previous.y)
-                    : IsDownPush(value.x, value.y, previous.x, previous.y)) return true;
+                if (test(template)) return true;
             }
         }
         catch (Exception ex)

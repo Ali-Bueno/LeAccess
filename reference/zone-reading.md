@@ -13,3 +13,7 @@ es-ES); the End of Time has no era name. `ZoneEra.Name` reads them through `Loca
 announcement adds the era only when it differs from the last one spoken ("Ruinas desmoronadas. Era en ruinas", then
 just the area names until travel changes the era); the remembered era survives resets. The Create+Circle / Ctrl+L
 status report adds the era to the zone. MenuZone 46 checks; listening pending.
+
+## Transition pop-ups (2026-10-10, user report)
+
+"Entering The Keeper's Camp" and "Portaling to Keeper's Camp" are shown by `ZoneLoadingStatusUI` (singleton `instance`, `Panel`, `zoneNameTMP`); pinnacle and boss loads use `AdditiveLoadingStatusUI` (`overlayPanel`/`fullPanel`, `zoneNameTMP`, `zoneDetails`; no singleton, so it is looked up every 2 s until found, then cached). `Zones/Transitions/ZoneTransitionAnnouncer` polls both from `MenuAccessibility.LateUpdate` and speaks the visible text queued (no interrupt) once per appearance or text change (`ZoneTransitionState`); it ignores `LoadingScreen.IsVisible` because the pop-up precedes the load. The arrival name from `ZoneAnnouncer` is unchanged. Log: `[Zone] transition: <text>`.

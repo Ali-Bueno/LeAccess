@@ -101,6 +101,12 @@ internal static class VideoSubtitleTests
         video = Video("Reset pending caption");
         Tick(true); VisibleSubtitleAnnouncer.Reset(); video.IsPlaying = false; Tick();
         check(ScreenReader.Messages.Count == 0, "Explicit lifecycle reset drops movie pending content");
+        video = Video("Silenced movie caption");
+        LeAccess.Accessibility.Dialogue.NpcLines.Use(() => false);
+        Tick(); Tick(); Tick();
+        check(ScreenReader.Messages.Count == 0 && !VisibleSubtitleAnnouncer.HasPendingContent,
+            "A silenced movie caption is neither spoken nor retried");
+        LeAccess.Accessibility.Dialogue.NpcLines.Use(() => true);
         CharacterSelectionVideoManager.instance = null;
     }
 }

@@ -25,6 +25,9 @@ internal static class CharacterNameAccessibility
 
     internal static bool HasPendingContent { get; private set; }
 
+    /// <summary>The visible name field of the form the player currently owns, as of the last update.</summary>
+    internal static TMP_InputField OwnedInput { get; private set; }
+
     internal static void Update()
     {
         try
@@ -83,6 +86,7 @@ internal static class CharacterNameAccessibility
             if (IsAlive(validator) && validator.isActiveAndEnabled && IsAlive(validator.input) &&
                 validator.input.Pointer == input.Pointer) Add(validator.errorUI);
         text = ScreenContentTracker.Combine(Errors);
+        OwnedInput = input;
         return true;
     }
 
@@ -112,6 +116,7 @@ internal static class CharacterNameAccessibility
         Tracker.Reset();
         Errors.Clear();
         HasPendingContent = false;
+        OwnedInput = null;
         _context = 0;
         _owner = null;
         _input = null;

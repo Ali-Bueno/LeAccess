@@ -4,6 +4,8 @@
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/CharacterNameAccessibility.cs" Link="CharacterNameAccessibility.cs" />
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/CharacterNameKeyboard.cs" Link="CharacterNameKeyboard.cs" />
     <Compile Include="../../LeAccess/Accessibility/Patches/CharacterNameKeyboardPatches.cs" Link="CharacterNameKeyboardPatches.cs" />
+    <Compile Include="../../LeAccess/Accessibility/CharacterCreation/CharacterNameEcho.cs" Link="CharacterNameEcho.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Utils/FieldEcho.cs" Link="FieldEcho.cs" />
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/ScreenKeyboardTyping.cs" Link="ScreenKeyboardTyping.cs" />
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/PhysicalTypingKeys.cs" Link="PhysicalTypingKeys.cs" />
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentTracker.cs" Link="ScreenContentTracker.cs" />
@@ -12,4 +14,5 @@
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
     <Compile Include="../../LeAccess/Accessibility/Utils/TextUtils.cs" Link="TextUtils.cs" />
   </ItemGroup>
+  <Import Project="../LocalizationSources.props" />
 </Project>

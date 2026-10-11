@@ -18,7 +18,7 @@ internal static class SocialAccessibility
 {
     private static readonly Dictionary<int, GameObject> Introduced = new();
     private static readonly ConcurrentQueue<string> Submitted = new();
-    private static readonly Dictionary<int, string> FieldValues = new();
+    private static readonly FieldEcho FieldValues = new();
     private static readonly List<int> Expired = new();
     private static readonly ScreenContentTracker PromptTracker = new();
     private static FriendPostRequestsUI _social;
@@ -127,11 +127,7 @@ internal static class SocialAccessibility
         int id = window.GetInstanceID();
         var input = window.activeInHierarchy ? SocialWindows.FieldOf(window, field) : null;
         if (!IsAlive(input) || !UiVisibility.IsVisible(input.gameObject)) { FieldValues.Remove(id); return; }
-        string value = input.text ?? "";
-        if (!FieldValues.TryGetValue(id, out string before)) { FieldValues[id] = value; return; }
-        if (before == value) return;
-        FieldValues[id] = value;
-        string edit = SocialText.Edit(before, value);
+        string edit = FieldValues.Observe(id, input.text);
         if (edit != null) ScreenReader.Speak(edit, interrupt: true);
     }
 

@@ -51,6 +51,7 @@ public class MenuAccessibility : MonoBehaviour
         }
         LoginTransitionGuard.Update();
         ScreenKeyboardTyping.Update();
+        CharacterNameEcho.Update();
         PauseMenuFocusRecovery.Update();
         ScreenContentAnnouncer.Update();
         DialogueAnnouncer.Update();
@@ -82,6 +83,7 @@ public class MenuAccessibility : MonoBehaviour
             !Endgame.EndgameAccessibility.HasActiveContent)
             ReadSelectedDetails();
         ZoneAnnouncer.Update();
+        Zones.Transitions.ZoneTransitionAnnouncer.Update();
         bool worldContentActive = ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent ||
             InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
             SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent;

@@ -202,6 +202,8 @@ internal static class VisibleSubtitleAnnouncer
 
     private static bool Speak(string text, string source = "Dialogue")
     {
+        // Counts as delivered, so a silenced line is not retried.
+        if (!NpcLines.Speak) return true;
         if (!ScreenReader.TrySpeak(text, interrupt: false)) return false;
         Plugin.Log.LogInfo($"[{source}] {text}");
         return true;

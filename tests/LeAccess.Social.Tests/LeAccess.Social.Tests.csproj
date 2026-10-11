@@ -15,6 +15,7 @@
     <Compile Include="../UiReadingOrderStub.cs" Link="UiReadingOrderStub.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
     <Compile Include="../../LeAccess/Accessibility/Utils/TextUtils.cs" Link="TextUtils.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Utils/FieldEcho.cs" Link="FieldEcho.cs" />
   </ItemGroup>
   <Import Project="../LocalizationSources.props" />
 </Project>

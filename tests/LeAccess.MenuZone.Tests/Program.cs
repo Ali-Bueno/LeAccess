@@ -216,4 +216,15 @@ Check(ScreenReader.Messages.Last().Text == "Bosque. Era Divina", "Travel to anot
 Enter(305, "unknown", "Lugar", SceneList.Era.Ancient);
 Check(ScreenReader.Messages.Last().Text == "Lugar", "An era without a game name is skipped");
 Check(ScreenReader.Messages.Count == before + 5, "Each area is announced once");
+var transition = new ZoneTransitionState();
+Check(!transition.Observe(null, out _) && !transition.Observe("  ", out _), "A hidden or empty transition pop-up is silent");
+Check(transition.Observe("Entering the Camp", out var entering) && entering == "Entering the Camp", "A transition pop-up speaks when it appears");
+Check(transition.Observe("Entering the Camp", out _), "A pop-up whose speech was not accepted is offered again");
+transition.Acknowledge("Entering the Camp");
+Check(!transition.Observe("Entering the Camp", out _), "A spoken pop-up is not repeated while it stays shown");
+Check(transition.Observe("Portaling to the Camp", out var portaling) && portaling == "Portaling to the Camp", "Changed text while shown speaks again");
+transition.Acknowledge("Portaling to the Camp"); transition.Observe(null, out _);
+Check(transition.Observe("Portaling to the Camp", out _), "Hiding and showing the same pop-up speaks it again");
+transition.Acknowledge("Portaling to the Camp"); transition.Reset();
+Check(transition.Observe("Portaling to the Camp", out _), "Reset forgets the spoken pop-up");
 Console.WriteLine($"Controller menu/zone tests passed: {checks} checks.");

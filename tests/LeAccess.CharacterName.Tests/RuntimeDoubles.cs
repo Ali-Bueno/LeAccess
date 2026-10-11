@@ -175,8 +175,10 @@ namespace LeAccess.Accessibility
         internal static readonly List<(string Text, bool Interrupt)> Messages = new();
         internal static bool IsAvailable() => Available;
         internal static bool IsSpeaking() => throw new InvalidOperationException("Unreliable backend status must not gate skills");
+        internal static int SpeechCount { get; private set; }
         internal static void Speak(string text, bool interrupt)
-        { Messages.Add((text, interrupt)); SpokeThisFrame = true; }
+        { Messages.Add((text, interrupt)); SpokeThisFrame = true; SpeechCount++; }
+        internal static bool TrySpeak(string text, bool interrupt) { Speak(text, interrupt); return true; }
     }
 }
 namespace LeAccess
