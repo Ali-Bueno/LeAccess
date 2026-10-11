@@ -41,6 +41,11 @@ from the main menu or gameplay alike.
   button still down): `[Mod menu] landing click ignored: online|offline`. The event system's selected object is put
   back on closing, since the landing focus still moved to Play offline. Failures name their stage
   (`Mod menu input block unavailable (stage: …)`).
+- With the selection held, the landing focus still moved and Cross still reached Play 50 times: `PriorityUiNavigationMap`
+  re-selects `NavigationManager.GetPriorityNavigable()` every frame before `ProcessDpadInput` (Capstone, MoveNext
+  +0x177 → +0x24a → +0x259). That getter walks `registeredPrioritizedNavigables` (instance + 0x28). While open the
+  manager gets an empty list; on closing the original comes back with anything registered meanwhile, minus destroyed
+  navigables.
 - The current `EventSystem` also stops sending navigation (`sendNavigationEvents = false`), restored the same way: with
   24 Rewired maps off, the landing screen still moved to "Play offline" and pressed it (user report, same day), so
   that screen reads the pad through Unity's own UI input module.
@@ -107,7 +112,7 @@ output start (their details say so).
 `.Bind(section, "Key")` in the source is in the catalog with both text keys.
 
 Log lines: `[Mod menu] opened`, `closed; other announcements held back: N`, `game input paused: N controller maps
-off, UI navigation off: N, menu selection held: True, button listeners off: N` / `resumed: N controller maps on`, `maps turned back on by the game while open: N` (should not appear), `game button holds cancelled while open: N`,
+off, UI navigation off: N, menu selection held: True, priority list held: True, button listeners off: N` / `resumed: N controller maps on`, `maps turned back on by the game while open: N` (should not appear), `game button holds cancelled while open: N`,
 `L1 bindings held back while a chord modifier is down: N`, `option without menu text: Section/Key`.
 
 Verified live (2026-10-11): the L1 guard (9 and 10 L1 bindings held back on a DualSense, no potion). Unverified: that

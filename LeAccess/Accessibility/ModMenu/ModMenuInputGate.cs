@@ -98,12 +98,15 @@ internal static class InputBlock
     private static readonly List<ButtonInputListener> Listeners = new();
     private static int _holdsCancelled;
     private static UnityEngine.GameObject _eventSelection;
+    private static NavigationManager _priorityOwner;
+    private static Il2CppSystem.Collections.Generic.List<IPrioritizedNavigable> _priorities, _noPriorities;
     private static bool _open;
     private static int _atOpen;
     private static string _failure;
 
     /// <summary>True while open and until the closing press is released.</summary>
-    internal static bool Blocking => _open || Disabled.Count > 0 || Navigation.Count > 0 || _selection is not null || Listeners.Count > 0;
+    internal static bool Blocking => _open || Disabled.Count > 0 || Navigation.Count > 0 || _selection is not null ||
+        Listeners.Count > 0 || _priorities is not null;
 
     internal static void Begin()
     {
@@ -112,7 +115,7 @@ internal static class InputBlock
         Hold();
         _atOpen = Disabled.Count;
         Plugin.Log.LogInfo($"[Mod menu] game input paused: {Disabled.Count} controller maps off, UI navigation off: {Navigation.Count}, " +
-            $"menu selection held: {_selection is not null}, button listeners off: {Listeners.Count}");
+            $"menu selection held: {_selection is not null}, priority list held: {_priorities is not null}, button listeners off: {Listeners.Count}");
     }
 
     /// <summary>Each frame while open: a map the game turns on meanwhile goes off too.</summary>
@@ -127,6 +130,7 @@ internal static class InputBlock
         }
         catch (Exception ex) { Report("maps", ex); }
         HoldNavigation();
+        HoldPriorities();
         HoldSelection();
         HoldListeners();
         CancelButtonHold();
@@ -143,7 +147,7 @@ internal static class InputBlock
     /// <summary>Waiting for release keeps the closing press from reaching the game as a new press.</summary>
     internal static void EndWhenIdle()
     {
-        if (_open || Disabled.Count == 0 && Navigation.Count == 0 && _selection is null && Listeners.Count == 0) return;
+        if (_open || !Blocking) return;
         if (AnythingHeld()) { Hold(); return; }
         End();
     }
@@ -151,6 +155,7 @@ internal static class InputBlock
     internal static void End()
     {
         _open = false;
+        RestorePriorities();
         RestoreSelection();
         foreach (var listener in Listeners)
         {
@@ -211,6 +216,54 @@ internal static class InputBlock
             }
         }
         catch (Exception ex) { Report("listeners", ex); }
+    }
+
+    // The priority map re-selects NavigationManager's highest priority navigable every frame before reading the pad
+    // (the landing screen); an empty list of priority navigables leaves it nothing to select.
+    private static void HoldPriorities()
+    {
+        try
+        {
+            var manager = NavigationManager.instance;
+            if (manager is null || manager.WasCollected) return;
+            var list = manager.registeredPrioritizedNavigables;
+            if (list is null || list.WasCollected || _noPriorities is not null && list.Pointer == _noPriorities.Pointer) return;
+            if (_priorities is null)
+            {
+                _priorityOwner = manager;
+                _priorities = list;
+            }
+            _noPriorities ??= new Il2CppSystem.Collections.Generic.List<IPrioritizedNavigable>();
+            manager.registeredPrioritizedNavigables = _noPriorities;
+        }
+        catch (Exception ex) { Report("priorities", ex); }
+    }
+
+    // Navigables registered while the menu was open join the original list.
+    private static void RestorePriorities()
+    {
+        var owner = _priorityOwner;
+        var original = _priorities;
+        var added = _noPriorities;
+        _priorityOwner = null;
+        _priorities = _noPriorities = null;
+        if (owner is null || original is null) return;
+        try
+        {
+            if (owner.WasCollected || original.WasCollected) return;
+            for (int index = 0; added is not null && index < added.Count; index++)
+                if (!original.Contains(added[index])) original.Add(added[index]);
+            // One removed while the menu was open left the empty list, not this one.
+            for (int index = original.Count - 1; index >= 0; index--)
+            {
+                var navigable = original[index]?.TryCast<INavigable>();
+                if (original[index] is null || navigable is not null && NavigationManager.IsDestroyedNavigable(navigable))
+                    original.RemoveAt(index);
+            }
+            var current = owner.registeredPrioritizedNavigables;
+            if (current is null || added is not null && current.Pointer == added.Pointer) owner.registeredPrioritizedNavigables = original;
+        }
+        catch (Exception ex) { Report("priorities restore", ex); }
     }
 
     // A menu panel with a hold action starts ControllerButtonHoldManager's hold on Cross before the selection is asked;
