@@ -244,7 +244,7 @@ launch; edit that file only with the game closed. The most useful ones:
 |---|---|---|
 | Localization | `Language` | `auto` follows the game's text language; or force `en`, `es`, `fr`, `de`, `pt`, `pl`, `ru`, `ko`, `zh` or `ja` |
 | Exploration | `LeftStickOnOtherPads` | L3 as the mod button on non-PlayStation pads (default on) |
-| Exploration | `RouteLegs` | How many stretches of a detour the scanner reads (0, the default, reads only the first heading) |
+| Exploration | `RouteLegs` | How many stretches of a detour the scanner reads (default 4; 0 reads only the first heading) |
 | Audio | `MasterVolume` | Volume of every mod sound (speech is not affected) |
 | World object sound volumes / ranges | One key per kind (`Gold`, `Rune`, `Shrine`, `ZoneExit`...) | Each object sound's own volume (0-200%) and distance (0 follows `LoopRange`) |
 | Reactive radar | `Enabled`, `Volume`, `WallBump`, `WallBumpVolume`, `MuteFootstepsAtWalls` | The wall radar, the wall bump and quiet footsteps against a wall |

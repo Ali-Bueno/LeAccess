@@ -22,6 +22,8 @@ internal static class ExplorationAccessibility
     private static ConfigEntry<int> _routeLegs;
     // A menu bound for the stretches read, not a game value: past it a route is better followed with the beacon.
     private const int MaxRouteLegs = 10;
+    // On by default (user decision 2026-10-11): four stretches cover a typical detour; the beacon follows the rest.
+    private const int DefaultRouteLegs = 4;
     private static readonly ExplorationCatalog Catalog = new();
     private static readonly List<ExplorationEntry> Entries = new();
     private static readonly List<System.Numerics.Vector2> UnexploredPositions = new();
@@ -39,7 +41,7 @@ internal static class ExplorationAccessibility
         _seenRange = config.Bind(ConfigSection, "SeenRange", 20f, new ConfigDescription(
             "A place is listed once it has been this close (world units) and in walkable line of sight.",
             new AcceptableValueRange<float>(5f, 60f)));
-        _routeLegs = config.Bind(ConfigSection, "RouteLegs", 0, new ConfigDescription(
+        _routeLegs = config.Bind(ConfigSection, "RouteLegs", DefaultRouteLegs, new ConfigDescription(
             "How many straight stretches of a detour the scanner reads, with climbs and descents; 0 reads only the way to head first.",
             new AcceptableValueRange<int>(0, MaxRouteLegs)));
         ExplorationInput.Initialize(config);

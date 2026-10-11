@@ -569,7 +569,7 @@ session) and how much room spheres reach past walls.
 
 The tester's report also asked for the path itself, as a sighted player plans it on the minimap: barriers, level
 changes and which side an entrance is entered from. Option `Exploration/RouteLegs` (mod menu, Exploration page,
-"Route stretches read"; 0 = off, the default, up to 10). When set, a detour's readout replaces "head down" with its
+"Route stretches read"; 0 = off, up to 10; default 4 since the user chose it on the same day). When set, a detour's readout replaces "head down" with its
 stretches: "Exit, 260 steps by route, down 40 steps, then right 60 steps, going up, then up 30 steps", and past the
 limit "and 2 more stretches". The level phrase follows as before; a straight route keeps the plain readout.
 - Corners (`ExploredMap.Corners`): the whole route straightened with the beacon's own pulling (`Pull`, NavMesh-clear

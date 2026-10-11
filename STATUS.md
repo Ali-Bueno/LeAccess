@@ -7,7 +7,7 @@ Earlier, 2026-10-11 11:18: wall tones rebuilt in the Grimdark style as an altern
 (mod menu "Wall tones", off by default): a soft steady tone per screen direction, louder as a wall comes closer
 ((1 - d/12 m)²), high ahead, low behind, mid in each ear, the farthest of three lanes per direction; about 6 dB under
 Grimdark ([wall tones](reference/navigation-radar.md#wall-tones-2026-10-11)). Unheard.
-Earlier, 2026-10-11: optional route legs: with `Exploration/RouteLegs` above 0 (mod menu, off by default) a detour's
+Earlier, 2026-10-11: route legs: with `Exploration/RouteLegs` above 0 (mod menu, 4 by default, user choice) a detour's
 scanner readout lists its stretches by direction with climbs and descents, the last one the way in
 ([legs](reference/exploration-mode.md#route-legs-2026-10-11-optional)); committed 8465b53, unheard.
 Earlier, 2026-10-11 11:07: the user confirms the wall bump and silent footsteps offline too (earlier game; that
