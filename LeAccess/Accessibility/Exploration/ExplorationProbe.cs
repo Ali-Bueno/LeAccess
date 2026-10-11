@@ -31,6 +31,7 @@ internal static class ExplorationProbe
     private static readonly List<string> Unseen = new();
     private static readonly List<MinimapRoom> Rooms = new();
     private static readonly List<MinimapRoom> Unvisited = new();
+    private static readonly List<MinimapRoom> Visited = new();
     private static readonly List<MinimapRoom> Entered = new();
     private static readonly List<FrontierArea> Frontier = new();
     private static readonly List<ExplorationFind> Finds = new();
@@ -51,6 +52,9 @@ internal static class ExplorationProbe
     internal static string LastStatus { get; private set; }
     // From the last refresh: rooms not yet visited (the room loop), rooms just entered and places just logged.
     internal static IReadOnlyList<MinimapRoom> UnvisitedRooms => Unvisited;
+    // Rooms visited or revealed by the game, and the scene session they belong to.
+    internal static IReadOnlyList<MinimapRoom> VisitedRooms => Visited;
+    internal static long VisitedSession { get; private set; }
     internal static IReadOnlyList<MinimapRoom> EnteredRooms => Entered;
     internal static IReadOnlyList<ExplorationFind> NewFinds => Finds;
 
@@ -62,6 +66,8 @@ internal static class ExplorationProbe
         Finds.Clear();
         Entered.Clear();
         Unvisited.Clear();
+        Visited.Clear();
+        VisitedSession = world.Session;
         LastFailure = null;
         var scene = SceneManager.GetActiveScene();
         if (!scene.IsValid() || !scene.isLoaded || (int)scene.handle != world.SceneHandle) return false;
@@ -196,6 +202,7 @@ internal static class ExplorationProbe
                 foreach (var room in Rooms)
                     if (!room.Revealed && !Seen.Contains(RoomTracker.VisitKey(MinimapRoomReader.Layout, room.Index)))
                         Unvisited.Add(room);
+                    else Visited.Add(room);
                 // Diagnostic: distance to the nearest room the player is not in.
                 if (RoomTracker.TryNearest(Rooms, player, Vector3.UnitZ, Vector3.UnitX, out float gap, out _, out _))
                     roomGap = gap.ToString("F0", CultureInfo.InvariantCulture);
@@ -331,6 +338,8 @@ internal static class ExplorationProbe
         Seen.Clear();
         Rooms.Clear();
         Unvisited.Clear();
+        Visited.Clear();
+        VisitedSession = 0;
         Entered.Clear();
         Finds.Clear();
         Frontier.Clear();

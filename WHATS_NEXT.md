@@ -14,8 +14,9 @@ shrine effects. All done; nothing heard yet. No new hook. Live checks, with log 
   arrival in the pocket below; check Cross works there.
 - Create+Circle repeats the entry; Square/Triangle readouts; `[Exploration] breakables: N` (are crates and pots in the
   Barrel group?); `[Shrine] activated: …` and `[Shrine] effect: …`.
-Open question for the user: explored ground comes from line of sight (20 units), while the minimap reveals whole room
-volumes, so a detour visible on the minimap may still be "no known route"; seeding visited minimap rooms is possible.
+Visited minimap rooms now count as explored (user decision): a detour shown on the minimap routes even if never seen
+from close up ([details](reference/exploration-mode.md#visited-minimap-rooms-count-as-explored-2026-10-11)); check
+`[Exploration beacon] visited rooms seeded: …` and that Burning Forest at Grael gives a route instead of "no known route".
 Not done: more enemy health speech (today bosses and elites only).
 
 # Handoff — 2026-10-10 night: first outside player report

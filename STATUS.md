@@ -6,7 +6,8 @@ and distance (L1 while Create or L3 is held, Ctrl+F1; [menu](reference/mod-menu.
 route ("260 steps by route, head down"), goals and arrival need a reachable point (the Fortress Walls storerooms)
 ([routes](reference/exploration-mode.md#route-aware-directions-and-reachable-goals-2026-10-11-tester-report)); mod button
 Square = life, mana, level and experience, Triangle = gold and progress, Circle repeats the scanner entry; breakables in
-the scanner ([layout](reference/exploration-mode.md#2026-10-11-tester-report-mod-button-layout-and-breakables)); separate
+the scanner ([layout](reference/exploration-mode.md#2026-10-11-tester-report-mod-button-layout-and-breakables)); visited minimap rooms
+count as explored ground for routes ([rooms](reference/exploration-mode.md#visited-minimap-rooms-count-as-explored-2026-10-11)); separate
 life/mana announcement options ([vitals](reference/vitals-api.md)); shrine names and effects ([shrines](reference/map-landmarks.md)).
 Installed (game closed). Unheard; checks in [WHATS_NEXT.md](WHATS_NEXT.md).
 Earlier, 2026-10-10 night: first report from a player outside the project; every item addressed. Name field echoes

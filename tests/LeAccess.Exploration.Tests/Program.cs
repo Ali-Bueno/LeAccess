@@ -14,6 +14,7 @@ internal static class Program
             UnexploredTests.Run();
             ArrivalTests.Run();
             TownTests.Run();
+            VisitedRoomTests.Run();
             RouteTests.Run();
             Console.WriteLine($"Exploration tests passed: {_checks} checks.");
             return 0;

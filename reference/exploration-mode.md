@@ -549,3 +549,18 @@ Listeners flagged `controllerTargetingUsePlayerY` take the player's height (`Exp
 sampled from the player's floor; none in Z52 or Z22 are flagged. Routes still need explored ground; the game's minimap
 reveals whole room volumes while explored cells come from line of sight within 20 units, so a route a sighted player
 can see may still be "unknown" here (possible follow-up: seed explored cells from visited minimap rooms).
+
+## Visited minimap rooms count as explored (2026-10-11)
+
+The tester's detours: the game's minimap reveals whole room volumes (`MinimapVolumesManager`, one sphere each), while
+explored cells came only from line of sight within `ExploreRadius`, so a detour a sighted player sees could read "no
+known route". User decision: mark visited rooms as explored. `VisitedRoomSeed` takes the rooms `ExplorationProbe` finds
+visited (the player stood inside, or the game's own status says revealed, as remembered per scene) and rasterizes the
+walkable NavMesh triangles inside each room's sphere (3D distance, so other floors outside the sphere stay out) onto
+the explored map, through `NavMeshSeed.Restart(regions)`: per beacon tick at most `TrianglesPerStep` triangles are
+rasterized and `RegionScanFactor` times as many bounding-box tests made; a failed mesh read waits `RetrySeconds`.
+Routes still check each edge on the NavMesh, so extra cells add options, never false passages. Seeded cells are saved
+with the other ground of fixed-layout scenes. Log: `[Exploration beacon] visited rooms seeded: +N (total M), cells +C,
+map T`. Tests: `VisitedRoomTests` (only visited rooms, not the floor above, spaced retries, bounded scan, a U-shaped
+detour that routes once its room is seeded). Unverified live: mesh copy cost on large maps (copied once per scene
+session) and how much room spheres reach past walls.

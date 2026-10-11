@@ -29,6 +29,7 @@ internal static class ExplorationBeacon
     private static ConfigEntry<float> _exploreRadius;
     private static ConfigEntry<int> _audioBuffer;
     private static readonly NavMeshWalkability Walkability = new();
+    private static readonly VisitedRoomSeed RoomSeed = new();
     private static readonly ExploredMemory Memory = new(() => new ExploredMap(ExploredMap.DefaultCellSize, Walkability.LevelHeight));
     private static readonly BeaconState State = new() { AtHand = TargetAtHand };
     private static readonly BeaconRouter Router = RouteExplored;
@@ -169,6 +170,14 @@ internal static class ExplorationBeacon
         catch (Exception ex) { ReportFailure(ex); }
     }
 
+    private static void SeedVisitedRooms(MapSectionWorldSnapshot world, double now)
+    {
+        if (ExplorationProbe.VisitedSession != world.Session) return;
+        int rooms = RoomSeed.Update(world.Session, _map, ExplorationProbe.VisitedRooms, now, Walkability.TryReadMesh, out int cells);
+        if (rooms > 0)
+            Plugin.Log.LogInfo($"[Exploration beacon] visited rooms seeded: +{rooms} (total {RoomSeed.SeededRooms}), cells +{cells}, map {_map.CellCount}");
+    }
+
     private static string Tick(double now, ExplorationTarget? target)
     {
         if (!TryCapture(out var world, out var player))
@@ -184,6 +193,7 @@ internal static class ExplorationBeacon
         }
         _map.Observe(player, Walkability);
         TownExplored.Update(world, _map, Walkability);
+        SeedVisitedRooms(world, now);
         if (!MinimapRoomReader.HasRooms) _map.UpdateFrontier(Walkability);
         if (State.LockedKey == null || !TryAxes(out var forward, out var right)) return null;
         _last = State.Tick(player, target, forward, right, now, Router);
