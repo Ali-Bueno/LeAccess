@@ -169,6 +169,31 @@ internal static class LootAndRoleTests
         Check(InteractableRoles.Name(InteractableRole.Nemesis, tag) == "Némesis", "An unresolved key without text uses the mod name");
         Check(InteractableRoles.Name(InteractableRole.None, tag) == null, "Without a role or game text there is no name");
 
+        // The echo and Morditas objects: fallback names, travel roles, and the Morditas hover label.
+        foreach (var (role, name) in new[] { (InteractableRole.UnstableRift, "fisura inestable"), (InteractableRole.Beacon, "Cristal revelador"),
+            (InteractableRole.MonolithForge, "Forja"), (InteractableRole.TimelineCatalyst, "Catalizador de línea temporal"),
+            (InteractableRole.OmenMirror, "Espejo de augurio"), (InteractableRole.MorditasCrystal, "Furia de Morditas"),
+            (InteractableRole.MorditasReward, "recompensa de Furia de Morditas") })
+            Check(InteractableRoles.Name(role, null) == name, $"{role} falls back to its catalog name");
+        Check(InteractableRoles.IsTravel(InteractableRole.TimeRift) && InteractableRoles.IsTravel(InteractableRole.UnstableRift) &&
+            InteractableRoles.IsTravel(InteractableRole.Beacon) && InteractableRoles.IsTravel(InteractableRole.TimelineCatalyst) &&
+            !InteractableRoles.IsTravel(InteractableRole.Nemesis) && !InteractableRoles.IsTravel(InteractableRole.MorditasCrystal) &&
+            !InteractableRoles.IsTravel(InteractableRole.OmenMirror) && !InteractableRoles.IsTravel(InteractableRole.None),
+            "Rifts, beacons and catalysts are travel roles");
+        var crystal = new RageOfMorditasInteractableObject { InteractLabel = new HoverTagOnMouseOver { hoverText = "Cristal de Morditas" } };
+        var crystalListener = new WorldObjectClickListener();
+        crystal.gameObject = crystalListener.gameObject; crystalListener.gameObject.Components.Add(crystal);
+        Check(InteractableRoles.Read(crystalListener) == InteractableRole.MorditasCrystal &&
+            InteractableRoles.Name(InteractableRole.MorditasCrystal, crystalListener, null) == "Cristal de Morditas",
+            "The Morditas crystal is named by its own hover label");
+        crystal.InteractLabel.hoverText = null;
+        Check(InteractableRoles.Name(InteractableRole.MorditasCrystal, crystalListener, null) == "Furia de Morditas",
+            "A silent Morditas label uses the catalog name");
+        var bones = new WorldObjectClickListener();
+        var bonePile = new GroundAncientBoneVisuals { gameObject = bones.gameObject }; bones.gameObject.Components.Add(bonePile);
+        Check(GroundLootListener.Owns(bones) && !GroundLootListener.Owns(new WorldObjectClickListener()),
+            "Ancient bone piles are ground loot, other listeners are not");
+
         // A shrine's name is found on a disabled tag, above or below the listener; the mod word is the last resort.
         Localization.Texts["shrine_tag"] = "Santuario del viento";
         var shrineListener = new WorldObjectClickListener();

@@ -233,6 +233,10 @@ internal sealed class MonolithPortal : UnityEngine.MonoBehaviour { }
 internal sealed class ShatteredRoadPortalInteractable : UnityEngine.MonoBehaviour { }
 internal sealed class NemesisEncounterInteractableObject : UnityEngine.MonoBehaviour { }
 internal sealed class OneShotCacheInteractableObject : UnityEngine.MonoBehaviour { }
+internal sealed class RageOfMorditasInteractableObject : UnityEngine.MonoBehaviour { internal HoverTagOnMouseOver InteractLabel; }
+internal sealed class RageOfMorditasRewardVisualController : UnityEngine.MonoBehaviour { internal HoverTagOnMouseOver InteractLabel; }
+internal sealed class OmenMirrorVisualController : UnityEngine.MonoBehaviour { }
+internal sealed class GroundAncientBoneVisuals : UnityEngine.MonoBehaviour { }
 internal static class Localization
 {
     internal static readonly Dictionary<string, string> Texts = new();
@@ -245,7 +249,11 @@ namespace LeAccess.I18n
         internal static string Get(string key) => key switch
         {
             "exploration.shrine" => "santuario", "exploration.time_rift" => "fisura temporal",
-            "exploration.nemesis" => "Némesis", "exploration.chest" => "cofre", _ => key
+            "exploration.nemesis" => "Némesis", "exploration.chest" => "cofre", "service.forge" => "Forja",
+            "exploration.morditas_rage" => "Furia de Morditas", "exploration.morditas_reward" => "recompensa de Furia de Morditas",
+            "exploration.unstable_rift" => "fisura inestable", "exploration.beacon" => "Cristal revelador",
+            "exploration.timeline_catalyst" => "Catalizador de línea temporal", "exploration.omen_mirror" => "Espejo de augurio",
+            _ => key
         };
     }
 }
@@ -262,7 +270,14 @@ namespace LeAccess.Accessibility.Combat
         internal static bool OnScreen(UnityEngine.Camera camera, UnityEngine.Vector3 position) => Screen(position);
     }
 }
-namespace LE.Gameplay.Monolith { internal sealed class MonolithChestInteraction : UnityEngine.MonoBehaviour { } }
+namespace LE.Gameplay.Monolith
+{
+    internal sealed class MonolithChestInteraction : UnityEngine.MonoBehaviour { }
+    internal sealed class UnstableRiftVisualController : UnityEngine.MonoBehaviour { }
+    internal sealed class BeaconVisualsController : UnityEngine.MonoBehaviour { }
+    internal sealed class ForgeVisualController : UnityEngine.MonoBehaviour { }
+    internal sealed class TimelineCatalystVisualController : UnityEngine.MonoBehaviour { }
+}
 namespace LE.Gameplay.PrimalHunt { internal sealed class CaveTreasureChest : UnityEngine.MonoBehaviour { } }
 namespace LE.Gameplay.Tombs { internal sealed class TombRewardChestInteraction : UnityEngine.MonoBehaviour { } }
 namespace Networking.Multiplayer.Interactables.Portals

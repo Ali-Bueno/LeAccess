@@ -135,11 +135,7 @@ internal sealed class WorldCueProbe
                     var listener = listeners[i];
                     if (!IsAlive(listener) || _lootListeners.Contains(listener.Pointer)) continue;
                     // Pooled/collected visuals can disappear before their listener leaves the other registry.
-                    if (listener.GetComponent<GroundGoldVisuals>() is not null ||
-                        listener.GetComponent<GroundItemVisuals>() is not null ||
-                        listener.GetComponent<GroundPotionVisuals>() is not null ||
-                        listener.GetComponent<GroundXPTomeVisuals>() is not null ||
-                        listener.GetComponent<GroundFavorTomeVisuals>() is not null) continue;
+                    if (GroundLootListener.Owns(listener)) continue;
                     if (NpcWorldProbe.IsNpc(listener)) continue;
                     _objects++;
                     Consider(listener, listener, null, WorldCueCategory.Interactable);

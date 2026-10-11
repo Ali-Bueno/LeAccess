@@ -11,8 +11,10 @@ using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Exploration;
 
-// Found is the bare name for "the radar has logged a new ..."; Destination the scene an exit leads to.
-internal readonly record struct ExplorationPlace(ExplorationCategory Category, string Name, string Found, string Destination);
+// Found is the bare name for "the radar has logged a new ..."; Destination the scene an exit leads to;
+// ListsOnScreen lists the place on sight whatever its category.
+internal readonly record struct ExplorationPlace(ExplorationCategory Category, string Name, string Found, string Destination,
+    bool ListsOnScreen = false);
 
 // Files a click listener under the D2R scanner's categories (d2r-access native_entities.cpp ObjectCategory):
 // the specific ones before the general, levers, notes and other objects into the catch-all.
@@ -23,23 +25,24 @@ internal static class ExplorationClassifier
         place = default;
         if (!IsAlive(listener) || !listener.isActiveAndEnabled || !IsAlive(listener.gameObject) ||
             !listener.gameObject.activeInHierarchy || !listener.gameObject.scene.IsValid() ||
-            !listener.gameObject.scene.isLoaded || !listener.CanInteract() || IsLoot(listener)) return false;
+            !listener.gameObject.scene.isLoaded || !listener.CanInteract() || GroundLootListener.Owns(listener)) return false;
         string service = WorldServiceReader.ReadServiceKey(listener);
         // The stash and waypoints also pass the NPC test.
-        if (service == "service.stash") return Place(ExplorationCategory.Stash, ModText.Get(service), out place);
-        if (service == "service.waypoint") return Place(ExplorationCategory.Waypoint, ModText.Get(service), out place);
+        if (service == "service.stash") return Place(listener, ExplorationCategory.Stash, ModText.Get(service), out place);
+        if (service == "service.waypoint") return Place(listener, ExplorationCategory.Waypoint, ModText.Get(service), out place);
         var role = InteractableRoles.Read(listener);
         if (role == InteractableRole.Shrine)
-            return Place(ExplorationCategory.Shrine, InteractableRoles.Name(InteractableRole.Shrine, listener, Tag(listener)), out place);
-        if (role is InteractableRole.TimeRift or InteractableRole.Nemesis)
-            return Place(role == InteractableRole.TimeRift ? ExplorationCategory.Portal : ExplorationCategory.Interactable,
-                InteractableRoles.Name(role, Tag(listener)), out place);
+            return Place(listener, ExplorationCategory.Shrine, InteractableRoles.Name(InteractableRole.Shrine, listener, Tag(listener)), out place);
+        // Roled objects are listed when on screen, as shrines are.
+        if (role is not (InteractableRole.None or InteractableRole.Cache))
+            return Place(listener, InteractableRoles.IsTravel(role) ? ExplorationCategory.Portal : ExplorationCategory.Interactable,
+                InteractableRoles.Name(role, listener, Tag(listener)), out place, onScreen: true);
         if (WorldCueIdentityReader.ReadKind(listener) == NaturalCueKind.Chest)
-            return Place(ExplorationCategory.Treasure, InteractableRoles.Name(InteractableRole.Cache, Tag(listener)), out place);
+            return Place(listener, ExplorationCategory.Treasure, InteractableRoles.Name(InteractableRole.Cache, Tag(listener)), out place);
         if (WorldServiceReader.IsNpc(listener))
-            return Place(IsCharacter(listener) ? ExplorationCategory.Npc : ExplorationCategory.Interactable,
+            return Place(listener, IsCharacter(listener) ? ExplorationCategory.Npc : ExplorationCategory.Interactable,
                 NpcNameReader.Read(listener, out _), out place);
-        if (service is not null) return Place(ExplorationCategory.Interactable, ModText.Get(service), out place);
+        if (service is not null) return Place(listener, ExplorationCategory.Interactable, ModText.Get(service), out place);
         string label = LandmarkProbe.ReadLabel(listener, listener.gameObject.scene, out bool portal, out bool transition);
         if (transition && !string.IsNullOrWhiteSpace(label))
         {
@@ -54,22 +57,27 @@ internal static class ExplorationClassifier
                 destination, scene);
             return true;
         }
-        if (portal) return Place(ExplorationCategory.Portal, label, out place);
+        if (portal) return Place(listener, ExplorationCategory.Portal, label, out place);
         var tag = Tag(listener);
         var category = IsAlive(tag) && tag.hoverTargetType is HoverTagOnMouseOver.HoverTargetType.SAME_SCENE_TRANSITION or
             HoverTagOnMouseOver.HoverTargetType.CONTINUE_ECHO_CHAIN ? ExplorationCategory.Exit : ExplorationCategory.Interactable;
-        return Place(category, HoverName(listener), out place);
+        return Place(listener, category, HoverName(listener), out place);
     }
 
-    // Ground loot has its own loops and the item category; its listeners are never places.
-    private static bool IsLoot(WorldObjectClickListener listener) =>
-        listener.GetComponent<GroundGoldVisuals>() is not null || listener.GetComponent<GroundItemVisuals>() is not null ||
-        listener.GetComponent<GroundPotionVisuals>() is not null || listener.GetComponent<GroundXPTomeVisuals>() is not null ||
-        listener.GetComponent<GroundFavorTomeVisuals>() is not null;
+    // Objects not yet known by name; each distinct GameObject name is logged once so it can be named later.
+    private static readonly HashSet<string> LoggedUnnamed = new();
 
-    private static bool Place(ExplorationCategory category, string name, out ExplorationPlace place)
+    // An unnamed object is still listed, under the generic name; other unnamed places stay out.
+    private static bool Place(WorldObjectClickListener listener, ExplorationCategory category, string name,
+        out ExplorationPlace place, bool onScreen = false)
     {
-        place = new ExplorationPlace(category, name, name, null);
+        if (string.IsNullOrWhiteSpace(name) && category == ExplorationCategory.Interactable)
+        {
+            if (LoggedUnnamed.Add(listener.gameObject.name))
+                Plugin.Log.LogInfo($"[Exploration] unnamed interactable: {listener.gameObject.name}");
+            name = ModText.Get("exploration.interactable");
+        }
+        place = new ExplorationPlace(category, name, name, null, onScreen);
         return !string.IsNullOrWhiteSpace(name);
     }
 

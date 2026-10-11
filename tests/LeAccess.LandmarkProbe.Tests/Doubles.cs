@@ -135,7 +135,10 @@ internal sealed class OpenShop : UnityEngine.Behaviour { }
 internal sealed class OpenStash : UnityEngine.Behaviour { }
 internal sealed class OpenMenuInteraction : UnityEngine.Behaviour
 {
-    internal enum MenuToOpen { Map, Stash, CraftingPanel, MtxShop }
+    internal enum MenuToOpen
+    {
+        Map, Stash, ArenaEnterPanel, CraftingPanel, MasteryPanel, Dungeon1EnterPanel, LightlessArborDungeonEnterPanel, SoulfireBastionDungeonEnterPanel, VaultsOfUncertainFatePanel, SanctuaryOfEterraPanel, FactionPanel, ObservatoryNorth, ObservatorySouth, ObservatoryEast, ObservatoryWest, FactionIntroduction, FactionMainCoF, FactionMainMG, FactionMGMyStall, FactionMainCoFRanks, CircleOfFortuneGambler, MerchantsGuildGambler, FactionMainFK, FactionMainTW, TheWeaverVendor, MtxShop, SetShattering, RandomiseLegendaryPotential, ExperimentalAffixCrafting, WovenEchoExchange, AttributeSwap, RerollUnique, IdolEnchantment, HunterVendor, TimeglassVendor
+    }
     internal MenuToOpen menu;
 }
 internal sealed class EnableWaypointInteraction : UnityEngine.Behaviour { }
@@ -216,6 +219,16 @@ internal sealed class MonolithPortal : UnityEngine.Behaviour { }
 internal sealed class ShatteredRoadPortalInteractable : UnityEngine.Behaviour { }
 internal sealed class NemesisEncounterInteractableObject : UnityEngine.Behaviour { }
 internal sealed class OneShotCacheInteractableObject : UnityEngine.Behaviour { }
+internal sealed class RageOfMorditasInteractableObject : UnityEngine.Behaviour { internal HoverTagOnMouseOver InteractLabel; }
+internal sealed class RageOfMorditasRewardVisualController : UnityEngine.Behaviour { internal HoverTagOnMouseOver InteractLabel; }
+internal sealed class OmenMirrorVisualController : UnityEngine.Behaviour { }
+namespace LE.Gameplay.Monolith
+{
+    internal sealed class UnstableRiftVisualController : UnityEngine.Behaviour { }
+    internal sealed class BeaconVisualsController : UnityEngine.Behaviour { }
+    internal sealed class ForgeVisualController : UnityEngine.Behaviour { }
+    internal sealed class TimelineCatalystVisualController : UnityEngine.Behaviour { }
+}
 internal static class Localization
 {
     internal static readonly Dictionary<string, string> Texts = new();

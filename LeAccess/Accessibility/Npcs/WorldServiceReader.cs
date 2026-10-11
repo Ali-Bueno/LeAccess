@@ -72,13 +72,37 @@ internal static class WorldServiceReader
         if (Owned(stash, listener) && stash.isActiveAndEnabled) return "service.stash";
         var menu = root.GetComponent<OpenMenuInteraction>();
         if (!Owned(menu, listener) || !menu.isActiveAndEnabled) return null;
-        return menu.menu switch
-        {
-            OpenMenuInteraction.MenuToOpen.CraftingPanel => "service.forge",
-            OpenMenuInteraction.MenuToOpen.Map when HasWaypoint(root, listener) => "service.waypoint",
-            _ => null
-        };
+        return menu.menu == OpenMenuInteraction.MenuToOpen.Map ? HasWaypoint(root, listener) ? "service.waypoint" : null
+            : MenuServiceKey(menu.menu);
     }
+
+    /// <summary>The service a menu object opens, named with the game's own terms; null for menus with no service name.</summary>
+    internal static string MenuServiceKey(OpenMenuInteraction.MenuToOpen menu) => menu switch
+    {
+        OpenMenuInteraction.MenuToOpen.CraftingPanel => "service.forge",
+        OpenMenuInteraction.MenuToOpen.SetShattering or OpenMenuInteraction.MenuToOpen.RandomiseLegendaryPotential or
+            OpenMenuInteraction.MenuToOpen.ExperimentalAffixCrafting or OpenMenuInteraction.MenuToOpen.AttributeSwap or
+            OpenMenuInteraction.MenuToOpen.RerollUnique or OpenMenuInteraction.MenuToOpen.IdolEnchantment => "service.crafting",
+        OpenMenuInteraction.MenuToOpen.MasteryPanel => "service.mastery",
+        OpenMenuInteraction.MenuToOpen.ArenaEnterPanel => "service.arena",
+        OpenMenuInteraction.MenuToOpen.Dungeon1EnterPanel or OpenMenuInteraction.MenuToOpen.LightlessArborDungeonEnterPanel or
+            OpenMenuInteraction.MenuToOpen.SoulfireBastionDungeonEnterPanel => "service.dungeon",
+        OpenMenuInteraction.MenuToOpen.VaultsOfUncertainFatePanel => "service.vault",
+        OpenMenuInteraction.MenuToOpen.SanctuaryOfEterraPanel => "service.sanctuary",
+        OpenMenuInteraction.MenuToOpen.FactionPanel or OpenMenuInteraction.MenuToOpen.FactionIntroduction => "service.faction",
+        OpenMenuInteraction.MenuToOpen.FactionMainCoF or OpenMenuInteraction.MenuToOpen.FactionMainCoFRanks => "service.circle_of_fortune",
+        OpenMenuInteraction.MenuToOpen.FactionMainMG or OpenMenuInteraction.MenuToOpen.FactionMGMyStall => "service.merchants_guild",
+        OpenMenuInteraction.MenuToOpen.FactionMainFK => "service.forgotten_knights",
+        OpenMenuInteraction.MenuToOpen.FactionMainTW => "service.the_woven",
+        OpenMenuInteraction.MenuToOpen.ObservatoryNorth or OpenMenuInteraction.MenuToOpen.ObservatorySouth or
+            OpenMenuInteraction.MenuToOpen.ObservatoryEast or OpenMenuInteraction.MenuToOpen.ObservatoryWest => "service.observatory",
+        OpenMenuInteraction.MenuToOpen.CircleOfFortuneGambler or OpenMenuInteraction.MenuToOpen.MerchantsGuildGambler => "service.gambler",
+        OpenMenuInteraction.MenuToOpen.TheWeaverVendor => "service.weaver",
+        OpenMenuInteraction.MenuToOpen.HunterVendor => "service.hunter_vendor",
+        OpenMenuInteraction.MenuToOpen.TimeglassVendor => "service.timeglass_vendor",
+        OpenMenuInteraction.MenuToOpen.WovenEchoExchange => "service.woven_echo_exchange",
+        _ => null
+    };
 
     private static bool HasWaypoint(Component root, WorldObjectClickListener listener)
     {

@@ -77,9 +77,11 @@ internal static class ExplorationProbe
         Vector3 origin = default;
         bool hasOrigin = nav is not null && nav.TrySample(player, out origin);
         var view = UnityEngine.Camera.main;
-        bool CanSeeHere(Vector3 target, float interactionRange, ExplorationCategory category) =>
+        bool CanSeeAt(Vector3 target, float interactionRange, bool listsOnScreen) =>
             CanSee(player, origin, hasOrigin, target, nav, seenRange, interactionRange) ||
-            ExplorationSight.ListsOnScreen(category) && view != null && BossLifeProbe.OnScreen(view, ToUnity(target));
+            listsOnScreen && view != null && BossLifeProbe.OnScreen(view, ToUnity(target));
+        bool CanSeeHere(Vector3 target, float interactionRange, ExplorationCategory category) =>
+            CanSeeAt(target, interactionRange, ExplorationSight.ListsOnScreen(category));
 
         int places = 0, unseen = 0;
         Unseen.Clear();
@@ -101,7 +103,7 @@ internal static class ExplorationProbe
                     if (!Seen.Contains(memory))
                     {
                         if (!Arrival.IsWayBack(place.Category, place.Destination, cameFrom, position, seenRange) &&
-                            !CanSeeHere(position, range, place.Category))
+                            !CanSeeAt(position, range, ExplorationSight.ListsOnScreen(place.Category, place.ListsOnScreen)))
                         {
                             if (unseen++ < UnseenLogged)
                                 Unseen.Add($"{place.Name} {ExploredMap.Horizontal(player, position):F0}m");

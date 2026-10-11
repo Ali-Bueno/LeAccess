@@ -585,3 +585,36 @@ Tests: ExplorationCatalog 99 (legs, joining, limit and remainder, sub-step stret
 (the U-shaped detour reads down, right, up with corners that walk the route; the Storerooms legs descend the ramp and
 end on the pocket floor). Unverified live: wording and length in game, and the corner count on real NavMesh routes
 (cell-sized jogs at doorways may still add short diagonal legs).
+
+## Every interactable in the scanner (2026-10-11, user request)
+
+Request: everything the player can interact with (the Nemesis, the Rage of Morditas, time rifts...) must be in the scanner.
+
+- New roles in `InteractableRoles.Read` (game component on the listener or an ancestor, alive and enabled):
+  `RageOfMorditasInteractableObject` and `RageOfMorditasRewardVisualController` (named by their own `InteractLabel` hover
+  tag, else `exploration.morditas_*`), `UnstableRiftVisualController`, `BeaconVisualsController`,
+  `ForgeVisualController`, `TimelineCatalystVisualController` (all `LE.Gameplay.Monolith`) and `OmenMirrorVisualController`.
+  Rift, beacon and catalyst file under Portal (`IsTravel`, as the time rift); the rest under Interactable. No Quest
+  category: none of them is a quest objective by itself.
+- The seven event-owner lookups are cached per listener (`InteractableRoles.EventOwners`, keyed by instance ID and
+  pointer; availability is still checked each time): the scanner reads every listener twice a second.
+- Sound: travel roles use the Portal loop, the other new roles the Shrine loop (landmark reach); no new WAV files.
+- On screen: `ExplorationPlace.ListsOnScreen` is set for every roled place (Nemesis included), so it lists when seen, not
+  only within the 20 m NavMesh line of sight; plain interactables keep that rule. Chests stay on the seen-range rule.
+- Nameless listeners that pass the filters are listed as `exploration.interactable` and each distinct GameObject name is
+  logged once: `[Exploration] unnamed interactable: <name>`. Only the Interactable category falls back; unnamed NPCs and
+  exits are still dropped.
+- Menu objects (`OpenMenuInteraction.MenuToOpen`, `WorldServiceReader.MenuServiceKey`): arena, dungeons, Vault of Uncertain
+  Fate, Sanctuary of Eterra, factions (Circle of Fortune, Merchant's Guild, Forgotten Knights, The Woven), observatory,
+  gamblers, The Weaver, hunter and timeglass vendors, woven-echo exchange, mastery and the crafting variants get
+  `service.*` keys, filed under Interactable. `Stash` (a native no-op) and `MtxShop` (cosmetic shop) stay unmapped, as the
+  landmark tests record. The service name is also appended to an NPC's spoken name, as the forge already was.
+- Ancient bone piles (`GroundAncientBoneVisuals`) join the ground-loot test (`GroundLootListener.Owns`, shared by the
+  scanner and the world cues); they have no list or loop of their own yet.
+- Strings use the game's terms (glossary); the hunter vendor and the generic and Morditas-reward names are the mod's own.
+
+Unverified in game: which of the new components are present and enabled when the player stands near them; whether the
+Morditas label text resolves; the unnamed-interactable log will show what is still missing. The Weaver altar and the rune
+prison have no listener field found and are not implemented.
+
+Tests: WorldCues 304, NpcProbe 116, LandmarkProbe 111, ExplorationCatalog 103, Exploration 448, Localization 9110.

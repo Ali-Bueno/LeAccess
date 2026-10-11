@@ -66,6 +66,30 @@ internal static class ServiceTests
         relay.isActiveAndEnabled = false;
         Check(WorldServiceReader.ReadServiceKey(listener) is null, "Disabled relay does not supply service metadata");
         relay.isActiveAndEnabled = true;
+        // Menu objects name the service they open; the no-op Stash and cosmetic shop menus stay unnamed.
+        var menuGo = new GameObject();
+        var menuListener = menuGo.Add(new WorldObjectClickListener());
+        var menus = menuGo.Add(new OpenMenuInteraction());
+        var kinds = new Dictionary<string, List<OpenMenuInteraction.MenuToOpen>>();
+        foreach (OpenMenuInteraction.MenuToOpen each in Enum.GetValues(typeof(OpenMenuInteraction.MenuToOpen)))
+        {
+            string key = WorldServiceReader.MenuServiceKey(each);
+            if (key is null) continue;
+            if (!kinds.TryGetValue(key, out var group)) kinds[key] = group = new();
+            group.Add(each);
+        }
+        Check(WorldServiceReader.MenuServiceKey(OpenMenuInteraction.MenuToOpen.ArenaEnterPanel) == "service.arena" &&
+            WorldServiceReader.MenuServiceKey(OpenMenuInteraction.MenuToOpen.TheWeaverVendor) == "service.weaver" &&
+            WorldServiceReader.MenuServiceKey(OpenMenuInteraction.MenuToOpen.CraftingPanel) == "service.forge" &&
+            WorldServiceReader.MenuServiceKey(OpenMenuInteraction.MenuToOpen.IdolEnchantment) == "service.crafting",
+            "Menu values map to their service keys");
+        Check(kinds["service.dungeon"].Count == 3 && kinds["service.observatory"].Count == 4 && kinds["service.gambler"].Count == 2,
+            "Dungeon, observatory and gambler menus share one key each");
+        Check(WorldServiceReader.MenuServiceKey(OpenMenuInteraction.MenuToOpen.Stash) is null &&
+            WorldServiceReader.MenuServiceKey(OpenMenuInteraction.MenuToOpen.MtxShop) is null &&
+            WorldServiceReader.MenuServiceKey(OpenMenuInteraction.MenuToOpen.Map) is null, "Stash, cosmetic shop and map menus have no service name");
+        menus.menu = OpenMenuInteraction.MenuToOpen.SanctuaryOfEterraPanel;
+        Check(WorldServiceReader.ReadServiceKey(menuListener) == "service.sanctuary", "A menu object on the listener names its service");
         return checks;
     }
 }

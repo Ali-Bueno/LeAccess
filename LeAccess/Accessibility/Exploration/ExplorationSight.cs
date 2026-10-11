@@ -7,4 +7,7 @@ internal static class ExplorationSight
     internal static bool ListsOnScreen(ExplorationCategory category) => category is ExplorationCategory.Shrine or
         ExplorationCategory.Portal or ExplorationCategory.Exit or ExplorationCategory.Stash or ExplorationCategory.Item or
         ExplorationCategory.Breakable;
+
+    // A place flagged by its role (the Nemesis, event objects) is listed on screen whatever its category.
+    internal static bool ListsOnScreen(ExplorationCategory category, bool flagged) => flagged || ListsOnScreen(category);
 }

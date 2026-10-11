@@ -138,7 +138,10 @@ internal sealed class OpenShop : UnityEngine.Component { }
 internal sealed class OpenStash : UnityEngine.Component { }
 internal sealed class OpenMenuInteraction : UnityEngine.Component
 {
-    internal enum MenuToOpen { Map, Stash, CraftingPanel, MtxShop }
+    internal enum MenuToOpen
+    {
+        Map, Stash, ArenaEnterPanel, CraftingPanel, MasteryPanel, Dungeon1EnterPanel, LightlessArborDungeonEnterPanel, SoulfireBastionDungeonEnterPanel, VaultsOfUncertainFatePanel, SanctuaryOfEterraPanel, FactionPanel, ObservatoryNorth, ObservatorySouth, ObservatoryEast, ObservatoryWest, FactionIntroduction, FactionMainCoF, FactionMainMG, FactionMGMyStall, FactionMainCoFRanks, CircleOfFortuneGambler, MerchantsGuildGambler, FactionMainFK, FactionMainTW, TheWeaverVendor, MtxShop, SetShattering, RandomiseLegendaryPotential, ExperimentalAffixCrafting, WovenEchoExchange, AttributeSwap, RerollUnique, IdolEnchantment, HunterVendor, TimeglassVendor
+    }
     internal MenuToOpen menu;
 }
 internal sealed class EnableWaypointInteraction : UnityEngine.Component { }

@@ -233,6 +233,9 @@ foreach (var landmark in new[] { ExplorationCategory.Shrine, ExplorationCategory
 foreach (var other in new[] { ExplorationCategory.Npc, ExplorationCategory.Treasure, ExplorationCategory.Interactable,
     ExplorationCategory.Waypoint, ExplorationCategory.Enemy })
     Equal(false, ExplorationSight.ListsOnScreen(other), $"{other} keeps the seen-range rule");
+foreach (var flagged in new[] { ExplorationCategory.Interactable, ExplorationCategory.Portal, ExplorationCategory.Npc })
+    Equal(true, ExplorationSight.ListsOnScreen(flagged, flagged: true), $"A flagged {flagged} is listed on screen");
+Equal(false, ExplorationSight.ListsOnScreen(ExplorationCategory.Interactable, flagged: false), "A plain interactable keeps the seen-range rule");
 
 // Non-finite entries are ignored.
 var broken = new List<ExplorationEntry> { new("x", "X", ExplorationCategory.Exit, new Vector3(float.NaN, 0, 0), 1) };

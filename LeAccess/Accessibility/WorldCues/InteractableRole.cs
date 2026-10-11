@@ -1,17 +1,23 @@
+using System;
 using System.Collections.Generic;
+using LE.Gameplay.Monolith;
 using LeAccess.I18n;
 using UnityEngine;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.WorldCues;
 
-internal enum InteractableRole { None, Shrine, TimeRift, Nemesis, Cache }
+internal enum InteractableRole
+{
+    None, Shrine, TimeRift, Nemesis, Cache, MorditasCrystal, MorditasReward, UnstableRift, Beacon, MonolithForge,
+    TimelineCatalyst, OmenMirror
+}
 
 // Interactables recognized by their game components; sound and fallback name follow the role.
 internal static class InteractableRoles
 {
-    // Shrines, time rifts, the Nemesis altar and caches, by the game components on the listener or its owner;
-    // shrines also by the objects their manager placed.
+    // Shrines, rifts, the Nemesis altar, caches and the echo and Morditas objects, by the game components on the
+    // listener or its owner; shrines also by the objects their manager placed.
     internal static InteractableRole Read(WorldObjectClickListener listener)
     {
         if (!Available(listener)) return InteractableRole.None;
@@ -24,9 +30,44 @@ internal static class InteractableRoles
             Available(listener.GetComponentInParent<TimeBeastRift>()) ||
             Available(listener.GetComponentInParent<MonolithPortal>()) ||
             Available(listener.GetComponentInParent<ShatteredRoadPortalInteractable>())) return InteractableRole.TimeRift;
-        return Available(listener.GetComponentInParent<OneShotCacheInteractableObject>())
-            ? InteractableRole.Cache : InteractableRole.None;
+        if (Available(listener.GetComponentInParent<OneShotCacheInteractableObject>())) return InteractableRole.Cache;
+        return ReadEventObject(listener);
     }
+
+    // Owners of the event roles by listener: the scanner asks for every listener twice a second, and an active
+    // listener's ancestors (so their components) stay the same for its life.
+    private static readonly Dictionary<(int, IntPtr), (InteractableRole Role, Behaviour Owner)> EventOwners = new();
+    // A scene holds a few hundred listeners; past this the cache restarts instead of growing over a long session.
+    private const int MaxCachedListeners = 4096;
+
+    // Objects of the endgame events: Rage of Morditas, monolith echoes and omen windows.
+    private static InteractableRole ReadEventObject(WorldObjectClickListener listener)
+    {
+        var key = (listener.GetInstanceID(), listener.Pointer);
+        if (!EventOwners.TryGetValue(key, out var owner))
+        {
+            if (EventOwners.Count >= MaxCachedListeners) EventOwners.Clear();
+            EventOwners[key] = owner = FindEventOwner(listener);
+        }
+        return owner.Role != InteractableRole.None && Available(owner.Owner) ? owner.Role : InteractableRole.None;
+    }
+
+    private static (InteractableRole, Behaviour) FindEventOwner(WorldObjectClickListener listener)
+    {
+        Behaviour owner;
+        if (IsAlive(owner = listener.GetComponentInParent<RageOfMorditasInteractableObject>())) return (InteractableRole.MorditasCrystal, owner);
+        if (IsAlive(owner = listener.GetComponentInParent<RageOfMorditasRewardVisualController>())) return (InteractableRole.MorditasReward, owner);
+        if (IsAlive(owner = listener.GetComponentInParent<UnstableRiftVisualController>())) return (InteractableRole.UnstableRift, owner);
+        if (IsAlive(owner = listener.GetComponentInParent<BeaconVisualsController>())) return (InteractableRole.Beacon, owner);
+        if (IsAlive(owner = listener.GetComponentInParent<ForgeVisualController>())) return (InteractableRole.MonolithForge, owner);
+        if (IsAlive(owner = listener.GetComponentInParent<TimelineCatalystVisualController>())) return (InteractableRole.TimelineCatalyst, owner);
+        if (IsAlive(owner = listener.GetComponentInParent<OmenMirrorVisualController>())) return (InteractableRole.OmenMirror, owner);
+        return (InteractableRole.None, null);
+    }
+
+    /// <summary>Roles that lead somewhere or start the next stretch of an echo; they are filed and sound as portals.</summary>
+    internal static bool IsTravel(InteractableRole role) => role is InteractableRole.TimeRift or InteractableRole.UnstableRift or
+        InteractableRole.Beacon or InteractableRole.TimelineCatalyst;
 
     private static bool Available(Behaviour component) => IsAlive(component) &&
         component.isActiveAndEnabled && IsAlive(component.gameObject) && component.gameObject.activeInHierarchy;
@@ -37,6 +78,13 @@ internal static class InteractableRoles
         InteractableRole.TimeRift => "exploration.time_rift",
         InteractableRole.Nemesis => "exploration.nemesis",
         InteractableRole.Cache => "exploration.chest",
+        InteractableRole.MorditasCrystal => "exploration.morditas_rage",
+        InteractableRole.MorditasReward => "exploration.morditas_reward",
+        InteractableRole.UnstableRift => "exploration.unstable_rift",
+        InteractableRole.Beacon => "exploration.beacon",
+        InteractableRole.MonolithForge => "service.forge",
+        InteractableRole.TimelineCatalyst => "exploration.timeline_catalyst",
+        InteractableRole.OmenMirror => "exploration.omen_mirror",
         _ => null
     };
 
@@ -52,10 +100,21 @@ internal static class InteractableRoles
     /// <summary>The name for a listener: shrines also search its ancestors and descendants for the hover tag, enabled or not.</summary>
     internal static string Name(InteractableRole role, WorldObjectClickListener listener, HoverTagOnMouseOver tag)
     {
-        if (role != InteractableRole.Shrine || !IsAlive(listener)) return Name(role, tag);
-        return ShrineName(new[] { tag, listener.GetComponentInParent<HoverTagOnMouseOver>(true),
-            listener.GetComponentInChildren<HoverTagOnMouseOver>(true) });
+        if (!IsAlive(listener)) return Name(role, tag);
+        if (role == InteractableRole.Shrine)
+            return ShrineName(new[] { tag, listener.GetComponentInParent<HoverTagOnMouseOver>(true),
+                listener.GetComponentInChildren<HoverTagOnMouseOver>(true) });
+        var label = InteractLabel(role, listener);
+        return label is null ? Name(role, tag) : GameShrineName(new[] { tag, label }) ?? ModText.Get(NameKey(role));
     }
+
+    // The Morditas crystals name themselves through their own hover label.
+    private static HoverTagOnMouseOver InteractLabel(InteractableRole role, WorldObjectClickListener listener) => role switch
+    {
+        InteractableRole.MorditasCrystal => listener.GetComponentInParent<RageOfMorditasInteractableObject>()?.InteractLabel,
+        InteractableRole.MorditasReward => listener.GetComponentInParent<RageOfMorditasRewardVisualController>()?.InteractLabel,
+        _ => null
+    };
 
     /// <summary>The first hover text the game gives any of the tags, else the mod's own word for a shrine.</summary>
     internal static string ShrineName(IEnumerable<HoverTagOnMouseOver> tags) =>
