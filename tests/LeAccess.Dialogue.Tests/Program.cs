@@ -1,4 +1,5 @@
 using LeAccess.Accessibility;
+using LeAccess.Accessibility.Announcements;
 using LeAccess.Accessibility.Dialogue;
 using LeAccess.Accessibility.ScreenContent;
 using PixelCrushers.DialogueSystem;
@@ -26,6 +27,7 @@ internal static class Program
             ReminderTypewriter();
             RejectedOutputRetriesCurrentTurn();
             AutomaticFocusFollowsLine();
+            SingleResponseRepeatsOnDirectionPush();
             Console.WriteLine($"Dialogue tests passed: {_checks} checks.");
             return 0;
         }
@@ -155,6 +157,35 @@ internal static class Program
         Check(ScreenReader.Messages.Count == 0, "The dialogue reader never enumerates response choices.");
         DialogueAnnouncer.HideResponses(ui);
         Check(!DialogueAnnouncer.HasActiveContent, "Closing responses releases dialogue ownership.");
+    }
+
+    private static void SingleResponseRepeatsOnDirectionPush()
+    {
+        var ui = Create();
+        var responseRoot = ui.gameObject.Child();
+        ui.dialogue.responseMenu = new TextMeshProResponseMenuControls { panel = responseRoot.Add(new Graphic()) };
+        var only = responseRoot.Child(); only.Add(new TMP_Text { text = "Recoger la carta" });
+        ElementAnnouncer.Repeated.Clear(); ElementAnnouncer.LastAnnouncedInstanceId = 7; ElementAnnouncer.FocusedElement = only;
+        DialogueAnnouncer.ShowResponses(ui);
+        Tick(); Tick();
+        Check(ElementAnnouncer.Repeated.Count == 0, "Without a push the lone response is not repeated");
+        MenuDirectionInput.Pushed = true; Tick();
+        Check(ElementAnnouncer.Repeated.Single() == only, "A direction push re-reads the focused response");
+        MenuDirectionInput.Pushed = true; ElementAnnouncer.LastAnnouncedInstanceId = 8; Tick();
+        Check(ElementAnnouncer.Repeated.Count == 1, "A push that moved focus is left to the focus announcement");
+        MenuDirectionInput.Pushed = true; ScreenReader.SpokeThisFrame = true; Tick();
+        Check(ElementAnnouncer.Repeated.Count == 1, "A push in a frame that already spoke does not double-speak");
+        ScreenReader.SpokeThisFrame = false;
+        MenuDirectionInput.Pushed = true; ElementAnnouncer.FocusedElement = new GameObject(); Tick();
+        Check(ElementAnnouncer.Repeated.Count == 1, "Focus outside the conversation is never repeated");
+        ElementAnnouncer.FocusedElement = only;
+        DialogueAnnouncer.HideResponses(ui);
+        MenuDirectionInput.Pushed = true; Tick();
+        Check(ElementAnnouncer.Repeated.Count == 1, "Without a response menu a push repeats nothing");
+        MenuDirectionInput.Pushed = false;
+        DialogueAnnouncer.Reset();
+        Check(DialogueResponseRepeat.ShouldRepeat(true, false, false) && !DialogueResponseRepeat.ShouldRepeat(false, false, false),
+            "Only an unmoved push repeats");
     }
 
     private static TextMeshProDialogueUI Create()

@@ -79,4 +79,8 @@ Check(OnlyReaderKeys(KeyCode.LeftControl) && OnlyReaderKeys(KeyCode.RightControl
 Check(!OnlyReaderKeys(KeyCode.R) && !OnlyReaderKeys(KeyCode.LeftControl, KeyCode.R) && !OnlyReaderKeys(KeyCode.Tab) &&
     !OnlyReaderKeys(KeyCode.Keypad0), "Any other key, alone or with a modifier, still switches to the keyboard");
 Check(!OnlyReaderKeys(), "No key activity leaves the game's own verdict alone");
+Check(LeAccess.Accessibility.Announcements.MenuDetailInput.IsPush(-1, 0, 0, 0) && LeAccess.Accessibility.Announcements.MenuDetailInput.IsPush(0, -0.6f, 0.1f, 0.1f),
+    "A stick leaving rest toward any direction is a push");
+Check(!LeAccess.Accessibility.Announcements.MenuDetailInput.IsPush(1, 0, 0, 1) && !LeAccess.Accessibility.Announcements.MenuDetailInput.IsPush(0.2f, 0.1f, 0, 0),
+    "A held stick or drift is not a push");
 Console.WriteLine($"Vitals/menu detail input tests passed: {checks} checks.");

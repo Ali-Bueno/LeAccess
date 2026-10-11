@@ -43,6 +43,17 @@ public static class ElementAnnouncer
     /// </summary>
     public static int LastAnnouncedInstanceId => _lastAnnouncedInstanceId;
 
+    /// <summary>The control the last announcement was about.</summary>
+    internal static GameObject FocusedElement => _cachedFocusedGo;
+
+    /// <summary>Speaks the focused control again, interrupting, though it was already announced.</summary>
+    internal static void RepeatFocus(GameObject go)
+    {
+        _lastAnnouncedInstanceId = 0;
+        _lastAnnouncementText = null;
+        AnnounceElement(go, interrupt: true);
+    }
+
     internal static void ResetFocus()
     {
         ClearLastFocus();

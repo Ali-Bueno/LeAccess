@@ -28,6 +28,7 @@ internal static class DialogueAnnouncer
     // The game selects a response or the continue button as each line appears, and again
     // when the response menu replaces the continue button; that focus queues behind the line.
     private static bool _followerArmed;
+    private static int _lastFocusId;
 
     internal static bool HasPendingContent { get; private set; }
     internal static bool HasActiveContent
@@ -152,6 +153,7 @@ internal static class DialogueAnnouncer
             RefreshNativeUi();
             ReportStatus();
             if (!Available()) { Reset(); return; }
+            RepeatResponseOnPush();
             if (!VisibleSubtitle())
             {
                 HasPendingContent = false;
@@ -182,8 +184,24 @@ internal static class DialogueAnnouncer
         }
     }
 
+    // A lone response never changes focus, so a direction push is the player's way to hear it again.
+    private static void RepeatResponseOnPush()
+    {
+        int focusId = ElementAnnouncer.LastAnnouncedInstanceId;
+        bool focusMoved = focusId != _lastFocusId;
+        _lastFocusId = focusId;
+        if (!IsAlive(ResponseRoot()) || !DialogueResponseRepeat.ShouldRepeat(MenuDirectionInput.PushedThisFrame(),
+            focusMoved, ScreenReader.SpokeThisFrame)) return;
+        var focused = ElementAnnouncer.FocusedElement;
+        if (!IsAlive(focused) || !OwnsFocus(focused) || IsContinueButton(focused)) return;
+        ElementAnnouncer.RepeatFocus(focused);
+        _lastFocusId = ElementAnnouncer.LastAnnouncedInstanceId;
+        Plugin.Log.LogInfo("[Dialogue] response repeated on direction push");
+    }
+
     internal static void Reset()
     {
+        _lastFocusId = 0;
         _ui = null;
         _subtitle = null;
         _subtitleId = 0;

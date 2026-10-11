@@ -63,3 +63,20 @@ namespace PixelCrushers.DialogueSystem.TextMeshPro
         public TextMeshProSubtitleControls subtitleReminder;
     }
 }
+
+namespace LeAccess.Accessibility.Announcements
+{
+    internal static class ElementAnnouncer
+    {
+        internal static int LastAnnouncedInstanceId;
+        internal static UnityEngine.GameObject FocusedElement;
+        internal static readonly List<UnityEngine.GameObject> Repeated = new();
+        internal static void RepeatFocus(UnityEngine.GameObject go) => Repeated.Add(go);
+    }
+
+    internal static class MenuDirectionInput
+    {
+        internal static bool Pushed;
+        internal static bool PushedThisFrame() => Pushed;
+    }
+}

@@ -360,3 +360,7 @@ replaced it with the response menu, the game's automatic focus on the first resp
 interrupted. `DialogueAnnouncer` now arms the follower both for each accepted line and
 when the response menu becomes visible (hook or polling, once per appearance). Dialogue
 suite: 86 checks. Listening pending.
+
+## Lone response re-read on a direction push (2026-10-10, user report)
+
+A single response (Messenger's "Pick up the letter") never changes focus, so `ElementAnnouncer` deduplicates it and a player who silenced the reader cannot hear it again. `DialogueAnnouncer.Update` now polls `MenuDirectionInput.PushedThisFrame` (d-pad, left stick edge via `MenuDetailInput.IsPush`, arrow keys) while the response menu is visible. When focus did not move and nothing spoke that frame (`DialogueResponseRepeat.ShouldRepeat`), `ElementAnnouncer.RepeatFocus` clears the dedup state and speaks the focused response with interrupt. No hook; log line `[Dialogue] response repeated on direction push`.
