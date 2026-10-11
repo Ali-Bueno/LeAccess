@@ -1,4 +1,14 @@
-# Handoff — 2026-10-11 evening: radar trace before any radar change
+# Handoff — 2026-10-11 10:00: first trace, shadow variants
+
+User: wall bump and silent footsteps work online (offline untested); walked little, mostly testing the other session's
+changes. The 14-cue trace already shows the grazing ray (live Left 11.6 → 0 → 10.9 → 0 m within 0.35 s, `edge` 0.00,
+both shadows smooth) ([findings](reference/navigation-radar.md#first-trace-2026-10-11-0945)). The shadow now logs two
+variants: `origin` (the live ray from an origin moved off a touching wall) and `lanes` (three lanes, median).
+Next session, same analysis as below plus: does `origin` alone remove the grazing flips, and does `lanes` lose narrow
+passages (`lanes` blocked where live and `origin` breathe)? Adopt the smaller sufficient variant. Also check the wall
+bump offline (`push read from the Actor state`).
+
+# Handoff — 2026-10-11 09:30: radar trace before any radar change
 
 User: unsure about the radar proposals; asked for the best diagnostics, will play a while, and the radar changes
 follow from that log. Installed, nothing audible changed ([format and how to read it](reference/navigation-radar.md#radar-trace-2026-10-11)).
@@ -8,7 +18,7 @@ toggling, real doorway) from its `depth`/`cont`/`edge` series; compare `live_fli
 shadow kept the real doorway breaths. Then change the live reading accordingly and remove `RadarWorldProbe.Shadow.cs`,
 the shadow engine in `ReactiveRadar` and the `shadow=` field (keep the event lines if still useful).
 
-# Handoff — 2026-10-11 afternoon: wall bump and silent footsteps
+# Handoff — 2026-10-11 09:19: wall bump and silent footsteps
 
 User: sometimes the radar feels inconsistent (brought another assistant's four proposals); wants to know when walking
 into a wall stops the character, offline and online, by silencing the footsteps or a short bump, since footsteps are
