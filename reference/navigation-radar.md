@@ -534,17 +534,15 @@ Proposed next step if the user agrees: depth and agreement in each cue's log lin
 The user asked for a better diagnosis before any radar change: play a while, then change what the log shows. Added
 lines (numbers invariant, `t=` is `Time.unscaledTimeAsDouble`, the radar's own clock):
 
-- `Reactive radar event: t= dir= state= [flip=] pos=x,z edge= depth=… cont=… origin=… lanes=…` for every generated
-  cue: the last 8 polls (0.4 s) of that direction, oldest first, live depth, continuation flags and each shadow
-  variant's depth (`-` = unknown). `flip=` gives the seconds since the opposite cue in the same direction when under 1.5 s.
+- `Reactive radar event: t= dir= state= [flip=] pos=x,z edge= depth=… cont=…` for every generated cue: the last 8
+  polls (0.4 s) of that direction, oldest first, depth and continuation flags (`-` = unknown). Until 11:20 the line
+  also carried the shadow readings (`shadow=`, then `origin=` and `lanes=`). `flip=` gives the seconds since the opposite cue in the same direction when under 1.5 s.
   `edge=` is the distance from the origin to the nearest NavMesh edge (`NavMesh.FindClosestEdgeFilter`).
 - `Reactive radar cue: t= direction= state=` as before, with the time: what was played.
-- `Reactive radar shadow origin|lanes: t= dir= state= [flip=]`: what each alternative reading would have played
-  (never heard).
-- The five-second status ends with `edge= trace: live_events= live_flips= origin_events= origin_flips= lanes_events=
-  lanes_flips= pressed_polls=a/b` (polls with the origin within the agent radius of an edge).
+- The five-second status ends with `edge= trace: events= flips= pressed_polls=a/b` (polls with the origin within the
+  agent radius of an edge; the edge query is `NavMesh.FindClosestEdgeFilter`, one per poll).
 
-**Shadow readings (temporary, `RadarWorldProbe.Shadow.cs`)**: `origin` is the live ray from an origin moved off a
+**Shadow readings (removed 11:20, see the second trace)**: `origin` is the live ray from an origin moved off a
 touching wall; `lanes` adds two parallel lanes (since 10:00; at 09:30 only `lanes` existed, logged as `shadow=`). The
 live rays, but from an origin moved off a touching wall (to one body radius from the nearest edge, away from it; on the edge itself, away from the live rays that read
 under a body radius), three parallel lanes per direction across the body width (centre, ±body radius; a lane whose
@@ -559,8 +557,8 @@ hovering around 2.1 or 3.0 to threshold chatter; a steady depth between 3 and 6 
 continuation branches. Compare `live_flips` with `shadow_flips`, and check that the shadow still breathes at the
 doorways the live reading found.
 
-Tests: Navigation 909 checks (trace window and flips, both shadows beside a wall with and without an edge direction,
-heartbeat and event lines).
+Tests: Navigation 895 checks after the shadow's removal (trace window and flips, edge distance, heartbeat and event
+lines).
 
 ### First trace (2026-10-11 09:45)
 
@@ -574,3 +572,25 @@ was split to learn whether moving the origin alone suffices (the three lanes may
 radii, the user's 2026-10-09 concern).
 Wall bump in the same log: `push read from the Client state`, three bumps (pan 0.99, -0.95, -0.23), each with
 `footsteps silenced: 1 foot triggers, 0 collider triggers`; the user heard the bump and the footsteps stop.
+
+### Second trace and decision (2026-10-11 11:00)
+
+The user played a little longer (online again) and reports the bump and the silent footsteps "help a lot". 3.75
+active minutes: 235 live events (63 a minute), 95 flips, 27 % of polls pressed against an edge, running at about
+6 m/s (median between events under 0.5 s apart). Flips by variant: live 95, `origin` 90, `lanes` 91; `origin`
+reproduced 81 of the 95 live flips, `lanes` 75.
+
+What the flips are: the player covered a median 2.4 m between the two cues of a flip (0.6 s). Breath after a knock
+(58): the obstacle passed was a median 2.3 m long (17 under 1.35 m); knock after a breath (38): the gap was a median
+3.1 m long (8 under 1.35 m). These are real pillars, props, wall segments and gaps passed at running speed, which the
+radar is meant to report. 34 flips involve a ray grazing the wall the player touched (`edge` under 0.15 and the depth
+jumping between under 0.3 and over 3 m); `origin` removed 12 of them but also lost real openings (14 of 101 live
+openings unmatched, e.g. the right wall ending at t=93.91, because the nearest edge pushed the origin toward another
+wall); `lanes` lost 20 of 101.
+
+Decision: no change to the live reading. Neither variant removes most flips, and both lose real openings; the
+grazing artifact now matters less because the bump tells a player who is against a wall. The shadow and its second
+engine are removed (≈26 NavMesh queries per poll saved); the event lines, flip marks and edge distance stay. If the
+radar feels too busy, the data supports one optional filter to discuss with the user: a breath only after the
+opening has lasted 1.5 body widths (1.35 m, ≈0.2 s at running speed), which would drop the 8 short gaps and delay
+every breath by that distance; knocks would stay immediate.

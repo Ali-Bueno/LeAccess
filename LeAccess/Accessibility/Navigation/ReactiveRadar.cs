@@ -30,8 +30,6 @@ public static class ReactiveRadar
     private static System.Numerics.Vector2 _position;
     private static System.Numerics.Vector2[] _axes;
     private static RadarEngine _engine;
-    // Temporary diagnostic: alternative readings run silently beside the live one (RadarWorldProbe.Shadow.cs).
-    private static readonly RadarEngine[] Shadows = new RadarEngine[RadarTrace.ShadowVariants];
     private static RadarAudioOutput _audio;
     private static double _nextAudioRetry;
     private static string _lastAudioFailure;
@@ -89,14 +87,13 @@ public static class ReactiveRadar
                 {
                     ResetPlayback();
                     _engine = new RadarEngine(snapshot.Settings);
-                    for (int i = 0; i < Shadows.Length; i++) Shadows[i] = new RadarEngine(snapshot.Settings);
                 }
 
                 ulong revision = _engine.Revision;
                 var events = _engine.Tick(snapshot.Position, snapshot.Axes, snapshot.Readings, now, snapshot.Session);
                 Diagnostics.Observe(_engine, _engine.Revision != revision);
                 if (_engine.Revision != revision) Trace.ClearReadings();
-                Trace.Record(snapshot.Readings, snapshot.ShadowReadings, snapshot.EdgeDistance, snapshot.AgentRadius);
+                Trace.Record(snapshot.Readings, snapshot.EdgeDistance, snapshot.AgentRadius);
                 LogEvents(events, snapshot, now);
                 if (_engine.Revision != revision)
                 {
@@ -149,19 +146,12 @@ public static class ReactiveRadar
         }
     }
 
-    // Each generated cue with its recent readings; the shadow's cues are logged, never played.
+    // Each generated cue with its recent readings.
     private static void LogEvents(RadarState[] events, RadarWorldSnapshot snapshot, double now)
     {
         for (int i = 0; i < events.Length; i++)
             if (events[i] != RadarState.Unknown)
-                Plugin.Log.LogInfo(Trace.Live(i, events[i], now, snapshot.Position, snapshot.EdgeDistance));
-        if (snapshot.ShadowReadings == null) return;
-        for (int variant = 0; variant < Shadows.Length; variant++)
-        {
-            var shadow = Shadows[variant].Tick(snapshot.Position, snapshot.Axes, snapshot.ShadowReadings[variant], now, snapshot.Session);
-            for (int i = 0; i < shadow.Length; i++)
-                if (shadow[i] != RadarState.Unknown) Plugin.Log.LogInfo(Trace.Shadow((RadarShadowVariant)variant, i, shadow[i], now));
-        }
+                Plugin.Log.LogInfo(Trace.Event(i, events[i], now, snapshot.Position, snapshot.EdgeDistance));
     }
 
     private static bool EnsureAudio(double now)
@@ -228,7 +218,6 @@ public static class ReactiveRadar
         WorldAudioReservation.Cancel(WorldAudioSource.Terrain);
         Queue.Clear();
         _engine?.Reset();
-        foreach (var shadow in Shadows) shadow?.Reset();
         if (_hasSnapshot) _audio?.Silence();
         _hasSnapshot = false;
         _nextCue = 0;
@@ -244,7 +233,6 @@ public static class ReactiveRadar
         _lastUnavailableReason = null;
         _lastFailure = null;
         _engine = null;
-        Array.Clear(Shadows, 0, Shadows.Length);
         Trace.Reset();
         _enabled = null;
         _unexploredMark = null;
