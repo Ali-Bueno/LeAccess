@@ -6,11 +6,17 @@
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../LeAccess/Accessibility/Audio/SoundLevels.cs" Link="SoundLevels.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/NaturalCueKind.cs" Link="NaturalCueKind.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Combat/EnemyCueKind.cs" Link="EnemyCueKind.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/NaturalCueBank.cs" Link="NaturalCueBank.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/CuePlacement.cs" Link="CuePlacement.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/PcmWaveReader.cs" Link="PcmWaveReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/WorldCueSynthesizer.cs" Link="WorldCueSynthesizer.cs" />
     <Compile Include="../../LeAccess/Accessibility/WorldCues/WorldCueState.cs" Link="WorldCueState.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/SoundGlossary.cs" Link="SoundGlossary.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/PreviewClips.cs" Link="PreviewClips.cs" />
+    <EmbeddedResource Include="../../LeAccess/Translations/en.json" LogicalName="LeAccess.Translations.en.json" />
     <EmbeddedResource Include="../../LeAccess/Sounds/*.wav" LogicalName="LeAccess.Sounds.%(Filename)%(Extension)" Condition="'$(OmitNaturalAudioResources)' != 'true'" />
     <EmbeddedResource Include="../../LeAccess/Sounds/Loops/*.wav" LogicalName="LeAccess.Sounds.Loops.%(Filename)%(Extension)" Condition="'$(OmitNaturalAudioResources)' != 'true'" />
   </ItemGroup>

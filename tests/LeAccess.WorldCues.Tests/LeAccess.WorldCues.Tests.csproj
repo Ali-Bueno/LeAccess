@@ -6,6 +6,9 @@
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../LeAccess/Accessibility/Audio/SoundLevels.cs" Link="SoundLevels.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/NaturalCueKind.cs" Link="NaturalCueKind.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Combat/EnemyCueKind.cs" Link="EnemyCueKind.cs" />
     <Compile Include="../../LeAccess/Accessibility/WorldCues/*.cs" Link="WorldCues/%(Filename)%(Extension)" />
     <Compile Include="../../LeAccess/Accessibility/Audio/WorldCueSynthesizer.cs" Link="WorldCueSynthesizer.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/CuePlacement.cs" Link="CuePlacement.cs" />

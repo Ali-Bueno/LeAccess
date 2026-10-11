@@ -79,8 +79,9 @@ internal sealed class WorldLoopMixer : ISampleProvider
             }
             _frames += frames;
         }
+        float master = SoundLevels.Master;
         for (int index = offset; index < offset + frames * Channels; index++)
-            buffer[index] = Math.Clamp(buffer[index], -1f, 1f);
+            buffer[index] = Math.Clamp(buffer[index] * master, -1f, 1f);
         return count;
     }
 

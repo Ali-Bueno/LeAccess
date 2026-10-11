@@ -39,6 +39,7 @@ internal class SmoothSineGenerator : ISampleProvider
     public int Read(float[] buffer, int offset, int count)
     {
         double sampleRate = _waveFormat.SampleRate;
+        float level = SoundLevels.Master * SoundLevels.Sonar;
 
         for (int i = 0; i < count; i++)
         {
@@ -48,7 +49,7 @@ internal class SmoothSineGenerator : ISampleProvider
             double sine = Math.Sin(2 * Math.PI * _phase);
             double mixed = triangle * 0.7 + sine * 0.3;
 
-            buffer[offset + i] = (float)(_currentVolume * mixed);
+            buffer[offset + i] = (float)(_currentVolume * mixed * level);
 
             _phase += _frequency / sampleRate;
             if (_phase >= 1.0)
@@ -84,12 +85,12 @@ public static class WallSonar
 {
     private const float MaxRange = 12f;
     private const float MinVolumeDistance = 0.5f;
-    private const float BaseVolume = 0.05f;
+    internal const float BaseVolume = 0.05f;
     private const float ProbeInterval = 0.1f;
 
-    private const double FreqForward = 500;
-    private const double FreqBack = 180;
-    private const double FreqSides = 300;
+    internal const double FreqForward = 500;
+    internal const double FreqBack = 180;
+    internal const double FreqSides = 300;
 
     private static WaveOutEvent _waveOut;
     private static MixingSampleProvider _mixer;

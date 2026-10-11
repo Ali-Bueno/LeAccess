@@ -31,19 +31,24 @@ internal static class WorldLoopSelection
 
     private static bool IsLoot(NaturalCueKind kind) => !IsLandmark(kind) && kind != NaturalCueKind.Chest;
 
-    /// <summary>Fills voices from candidates (sorted in place, nearest first) for one audible radius.</summary>
+    /// <summary>Fills voices from candidates (sorted in place, nearest first); range is the group radius, kinds with their own range and volume (SoundLevels) differ.</summary>
     internal static void Select(List<LoopCandidate> candidates, float range, float volume, List<LoopVoice> voices)
     {
         voices.Clear();
-        if (!(range > 0) || !(volume > 0)) return;
+        if (!(volume > 0)) return;
         candidates.Sort((a, b) => a.Distance != b.Distance ? a.Distance.CompareTo(b.Distance) : a.Id.CompareTo(b.Id));
+        // On-screen objects of an audible kind sound past their range; gains fall against the farthest of them.
+        float screen = 0;
+        foreach (var candidate in candidates)
+            if (candidate.OnScreen && SoundLevels.Volume(candidate.Kind) > 0 && float.IsFinite(candidate.Distance))
+                screen = Math.Max(screen, candidate.Distance);
         float total = 0;
-        Emit(candidates, c => IsLandmark(c.Kind), MaxVoices, range, voices, ref total);
-        Emit(candidates, c => c.Kind == NaturalCueKind.Chest, MaxChestVoices, range, voices, ref total);
+        Emit(candidates, c => IsLandmark(c.Kind), MaxVoices, range, screen, voices, ref total);
+        Emit(candidates, c => c.Kind == NaturalCueKind.Chest, MaxChestVoices, range, screen, voices, ref total);
         // The nearest of each loot kind first, so a pile of gold or gear cannot hide a rune, glyph or shard.
         Kinds.Clear();
-        Emit(candidates, c => IsLoot(c.Kind) && Kinds.Add(c.Kind), MaxVoices, range, voices, ref total);
-        Emit(candidates, c => IsLoot(c.Kind) && !voices.Exists(v => v.Id == c.Id), MaxVoices, range, voices, ref total);
+        Emit(candidates, c => IsLoot(c.Kind) && Kinds.Add(c.Kind), MaxVoices, range, screen, voices, ref total);
+        Emit(candidates, c => IsLoot(c.Kind) && !voices.Exists(v => v.Id == c.Id), MaxVoices, range, screen, voices, ref total);
         float scale = Math.Min(1, volume) * (total > MixGainLimit ? MixGainLimit / total : 1);
         for (int index = 0; index < voices.Count; index++)
             voices[index] = voices[index] with { Left = voices[index].Left * scale, Right = voices[index].Right * scale };
@@ -71,14 +76,16 @@ internal static class WorldLoopSelection
         float.IsFinite(front) ? 1 + (RearPitch - 1) * Math.Clamp(-front / RearBlendMetres, 0, 1) : 1;
 
     private static void Emit(List<LoopCandidate> candidates, Func<LoopCandidate, bool> share, int limit,
-        float range, List<LoopVoice> voices, ref float total)
+        float groupRange, float screen, List<LoopVoice> voices, ref float total)
     {
         int emitted = 0;
         foreach (var candidate in candidates)
         {
             if (voices.Count >= MaxVoices || emitted >= limit) return;
             if (!share(candidate)) continue;
-            float gain = Gain(candidate, range);
+            // A silent kind never takes a voice; a boosted one counts at its boosted gain against the headroom.
+            float level = SoundLevels.Volume(candidate.Kind);
+            float gain = level > 0 ? Gain(candidate, Math.Max(SoundLevels.Range(candidate.Kind, groupRange), screen)) * level : 0;
             if (gain <= 0) continue;
             // Equal-power stereo, as the existing cue placement.
             float right = float.IsFinite(candidate.Right) ? Math.Clamp(candidate.Right, -1, 1) : 0;

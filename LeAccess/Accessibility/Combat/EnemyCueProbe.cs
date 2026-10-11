@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using EHG.Multiplayer;
+using LeAccess.Accessibility.Audio;
 using LeAccess.Accessibility.Navigation;
 using NVector3 = System.Numerics.Vector3;
 
@@ -39,7 +40,7 @@ internal sealed class EnemyCueProbe
         var up = snapshot.Axes[(int)RadarDirection.Up];
         var right = snapshot.Axes[(int)RadarDirection.Right];
         _selector.Select(_contacts, origin, new NVector3(up.X, 0, up.Y), new NVector3(right.X, 0, right.Y),
-            range, bosses, ordinary, _sight, Selected, elites);
+            range, bosses, ordinary, _sight, Selected, elites, static kind => SoundLevels.Enemy(kind) > 0);
         Session = snapshot.Session;
         UnavailableReason = null;
         return true;

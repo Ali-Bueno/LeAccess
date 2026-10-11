@@ -6,6 +6,9 @@
     <Nullable>disable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../LeAccess/Accessibility/Audio/SoundLevels.cs" Link="SoundLevels.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/NaturalCueKind.cs" Link="NaturalCueKind.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Combat/EnemyCueKind.cs" Link="EnemyCueKind.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/WorldAudioReservation.cs" Link="WorldAudioReservation.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/RadarModel.cs" Link="RadarModel.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/RadarEngine.cs" Link="RadarEngine.cs" />

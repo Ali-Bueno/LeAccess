@@ -7,8 +7,6 @@ using LeAccess.Accessibility.Navigation.Guidance;
 
 namespace LeAccess.Accessibility.Combat;
 
-internal enum EnemyCueKind { Boss, Elite, Ordinary }
-
 // Slot is the cadence stream: the boss class, or an elite or ordinary enemy's rank by distance.
 internal readonly record struct EnemyCue(int Id, EnemyCueKind Kind, float Distance, float Pan, float Forward,
     double IntervalSeconds, int Slot);
@@ -25,10 +23,10 @@ internal sealed class EnemyCueSelector
     private readonly List<(EnemyCue Cue, EnemyContact Contact)> _ordinary = new();
     private readonly List<(EnemyCue Cue, EnemyContact Contact)> _elites = new();
 
-    // The nearest boss in sight first, then the nearest elite, then the nearest ordinary enemies in sight.
+    // audible false silences a type outright (volume 0): it takes no stream. The nearest boss in sight first, then the nearest elite, then the nearest ordinary enemies in sight.
     internal void Select(IReadOnlyList<EnemyContact> contacts, Vector3 player, Vector3 forward, Vector3 right,
         float range, bool bosses, bool ordinary, Func<EnemyContact, TerrainSight> sight, List<EnemyCue> selected,
-        bool elites = true)
+        bool elites = true, Func<EnemyCueKind, bool> audible = null)
     {
         selected.Clear();
         _ordinary.Clear();
@@ -43,7 +41,7 @@ internal sealed class EnemyCueSelector
             // A disabled elite class growls the same way.
             var kind = contact.Boss && bosses ? EnemyCueKind.Boss
                 : elites && EnemyClassifier.IsElite(contact.Class) ? EnemyCueKind.Elite : EnemyCueKind.Ordinary;
-            bool silent = kind == EnemyCueKind.Ordinary && !ordinary;
+            bool silent = kind == EnemyCueKind.Ordinary && !ordinary || audible != null && !audible(kind);
             if (silent || !GuidanceGeometry.Finite(contact.Position)) continue;
             var delta = contact.Position - player;
             float distance = delta.Length();
