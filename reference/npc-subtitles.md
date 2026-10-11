@@ -364,3 +364,7 @@ suite: 86 checks. Listening pending.
 ## Lone response re-read on a direction push (2026-10-10, user report)
 
 A single response (Messenger's "Pick up the letter") never changes focus, so `ElementAnnouncer` deduplicates it and a player who silenced the reader cannot hear it again. `DialogueAnnouncer.Update` now polls `MenuDirectionInput.PushedThisFrame` (d-pad, left stick edge via `MenuDetailInput.IsPush`, arrow keys) while the response menu is visible. When focus did not move and nothing spoke that frame (`DialogueResponseRepeat.ShouldRepeat`), `ElementAnnouncer.RepeatFocus` clears the dedup state and speaks the focused response with interrupt. No hook; log line `[Dialogue] response repeated on direction push`.
+
+## Optional silence for NPC speech (2026-10-10, user report)
+
+Config `[Dialogue] SpeakNpcLines` (default true; only English is voiced). When false, `NpcLines.Speak` gates only NPC text: the conversation body in `DialogueAnnouncer.Update` (treated as delivered: no pending content, so response focus is not held back) and `VisibleSubtitleAnnouncer.Speak` (barks, submitted NPC messages, cinematic and intro-video subtitles; counted as delivered so they are not retried). Responses, the continue button, quest text and tutorials are unaffected. Unvoiced lines are silenced too.

@@ -28,6 +28,7 @@ internal static class Program
             RejectedOutputRetriesCurrentTurn();
             AutomaticFocusFollowsLine();
             SingleResponseRepeatsOnDirectionPush();
+            UnspokenNpcLines();
             Console.WriteLine($"Dialogue tests passed: {_checks} checks.");
             return 0;
         }
@@ -186,6 +187,28 @@ internal static class Program
         DialogueAnnouncer.Reset();
         Check(DialogueResponseRepeat.ShouldRepeat(true, false, false) && !DialogueResponseRepeat.ShouldRepeat(false, false, false),
             "Only an unmoved push repeats");
+    }
+
+    private static void UnspokenNpcLines()
+    {
+        var ui = Create();
+        NpcLines.Use(() => false);
+        try
+        {
+            Show(ui, "Una carta."); Tick(); Tick(); Tick();
+            Check(ScreenReader.Messages.Count == 0 && !DialogueAnnouncer.HasPendingContent,
+                "A silenced NPC line is neither spoken nor left pending");
+            Check(DialogueAnnouncer.HasActiveContent, "The conversation still owns its controls");
+            var responseRoot = ui.gameObject.Child();
+            ui.dialogue.responseMenu = new TextMeshProResponseMenuControls { panel = responseRoot.Add(new Graphic()) };
+            DialogueAnnouncer.ShowResponses(ui); Tick();
+            Check(!DialogueAnnouncer.HasPendingContent, "Responses are not held back by a silenced line");
+        }
+        finally { NpcLines.Use(() => true); }
+        DialogueAnnouncer.Reset();
+        ui = Create(); Show(ui, "Una carta."); Tick(); Tick();
+        Check(ScreenReader.Messages.Single().Text == "Erza: Una carta.", "Lines are spoken again once the setting is back on");
+        DialogueAnnouncer.Reset();
     }
 
     private static TextMeshProDialogueUI Create()

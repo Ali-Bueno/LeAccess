@@ -62,6 +62,10 @@ public class Plugin : BasePlugin
         CombatAccessibility.Initialize(Config);
         VitalsAccessibility.Initialize(Config);
         GoldPickupAnnouncer.Initialize(Config);
+        var speakNpcLines = Config.Bind("Dialogue", "SpeakNpcLines", true,
+            "Speak what NPCs say: conversation lines, barks and cinematic subtitles. Turn off to rely on the game's voices; " +
+            "lines without a voice are silenced too, and only English is voiced. Responses, buttons and quest text are always spoken.");
+        LeAccess.Accessibility.Dialogue.NpcLines.Use(() => speakNpcLines.Value);
         LeAccess.Accessibility.Progression.ProgressionAccessibility.Initialize(Config);
         BossLifeAccessibility.Initialize(Config);
         LandmarkAccessibility.Initialize(Config);

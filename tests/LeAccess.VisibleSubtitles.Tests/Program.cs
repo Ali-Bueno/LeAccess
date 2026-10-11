@@ -131,6 +131,10 @@ for(int i=0;i<=SubmittedSubtitleTracker.MaximumPendingLines;i++)submittedTracker
 Check(submittedTracker.TryTake(true,0,out submittedText)&&submittedText=="Line 1","bounded backlog discards oldest pending line");
 submittedTracker.Reset();Check(!submittedTracker.TryTake(true,0,out submittedText)&&submittedText==null,"reset discards pending and dedup state");
 VideoSubtitleTests.Run(Check);
+NpcLines.Use(()=>false);
+Reset();bark=Bark("Grae: ¡Sigamos!");VisibleSubtitleAnnouncer.NpcMessageSubmitted("Sigamos.","Grael");Tick();Tick();Tick();
+Check(ScreenReader.Messages.Count==0&&!VisibleSubtitleAnnouncer.HasPendingContent,"silenced barks and NPC messages are neither spoken nor retried");
+NpcLines.Use(()=>true);
 BarkAudibilityTests.Run(Check);
 RejectedOutputTests.Run(Check);
 Console.WriteLine($"Passed {checks} visible subtitle checks.");

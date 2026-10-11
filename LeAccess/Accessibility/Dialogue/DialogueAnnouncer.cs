@@ -161,6 +161,8 @@ internal static class DialogueAnnouncer
                 return;
             }
             if (Time.frameCount <= _shownFrame) return;
+            // A voiced line is not read; delivered as far as responses and the continue button are concerned.
+            if (!NpcLines.Speak) { HasPendingContent = false; return; }
             string line = Read(_subtitle.line);
             // Typewriter effects may expose a prefix; read the current subtitle's full localized line once.
             if (!string.IsNullOrEmpty(line) && !string.IsNullOrEmpty(_fullLine) &&
