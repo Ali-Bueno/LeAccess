@@ -53,7 +53,7 @@ internal static class BossLifeAccessibility
             var update = State.Observe(samples);
             if (!update.HasContent) return;
             string text = update.Text((name, percent) => ModText.Format("boss.health", name, percent));
-            if (!ScreenReader.TrySpeak(text, false)) return;
+            if (!ScreenReader.TrySpeakOverPickup(text, false)) return;
             State.Acknowledge(update);
             Plugin.Log.LogInfo($"[Boss life] {text}");
         }

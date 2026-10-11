@@ -43,7 +43,7 @@ internal static class GroundLootAccessibility
             HasPendingContent = pending && announcement is null;
             if (announcement is null) return;
             Plugin.Log.LogInfo($"[GroundItem] label={snapshot.LabelId} drop={snapshot.DropId}: {announcement}");
-            ScreenReader.Speak(announcement, interrupt: false);
+            ScreenReader.TrySpeakPickup(announcement);
         }
         catch (Exception ex)
         {

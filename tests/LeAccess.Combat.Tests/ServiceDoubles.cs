@@ -61,6 +61,7 @@ namespace LeAccess.Accessibility
         public static bool IsAvailable() => Available;
         public static bool IsSpeaking() => Speaking;
         public static void Speak(string text, bool interrupt) { Messages.Add((text, interrupt)); SpokeThisFrame = true; }
+        public static bool TrySpeakOverPickup(string text, bool interrupt) { Speak(text, interrupt); return true; }
     }
 }
 namespace LeAccess.Accessibility.Navigation

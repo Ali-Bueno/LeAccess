@@ -115,7 +115,8 @@ internal static class VitalsAccessibility
                 // Ordinary crossings and potion counts queue through the existing speech sink.
                 string vitals = Join(change.HealthPercent < 0 ? null : HealthText(change.HealthPercent),
                     change.ManaPercent < 0 ? null : ManaText(change.ManaPercent));
-                if (Speak(Join(vitals, potionChanged ? potionText : null), change.Interrupt))
+                // A potion count alone is a pickup line; a life or mana crossing goes before pickups.
+                if (Speak(Join(vitals, potionChanged ? potionText : null), change.Interrupt, pickup: vitals is null))
                 {
                     Announcements.Acknowledge(change.HealthPercent, change.ManaPercent);
                     if (potionChanged) _potions = potions;
@@ -159,9 +160,9 @@ internal static class VitalsAccessibility
     private static string Join(string health, string mana) => string.IsNullOrEmpty(health) ? mana
         : string.IsNullOrEmpty(mana) ? health : health + ". " + mana;
 
-    private static bool Speak(string text, bool interrupt)
+    private static bool Speak(string text, bool interrupt, bool pickup = false)
     {
-        if (!ScreenReader.TrySpeak(text, interrupt)) return false;
+        if (!(pickup ? ScreenReader.TrySpeakPickup(text) : ScreenReader.TrySpeakOverPickup(text, interrupt))) return false;
         Plugin.Log.LogInfo($"[Vitals] {text}");
         return true;
     }

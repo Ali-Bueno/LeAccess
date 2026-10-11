@@ -34,7 +34,7 @@ internal static class GoldPickupAnnouncer
             int gain = State.Observe(tracker, gold, vendor);
             if (gain <= 0) return;
             string text = ModText.Format("gold.pickup", gain);
-            if (!ScreenReader.TrySpeak(text, interrupt: false)) return;
+            if (!ScreenReader.TrySpeakPickup(text)) return;
             State.Acknowledge();
             Plugin.Log.LogInfo($"[Gold] {text}");
         }

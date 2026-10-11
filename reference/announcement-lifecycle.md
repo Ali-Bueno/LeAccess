@@ -99,3 +99,14 @@ Validation: dialogue **73**, screen content **211**, notifications **115**, and
 visible subtitles **166** checks pass. The main no-deployment build has zero
 warnings/errors. Audible timing, actual countdown restart delivery online, and
 interaction with sustained live world narration still require listening.
+
+## Pickup lines give way (2026-10-11, user report)
+
+User: picking things up made the reader queue everything ("25 de oro. 30 de oro. Poción 1 de 3. Maza …"), late enough
+to delay combat and life warnings. Pickup lines are the gold gain (`GoldPickupAnnouncer`), a potion count on its own
+(`VitalsAccessibility`, no life or mana crossing in the same line) and the ground item the controller targets
+(`GroundLootAccessibility`). They go through `ScreenReader.TrySpeakPickup`: a pickup line spoken within
+`PickupSpeechSeconds` (4 s) of the previous one interrupts it instead of queueing. Life and mana crossings, the
+nearest enemy and boss/elite life use `TrySpeakOverPickup`, which interrupts a pickup line still in that window and
+otherwise keeps its own interrupt flag. Any other accepted speech closes the window, so a pickup never cuts it and is
+never cut for it. Tests: `LeAccess.ScreenReader.Tests` (8 checks). Unverified live: whether 4 s fits long item names.

@@ -106,6 +106,8 @@ namespace LeAccess.Accessibility
             Spoken.Add((text,interrupt)); SpokeThisFrame = true;
             return true;
         }
+        internal static bool TrySpeakPickup(string text) => TrySpeak(text, false);
+        internal static bool TrySpeakOverPickup(string text, bool interrupt) => TrySpeak(text, interrupt);
     }
 }
 namespace LeAccess

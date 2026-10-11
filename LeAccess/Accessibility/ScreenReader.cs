@@ -30,6 +30,12 @@ public static class ScreenReader
     internal static bool MenuOwnsSpeech { get; set; }
     internal static int HeldBack { get; private set; }
 
+    // A pickup line is short; after this long it has been heard and nothing is cut for it.
+    private const double PickupSpeechSeconds = 4;
+    private static double _pickupUntil = double.NegativeInfinity;
+
+    private static bool PickupSpeaking => UnityEngine.Time.unscaledTimeAsDouble < _pickupUntil;
+
     /// <summary>
     /// Initialize the screen reader connection.
     /// </summary>
@@ -93,8 +99,21 @@ public static class ScreenReader
     public static bool TrySpeak(string text, bool interrupt = true)
     {
         if (MenuOwnsSpeech && !string.IsNullOrEmpty(text)) { HeldBack++; return true; }
-        return Output(text, interrupt);
+        if (!Output(text, interrupt)) return false;
+        _pickupUntil = double.NegativeInfinity;
+        return true;
     }
+
+    /// <summary>Gold, potion and ground-item lines: each cuts the previous one instead of queueing behind it.</summary>
+    internal static bool TrySpeakPickup(string text)
+    {
+        if (!TrySpeak(text, PickupSpeaking)) return false;
+        _pickupUntil = UnityEngine.Time.unscaledTimeAsDouble + PickupSpeechSeconds;
+        return true;
+    }
+
+    /// <summary>Life, mana and combat lines cut a pickup line still being read; otherwise as TrySpeak.</summary>
+    internal static bool TrySpeakOverPickup(string text, bool interrupt) => TrySpeak(text, interrupt || PickupSpeaking);
 
     /// <summary>Speech of the mod menu itself, the only speech while it is open.</summary>
     internal static bool SpeakMenu(string text, bool interrupt = true) => Output(text, interrupt);
@@ -215,6 +234,7 @@ public static class ScreenReader
         _connectionRequested = false;
         _nextProbeTime = 0;
         _lastSpeechFrame = -1;
+        _pickupUntil = double.NegativeInfinity;
         _lastDetectedName = _lastFailure = null;
         DetectedScreenReader = "None";
         if (_nvdaClient != IntPtr.Zero)

@@ -168,6 +168,7 @@ namespace LeAccess.Accessibility
         internal static bool IsSpeaking() => Speaking;
         internal static void Speak(string text, bool interrupt)
         { Messages.Add((text, interrupt)); SpokeThisFrame = true; }
+        internal static bool TrySpeakPickup(string text) { Speak(text, false); return true; }
     }
 }
 namespace LeAccess

@@ -117,7 +117,7 @@ public static class CombatAccessibility
             {
                 string format = _announcementFormat.Value;
                 if (string.IsNullOrWhiteSpace(format) || !format.Contains("{0}")) format = DefaultAnnouncementFormat;
-                ScreenReader.Speak(format.Replace("{0}", nearest), interrupt: false);
+                ScreenReader.TrySpeakOverPickup(format.Replace("{0}", nearest), false);
                 Plugin.Log.LogInfo($"[NearestEnemy] {nearest}");
             }
         }
