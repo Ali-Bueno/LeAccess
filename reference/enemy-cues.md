@@ -171,3 +171,7 @@ Selection: boss first, then the nearest elite in sight (one elite stream, rank 1
 other elites growl as ordinary enemies. Max three streams and the sight rules are unchanged, but an
 off-mesh elite stays silent (only bosses are exempt). Config `[Enemy cues] Elites` (default true; off, they
 growl). Magic enemies stay ordinary. The log shows `Elite#id@dist/slotN`.
+
+## 2026-10-10, user report: on-screen enemies
+
+- `EnemyCueProbe` passes the main camera to the scan; contacts carry `OnScreen`. The selector admits an on-screen enemy past the skill range (line-of-sight rule unchanged) and the pulse cadence falls against the farthest on-screen enemy, so the screen edge is the slow `FarIntervalSeconds` pulse. Voice caps and nearest-first ranking are unchanged.

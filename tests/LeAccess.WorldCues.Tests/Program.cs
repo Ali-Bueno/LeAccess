@@ -402,6 +402,30 @@ GroundPotionVisuals.all.WasCollected = true; probe.Loopable = WorldLoopBank.Has;
 Check(!probe.TryCapture(out _) && probe.Loops.Single().Kind == NaturalCueKind.Tome, "A collected registry is never enumerated");
 WorldLoopBank.Available = false;
 
+// On-screen objects sound past the range; the farthest of them is the range the gains fall against.
+Reset(); probe = new(); WorldLoopBank.Available = true;
+probe.Loopable = WorldLoopBank.Has; probe.LoopRange = 12; probe.LandmarkRange = 12;
+LeAccess.Accessibility.Combat.BossLifeProbe.Screen = position => position.x <= 20;
+coin = Coin(20); var edgeCoin = Coin(26);
+waypoint = Interactable(0, 18); waypoint.interactionRange = 2; waypoint.ServiceKey = "service.waypoint";
+probe.TryCapture(out _);
+Check(probe.Loops.Count == 2 && probe.Loops.All(l => l.OnScreen) &&
+    probe.Loops.All(l => l.Distance > probe.LoopRange) && !probe.Loops.Any(l => l.Distance > 25),
+    "Loot and landmarks on screen past the loop range are listed; off screen they are not");
+Check(Math.Abs(probe.LoopReach - 20) < 1e-4, "The gains fall against the farthest on-screen loop");
+LeAccess.Accessibility.Combat.BossLifeProbe.Screen = _ => false;
+probe.TryCapture(out _);
+Check(probe.Loops.Count == 0 && probe.LoopReach == 12, "Nothing on screen keeps the configured range");
+LeAccess.Accessibility.Combat.BossLifeProbe.Screen = _ => true;
+coin = Coin(5);
+probe.TryCapture(out _);
+Check(probe.Loops.Any(l => l.Distance <= 12 && l.OnScreen), "A near object on screen is flagged");
+var gazer = Interactable(0, 40); gazer.interactionRange = 2;
+probe.TryCapture(out _);
+Check(probe.Targets[(int)WorldCueCategory.Interactable] == null,
+    "An unclassified object on screen keeps its native range");
+LeAccess.Accessibility.Combat.BossLifeProbe.Screen = _ => false;
+
 // Selection: exits first, at most three chests, eight voices, D2R gain law and pile limit.
 var candidates = new List<LoopCandidate>();
 for (int i = 1; i <= 10; i++) candidates.Add(new(100 + i, NaturalCueKind.Gold, i * 0.5f, 0, 1));
@@ -418,6 +442,16 @@ float Scalar(LoopVoice v) => MathF.Sqrt(v.Left * v.Left + v.Right * v.Right);
 Check(voices.Sum(Scalar) <= WorldLoopSelection.MixGainLimit + 1e-4, "A loud pile is limited together");
 Check(voices[0].Right < 1e-6 && voices[0].Left > 0 && Math.Abs(voices[0].Pitch - WorldLoopSelection.RearPitch) < 1e-6,
     "A landmark to the left and behind pans left and drops its pitch");
+var screenGold = new LoopCandidate(1, NaturalCueKind.Gold, 20, 0, 1, OnScreen: true);
+var hiddenGold = screenGold with { OnScreen = false, Distance = 11.9f };
+var screenShrine = new LoopCandidate(2, NaturalCueKind.Shrine, 20, 0, 1, OnScreen: true);
+Check(Math.Abs(WorldLoopSelection.Gain(screenGold, 20) - WorldLoopSelection.NearGain * WorldLoopSelection.ScreenEdgeShare) < 1e-6 &&
+    WorldLoopSelection.Gain(hiddenGold, 12) < WorldLoopSelection.Gain(screenGold, 20) && WorldLoopSelection.Gain(screenGold, 19) == 0,
+    "Loot at the edge of the screen is quiet but audible; off screen it keeps the steep law");
+Check(Math.Abs(WorldLoopSelection.Gain(screenShrine, 20) - WorldLoopSelection.NearGain * WorldCueReach.FarGain) < 1e-6 &&
+    WorldLoopSelection.Gain(screenShrine with { Distance = 0 }, 20) == WorldLoopSelection.NearGain &&
+    WorldLoopSelection.Gain(screenShrine with { Distance = 10 }, 20) > WorldLoopSelection.Gain(hiddenGold with { Distance = 10 }, 20),
+    "A landmark fades linearly to FarGain, far gentler than the quadratic law");
 Check(Math.Abs(WorldLoopSelection.Gain(0, 12) - 0.4f) < 1e-6 && Math.Abs(WorldLoopSelection.Gain(6, 12) - 0.1f) < 1e-6 &&
     WorldLoopSelection.Gain(12, 12) == 0 && WorldLoopSelection.Gain(float.NaN, 12) == 0 && WorldLoopSelection.Gain(1, 0) == 0,
     "Gain falls with the square of the remaining proximity");
@@ -437,7 +471,7 @@ Check(voices.All(v => v.Kind != NaturalCueKind.Gem) && voices.Select(v => v.Id).
     "A kind out of range gets no voice and no object sounds twice");
 var single = new List<LoopCandidate> { new(1, NaturalCueKind.Stash, 6, 0, 1) };
 WorldLoopSelection.Select(single, 12, 0.5f, voices);
-Check(Math.Abs(Scalar(voices.Single()) - 0.05f) < 1e-5, "Volume scales a single voice below the pile limit");
+Check(Math.Abs(Scalar(voices.Single()) - WorldLoopSelection.Gain(single[0], 12) * 0.5f) < 1e-5, "Volume scales a single voice below the pile limit");
 WorldLoopSelection.Select(single, 0, 1, voices);
 Check(voices.Count == 0, "A zero range plays nothing");
 

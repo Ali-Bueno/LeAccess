@@ -36,6 +36,7 @@ internal sealed class EnemyCueSelector
         if (contacts == null || sight == null || !GuidanceGeometry.Finite(player) ||
             !float.IsFinite(range) || range <= 0) return;
         EnemyCue? boss = null;
+        float reach = ScreenReach(contacts, player, range);
         foreach (var contact in contacts)
         {
             // A disabled boss class growls instead, as D2R does for a disabled ranged class.
@@ -46,10 +47,10 @@ internal sealed class EnemyCueSelector
             if (silent || !GuidanceGeometry.Finite(contact.Position)) continue;
             var delta = contact.Position - player;
             float distance = delta.Length();
-            if (!float.IsFinite(distance) || distance > range) continue;
+            if (!float.IsFinite(distance) || distance > range && !contact.OnScreen) continue;
             GuidanceGeometry.Bearing(delta, forward, right, out float pan, out float ahead);
             var cue = new EnemyCue(contact.Id, kind, distance, pan, ahead,
-                EntityCueCadence.Interval(distance, range), BossSlot);
+                EntityCueCadence.Interval(distance, reach), BossSlot);
             // Elites and ordinary enemies are ranked first so only the nearest few pay for a terrain ray.
             if (kind != EnemyCueKind.Boss) { (kind == EnemyCueKind.Elite ? _elites : _ordinary).Add((cue, contact)); continue; }
             if (boss.HasValue && !Nearer(cue, boss.Value) || !InSight(contact, sight(contact))) continue;
@@ -78,6 +79,19 @@ internal sealed class EnemyCueSelector
         }
         _ordinary.Clear();
         _elites.Clear();
+    }
+
+    // Enemies on screen are audible past the targeting range; the cadence falls against the farthest of them.
+    private static float ScreenReach(IReadOnlyList<EnemyContact> contacts, Vector3 player, float range)
+    {
+        float reach = range;
+        foreach (var contact in contacts)
+        {
+            if (!contact.OnScreen || !GuidanceGeometry.Finite(contact.Position)) continue;
+            float distance = (contact.Position - player).Length();
+            if (float.IsFinite(distance)) reach = Math.Max(reach, distance);
+        }
+        return reach;
     }
 
     // A boss off the walkable surface (water, ledge) stays audible: it is still in targeting range.

@@ -179,9 +179,11 @@ internal sealed partial class ExploredMap
     }
 
     private (int X, int Z) ColumnOf(Vector3 point) =>
-        ((int)MathF.Floor(point.X / CellSize), (int)MathF.Floor(point.Z / CellSize));
+        (IndexOf(point.X), IndexOf(point.Z));
 
-    private float CenterOf(int index) => (index + 0.5f) * CellSize;
+    internal float CenterOf(int index) => (index + 0.5f) * CellSize;
+
+    internal int IndexOf(float coordinate) => (int)MathF.Floor(coordinate / CellSize);
 
     private bool Inside((int X, int Z) column, Vector3 point) =>
         MathF.Abs(point.X - CenterOf(column.X)) <= CellSize / 2 && MathF.Abs(point.Z - CenterOf(column.Z)) <= CellSize / 2;

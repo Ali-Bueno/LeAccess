@@ -4,8 +4,9 @@ using LeAccess.Accessibility.Audio;
 
 namespace LeAccess.Accessibility.WorldCues;
 
-/// <summary>An eligible object with a loop: Right is the camera-relative pan, Front its metres ahead (negative behind).</summary>
-internal readonly record struct LoopCandidate(int Id, NaturalCueKind Kind, float Distance, float Right, float Front);
+/// <summary>An eligible object with a loop: Right is the camera-relative pan, Front its metres ahead (negative behind), OnScreen whether the camera sees it.</summary>
+internal readonly record struct LoopCandidate(int Id, NaturalCueKind Kind, float Distance, float Right, float Front,
+    bool OnScreen = false);
 
 // D2RAccess ground_items.cpp Tick/Spatialize: which loops sound and how loud, in Last Epoch metres.
 internal static class WorldLoopSelection
@@ -18,6 +19,8 @@ internal static class WorldLoopSelection
     internal const float NearGain = 0.4f;
     // D2RAccess MixGainLimit: headroom when nearby loops peak together.
     internal const float MixGainLimit = 0.5f;
+    // Share of NearGain an on-screen loot loop keeps at the edge of the range (about -20 dB): quiet, never silent.
+    internal const float ScreenEdgeShare = 0.1f;
     // D2RAccess RearPitch, blended across one subtile; here across one metre behind the player.
     internal const float RearPitch = 0.94f;
     internal const float RearBlendMetres = 1f;
@@ -54,6 +57,16 @@ internal static class WorldLoopSelection
         return NearGain * proximity * proximity;
     }
 
+    /// <summary>Landmarks fade linearly to WorldCueReach.FarGain at the range edge; loot on screen never drops below ScreenEdgeShare.</summary>
+    internal static float Gain(LoopCandidate candidate, float range)
+    {
+        if (!float.IsFinite(candidate.Distance) || !(range > 0) || candidate.Distance > range) return 0;
+        if (IsLandmark(candidate.Kind))
+            return NearGain * (WorldCueReach.FarGain + (1 - WorldCueReach.FarGain) * (1 - candidate.Distance / range));
+        float gain = Gain(candidate.Distance, range);
+        return candidate.OnScreen ? Math.Max(gain, NearGain * ScreenEdgeShare) : gain;
+    }
+
     internal static float Pitch(float front) =>
         float.IsFinite(front) ? 1 + (RearPitch - 1) * Math.Clamp(-front / RearBlendMetres, 0, 1) : 1;
 
@@ -65,7 +78,7 @@ internal static class WorldLoopSelection
         {
             if (voices.Count >= MaxVoices || emitted >= limit) return;
             if (!share(candidate)) continue;
-            float gain = Gain(candidate.Distance, range);
+            float gain = Gain(candidate, range);
             if (gain <= 0) continue;
             // Equal-power stereo, as the existing cue placement.
             float right = float.IsFinite(candidate.Right) ? Math.Clamp(candidate.Right, -1, 1) : 0;

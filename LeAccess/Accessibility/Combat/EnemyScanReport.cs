@@ -6,7 +6,8 @@ using LeAccess.Accessibility.Navigation.Guidance;
 
 namespace LeAccess.Accessibility.Combat;
 
-internal readonly record struct EnemyContact(int Id, string Name, EnemyClass Class, Vector3 Position)
+internal readonly record struct EnemyContact(int Id, string Name, EnemyClass Class, Vector3 Position,
+    bool OnScreen = false)
 {
     internal bool Boss => Class == EnemyClass.Boss;
 }

@@ -40,6 +40,8 @@ internal sealed partial class ExploredMap
         bool onMesh = nav.TrySample(target, out var goal) && Finite(goal);
         if (!onMesh) goal = target;
         float reach = float.IsFinite(arrivalRadius) && arrivalRadius > 0 ? arrivalRadius : 0;
+        // Behind a counter the nearest explored cell centre can sit up to a cell from the walkable edge.
+        if (!onMesh) reach = Math.Max(reach, CellSize);
         if (Reaches(start, goal, onMesh, reach, nav))
             return Finish(new List<Vector3> { start, goal }, onMesh, nav, out path, out length);
 

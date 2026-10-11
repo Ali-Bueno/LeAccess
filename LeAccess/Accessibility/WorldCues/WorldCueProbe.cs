@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using ItemFiltering;
 using LeAccess.Accessibility.Audio;
+using LeAccess.Accessibility.Combat;
 using LeAccess.Accessibility.Npcs;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -21,7 +22,7 @@ internal sealed class WorldCueProbe
     private IntPtr _selected;
     private bool _found, _preferred;
     private WorldCueTarget _nearest;
-    private float _lootRange;
+    private float _lootRange, _screenReach;
     private readonly bool[] _categoryPreferred = new bool[3];
     private readonly int[] _held = new int[3];
     /// <summary>Audible radius in metres for exits, waypoints and the stash; at most the native radius disables it.</summary>
@@ -30,6 +31,8 @@ internal sealed class WorldCueProbe
     internal Func<NaturalCueKind, bool> Loopable { get; set; }
     /// <summary>Audible radius in metres for looping objects.</summary>
     internal float LoopRange { get; set; }
+    /// <summary>LoopRange, or the farthest on-screen loop when that is farther: the range loop gains fall against.</summary>
+    internal float LoopReach => Math.Max(LoopRange, _screenReach);
     /// <summary>Every eligible object with a playable loop, in registry order.</summary>
     internal List<LoopCandidate> Loops { get; } = new();
     internal WorldCueTarget?[] Targets { get; } = new WorldCueTarget?[3];
@@ -48,6 +51,7 @@ internal sealed class WorldCueProbe
         Array.Clear(Targets, 0, Targets.Length);
         Array.Clear(_categoryPreferred, 0, _categoryPreferred.Length);
         Loops.Clear();
+        _screenReach = 0;
         _coins = _equipment = _objects = _outOfRange = _filtered = _unavailable = 0;
         _missingItemData = _nonEquipment = _missingLabel = _pickups = 0;
         var player = LocalPlayerSource.Player;
@@ -184,8 +188,10 @@ internal sealed class WorldCueProbe
         bool held = _held[categoryIndex] == id;
         float loopRange = Loopable != null ? LoopRange : 0;
         float reach = Math.Max(range, Math.Max(LandmarkRange, loopRange));
-        if (!float.IsFinite(range) || range <= 0 || !float.IsFinite(distance) || distance > WorldCueReach.Limit(reach, held))
-        { _outOfRange++; return; }
+        if (!float.IsFinite(range) || range <= 0 || !float.IsFinite(distance)) { _outOfRange++; return; }
+        // What a sighted player sees on screen is audible even past the range (loops and landmarks only, below).
+        bool screenKnown = distance > WorldCueReach.Limit(reach, held), onScreen = screenKnown && IsOnScreen(owner);
+        if (screenKnown && !onScreen) { _outOfRange++; return; }
         NaturalCueKind? sound = category switch
         {
             WorldCueCategory.Coins => NaturalCueKind.Gold,
@@ -201,14 +207,15 @@ internal sealed class WorldCueProbe
         // An object with a whole D2R loop belongs to the loop mixer, never also to the repeated cue.
         if (sound.HasValue && Loopable?.Invoke(sound.Value) == true)
         {
-            if (distance <= loopRange) Loops.Add(new LoopCandidate(id, sound.Value, distance, pan, front));
+            if (!screenKnown) onScreen = IsOnScreen(owner);
+            if (distance <= loopRange || onScreen) AddLoop(new LoopCandidate(id, sound.Value, distance, pan, front, onScreen));
             else _outOfRange++;
             return;
         }
         // Loot cues keep their D2R recording only when the mixer cannot play it.
         if (!interactable) sound = null;
         float audible = WorldCueReach.IsLandmark(sound) ? Math.Max(range, LandmarkRange) : range;
-        if (distance > WorldCueReach.Limit(audible, held)) { _outOfRange++; return; }
+        if (distance > WorldCueReach.Limit(audible, held) && !(onScreen && WorldCueReach.IsLandmark(sound))) { _outOfRange++; return; }
         bool preferred = _selected != IntPtr.Zero && (IsAlive(listener) && _selected == listener.Pointer || _selected == owner.Pointer ||
             IsAlive(label) && _selected == label.Pointer);
         var previous = Targets[categoryIndex];
@@ -231,10 +238,21 @@ internal sealed class WorldCueProbe
         Vector3 offset = owner.transform.position - _position;
         if (IsAlive(listener) && listener.controllerTargetingUsePlayerY) offset.y = 0;
         float distance = offset.magnitude;
-        if (!float.IsFinite(distance) || distance > LoopRange) { _outOfRange++; return; }
+        if (!float.IsFinite(distance)) { _outOfRange++; return; }
+        bool onScreen = IsOnScreen(owner);
+        if (distance > LoopRange && !onScreen) { _outOfRange++; return; }
         Place(offset, out float pan, out _, out float front);
-        Loops.Add(new LoopCandidate(owner.GetInstanceID(), kind, distance, pan, front));
+        AddLoop(new LoopCandidate(owner.GetInstanceID(), kind, distance, pan, front, onScreen));
     }
+
+    // Past LoopRange only on-screen loops are listed; the farthest of them sets the range their gains fall against.
+    private void AddLoop(LoopCandidate candidate)
+    {
+        if (candidate.OnScreen) _screenReach = Math.Max(_screenReach, candidate.Distance);
+        Loops.Add(candidate);
+    }
+
+    private bool IsOnScreen(MonoBehaviour owner) => BossLifeProbe.OnScreen(_camera, owner.transform.position);
 
     // Camera-relative pan and forward axis, plus metres ahead for the loop's rear pitch blend.
     private void Place(Vector3 offset, out float pan, out float forward, out float front)

@@ -116,18 +116,43 @@ Equal(Line("Maeve", 3, "right"), ExplorationCatalog.Describe(new ExplorationEntr
     new Vector3(3, 9, 0), 1), player, forward, right, step, text), "horizontal distance");
 
 // End of Time: Elder Gaspar stood 15.7 above the player on the central platform, 9 horizontally (reference/exploration-mode.md).
+// Levels compare NavMesh-sampled ground, never raw heights: an objective icon floats above its floor.
 const float floorHeight = 2f;
+float[] floors = { -15.69f, 0f, 15.69f };
+Func<Vector3, float?> floorGround = point => floors.OrderBy(floor => Math.Abs(floor - point.Y)).First();
+Func<Vector3, float?> exactGround = point => point.Y;
 var gaspar = new ExplorationEntry("g", "Gaspar", ExplorationCategory.Npc, new Vector3(2.18f, 15.69f, 9.12f), 1);
 Equal(text("exploration.on_level", Line("Gaspar", 9, "up"), text("exploration.level_higher")),
-    ExplorationCatalog.Describe(gaspar, player, forward, right, step, text, floorHeight), "a target on a platform above is on a higher level");
+    ExplorationCatalog.Describe(gaspar, player, forward, right, step, text, floorHeight, floorGround), "a target on a platform above is on a higher level");
 Equal(text("exploration.on_level", text("exploration.entry_here", "Knight"), text("exploration.level_lower")),
     ExplorationCatalog.Describe(new ExplorationEntry("k", "Knight", ExplorationCategory.Npc, new Vector3(0, -15.69f, 0.2f), 1),
-        player, forward, right, step, text, floorHeight), "a target right below says here, on a lower level");
+        player, forward, right, step, text, floorHeight, floorGround), "a target right below says here, on a lower level");
 Equal(Line("Maeve", 3, "right"), ExplorationCatalog.Describe(new ExplorationEntry("n", "Maeve", ExplorationCategory.Npc,
-    new Vector3(3, 1.9f, 0), 1), player, forward, right, step, text, floorHeight), "a step or ramp below one floor is the same level");
-var levelled = new ExplorationCatalog { LevelHeight = floorHeight };
+    new Vector3(3, 1.9f, 0), 1), player, forward, right, step, text, floorHeight, exactGround), "a step or ramp below one floor is the same level");
+// The minimap icon of a quest marker floats 5 above the same floor: no level phrase.
+Equal(Line("Objective", 3, "right"), ExplorationCatalog.Describe(new ExplorationEntry("o", "Objective", ExplorationCategory.Quest,
+    new Vector3(3, 5, 0), 1), player, forward, right, step, text, floorHeight, floorGround), "a marker floating above the same floor claims no level");
+// Without a ground sample for either end nothing is claimed.
+Equal(Line("Gaspar", 9, "up"), ExplorationCatalog.Describe(gaspar, player, forward, right, step, text, floorHeight),
+    "no ground sampler, no level claim");
+Equal(Line("Gaspar", 9, "up"), ExplorationCatalog.Describe(gaspar, player, forward, right, step, text, floorHeight, point => point.Y > 1 ? null : 0f),
+    "an unsampled target claims no level");
+Equal(Line("Gaspar", 9, "up"), ExplorationCatalog.Describe(gaspar, new Vector3(0, 0, 0), forward, right, step, text, floorHeight, point => point.Y > 1 ? 15.69f : null),
+    "an unsampled player claims no level");
+var levelled = new ExplorationCatalog { LevelHeight = floorHeight, Ground = floorGround };
 Equal(Category(ExplorationCategory.Npc) + ". " + text("exploration.on_level", Line("Gaspar", 9, "up"), text("exploration.level_higher")),
-    levelled.StepCategory(1, new List<ExplorationEntry> { gaspar }, player, forward, right, step, text), "the scanner passes its floor height");
+    levelled.StepCategory(1, new List<ExplorationEntry> { gaspar }, player, forward, right, step, text), "the scanner passes its floor height and ground");
+var unsampled = new ExplorationCatalog { LevelHeight = floorHeight };
+Equal(Category(ExplorationCategory.Npc) + ". " + Line("Gaspar", 9, "up"),
+    unsampled.StepCategory(1, new List<ExplorationEntry> { gaspar }, player, forward, right, step, text), "the scanner without ground says no level");
+
+// Landmarks and loot (shrines, gold, items) are listed when on screen; NPCs, chests and objects keep the seen-range rule.
+foreach (var landmark in new[] { ExplorationCategory.Shrine, ExplorationCategory.Portal, ExplorationCategory.Exit,
+    ExplorationCategory.Stash, ExplorationCategory.Item })
+    Equal(true, ExplorationSight.ListsOnScreen(landmark), $"{landmark} is listed on screen");
+foreach (var other in new[] { ExplorationCategory.Npc, ExplorationCategory.Treasure, ExplorationCategory.Interactable,
+    ExplorationCategory.Waypoint, ExplorationCategory.Enemy })
+    Equal(false, ExplorationSight.ListsOnScreen(other), $"{other} keeps the seen-range rule");
 
 // Non-finite entries are ignored.
 var broken = new List<ExplorationEntry> { new("x", "X", ExplorationCategory.Exit, new Vector3(float.NaN, 0, 0), 1) };

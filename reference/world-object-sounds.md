@@ -211,3 +211,8 @@ recording and follow D2RAccess:
 
 A detour that kept one stereo channel of the Last Epoch loops was reverted: the
 summed channels were never the cause.
+
+## 2026-10-10, user report: on-screen objects are audible
+
+- Loot and landmark loops: an object the camera sees (`BossLifeProbe.OnScreen`) is a candidate past `LoopRange`. `WorldCueProbe.LoopReach` is `LoopRange` or the farthest on-screen loop; gains fall against it. On-screen loot keeps `WorldLoopSelection.ScreenEdgeShare` (10 percent of `NearGain`, about -20 dB) at the edge, so it is quiet but audible.
+- Landmark loops (portal, exit, stash, shrine, Nemesis) fade linearly to `WorldCueReach.FarGain` instead of the quadratic law, so a shrine is clearly audible across the screen. Repeated-cue landmarks past their range also sound when on screen. Plain interactables keep the native range.
