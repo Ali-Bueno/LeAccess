@@ -190,5 +190,6 @@ Check(!MasteryReader.TryGetMasteryInfo(first.gameObject, out _, out _), "ambiguo
 checks += CreationTabTests.Run(Reset);
 checks += CreationRealmTests.Run(Reset);
 checks += CharacterTileTests.Run(Reset);
+checks += CharacterSheetSummaryTests.Run();
 checks += CreationChoiceTests.Run(Reset);
 Console.WriteLine($"Classes: {checks} checks passed.");
