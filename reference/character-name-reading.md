@@ -207,8 +207,7 @@ separate canvases, without guessing ownership from nearby text.
 The two-observation tracker speaks a changed visible error once, retains only
 the latest pending text, and combines identical direct/validator errors once.
 Clearing an error rearms a later occurrence. Closing the form releases the cache.
-Messages use the game's actual localized text. No guessed validity rule, typed
-character echo, submission, character creation, or input-mode change is introduced.
+Messages use the game's actual localized text. No guessed validity rule, submission, character creation, or input-mode change is introduced.
 
 The source-linked `LeAccess.CharacterName.Tests` suite passes **38 checks** for
 direct/validator/local-slot sources, ownership, hidden/stale components, duplicate
@@ -216,3 +215,12 @@ errors, corrections, rapid updates, modal/keyboard/pause gates and reopening.
 Main build succeeds against the installed interop. Controller editing and actual
 error-widget visibility still require tomorrow's listening test; this reader
 does not claim to fix all previously reported name-entry interaction failures.
+
+## Typing echo (2026-10-10, user report)
+
+`CharacterNameEcho` (polled in `MenuAccessibility.LateUpdate` right after `ScreenKeyboardTyping.Update`)
+diffs the text of `CharacterNameAccessibility.OwnedInput`, the visible owned name field, with the shared
+`Utils/FieldEcho` (also used by the Social username windows). It covers screen-keyboard keys, physical keys and
+a natively focused TMP field alike. The first sight of a field is a silent baseline; a typed suffix is spoken as
+is, an erased one as `social.erased`, an emptied field as `social.field_empty`. An echo interrupts only the
+previous echo (`ScreenReader.SpeechCount` unchanged since it); any other speech in between is queued after.

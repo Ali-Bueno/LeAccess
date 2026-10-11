@@ -6,6 +6,7 @@ using LeAccess;
 using LeAccess.Accessibility;
 using LeAccess.Accessibility.ScreenContent;
 using LeAccess.Accessibility.Social;
+using LeAccess.Accessibility.Utils;
 using LeAccess.I18n;
 using TMPro;
 using UnityEngine;
@@ -22,10 +23,10 @@ string Read(GameObject element) => SocialReader.TryRead(element, out string text
 // Wording that does not need the panel.
 Check(SocialText.TrimDecoration("● Ausente") == "Ausente" && SocialText.TrimDecoration("En línea") == "En línea",
     "The status option's coloured dot is dropped");
-Check(SocialText.Edit("", "B") == "B" && SocialText.Edit("B", "Be") == "e" && SocialText.Edit("Bea", "Be") == F("social.erased", "a"),
+Check(FieldEcho.Describe("", "B") == "B" && FieldEcho.Describe("B", "Be") == "e" && FieldEcho.Describe("Bea", "Be") == F("social.erased", "a"),
     "Typing speaks the new characters and erasing the removed ones");
-Check(SocialText.Edit("Bea", "Zed") == "Zed" && SocialText.Edit("Bea", "") == T("social.field_empty") &&
-    SocialText.Edit("Bea", "Bea") == null, "A replaced, cleared or unchanged value");
+Check(FieldEcho.Describe("Bea", "Zed") == "Zed" && FieldEcho.Describe("Bea", "") == T("social.field_empty") &&
+    FieldEcho.Describe("Bea", "Bea") == null, "A replaced, cleared or unchanged value");
 Check(SocialText.Region("Región de grupo", null, "25ms") == null && SocialText.Status(null, "Ana#1234") == F("social.username", "Ana#1234"),
     "A missing region or status value leaves the generic reading or just the username");
 Check(SocialText.Invite("Bea#5678", "te ha invitado a un grupo.", "Aceptar", "Rechazar") ==

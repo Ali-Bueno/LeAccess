@@ -85,20 +85,6 @@ internal static class SocialText
         return Join(sentence, choices);
     }
 
-    /// <summary>What a change to a username field sounds like: the typed or erased characters, else the whole value.</summary>
-    internal static string Edit(string before, string after)
-    {
-        before ??= "";
-        after ??= "";
-        if (before == after) return null;
-        if (after.Length == 0) return ModText.Get("social.field_empty");
-        if (after.Length > before.Length && after.StartsWith(before, System.StringComparison.Ordinal))
-            return after.Substring(before.Length);
-        if (before.Length > after.Length && before.StartsWith(after, System.StringComparison.Ordinal))
-            return ModText.Format("social.erased", before.Substring(after.Length));
-        return after;
-    }
-
     /// <summary>Drops the status option's coloured dot and spacing, keeping its words.</summary>
     internal static string TrimDecoration(string text)
     {

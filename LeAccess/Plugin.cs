@@ -90,6 +90,7 @@ public class Plugin : BasePlugin
         LeAccess.Accessibility.CharacterCreation.ClassCarouselHandler.Reset();
         LeAccess.Accessibility.CharacterCreation.CreationChoiceReader.Reset();
         LeAccess.Accessibility.CharacterCreation.CharacterNameAccessibility.Reset();
+        LeAccess.Accessibility.CharacterCreation.CharacterNameEcho.Reset();
         LeAccess.Accessibility.CharacterCreation.CharacterNameKeyboard.Reset();
         LeAccess.Accessibility.CharacterCreation.ScreenKeyboardTyping.Reset();
         LeAccess.Accessibility.ScreenContent.ScreenContentAnnouncer.Reset();

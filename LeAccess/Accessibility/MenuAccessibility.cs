@@ -51,6 +51,7 @@ public class MenuAccessibility : MonoBehaviour
         }
         LoginTransitionGuard.Update();
         ScreenKeyboardTyping.Update();
+        CharacterNameEcho.Update();
         PauseMenuFocusRecovery.Update();
         ScreenContentAnnouncer.Update();
         DialogueAnnouncer.Update();

@@ -134,6 +134,26 @@ form.gameObject.Active = true; Settle();
 Check(ScreenReader.Messages.Single().Text == "Validator refreshed on reopen", "Reopening rebuilds the bounded validator cache");
 form = Reset(); Tick(); form.newCharacterError.text = "Segundo error"; Tick(); Tick();
 Check(ScreenReader.Messages.Single().Text == "Segundo error", "Rapid error changes discard the unsettled previous error");
+
+// Typing echo: silent baseline, then typed or erased characters; only the previous echo is interrupted.
+form = Reset(); CharacterNameEcho.Reset();
+var field = form.newCharacterNameInputField; field.text = "Al";
+void Echo() => CharacterNameEcho.Update();
+Settle(); Echo();
+Check(ScreenReader.Messages.Count == 1 && ScreenReader.Messages.All(m => m.Text != "Al"), "Prefilled name sets a silent baseline");
+ScreenReader.Messages.Clear();
+field.text = "Ali"; Echo();
+Check(ScreenReader.Messages.Single() == ("i", false), "First typed character echoes without cutting other speech");
+field.text = "Alis"; Echo();
+Check(ScreenReader.Messages[1] == ("s", true), "A consecutive echo interrupts the previous echo");
+ScreenReader.Messages.Clear(); field.text = "Ali"; Echo();
+Check(ScreenReader.Messages.Single() == (LeAccess.I18n.ModText.Format("social.erased", "s"), true), "Erasing echoes the erased characters");
+ScreenReader.Speak("other", false); field.text = "Alix"; Echo();
+Check(ScreenReader.Messages[^1] == ("x", false), "An echo after other speech does not interrupt it");
+ScreenReader.Messages.Clear(); field.text = "Alix"; Echo();
+Check(ScreenReader.Messages.Count == 0, "An unchanged name stays silent");
+CharacterNameAccessibility.Reset(); Echo(); field.text = "Z"; Echo(); CharacterNameAccessibility.Update(); Echo();
+Check(ScreenReader.Messages.Count == 0, "A name that is not owned never echoes, and reowning re-baselines");
 if (failures.Count != 0) throw new InvalidOperationException(string.Join(Environment.NewLine, failures));
 checks += KeyboardTests.Run();
 checks += TypingTests.Run();
