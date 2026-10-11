@@ -1,6 +1,15 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-10 night: first report from a player outside the project; every item addressed. Name field echoes
+**Updated:** 2026-10-11: in-game settings menu with every option, a glossary of the mod's 38 sounds and per-kind volume
+and distance (L1 while Create or L3 is held, Ctrl+F1; [menu](reference/mod-menu.md),
+[levels](reference/world-object-sounds.md)); a release tester's report: scanner readouts and the beacon follow the explored
+route ("260 steps by route, head down"), goals and arrival need a reachable point (the Fortress Walls storerooms)
+([routes](reference/exploration-mode.md#route-aware-directions-and-reachable-goals-2026-10-11-tester-report)); mod button
+Square = life, mana, level and experience, Triangle = gold and progress, Circle repeats the scanner entry; breakables in
+the scanner ([layout](reference/exploration-mode.md#2026-10-11-tester-report-mod-button-layout-and-breakables)); separate
+life/mana announcement options ([vitals](reference/vitals-api.md)); shrine names and effects ([shrines](reference/map-landmarks.md)).
+Installed (game closed). Unheard; checks in [WHATS_NEXT.md](WHATS_NEXT.md).
+Earlier, 2026-10-10 night: first report from a player outside the project; every item addressed. Name field echoes
 typing ([echo](reference/character-name-reading.md#typing-echo-2026-10-10-user-report)); a lone dialogue response
 repeats on a direction push and `[Dialogue] SpeakNpcLines` (default on) can silence voiced NPC speech
 ([dialogue](reference/npc-subtitles.md#optional-silence-for-npc-speech-2026-10-10-user-report)); Ctrl no longer arms
@@ -218,6 +227,7 @@ releases go to GitHub Releases with the asset name `LeAccess.zip` (see below).
 
 ## Validation and references
 
+- 2026-10-11 08:57: settings menu and tester batch installed (`LeAccess.dll` `ECC6B942930F0B00…`, game closed). All 62 host suites pass (new ModMenu 262; Exploration 425, ExplorationCatalog 91, Localization 8410, WorldLoops 181); PatchSafety 84 declarations / 83 targets, no new hook. No friend ZIP or release.
 - 2026-10-10 22:47: player-report batch installed (`LeAccess.dll` `C517B9A5B6820E59…`, game closed; external catalogs kept, new keys are embedded). All 61 host suites pass (Inventory 390, Exploration 397, ExplorationCatalog 64, Skills 291, Passives 203, Dialogue 97, Classes 148, Localization 5750); PatchSafety 84 declarations / 83 targets, no new hook. No friend ZIP or release.
 - 2026-10-10: release announced in the audiogames.net Play testing room on the user's account, at their request: <https://forum.audiogames.net/topic/60577/>.
 - 2026-10-10: GitHub release `v0.1.0` (first public test release) carries that ZIP as `LeAccess.zip`; every release must keep that asset name so <https://github.com/Ali-Bueno/LeAccess/releases/latest/download/LeAccess.zip> (README, forum post) stays valid, and must not be a prerelease (`latest` skips them).

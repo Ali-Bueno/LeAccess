@@ -1,3 +1,23 @@
+# Handoff — 2026-10-11: settings menu and a release tester's report
+
+A player asked for an in-game menu with every option, a glossary of the sounds and group or individual volume and
+distance for every object with a sound, opened with Create + L1 or L3 + L1 anywhere ([design](reference/mod-menu.md)).
+A release tester then reported straight-line tracker directions, the beacon delivering the player above the Fortress
+Walls storerooms, asked for one status button and a "repeat tracker" button, fewer mana announcements, breakables and
+shrine effects. All done; nothing heard yet. No new hook. Live checks, with log lines:
+- Menu: opens from the main menu, a panel and gameplay (`[Mod menu] opened`); the game ignores the pad while open
+  (`game input paused` / `resumed` after release); L1 of the chord neither drinks a potion nor changes era
+  (`L1 bindings held back … : N`, N > 0 on DualSense and Xbox); no other speech talks over it (`held back: N`).
+- Sounds page: each sound plays at its level; Gold at 0 % goes silent in play; a kind's own distance carries further.
+- Scanner: Burning Forest at Grael says the route ("… by route, head down"; `[Exploration] route … straight= route=`);
+  an unexplored detour says "no known route". Storerooms: no arrival on the plateau (`arrival held … wall|other level`),
+  arrival in the pocket below; check Cross works there.
+- Create+Circle repeats the entry; Square/Triangle readouts; `[Exploration] breakables: N` (are crates and pots in the
+  Barrel group?); `[Shrine] activated: …` and `[Shrine] effect: …`.
+Open question for the user: explored ground comes from line of sight (20 units), while the minimap reveals whole room
+volumes, so a detour visible on the minimap may still be "no known route"; seeding visited minimap rooms is possible.
+Not done: more enemy health speech (today bosses and elites only).
+
 # Handoff — 2026-10-10 night: first outside player report
 
 A player's list (English game, NVDA, controller), every item addressed; the user asked that options which depend on
