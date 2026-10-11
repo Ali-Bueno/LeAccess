@@ -49,6 +49,7 @@ public class MenuAccessibility : MonoBehaviour
             _lastPolledSelection = 0;
             ElementAnnouncer.ResetFocus();
         }
+        ModMenu.ModMenu.Update();
         LoginTransitionGuard.Update();
         ScreenKeyboardTyping.Update();
         CharacterNameEcho.Update();

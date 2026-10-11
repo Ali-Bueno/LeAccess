@@ -26,6 +26,10 @@ public static class ScreenReader
 
     public static string DetectedScreenReader { get; private set; } = "None";
 
+    /// <summary>While the mod menu is open, other speech is dropped (counted, not queued) so the menu is not talked over.</summary>
+    internal static bool MenuOwnsSpeech { get; set; }
+    internal static int HeldBack { get; private set; }
+
     /// <summary>
     /// Initialize the screen reader connection.
     /// </summary>
@@ -88,6 +92,15 @@ public static class ScreenReader
     /// </summary>
     public static bool TrySpeak(string text, bool interrupt = true)
     {
+        if (MenuOwnsSpeech && !string.IsNullOrEmpty(text)) { HeldBack++; return true; }
+        return Output(text, interrupt);
+    }
+
+    /// <summary>Speech of the mod menu itself, the only speech while it is open.</summary>
+    internal static bool SpeakMenu(string text, bool interrupt = true) => Output(text, interrupt);
+
+    private static bool Output(string text, bool interrupt)
+    {
         if (string.IsNullOrEmpty(text) || !IsAvailable()) return false;
 
         try
@@ -121,7 +134,7 @@ public static class ScreenReader
     /// </summary>
     public static void Silence()
     {
-        if (!IsAvailable()) return;
+        if (MenuOwnsSpeech || !IsAvailable()) return;
 
         try
         {
@@ -138,7 +151,7 @@ public static class ScreenReader
     /// </summary>
     public static void Braille(string text)
     {
-        if (string.IsNullOrEmpty(text) || !IsAvailable()) return;
+        if (MenuOwnsSpeech || string.IsNullOrEmpty(text) || !IsAvailable()) return;
 
         try
         {

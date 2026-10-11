@@ -39,10 +39,14 @@ public class Plugin : BasePlugin
         ModText.Initialize(Path.Combine(Path.GetDirectoryName(typeof(Plugin).Assembly.Location), "Translations"),
             message => Log.LogWarning(message));
         GameLocale.Initialize(Config);
-        ListPosition.Enabled = Config.Bind("Menus", "AnnouncePositions", true,
-            "Speak list positions such as \"3 of 8\" after menu, inventory, map and tree entries.").Value;
-        KeywordExplanation.Enabled = Config.Bind("Tooltips", "ReadKeywordExplanations", true,
-            "Read the status-effect explanations the game shows only while Right Stick is held, with a details request.").Value;
+        var positions = Config.Bind("Menus", "AnnouncePositions", true,
+            "Speak list positions such as \"3 of 8\" after menu, inventory, map and tree entries.");
+        ListPosition.Enabled = positions.Value;
+        positions.SettingChanged += (_, _) => ListPosition.Enabled = positions.Value;
+        var keywords = Config.Bind("Tooltips", "ReadKeywordExplanations", true,
+            "Read the status-effect explanations the game shows only while Right Stick is held, with a details request.");
+        KeywordExplanation.Enabled = keywords.Value;
+        keywords.SettingChanged += (_, _) => KeywordExplanation.Enabled = keywords.Value;
 
         // Initialize screen reader
         if (!ScreenReader.Initialize())
@@ -81,6 +85,7 @@ public class Plugin : BasePlugin
         EnemyCueSounds.Initialize(Config);
         ControllerBindingLog.Initialize(Config);
         ExplorationAccessibility.Initialize(Config);
+        LeAccess.Accessibility.ModMenu.ModMenu.Initialize(Config);
         WallSonar.Initialize();
         LeAccess.Accessibility.Forge.ForgeResultLog.Install();
         LeAccess.Accessibility.Social.SocialLog.Install();
@@ -94,6 +99,7 @@ public class Plugin : BasePlugin
 
     public override bool Unload()
     {
+        LeAccess.Accessibility.ModMenu.ModMenu.Cleanup();
         LeAccess.Accessibility.Login.LoginTransitionGuard.Reset();
         GameLocale.Reset();
         LeAccess.Accessibility.CharacterCreation.PauseMenuFocusRecovery.Reset();
