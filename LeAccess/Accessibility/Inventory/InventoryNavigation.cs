@@ -2,7 +2,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
-using Anchor = LeAccess.Accessibility.Inventory.InventoryNavigationOrder.Anchor;
+using Box = LeAccess.Accessibility.Inventory.InventoryNavigationOrder.Box;
+using Cell = LeAccess.Accessibility.Inventory.InventoryNavigationOrder.Cell;
 using Edges = LeAccess.Accessibility.Inventory.InventoryNavigationOrder.Edges;
 
 namespace LeAccess.Accessibility.Inventory;
@@ -11,8 +12,11 @@ namespace LeAccess.Accessibility.Inventory;
 /// <remarks>See reference/inventory-drop-focus.md#controller-navigation-2026-10-04 and reference/idols.md.</remarks>
 internal static class InventoryNavigation
 {
-    private static readonly List<(Anchor Item, ItemContainerEntry Entry)> Items = new();
-    private static readonly List<Anchor> Order = new();
+    private static readonly List<(Box Item, ItemContainerEntry Entry)> Items = new();
+    private static readonly List<Box> Order = new();
+    // The cursor cell is only valid for the item this class last landed on.
+    private static ItemContainerEntry _cursorEntry;
+    private static Cell _cursor;
     private static string _lastFailure;
 
     /// <summary>Handles a d-pad step in an item grid; false lets the game's own step run.</summary>
@@ -26,11 +30,14 @@ internal static class InventoryNavigation
                 !TryReadItems(container, out var size)) return false;
             int current = CurrentIndex(container);
             var slot = container.currentFocusSlot;
-            var move = InventoryNavigationOrder.Plan(Order, current, slot.x, slot.y, direction, exits);
+            var cursor = current < 0 ? new Cell(slot.x, slot.y) :
+                _cursorEntry is not null && _cursorEntry.Pointer == Items[current].Entry.Pointer ? _cursor : Items[current].Item.TopLeft;
+            var move = InventoryNavigationOrder.Plan(Order, current, cursor, direction, exits);
             switch (move.Kind)
             {
                 case InventoryNavigationOrder.MoveKind.Select:
                     var target = Items[move.Index];
+                    (_cursorEntry, _cursor) = (target.Entry, move.Cursor);
                     container.currentFocusSlot = new Vector2Int { x = target.Item.Column, y = target.Item.Top };
                     container.SetFocusItem(target.Entry);
                     return true;
@@ -39,13 +46,13 @@ internal static class InventoryNavigation
                     return true;
                 case InventoryNavigationOrder.MoveKind.Exit:
                     // From the border cell on that side the game's own step leaves the grid, as from this item's row or column.
-                    var from = current >= 0 ? Items[current].Item : new Anchor(slot.x, slot.y);
+                    var from = move.Cursor;
                     container.currentFocusSlot = direction switch
                     {
                         Direction.UP => new Vector2Int { x = from.Column, y = size.y - 1 },
                         Direction.DOWN => new Vector2Int { x = from.Column, y = 0 },
-                        Direction.LEFT => new Vector2Int { x = 0, y = from.Top },
-                        _ => new Vector2Int { x = size.x - 1, y = from.Top }
+                        Direction.LEFT => new Vector2Int { x = 0, y = from.Row },
+                        _ => new Vector2Int { x = size.x - 1, y = from.Row }
                     };
                     return false;
                 default:
@@ -103,7 +110,8 @@ internal static class InventoryNavigation
             if (entry is null || entry.WasCollected) continue;
             var position = entry.Position;
             // Position is the item's bottom-left cell.
-            Items.Add((new Anchor(position.x, position.y + Math.Max(entry.size.y, 1) - 1), entry));
+            int width = Math.Max(entry.size.x, 1), height = Math.Max(entry.size.y, 1);
+            Items.Add((new Box(position.x, position.y + height - 1, width, height), entry));
         }
         Items.Sort((a, b) => InventoryNavigationOrder.Compare(a.Item, b.Item));
         foreach (var item in Items) Order.Add(item.Item);
