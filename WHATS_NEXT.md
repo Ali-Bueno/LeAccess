@@ -58,6 +58,9 @@ Mod menu input: Cross, Circle and the D-pad must do nothing in the game while it
 not dodge (`[Mod menu] game input paused: N controller maps off`; `maps turned back on by the game while open` must
 not appear). The first version used `Player.isPlaying` and leaked every button; the second left the landing screen's
 Unity UI navigation on (check the log line `UI navigation off: 1` and that Down + Cross there does nothing).
+Third version (1ac19b6): the menu also empties the game's menu selection, since its menus read the pad through the
+template; check `menu selection held: True` and that Down + Cross on the landing screen does nothing, and that the
+selection is back after closing. Inventory: left/right must step 1, 2, 3 … of N with no jump back.
 Dialogue with several responses: each push says the new response once.
 Pickup lines (gold, a potion count alone, the targeted ground item) now cut each other, and life, mana and combat lines
 cut them ([details](reference/announcement-lifecycle.md#pickup-lines-give-way-2026-10-11-user-report)); check that a
