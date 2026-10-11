@@ -8,8 +8,6 @@ namespace LeAccess.Accessibility.Exploration;
 internal sealed partial class ExploredMap
 {
     internal const int DefaultMaxExpansions = 6000;
-    // A target is reached from an explored cell within its arrival radius or a clear hop this many cells long.
-    private const int HopCells = 2;
     // Only the first stretch is straightened; it sets the bearing and, until the cadence saturates, the pace.
     private const int PullHorizon = 32;
 
@@ -21,29 +19,30 @@ internal sealed partial class ExploredMap
     internal int MaxExpansions { get; set; } = DefaultMaxExpansions;
     internal int LastExpansions { get; private set; }
     internal string LastFailure { get; private set; }
+    internal RouteGoal LastGoal { get; private set; }
 
     // Whether the straight line from the player to the target is walkable (the "straight" reach word).
     internal static bool StraightClear(Vector3 from, Vector3 target, IWalkability nav) =>
         nav is not null && nav.TrySample(from, out var start) && nav.TrySample(target, out var end) &&
         nav.Clear(start, end);
 
+    // An area (a minimap room, a frontier edge) is reached on entering its radius; a point target where it is at hand.
     internal bool TryRoute(Vector3 from, Vector3 target, float arrivalRadius, IWalkability nav,
-        out IReadOnlyList<Vector3> path, out float length)
+        out IReadOnlyList<Vector3> path, out float length, bool area = false)
     {
         path = Array.Empty<Vector3>();
         length = 0;
         LastExpansions = 0;
         LastFailure = null;
+        LastGoal = default;
         if (nav is null || !Finite(from) || !Finite(target)) return Fail("invalid");
         if (!nav.TrySample(from, out var start) || !Finite(start)) return Fail("player off NavMesh");
-        // Objects can stand off the walkable mesh; then their own position is the goal.
-        bool onMesh = nav.TrySample(target, out var goal) && Finite(goal);
-        if (!onMesh) goal = target;
         float reach = float.IsFinite(arrivalRadius) && arrivalRadius > 0 ? arrivalRadius : 0;
+        var goal = LastGoal = ResolveGoal(target, reach, area, nav);
         // Behind a counter the nearest explored cell centre can sit up to a cell from the walkable edge.
-        if (!onMesh) reach = Math.Max(reach, CellSize);
-        if (Reaches(start, goal, onMesh, reach, nav))
-            return Finish(new List<Vector3> { start, goal }, onMesh, nav, out path, out length);
+        if (!goal.OnMesh) reach = Math.Max(reach, CellSize);
+        if (Reaches(start, goal, reach, nav))
+            return Finish(new List<Vector3> { start, goal.Point }, goal.OnMesh, nav, out path, out length);
 
         Prepare();
         float slack = Math.Max(reach, CellSize * HopCells);
@@ -54,7 +53,7 @@ internal sealed partial class ExploredMap
                 if (!_columns.TryGetValue((column.X + dx, column.Z + dz), out var cells)) continue;
                 foreach (int cell in cells)
                     if (nav.Clear(start, _points[cell]))
-                        Offer(cell, -1, Vector3.Distance(start, _points[cell]), goal, slack);
+                        Offer(cell, -1, Vector3.Distance(start, _points[cell]), goal.Point, slack);
             }
         if (_open.Count == 0) return Fail("player cell unexplored");
 
@@ -64,8 +63,8 @@ internal sealed partial class ExploredMap
             _closed[cell] = _search;
             if (++LastExpansions > MaxExpansions) return Fail("expansion cap");
             var point = _points[cell];
-            if (Reaches(point, goal, onMesh, reach, nav))
-                return Finish(Trace(start, cell, goal), onMesh, nav, out path, out length);
+            if (Reaches(point, goal, reach, nav))
+                return Finish(Trace(start, cell, goal.Point), goal.OnMesh, nav, out path, out length);
             var (x, z) = _cellColumns[cell];
             for (int dz = -1; dz <= 1; dz++)
                 for (int dx = -1; dx <= 1; dx++)
@@ -73,17 +72,10 @@ internal sealed partial class ExploredMap
                     if (dx == 0 && dz == 0 || !_columns.TryGetValue((x + dx, z + dz), out var cells)) continue;
                     foreach (int next in cells)
                         if (_closed[next] != _search && Edge(cell, next, nav))
-                            Offer(next, cell, _cost[cell] + Vector3.Distance(point, _points[next]), goal, slack);
+                            Offer(next, cell, _cost[cell] + Vector3.Distance(point, _points[next]), goal.Point, slack);
                 }
         }
         return Fail("no explored route");
-    }
-
-    private bool Reaches(Vector3 point, Vector3 goal, bool onMesh, float reach, IWalkability nav)
-    {
-        float horizontal = Horizontal(point, goal);
-        if (onMesh && MathF.Abs(point.Y - goal.Y) >= LevelHeight) return false;
-        return horizontal <= reach || onMesh && horizontal <= CellSize * HopCells && nav.Clear(point, goal);
     }
 
     // Horizontal distance less the goal's slack never overestimates, so the search stays optimal.

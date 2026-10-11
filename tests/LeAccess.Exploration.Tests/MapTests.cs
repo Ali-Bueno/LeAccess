@@ -158,24 +158,24 @@ internal static class MapTests
     }
 
     internal static BeaconRouter Router(ExploredMap map, IWalkability nav) =>
-        (Vector3 from, Vector3 target, float arrival, out IReadOnlyList<Vector3> path, out float length) =>
-            map.TryRoute(from, target, arrival, nav, out path, out length);
+        (Vector3 from, ExplorationTarget target, out IReadOnlyList<Vector3> path, out float length) =>
+            map.TryRoute(from, target.Position, BeaconState.ArrivalRadius(target), nav, out path, out length, target.Area);
 
-    private static string[] Rows(int width, int depth, Func<int, int, char> tile) =>
+    internal static string[] Rows(int width, int depth, Func<int, int, char> tile) =>
         Enumerable.Range(0, depth).Select(z => new string(Enumerable.Range(0, width).Select(x => tile(x, z)).ToArray())).ToArray();
 
-    private static void Settle(ExploredMap map, FakeGrid grid, Vector3 player)
+    internal static void Settle(ExploredMap map, FakeGrid grid, Vector3 player)
     {
         for (int call = 0; call < 20; call++) map.Observe(player, grid);
     }
 
-    private static void Walk(ExploredMap map, FakeGrid grid, Vector3 from, Vector3 to)
+    internal static void Walk(ExploredMap map, FakeGrid grid, Vector3 from, Vector3 to)
     {
         int steps = (int)MathF.Ceiling(Vector3.Distance(from, to));
         for (int step = 0; step <= steps; step++) Settle(map, grid, Vector3.Lerp(from, to, (float)step / steps));
     }
 
-    private static bool Walkable(IReadOnlyList<Vector3> path, FakeGrid grid)
+    internal static bool Walkable(IReadOnlyList<Vector3> path, FakeGrid grid)
     {
         for (int index = 1; index < path.Count; index++)
             if (!grid.Clear(path[index - 1], path[index])) return false;

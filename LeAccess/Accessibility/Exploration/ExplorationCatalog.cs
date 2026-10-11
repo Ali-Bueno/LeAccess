@@ -19,8 +19,11 @@ internal readonly record struct ExplorationEntry(string Key, string Name, Explor
 
 internal delegate string ExplorationText(string key, params object[] arguments);
 
+// A walking route through explored ground: its length, the point the beacon pans to, and whether it is one straight leg.
+internal readonly record struct ExplorationRoute(float Length, Vector3 Aim, bool Direct);
+
 // Category/entry cursor of the right-stick scanner. Entries are nearest first and wrap; as in D2R a
-// category step says the category's name, never a count, and readouts give the straight line.
+// category step says the category's name, never a count. Readouts follow the explored route when one is known.
 internal sealed class ExplorationCatalog
 {
     // D2R map_survey.cpp CategoryOrder: the ways out, where there is left to go, what the level is for,
@@ -66,7 +69,7 @@ internal sealed class ExplorationCatalog
         _category = present[NextCategory(present, Math.Sign(delta) >= 0 ? 1 : -1)];
         var sorted = Sorted(entries, _category.Value, player);
         _selected = sorted[0].Key;
-        return text(CategoryKey(_category.Value)) + ". " + Describe(sorted[0], player, forward, right, stepLength, text, LevelHeight, Ground);
+        return text(CategoryKey(_category.Value)) + ". " + DescribeEntry(sorted[0], player, forward, right, stepLength, text);
     }
 
     internal string StepEntry(int delta, IReadOnlyList<ExplorationEntry> entries, Vector3 player,
@@ -82,15 +85,20 @@ internal sealed class ExplorationCatalog
         int index = sorted.FindIndex(entry => entry.Key == _selected);
         index = index < 0 ? 0 : Wrap(index + (Math.Sign(delta) >= 0 ? 1 : -1), sorted.Count);
         _selected = sorted[index].Key;
-        return Describe(sorted[index], player, forward, right, stepLength, text, LevelHeight, Ground);
+        return DescribeEntry(sorted[index], player, forward, right, stepLength, text);
     }
 
     // Create+Circle: the selected entry again with the current distance and direction, or the empty-scanner line.
     internal string RepeatSelected(IReadOnlyList<ExplorationEntry> entries, Vector3 player,
         Vector3 forward, Vector3 right, float stepLength, ExplorationText text) =>
         Selected(entries) is { } entry && GuidanceGeometry.Finite(entry.Position)
-            ? Describe(entry, player, forward, right, stepLength, text, LevelHeight, Ground)
+            ? DescribeEntry(entry, player, forward, right, stepLength, text)
             : text("exploration.scanner.empty");
+
+    /// <summary>The scanner's one readout of an entry, with this scanner's level height, ground and routes.</summary>
+    internal string DescribeEntry(ExplorationEntry entry, Vector3 player, Vector3 forward, Vector3 right,
+        float stepLength, ExplorationText text) =>
+        Describe(entry, player, forward, right, stepLength, text, LevelHeight, Ground, Route);
 
     /// <summary>Height of one walkable floor; a target farther above or below is said to be on another level.</summary>
     internal float LevelHeight { get; set; } = float.PositiveInfinity;
@@ -98,25 +106,45 @@ internal sealed class ExplorationCatalog
     /// <summary>Walkable ground height under a point, or null when unknown; without it no level is claimed.</summary>
     internal Func<Vector3, float?> Ground { get; set; }
 
+    /// <summary>The walking route from the player to an entry, or null when none is known; unset, routes are not spoken.</summary>
+    internal Func<ExplorationEntry, Vector3, ExplorationRoute?> Route { get; set; }
+
     internal static string Describe(ExplorationEntry entry, Vector3 player, Vector3 forward, Vector3 right,
         float stepLength, ExplorationText text, float levelHeight = float.PositiveInfinity,
-        Func<Vector3, float?> ground = null)
+        Func<Vector3, float?> ground = null, Func<ExplorationEntry, Vector3, ExplorationRoute?> route = null)
     {
         string name = entry.Boss ? text("exploration.boss", entry.Name) : entry.Name;
         var delta = entry.Position - player;
-        float distance = new Vector2(delta.X, delta.Z).Length();
-        int steps = stepLength > 0 && float.IsFinite(distance)
-            ? (int)Math.Round(distance / stepLength, MidpointRounding.AwayFromZero) : 0;
+        int steps = Steps(new Vector2(delta.X, delta.Z).Length(), stepLength);
         string direction = GuidanceGeometry.Direction(delta, forward, right);
         string place = steps < 1 || direction == null ? text("exploration.entry_here", name)
             : text("exploration.entry", name, steps == 1 ? text("exploration.steps_one") : text("exploration.steps_many", steps),
                 text(direction));
+        if (route is not null)
+            place = route(entry, player) is { } known
+                ? Routed(known, name, steps, direction, player, forward, right, stepLength, text) ?? place
+                : text("exploration.entry_unrouted", place);
         // Distance is horizontal. Markers float above their floor, so levels compare sampled ground, never raw heights.
         float? difference = GroundDifference(entry.Position, player, ground);
         bool otherLevel = difference is { } dy && float.IsFinite(levelHeight) && levelHeight > 0 && Math.Abs(dy) >= levelHeight;
         return otherLevel ? text("exploration.on_level", place, text(difference > 0 ? "exploration.level_higher" : "exploration.level_lower"))
             : place;
     }
+
+    // A detour speaks its walking length and the way to head now; a straight route keeps the plain readout.
+    private static string Routed(ExplorationRoute route, string name, int straightSteps, string straightDirection,
+        Vector3 player, Vector3 forward, Vector3 right, float stepLength, ExplorationText text)
+    {
+        int steps = Steps(route.Length, stepLength);
+        string heading = GuidanceGeometry.Direction(route.Aim - player, forward, right);
+        if (route.Direct || steps < 1 || heading == null || steps == straightSteps && heading == straightDirection) return null;
+        return text("exploration.entry", name,
+            steps == 1 ? text("exploration.route_steps_one") : text("exploration.route_steps_many", steps),
+            text("exploration.route_heading", text(heading)));
+    }
+
+    private static int Steps(float distance, float stepLength) => stepLength > 0 && float.IsFinite(distance)
+        ? (int)Math.Round(distance / stepLength, MidpointRounding.AwayFromZero) : 0;
 
     private static float? GroundDifference(Vector3 target, Vector3 player, Func<Vector3, float?> ground)
     {

@@ -139,6 +139,9 @@ internal static class ExplorationAccessibility
             Catalog.Ground = point => nav.TrySample(point, out var ground) ? ground.Y : null;
         }
         else Catalog.Ground = null;
+        // Routes go through the explored ground of this scene session, computed only for the entry spoken.
+        Catalog.Route = nav != null && ExplorationBeacon.CurrentMap(_world.Session) != null
+            ? (entry, from) => ExplorationBeacon.RouteFor(ExplorationTarget.From(entry), from) : null;
         ExplorationText text = ModText.Format;
         string sentence = command switch
         {
@@ -156,7 +159,7 @@ internal static class ExplorationAccessibility
     {
         if (Catalog.Selected(Entries) is not { } entry)
             return ModText.Get(ExplorationInput.LeftStickIsModifier ? "exploration.scanner.no_selection_l3" : "exploration.scanner.no_selection");
-        _lastTarget = new ExplorationTarget(entry.Key, entry.Name, entry.Position, entry.ArrivalRadius);
+        _lastTarget = ExplorationTarget.From(entry);
         return ExplorationBeacon.Lock(_lastTarget.Value);
     }
 
@@ -170,7 +173,7 @@ internal static class ExplorationAccessibility
         if (!_hasEntries) return last;
         foreach (var entry in Entries)
             if (entry.Key == key)
-                return _lastTarget = new ExplorationTarget(entry.Key, entry.Name, entry.Position, entry.ArrivalRadius);
+                return _lastTarget = ExplorationTarget.From(entry);
         return key.StartsWith("listener:", StringComparison.Ordinal) ? last : null;
     }
 

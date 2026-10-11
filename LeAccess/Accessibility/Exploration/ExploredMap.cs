@@ -8,6 +8,8 @@ namespace LeAccess.Accessibility.Exploration;
 internal interface IWalkability
 {
     bool TrySample(Vector3 point, out Vector3 onMesh);
+    // The nearest walkable point (3D) within a radius of the caller's choosing.
+    bool TrySampleWithin(Vector3 point, float radius, out Vector3 onMesh);
     bool Clear(Vector3 from, Vector3 to);
 }
 

@@ -64,11 +64,13 @@ internal sealed class NavMeshWalkability : IWalkability
         return true;
     }
 
-    public bool TrySample(NVector3 point, out NVector3 onMesh)
+    public bool TrySample(NVector3 point, out NVector3 onMesh) => TrySampleWithin(point, SampleRadius, out onMesh);
+
+    public bool TrySampleWithin(NVector3 point, float radius, out NVector3 onMesh)
     {
         onMesh = default;
-        if (!_configured || !ExploredMap.Finite(point) ||
-            !NavMesh.SamplePositionFilter(Unity(point), out var hit, SampleRadius, _agentTypeId, _areaMask)) return false;
+        if (!_configured || !ExploredMap.Finite(point) || !float.IsFinite(radius) || radius <= 0 ||
+            !NavMesh.SamplePositionFilter(Unity(point), out var hit, radius, _agentTypeId, _areaMask)) return false;
         onMesh = new NVector3(hit.position.x, hit.position.y, hit.position.z);
         return ExploredMap.Finite(onMesh);
     }

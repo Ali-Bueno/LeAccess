@@ -15,6 +15,8 @@ var words = new Dictionary<string, string>
     ["exploration.boss"] = "{0} <boss>", ["exploration.entry_here"] = "{0} <here>",
     ["exploration.on_level"] = "{0} [{1}]", ["exploration.level_higher"] = "<higher>", ["exploration.level_lower"] = "<lower>",
     ["exploration.steps_one"] = "<1 step>", ["exploration.steps_many"] = "<{0} steps>", ["exploration.entry"] = "{0}; {1}; {2}",
+    ["exploration.route_steps_one"] = "<1 step by route>", ["exploration.route_steps_many"] = "<{0} steps by route>",
+    ["exploration.route_heading"] = "<head {0}>", ["exploration.entry_unrouted"] = "{0} <no known route>",
     ["guidance.direction.up"] = "<up>", ["guidance.direction.up_right"] = "<up-right>",
     ["guidance.direction.right"] = "<right>", ["guidance.direction.down_right"] = "<down-right>",
     ["guidance.direction.down"] = "<down>", ["guidance.direction.down_left"] = "<down-left>",
@@ -145,6 +147,50 @@ Equal(Category(ExplorationCategory.Npc) + ". " + text("exploration.on_level", Li
 var unsampled = new ExplorationCatalog { LevelHeight = floorHeight };
 Equal(Category(ExplorationCategory.Npc) + ". " + Line("Gaspar", 9, "up"),
     unsampled.StepCategory(1, new List<ExplorationEntry> { gaspar }, player, forward, right, step, text), "the scanner without ground says no level");
+
+// Routes (2026-10-11 tester report): a detour speaks its walking length and the way to head now (the beacon's
+// look-ahead); no known route marks the straight line; a route that reads like the straight line keeps it.
+string RouteLine(string name, int steps, string heading) => text("exploration.entry", name,
+    steps == 1 ? text("exploration.route_steps_one") : text("exploration.route_steps_many", steps),
+    text("exploration.route_heading", text($"guidance.direction.{heading}")));
+var exitRight = Entry("exit", "Exit", ExplorationCategory.Exit, 20, 0);
+string plainRight = Line("Exit", 20, "right");
+Func<ExplorationEntry, Vector3, ExplorationRoute?> detour = (_, from) => new ExplorationRoute(46, from + new Vector3(0, 0, -4), false);
+Equal(RouteLine("Exit", 46, "down"), ExplorationCatalog.Describe(exitRight, player, forward, right, step, text, route: detour),
+    "a detour speaks the route and the way to head");
+Equal(text("exploration.entry_unrouted", plainRight),
+    ExplorationCatalog.Describe(exitRight, player, forward, right, step, text, route: (_, _) => null), "no known route marks the straight line");
+Equal(plainRight, ExplorationCatalog.Describe(exitRight, player, forward, right, step, text,
+    route: (_, from) => new ExplorationRoute(20.4f, from + new Vector3(4, 0, 0), true)), "a direct route keeps the plain readout");
+Equal(plainRight, ExplorationCatalog.Describe(exitRight, player, forward, right, step, text,
+    route: (_, from) => new ExplorationRoute(20.3f, from + new Vector3(4, 0, 0.5f), false)), "a route reading like the line keeps it");
+Equal(plainRight, ExplorationCatalog.Describe(exitRight, player, forward, right, step, text), "without routes the readout is unchanged");
+Equal(RouteLine("Exit", 1, "up"), ExplorationCatalog.Describe(Entry("exit", "Exit", ExplorationCategory.Exit, 0.3f, 0), player, forward, right,
+    step, text, route: (_, from) => new ExplorationRoute(1.2f, from + new Vector3(0, 0, 1.2f), false)), "here, behind a rail, says its route");
+// The level phrase follows the routed or marked readout.
+Equal(text("exploration.on_level", RouteLine("Gaspar", 60, "right"), text("exploration.level_higher")),
+    ExplorationCatalog.Describe(gaspar, player, forward, right, step, text, floorHeight, floorGround,
+        (_, from) => new ExplorationRoute(60, from + new Vector3(4, 0, 0), false)), "a route up to another level keeps the level phrase");
+Equal(text("exploration.on_level", text("exploration.entry_unrouted", Line("Gaspar", 9, "up")), text("exploration.level_higher")),
+    ExplorationCatalog.Describe(gaspar, player, forward, right, step, text, floorHeight, floorGround, (_, _) => null),
+    "no route to another level keeps the level phrase");
+// The scanner routes only the entry it speaks, through one function.
+int routedCount = 0;
+var routing = new ExplorationCatalog
+{
+    Route = (entry, from) =>
+    {
+        routedCount++;
+        return entry.Key == "exit-far" ? new ExplorationRoute(31, from + new Vector3(-4, 0, 0), false) : null;
+    }
+};
+Equal(Category(ExplorationCategory.Exit) + ". " + text("exploration.entry_unrouted", Line("Exit near", 7, "up_left")),
+    routing.StepCategory(1, entries, player, forward, right, step, text), "a category step routes its entry");
+Equal(1, routedCount, "only the spoken entry is routed");
+Equal(RouteLine("Exit far", 31, "left"), routing.StepEntry(1, entries, player, forward, right, step, text), "an entry step routes its entry");
+Equal(RouteLine("Exit far", 31, "left"), routing.DescribeEntry(routing.Selected(entries).Value, player, forward, right, step, text),
+    "the selected entry is described by the same function");
+Equal(3, routedCount, "one route per readout");
 
 // Landmarks and loot (shrines, gold, items) are listed when on screen; NPCs, chests and objects keep the seen-range rule.
 foreach (var landmark in new[] { ExplorationCategory.Shrine, ExplorationCategory.Portal, ExplorationCategory.Exit,
