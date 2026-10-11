@@ -1,3 +1,13 @@
+# Handoff — 2026-10-11 11:18: wall tones
+
+User: an option in the mod menu to use wall tones like Grimdark's, softer but with distance still clearly audible, for
+players who prefer them to the radar. Done ([design](reference/navigation-radar.md#wall-tones-2026-10-11)): the old
+continuous sonar keys now drive Grimdark-style tones; page and option renamed "Wall tones" in ten languages. Live
+checks: turn "Wall tones" on (radar off or on), `[Wall tones] playing` in the log; walking along a corridor the side
+tones stay steady and the tone ahead rises toward a wall; hugging a wall does not sound like a wall ahead; menus and
+pauses silence them (`[Wall tones] silent: …`); the Sounds page previews the three tones. Ask whether the level and
+the high tone ahead suit the user.
+
 # Handoff — 2026-10-11: route legs (optional)
 
 The release tester wants the path, not only the line: barriers, level changes, the side an entrance is entered from.
@@ -8,14 +18,14 @@ the stretches should match the walk, the ramp say "going down", the last stretch
 `[Exploration] route … corners=N`. Too many short diagonal stretches at doorways would mean the folding needs a
 wider threshold. Not yet in any test package (v0.1.0 predates the route work).
 
-# Handoff — 2026-10-11 11:20: radar decision
+# Handoff — 2026-10-11 11:04: radar decision
 
 Second trace analysed ([decision](reference/navigation-radar.md#second-trace-and-decision-2026-10-11-1100)): no radar
 irregularity beyond a minor grazing artifact against walls; no change to the live reading; shadow removed, event lines
-kept. The user confirmed the wall bump offline too (11:40) and wants the radar left as it is; the 1.35 m opening
+kept. The user confirmed the wall bump offline too (11:07) and wants the radar left as it is; the 1.35 m opening
 confirmation described there stays an idea only, offer it only if the user finds the radar too busy.
 
-# Handoff — 2026-10-11 10:00: first trace, shadow variants
+# Handoff — 2026-10-11 09:49: first trace, shadow variants
 
 User: wall bump and silent footsteps work online (offline untested); walked little, mostly testing the other session's
 changes. The 14-cue trace already shows the grazing ray (live Left 11.6 → 0 → 10.9 → 0 m within 0.35 s, `edge` 0.00,
