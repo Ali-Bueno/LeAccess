@@ -28,6 +28,12 @@ internal static class LoginTransitionGuard
 
     internal static bool MayExecute(LandingZonePanel panel, bool online)
     {
+        // The landing buttons answer Cross through paths the mod menu cannot all close; with it open they never start.
+        if (ModMenu.InputBlock.Blocking)
+        {
+            Plugin.Log.LogInfo($"[Mod menu] landing click ignored: {(online ? "online" : "offline")}");
+            return false;
+        }
         bool deferred = false;
         try
         {

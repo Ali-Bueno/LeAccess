@@ -173,6 +173,11 @@ foreach (var phase in new[] { ClientAppStateType.None, ClientAppStateType.Charac
 panel = Setup(); Ready();
 Check(LoginTransitionGuard.MayExecute(panel, false), "Ready Login preserves normal offline behavior");
 Check(LoginTransitionGuard.MayExecute(panel, true), "Ready Login preserves normal online behavior");
+LeAccess.Accessibility.ModMenu.InputBlock.Blocking = true;
+Check(!LoginTransitionGuard.MayExecute(panel, true) && !LoginTransitionGuard.MayExecute(panel, false),
+    "With the mod menu open the landing buttons never start");
+LeAccess.Accessibility.ModMenu.InputBlock.Blocking = false;
+Check(LoginTransitionGuard.MayExecute(panel, true), "Closing the mod menu gives the landing buttons back");
 panel = Setup(); panel.loginController.landingZonePanel = null;
 Check(LoginTransitionGuard.MayExecute(panel, false), "Unowned native panel is outside the guard's verified scope");
 panel = Setup(); panel.loginController.FSM.CurrentState = LoginController.LoginUIState.EmailPrompt;

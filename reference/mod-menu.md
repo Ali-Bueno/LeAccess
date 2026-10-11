@@ -35,6 +35,12 @@ from the main menu or gameplay alike.
   before the selection is asked; `UpdateButtonsHold` then vibrates the pad (`ControllerHapticsManager.Play`) and fires
   the hold feedback (user report: vibration and a cursor sound, nothing activated). While open, a hold in progress is
   reset each frame (`ResetHoldingButton`, which also stops the haptics). Call targets checked with Capstone.
+- Even so, Cross on the landing screen still reached Play (log: every block in place, then
+  `Application state changed to CharacterSelect`); the path is unknown. The existing `LandingZonePanel.OnPlay*Clicked`
+  prefix (`LoginTransitionGuard.MayExecute`) now refuses both while `InputBlock.Blocking` (open, or closing with a
+  button still down): `[Mod menu] landing click ignored: online|offline`. The event system's selected object is put
+  back on closing, since the landing focus still moved to Play offline. Failures name their stage
+  (`Mod menu input block unavailable (stage: …)`).
 - The current `EventSystem` also stops sending navigation (`sendNavigationEvents = false`), restored the same way: with
   24 Rewired maps off, the landing screen still moved to "Play offline" and pressed it (user report, same day), so
   that screen reads the pad through Unity's own UI input module.

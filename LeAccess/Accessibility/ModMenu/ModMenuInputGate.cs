@@ -97,9 +97,13 @@ internal static class InputBlock
     private static INavigable _selection;
     private static readonly List<ButtonInputListener> Listeners = new();
     private static int _holdsCancelled;
+    private static UnityEngine.GameObject _eventSelection;
     private static bool _open;
     private static int _atOpen;
     private static string _failure;
+
+    /// <summary>True while open and until the closing press is released.</summary>
+    internal static bool Blocking => _open || Disabled.Count > 0 || Navigation.Count > 0 || _selection is not null || Listeners.Count > 0;
 
     internal static void Begin()
     {
@@ -121,7 +125,7 @@ internal static class InputBlock
             for (int index = 0; index < players.playerCount; index++) HoldPlayer(players.GetPlayer(index));
             HoldPlayer(players.GetSystemPlayer());
         }
-        catch (Exception ex) { Report(ex); }
+        catch (Exception ex) { Report("maps", ex); }
         HoldNavigation();
         HoldSelection();
         HoldListeners();
@@ -151,21 +155,22 @@ internal static class InputBlock
         foreach (var listener in Listeners)
         {
             try { if (!listener.WasCollected) listener.enabled = true; }
-            catch (Exception ex) { Report(ex); }
+            catch (Exception ex) { Report("listener restore", ex); }
         }
         Listeners.Clear();
         foreach (var events in Navigation)
         {
             try { if (!events.WasCollected) events.sendNavigationEvents = true; }
-            catch (Exception ex) { Report(ex); }
+            catch (Exception ex) { Report("navigation restore", ex); }
         }
         Navigation.Clear();
+        RestoreEventSelection();
         if (Disabled.Count == 0) return;
         int restored = 0;
         foreach (var map in Disabled)
         {
             try { if (!map.WasCollected) { map.enabled = true; restored++; } }
-            catch (Exception ex) { Report(ex); }
+            catch (Exception ex) { Report("map restore", ex); }
         }
         Disabled.Clear();
         Plugin.Log.LogInfo($"[Mod menu] game input resumed: {restored} controller maps on");
@@ -182,7 +187,7 @@ internal static class InputBlock
             _selection = current;
             NavigationManager.currentlySelected = null;
         }
-        catch (Exception ex) { Report(ex); }
+        catch (Exception ex) { Report("selection", ex); }
     }
 
     // Buttons such as the landing screen's Play answer a key of their own (ButtonInputListener.key, read through Unity's
@@ -205,7 +210,7 @@ internal static class InputBlock
                 Listeners.Add(listener);
             }
         }
-        catch (Exception ex) { Report(ex); }
+        catch (Exception ex) { Report("listeners", ex); }
     }
 
     // A menu panel with a hold action starts ControllerButtonHoldManager's hold on Cross before the selection is asked;
@@ -219,7 +224,7 @@ internal static class InputBlock
             holds.ResetHoldingButton();
             _holdsCancelled++;
         }
-        catch (Exception ex) { Report(ex); }
+        catch (Exception ex) { Report("button hold", ex); }
     }
 
     private static void RestoreSelection()
@@ -232,7 +237,7 @@ internal static class InputBlock
             if (NavigationManager.currentlySelected is null && !selection.WasCollected &&
                 !NavigationManager.IsDestroyedNavigable(selection)) NavigationManager.currentlySelected = selection;
         }
-        catch (Exception ex) { Report(ex); }
+        catch (Exception ex) { Report("selection restore", ex); }
     }
 
     // Unity UI modules (the login screen reads the pad through Unity's own input) send no move, submit or cancel then.
@@ -242,10 +247,25 @@ internal static class InputBlock
         {
             var events = UnityEngine.EventSystems.EventSystem.current;
             if (events is null || events.WasCollected || !events.sendNavigationEvents) return;
+            if (Navigation.Count == 0) _eventSelection = events.currentSelectedGameObject;
             events.sendNavigationEvents = false;
             Navigation.Add(events);
         }
-        catch (Exception ex) { Report(ex); }
+        catch (Exception ex) { Report("navigation", ex); }
+    }
+
+    // The UI focus can still move while open (the landing screen went to Play offline); it goes back to where it was.
+    private static void RestoreEventSelection()
+    {
+        var saved = _eventSelection;
+        _eventSelection = null;
+        try
+        {
+            var events = UnityEngine.EventSystems.EventSystem.current;
+            if (saved is null || saved.WasCollected || !saved.activeInHierarchy || events is null || events.WasCollected) return;
+            if (events.currentSelectedGameObject?.Pointer != saved.Pointer) events.SetSelectedGameObject(saved);
+        }
+        catch (Exception ex) { Report("focus restore", ex); }
     }
 
     private static void HoldPlayer(Player player)
@@ -276,12 +296,12 @@ internal static class InputBlock
         }
     }
 
-    private static void Report(Exception ex)
+    private static void Report(string stage, Exception ex)
     {
-        string failure = $"{ex.GetType().Name}: {ex.Message}";
+        string failure = $"{stage}: {ex.GetType().Name}: {ex.Message}";
         if (_failure == failure) return;
         _failure = failure;
-        Plugin.Log.LogWarning($"Mod menu input block unavailable: {failure}");
+        Plugin.Log.LogWarning($"Mod menu input block unavailable ({failure})");
     }
 
     private static bool AnythingHeld()

@@ -181,3 +181,8 @@ namespace HarmonyLib
         public HarmonyPatch(Type type, string method) { }
     }
 }
+
+namespace LeAccess.Accessibility.ModMenu
+{
+    internal static class InputBlock { internal static bool Blocking; }
+}
