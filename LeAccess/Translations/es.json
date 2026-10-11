@@ -771,6 +771,10 @@
   "sound.EnemyElite.details": "Una oleada ascendente del enemigo raro o campeón más cercano a la vista; se repite más rápido cuanto más se acerca.",
   "sound.EnemyOrdinary": "Rugido de enemigo",
   "sound.EnemyOrdinary.details": "Un rugido grave y corto de cada uno de los enemigos normales más cercanos a la vista; se repite más rápido cuanto más se acercan.",
+  "sound.LowLifeStart": "Vida baja",
+  "sound.LowLifeStart.details": "El aviso de Diablo IV, una vez, cuando tu vida baja del porcentaje de vida baja.",
+  "sound.LowLifeLoop": "Latido de vida baja",
+  "sound.LowLifeLoop.details": "El latido de Diablo IV, que se repite mientras tu vida sigue por debajo del porcentaje de vida baja.",
   "sound.NpcTap": "Toque de PNJ",
   "sound.NpcTap.details": "Un toque suave de un personaje con el que puedes hablar, situado en su dirección.",
   "sound.Gold": "Monedas de oro",
@@ -862,6 +866,12 @@
   "menu.option.vitals_mana_ones.details": "Por debajo de este porcentaje de maná, lo dice de 1 en 1. Nunca desactiva este tramo.",
   "menu.option.vitals_mana_step": "Cambio mínimo de maná",
   "menu.option.vitals_mana_step.details": "Cuánto debe cambiar el maná desde el último aviso para que se diga otro tramo. Un valor mayor da menos avisos de maná; con el maná vacío siempre habla.",
+  "menu.option.vitals_low_life_sound": "Sonido de vida baja",
+  "menu.option.vitals_low_life_sound.details": "Hace sonar el aviso de vida baja de Diablo IV cuando la vida baja del porcentaje de abajo, y su latido mientras sigue ahí.",
+  "menu.option.vitals_low_life_below": "Vida baja por debajo de",
+  "menu.option.vitals_low_life_below.details": "Porcentaje de vida por debajo del cual suena el sonido de vida baja.",
+  "menu.option.vitals_low_life_volume": "Volumen de vida baja",
+  "menu.option.vitals_low_life_volume.details": "Volumen del aviso y del latido de vida baja.",
   "menu.option.landmarks_shrine_effects": "Efectos de santuario",
   "menu.option.landmarks_shrine_effects.details": "Tras usar un santuario, dice su nombre y el efecto que concede."
 }

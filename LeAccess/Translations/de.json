@@ -771,6 +771,10 @@
   "sound.EnemyElite.details": "Ein ansteigendes Anschwellen vom nächsten seltenen oder Champion-Gegner in Sichtweite; es wiederholt sich schneller, je näher er kommt.",
   "sound.EnemyOrdinary": "Gegner-Knurren",
   "sound.EnemyOrdinary.details": "Ein kurzes tiefes Knurren von jedem der nächsten normalen Gegner in Sichtweite; es wiederholt sich schneller, je näher sie kommen.",
+  "sound.LowLifeStart": "Wenig Leben",
+  "sound.LowLifeStart.details": "Die Warnung aus Diablo IV, einmal, wenn dein Leben unter den Wert für wenig Leben fällt.",
+  "sound.LowLifeLoop": "Herzschlag bei wenig Leben",
+  "sound.LowLifeLoop.details": "Der Herzschlag aus Diablo IV, wiederholt, solange dein Leben unter dem Wert für wenig Leben bleibt.",
   "sound.NpcTap": "NSC-Tippen",
   "sound.NpcTap.details": "Ein leises Tippen von einer Figur, mit der du sprechen kannst, aus ihrer Richtung.",
   "sound.Gold": "Goldmünzen",
@@ -862,6 +866,12 @@
   "menu.option.vitals_mana_ones.details": "Unter diesem Manaprozentwert wird das Mana alle 1 Prozent angesagt. Nie schaltet diesen Bereich aus.",
   "menu.option.vitals_mana_step": "Minimale Manaänderung",
   "menu.option.vitals_mana_step.details": "Wie stark sich das Mana seit der letzten Ansage ändern muss, bevor eine Stufe erneut angesagt wird. Höher bedeutet weniger Mana-Ansagen; bei leerem Mana wird immer gesprochen.",
+  "menu.option.vitals_low_life_sound": "Ton bei wenig Leben",
+  "menu.option.vitals_low_life_sound.details": "Spielt die Warnung aus Diablo IV, wenn das Leben unter den Prozentwert unten fällt, und den Herzschlag, solange es dort bleibt.",
+  "menu.option.vitals_low_life_below": "Wenig Leben unter",
+  "menu.option.vitals_low_life_below.details": "Lebensprozentwert, unter dem der Ton bei wenig Leben spielt.",
+  "menu.option.vitals_low_life_volume": "Lautstärke bei wenig Leben",
+  "menu.option.vitals_low_life_volume.details": "Lautstärke der Warnung und des Herzschlags bei wenig Leben.",
   "menu.option.landmarks_shrine_effects": "Schreineffekte",
   "menu.option.landmarks_shrine_effects.details": "Nach der Nutzung eines Schreins werden sein Name und der gewährte Effekt angesagt."
 }

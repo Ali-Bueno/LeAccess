@@ -18,6 +18,9 @@
     <Compile Include="../../LeAccess/Accessibility/Audio/NaturalCueBank.cs" Link="NaturalCueBank.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/CuePlacement.cs" Link="CuePlacement.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/PcmWaveReader.cs" Link="PcmWaveReader.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/LowLifeClips.cs" Link="LowLifeClips.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/LowLifeMixer.cs" Link="LowLifeMixer.cs" />
     <EmbeddedResource Include="../../LeAccess/Sounds/Loops/*.wav" LogicalName="LeAccess.Sounds.Loops.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../LeAccess/Sounds/*.wav" LogicalName="LeAccess.Sounds.%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

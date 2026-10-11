@@ -51,10 +51,11 @@ else
     var signals = new List<float[]>();
     foreach (var loopOnly in Enum.GetValues<NaturalCueKind>().Where(k => k >= NaturalCueKind.Potion))
         Check(!NaturalCueBank.TryBuild(loopOnly, 0, 1, 1, out _), $"{loopOnly} has no excerpt; it only loops");
-    // The short fallback cues are cut from the loop recordings; only the two one-shots ship at the root.
+    // The short fallback cues are cut from the loop recordings; only the one-shots ship at the root.
     var assembly = typeof(NaturalCueBank).Assembly;
     Check(assembly.GetManifestResourceNames().Where(n => !n.Contains(".Loops.") && n.EndsWith(".wav")).OrderBy(n => n)
-        .SequenceEqual(new[] { "LeAccess.Sounds.discovery.wav", "LeAccess.Sounds.inside_unexplored_room.wav" }),
+        .SequenceEqual(new[] { "LeAccess.Sounds.discovery.wav", "LeAccess.Sounds.inside_unexplored_room.wav",
+            "LeAccess.Sounds.low_life_start.wav" }),
         "No root recording duplicates a loop");
     foreach (var (kind, name, seconds) in new[] { (NaturalCueKind.Gold, "gold", NaturalCueBank.GoldSeconds),
         (NaturalCueKind.Equipment, "equipment", NaturalCueBank.EquipmentSeconds),

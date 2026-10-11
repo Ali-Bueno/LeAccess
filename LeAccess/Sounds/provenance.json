@@ -158,5 +158,21 @@
     "asset_sha256": "C1AB231C5F89A099F946D01DB5E61482844F67068D5B9A1DAD277EF3F870A397",
     "start_seconds": 0,
     "duration_seconds": "whole"
+  },
+  {
+    "asset": "low_life_start.wav",
+    "source": "d4:sorted/UI/Play_UI_Global_Player_LowHealth_Start_Media/913678365.ogg",
+    "source_sha256": "AAFC6E0C5EBAD1EFC80FE07D6F14702E6EDFD2F60DF8C7A1A46065DDE5944597",
+    "asset_sha256": "0C7FB34DD1CA2AD9F62D40E107E3BCBE15C9465D7A5E6C17AF60708118516593",
+    "start_seconds": 0,
+    "duration_seconds": "whole"
+  },
+  {
+    "asset": "Loops/low_life.wav",
+    "source": "d4:sorted/UI/Play_UI_Global_Player_LowHealth_Loop_Media/916753924.ogg",
+    "source_sha256": "A95CB7BE3DE251D06F292D2BA026C368CF9C28ECBB013FEA38855DB8F5EF3379",
+    "asset_sha256": "90EACB74320376F45101E32B5A92C82218150DB563F30FCD6F9D6E48DE0FC237",
+    "start_seconds": 0,
+    "duration_seconds": "whole"
   }
 ]

@@ -771,6 +771,10 @@
   "sound.EnemyElite.details": "Narastające zawodzenie od najbliższego rzadkiego wroga lub championa w zasięgu wzroku; powtarza się szybciej, im jest bliżej.",
   "sound.EnemyOrdinary": "Warkot wroga",
   "sound.EnemyOrdinary.details": "Krótki niski warkot każdego z najbliższych zwykłych wrogów w zasięgu wzroku; powtarza się szybciej, im są bliżej.",
+  "sound.LowLifeStart": "Niskie życie",
+  "sound.LowLifeStart.details": "Ostrzeżenie z Diablo IV, raz, gdy życie spada poniżej progu niskiego życia.",
+  "sound.LowLifeLoop": "Bicie serca przy niskim życiu",
+  "sound.LowLifeLoop.details": "Bicie serca z Diablo IV, powtarzane, dopóki życie jest poniżej progu niskiego życia.",
   "sound.NpcTap": "Stuknięcie postaci niezależnej",
   "sound.NpcTap.details": "Cichy stukot od postaci, z którą możesz porozmawiać, słyszalny z jej kierunku.",
   "sound.Gold": "Monety złota",
@@ -862,6 +866,12 @@
   "menu.option.vitals_mana_ones.details": "Poniżej tego procentu many podaje manę co 1 procent. Nigdy wyłącza ten zakres.",
   "menu.option.vitals_mana_step": "Minimalna zmiana many",
   "menu.option.vitals_mana_step.details": "O ile musi zmienić się mana od ostatniej zapowiedzi, aby próg został ogłoszony ponownie. Wyższa wartość oznacza mniej zapowiedzi many; przy pustej manie zawsze się odzywa.",
+  "menu.option.vitals_low_life_sound": "Dźwięk niskiego życia",
+  "menu.option.vitals_low_life_sound.details": "Odtwarza ostrzeżenie z Diablo IV, gdy życie spada poniżej progu niżej, i bicie serca, dopóki tam pozostaje.",
+  "menu.option.vitals_low_life_below": "Niskie życie poniżej",
+  "menu.option.vitals_low_life_below.details": "Procent życia, poniżej którego gra dźwięk niskiego życia.",
+  "menu.option.vitals_low_life_volume": "Głośność niskiego życia",
+  "menu.option.vitals_low_life_volume.details": "Głośność ostrzeżenia i bicia serca przy niskim życiu.",
   "menu.option.landmarks_shrine_effects": "Efekty kapliczek",
   "menu.option.landmarks_shrine_effects.details": "Po użyciu kapliczki mówi jej nazwę i przyznany efekt."
 }

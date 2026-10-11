@@ -11,6 +11,8 @@ namespace LeAccess.Accessibility.Audio;
 internal static class SoundPreview
 {
     private const double LoopSeconds = 2;
+    // The heartbeat is slow: two seconds hold barely two beats.
+    private const double LowLifeLoopSeconds = 4;
     private const int BufferMilliseconds = 100;
     private const string WorldGroupSection = "World object sounds";
     private static RadarAudioOutput _output;
@@ -50,6 +52,8 @@ internal static class SoundPreview
             "EnemyBoss" => Enemy(EnemyCueKind.Boss),
             "EnemyElite" => Enemy(EnemyCueKind.Elite),
             "EnemyOrdinary" => Enemy(EnemyCueKind.Ordinary),
+            "LowLifeStart" => LowLife(LowLifeClips.Start, (double)LowLifeClips.Start.Length / PreviewClips.SampleRate),
+            "LowLifeLoop" => LowLife(LowLifeClips.Loop, LowLifeLoopSeconds),
             "NpcTap" => NpcCueSynthesizer.Synthesize(0, 1, Group("NPC sounds", "Volume")),
             "BeaconPing" => Beacon(BeaconSound.Ping),
             "BeaconLocked" => Beacon(BeaconSound.Locked),
@@ -81,6 +85,9 @@ internal static class SoundPreview
 
     private static float[] Beacon(BeaconSound sound) =>
         BeaconCueSynthesizer.Synthesize(sound, 0, 1, Group("Exploration beacon", "Volume"));
+
+    private static float[] LowLife(float[] clip, double seconds) =>
+        PreviewClips.Loop(clip, Group("Vitals", "LowLifeVolume"), seconds);
 
     private static float[] WallTone(RadarDirection direction) =>
         WallToneSynth.Preview(direction, SoundLevels.Sonar, LoopSeconds);

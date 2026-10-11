@@ -10,7 +10,7 @@ internal readonly record struct SoundGlossaryEntry(string Id, string VolumeSecti
 internal static class SoundGlossary
 {
     private const string RadarSection = "Reactive radar", NpcSection = "NPC sounds",
-        BeaconSection = "Exploration beacon";
+        BeaconSection = "Exploration beacon", VitalsSection = "Vitals";
 
     internal static IReadOnlyList<SoundGlossaryEntry> Entries { get; } = new SoundGlossaryEntry[]
     {
@@ -21,6 +21,8 @@ internal static class SoundGlossary
         new("EnemyBoss", SoundLevels.EnemySection, SoundLevels.EnemyKeys[0]),
         new("EnemyElite", SoundLevels.EnemySection, SoundLevels.EnemyKeys[1]),
         new("EnemyOrdinary", SoundLevels.EnemySection, SoundLevels.EnemyKeys[2]),
+        new("LowLifeStart", VitalsSection, "LowLifeVolume"),
+        new("LowLifeLoop", VitalsSection, "LowLifeVolume"),
         new("NpcTap", NpcSection, "Volume"),
         World("Gold"), World("Equipment"), World("MagicEquipment"), World("RareEquipment"),
         World("LegendaryEquipment"), World("Potion"), World("Tome"), World("Rune"), World("Glyph"),

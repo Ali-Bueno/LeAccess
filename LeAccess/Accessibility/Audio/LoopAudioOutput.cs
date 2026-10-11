@@ -5,11 +5,12 @@ using NAudio.Wave;
 
 namespace LeAccess.Accessibility.Audio;
 
-// Persistent device stream for the world loop mixer; same stop/recovery contract as RadarAudioOutput.
+// Persistent device stream for the world loop mixer, or any other looping source; same stop/recovery contract as RadarAudioOutput.
 internal sealed class LoopAudioOutput : IDisposable
 {
     private readonly object _gate = new();
     private readonly WorldLoopMixer _mixer;
+    private readonly ISampleProvider _source;
     private readonly string _description;
     private readonly int _latency;
     private IWavePlayer _output;
@@ -22,7 +23,17 @@ internal sealed class LoopAudioOutput : IDisposable
     internal LoopAudioOutput(string description, int latencyMilliseconds, double smoothingSeconds)
     {
         if (latencyMilliseconds <= 0) throw new ArgumentOutOfRangeException(nameof(latencyMilliseconds));
-        _mixer = new WorldLoopMixer(WorldLoopBank.Get, smoothingSeconds);
+        _source = _mixer = new WorldLoopMixer(WorldLoopBank.Get, smoothingSeconds);
+        _description = description;
+        _latency = latencyMilliseconds;
+        Start();
+    }
+
+    /// <summary>Starts the device stream for a source that mixes itself; voices then do nothing.</summary>
+    internal LoopAudioOutput(string description, int latencyMilliseconds, ISampleProvider source)
+    {
+        if (latencyMilliseconds <= 0) throw new ArgumentOutOfRangeException(nameof(latencyMilliseconds));
+        _source = source ?? throw new ArgumentNullException(nameof(source));
         _description = description;
         _latency = latencyMilliseconds;
         Start();
@@ -38,20 +49,20 @@ internal sealed class LoopAudioOutput : IDisposable
                 return FormattableString.Invariant(
                     $"running={!_disposed && _output?.PlaybackState == PlaybackState.Playing} backend={_backend ?? "none"} ") +
                     (_wasapiFailure == null ? "" : $"wasapi_failure=\"{_wasapiFailure}\" ") +
-                    FormattableString.Invariant($"voices={_mixer.ActiveVoices} frames={_mixer.FramesMixed} ") +
-                    FormattableString.Invariant($"max_read_gap_ms={_mixer.MaxReadGapMilliseconds:F1} ") +
+                    (_mixer == null ? "" : FormattableString.Invariant($"voices={_mixer.ActiveVoices} frames={_mixer.FramesMixed} ") +
+                        FormattableString.Invariant($"max_read_gap_ms={_mixer.MaxReadGapMilliseconds:F1} ")) +
                     $"stops={_stops} recoveries={_recoveries} failure={Failure() ?? "none"}";
         }
     }
 
     internal void SetVoices(IReadOnlyList<LoopVoice> voices)
     {
-        if (!_disposed) _mixer.SetVoices(voices);
+        if (!_disposed) _mixer?.SetVoices(voices);
     }
 
     internal void Silence()
     {
-        if (!_disposed) _mixer.Silence();
+        if (!_disposed) _mixer?.Silence();
     }
 
     // Main thread, at the caller's retry interval.
@@ -106,7 +117,7 @@ internal sealed class LoopAudioOutput : IDisposable
         try
         {
             var wasapi = new WasapiOut(AudioClientShareMode.Shared, true, _latency);
-            try { wasapi.Init(_mixer); }
+            try { wasapi.Init(_source); }
             catch { wasapi.Dispose(); throw; }
             _backend = "wasapi";
             return wasapi;
@@ -116,7 +127,7 @@ internal sealed class LoopAudioOutput : IDisposable
             _wasapiFailure = $"{ex.GetType().Name}: {ex.Message}";
         }
         var wave = new WaveOutEvent { DesiredLatency = _latency };
-        try { wave.Init(_mixer); }
+        try { wave.Init(_source); }
         catch { wave.Dispose(); throw; }
         _backend = "waveout";
         return wave;

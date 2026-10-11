@@ -23,6 +23,8 @@ internal static class VitalsAccessibility
     private static ConfigEntry<int> _lifeStep;
     private static ConfigEntry<int> _manaStep;
     private static ConfigEntry<bool> _lifeFirst;
+    // The latest life reading for the low-life sound; -1 when unknown.
+    private static int _lifePercent = -1;
     private static Steps _lifeSteps, _manaSteps;
     private static double _nextPoll;
     private static int _potions = -1;
@@ -46,6 +48,7 @@ internal static class VitalsAccessibility
             "Automatic life announcements cut any other speech, and for a moment other speech waits behind them instead of cutting them.");
         _lifeSteps = new Steps(config, "Life", VitalsSteps.Life);
         _manaSteps = new Steps(config, "Mana", VitalsSteps.Mana);
+        LowLifeCue.Initialize(config);
         _reportKey = config.Bind("Vitals", "ReportKey", KeyCode.R,
             "Read life, mana, level and experience, potions and effects during gameplay. Use None to disable the keyboard shortcut.");
         _controllerReport = config.Bind("Vitals", "ReportWithControllerView", true,
@@ -58,6 +61,12 @@ internal static class VitalsAccessibility
     internal static void Update(bool otherContentActive = false)
     {
         if (_automatic == null) return;
+        Poll(otherContentActive);
+        LowLifeCue.Update(_lifePercent);
+    }
+
+    private static void Poll(bool otherContentActive)
+    {
         try
         {
             if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible)
@@ -76,8 +85,9 @@ internal static class VitalsAccessibility
                 Speak(GoldAndPointsText(), true);
             _previousGameplayInput = gameplayInput;
 
-            if (!_automatic.Value && !report)
-            { Announcements.Reset(); _session = 0; _potions = -1; return; }
+            // The low-life sound needs readings even with spoken announcements off.
+            if (!_automatic.Value && !report && !LowLifeCue.Wanted)
+            { Announcements.Reset(); _session = 0; _potions = -1; _lifePercent = -1; return; }
             double now = Time.unscaledTimeAsDouble;
             if (!report && now < _nextPoll) return;
             _nextPoll = now + PollSeconds;
@@ -86,6 +96,7 @@ internal static class VitalsAccessibility
                 Announcements.Reset();
                 _session = 0;
                 _potions = -1;
+                _lifePercent = -1;
                 _previousGameplayInput = false;
                 if (report) Speak(ModText.Get("vitals.unavailable"), true);
                 return;
@@ -102,6 +113,9 @@ internal static class VitalsAccessibility
             string potionText = PotionText(snapshot);
             int health = VitalsAnnouncementState.Percent(snapshot.Health, snapshot.MaxHealth);
             int mana = VitalsAnnouncementState.Percent(snapshot.Mana, snapshot.MaxMana);
+            _lifePercent = health;
+            if (!_automatic.Value && !report)
+            { Announcements.Reset(); _session = 0; _potions = -1; return; }
             var change = Announcements.Observe(health, mana, acknowledge: false, Policy());
             if (report)
             {
@@ -204,6 +218,7 @@ internal static class VitalsAccessibility
 
     private static void Reset()
     {
+        _lifePercent = -1;
         Announcements.Reset();
         _session = 0;
         _potions = -1;
@@ -214,6 +229,7 @@ internal static class VitalsAccessibility
     internal static void Cleanup()
     {
         Reset();
+        LowLifeCue.Cleanup();
         _automatic = null;
         _reportKey = null;
         _controllerReport = null;

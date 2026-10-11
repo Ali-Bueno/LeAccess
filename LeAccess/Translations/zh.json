@@ -771,6 +771,10 @@
   "sound.EnemyElite.details": "视野内最近的稀有或勇士敌人发出的上升涌动声；越靠近，重复得越快。",
   "sound.EnemyOrdinary": "敌人咆哮",
   "sound.EnemyOrdinary.details": "视野内最近的每个普通敌人发出的短促低吼；越靠近，重复得越快。",
+  "sound.LowLifeStart": "生命过低",
+  "sound.LowLifeStart.details": "生命降到低生命百分比以下时，播放一次《暗黑破坏神 IV》的警告声。",
+  "sound.LowLifeLoop": "生命过低心跳",
+  "sound.LowLifeLoop.details": "生命保持在低生命百分比以下时，重复播放《暗黑破坏神 IV》的心跳声。",
   "sound.NpcTap": "NPC 轻敲",
   "sound.NpcTap.details": "可对话角色发出的轻轻敲击声，来自该角色所在的方向。",
   "sound.Gold": "金币",
@@ -862,6 +866,12 @@
   "menu.option.vitals_mana_ones.details": "魔力低于此百分比时，每1%播报一次。“从不”关闭此范围。",
   "menu.option.vitals_mana_step": "魔力最小变化",
   "menu.option.vitals_mana_step.details": "距上次播报后，魔力需要变化多少才会再次播报区间。数值越大，魔力播报越少；魔力耗尽时始终播报。",
+  "menu.option.vitals_low_life_sound": "生命过低音效",
+  "menu.option.vitals_low_life_sound.details": "生命降到下方百分比以下时播放《暗黑破坏神 IV》的生命过低警告，保持在其下时播放心跳声。",
+  "menu.option.vitals_low_life_below": "生命过低阈值",
+  "menu.option.vitals_low_life_below.details": "生命低于此百分比时播放生命过低音效。",
+  "menu.option.vitals_low_life_volume": "生命过低音量",
+  "menu.option.vitals_low_life_volume.details": "生命过低警告和心跳声的音量。",
   "menu.option.landmarks_shrine_effects": "神龛效果",
   "menu.option.landmarks_shrine_effects.details": "使用神龛后，朗读其名称和所赋予的效果。"
 }

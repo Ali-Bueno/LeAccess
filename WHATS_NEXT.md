@@ -1,3 +1,10 @@
+# Handoff — 2026-10-11: low-life sound
+
+User request: Diablo IV's low-life start sound and heartbeat as an optional cue ([details](reference/vitals-api.md#low-life-sound-2026-10-11)).
+Live checks: turn on `Sonido de vida baja` (Vitals page), preview both sounds on the Sounds page, then drop under 40
+percent: one warning, then the heartbeat until healed or dead (`[Low life] on at N%` / `off at N%`); judge its loudness
+against speech and the radar. Route legs are on by default now (4).
+
 # Handoff — 2026-10-11: life first and life/mana steps
 
 User request: life before any other announcement, and choosable percent steps. Mod menu, Vitals page: `Vida primero`

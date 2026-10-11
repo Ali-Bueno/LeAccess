@@ -771,6 +771,10 @@
   "sound.EnemyElite.details": "視界内で最も近いレアまたはチャンピオンの敵から聞こえる、上がっていく音です。近づくほど速く繰り返されます。",
   "sound.EnemyOrdinary": "敵のうなり声",
   "sound.EnemyOrdinary.details": "視界内で最も近い通常の敵それぞれから聞こえる、短く低いうなり声です。近づくほど速く繰り返されます。",
+  "sound.LowLifeStart": "ライフ低下",
+  "sound.LowLifeStart.details": "ライフがライフ低下の値を下回ったとき、一度だけ鳴るディアブロ IV の警告音。",
+  "sound.LowLifeLoop": "ライフ低下の心音",
+  "sound.LowLifeLoop.details": "ライフがライフ低下の値を下回っている間、繰り返すディアブロ IV の心音。",
   "sound.NpcTap": "NPCのタップ音",
   "sound.NpcTap.details": "話しかけられるキャラクターから、その方向に聞こえるやわらかなタップ音です。",
   "sound.Gold": "ゴールド",
@@ -862,6 +866,12 @@
   "menu.option.vitals_mana_ones.details": "マナがこの値を下回ると1パーセントごとに読みます。「しない」でこの範囲をオフにします。",
   "menu.option.vitals_mana_step": "マナの最小変化量",
   "menu.option.vitals_mana_step.details": "前回の通知からマナがどれだけ変わると、区切りをもう一度読み上げるかを決めます。大きいほどマナの通知が減り、マナが空のときは常に読み上げます。",
+  "menu.option.vitals_low_life_sound": "ライフ低下の音",
+  "menu.option.vitals_low_life_sound.details": "ライフが下の値を下回るとディアブロ IV のライフ低下警告を鳴らし、その間は心音を鳴らします。",
+  "menu.option.vitals_low_life_below": "ライフ低下の値",
+  "menu.option.vitals_low_life_below.details": "ライフがこの値を下回るとライフ低下の音が鳴ります。",
+  "menu.option.vitals_low_life_volume": "ライフ低下の音量",
+  "menu.option.vitals_low_life_volume.details": "ライフ低下の警告音と心音の音量。",
   "menu.option.landmarks_shrine_effects": "祭壇の効果",
   "menu.option.landmarks_shrine_effects.details": "祭壇を使ったあと、その名前と与えられた効果を読み上げます。"
 }

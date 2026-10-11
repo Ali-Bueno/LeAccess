@@ -130,4 +130,41 @@ Check(slow.FramesMixed == Rate, "Mixed frames are counted for diagnostics");
     SoundLevels.Reset();
 }
 
+// Low-life sound (2026-10-11, user request): Diablo IV's start sound once, its heartbeat while life stays low.
+Check(Math.Abs(LowLifeClips.Start.Length / (double)Rate - 3.53) < 0.01 && Math.Abs(LowLifeClips.Start.Max(Math.Abs) - 0.9f) < 1e-3,
+    $"the low-life start sound loads whole at the loops' peak ({LowLifeClips.LastFailure})");
+Check(Math.Abs(LowLifeClips.Loop.Length / (double)Rate - 11.57) < 0.01 && Math.Abs(LowLifeClips.Loop.Max(Math.Abs) - 0.9f) < 1e-3,
+    "the heartbeat loop loads whole at the loops' peak");
+Check(LowLifeMixer.IsLow(39, 40) && !LowLifeMixer.IsLow(40, 40) && !LowLifeMixer.IsLow(0, 40) && !LowLifeMixer.IsLow(-1, 40),
+    "low life is alive and under the percent");
+{
+    float centre = MathF.Sqrt(0.5f);
+    float master = 1;
+    var lowLife = new LowLifeMixer(new[] { 0.2f, 0.2f, 0.2f }, new[] { 0.1f, -0.1f }, 0, () => master);
+    float[] Frames(int frames) { var buffer = new float[frames * 2]; lowLife.Read(buffer, 0, buffer.Length); return buffer; }
+    Check(Frames(4).All(x => x == 0), "nothing plays before life is low");
+    lowLife.Set(true, 1);
+    var entering = Frames(4);
+    Check(Math.Abs(entering[0] - 0.3f * centre) < 1e-5 && entering[0] == entering[1], "entering low life plays the start sound over the loop, centred");
+    Check(Math.Abs(entering[6] + 0.1f * centre) < 1e-5 && Math.Abs(entering[2] - (0.2f - 0.1f) * centre) < 1e-5,
+        "after the start sound the loop carries on");
+    lowLife.Set(false, 1);
+    Check(Frames(2).All(x => x == 0) && !lowLife.LoopAudible, "leaving low life stops the loop");
+    lowLife.Set(true, 1);
+    Check(lowLife.StartPlaying, "entering again replays the start sound");
+    Frames(1);
+    lowLife.Set(false, 1); lowLife.Set(true, 1);
+    Check(Math.Abs(Frames(1)[0] - 0.2f * centre - (-0.1f) * centre) < 1e-5, "a flicker over the line does not restart a start sound still playing");
+    master = 0;
+    Check(Frames(4).All(x => x == 0), "master zero silences the cue");
+    master = 1;
+    var fading = new LowLifeMixer(Array.Empty<float>(), Enumerable.Repeat(0.5f, Rate).ToArray(), 0.05, () => 1);
+    fading.Set(true, 1);
+    var rising = new float[Rate / 10 * 2]; fading.Read(rising, 0, rising.Length);
+    Check(rising[0] < rising[^2] && rising[0] < 0.01f, "the heartbeat glides in");
+    fading.Set(false, 1);
+    var falling = new float[Rate * 2]; fading.Read(falling, 0, falling.Length);
+    Check(falling[0] > 0.1f && falling[^2] == 0 && !fading.LoopAudible, "and glides out to silence");
+}
+
 Console.WriteLine($"World loop tests passed: {checks} checks.");

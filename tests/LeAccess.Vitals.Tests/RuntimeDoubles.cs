@@ -47,6 +47,14 @@ namespace LeAccess.Accessibility.Navigation
 }
 namespace LeAccess.Accessibility.Vitals
 {
+    internal static class LowLifeCue
+    {
+        internal static bool Wanted;
+        internal static readonly List<int> Readings = new();
+        internal static void Initialize(BepInEx.Configuration.ConfigFile config) { }
+        internal static void Update(int healthPercent) => Readings.Add(healthPercent);
+        internal static void Cleanup() { }
+    }
     internal readonly record struct VitalsSnapshot(long Session, double Health, double MaxHealth,
         double Mana, double MaxMana, bool ManaReplaced, int Potions = -1, int MaxPotions = -1);
     internal static class VitalsEffectsProbe

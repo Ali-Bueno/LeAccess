@@ -771,6 +771,10 @@
   "sound.EnemyElite.details": "시야 안에서 가장 가까운 희귀 또는 챔피언 적에게서 나는 올라가는 소리입니다. 가까워질수록 더 빨리 반복됩니다.",
   "sound.EnemyOrdinary": "적 으르렁거림",
   "sound.EnemyOrdinary.details": "시야 안에서 가장 가까운 일반 적 각각에게서 나는 짧고 낮은 으르렁거림입니다. 가까워질수록 더 빨리 반복됩니다.",
+  "sound.LowLifeStart": "생명력 낮음",
+  "sound.LowLifeStart.details": "생명력이 생명력 낮음 기준 아래로 떨어질 때 한 번 울리는 디아블로 IV 경고음.",
+  "sound.LowLifeLoop": "생명력 낮음 심장 박동",
+  "sound.LowLifeLoop.details": "생명력이 생명력 낮음 기준 아래에 있는 동안 반복되는 디아블로 IV 심장 박동.",
   "sound.NpcTap": "NPC 두드림",
   "sound.NpcTap.details": "말을 걸 수 있는 인물에게서, 그 인물이 있는 방향으로 들리는 부드러운 두드림 소리입니다.",
   "sound.Gold": "골드 동전",
@@ -862,6 +866,12 @@
   "menu.option.vitals_mana_ones.details": "마나가 이 퍼센트보다 낮으면 1퍼센트마다 알립니다. 안 함은 이 구간을 끕니다.",
   "menu.option.vitals_mana_step": "마나 최소 변화량",
   "menu.option.vitals_mana_step.details": "마지막 알림 이후 마나가 얼마나 변해야 구간을 다시 말하는지 정합니다. 값이 클수록 마나 알림이 줄어들며, 마나가 비면 항상 말합니다.",
+  "menu.option.vitals_low_life_sound": "생명력 낮음 소리",
+  "menu.option.vitals_low_life_sound.details": "생명력이 아래 퍼센트보다 낮아지면 디아블로 IV 경고음을, 그 아래에 있는 동안 심장 박동을 재생합니다.",
+  "menu.option.vitals_low_life_below": "생명력 낮음 기준",
+  "menu.option.vitals_low_life_below.details": "이 생명력 퍼센트보다 낮으면 생명력 낮음 소리가 재생됩니다.",
+  "menu.option.vitals_low_life_volume": "생명력 낮음 음량",
+  "menu.option.vitals_low_life_volume.details": "생명력 낮음 경고음과 심장 박동의 음량.",
   "menu.option.landmarks_shrine_effects": "성소 효과",
   "menu.option.landmarks_shrine_effects.details": "성소를 사용한 뒤 그 이름과 부여된 효과를 말해 줍니다."
 }

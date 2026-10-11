@@ -225,3 +225,23 @@ chosen: every 1, 5, 10 or 25, finer from some percent down.
 - Tests: VitalsState 402 (bands, finest step, off ranges, live step changes, finer mana), Vitals 128 (defaults, life
   channel, steps read live), ScreenReader 56, ModMenu 298 (number choices). Unverified live: whether 2 s covers a life
   line at the user's speech rate, and how busy step 1 or 5 sounds in combat.
+
+## Low-life sound (2026-10-11)
+
+User request: Diablo IV's low-life audio as an optional cue. Sources in the user's sorted Diablo IV export
+(`D:\code\d4 sounds\sorted\UI\`): `Play_UI_Global_Player_LowHealth_Start_Media/913678365.ogg` (3.53 s stinger) and
+`Play_UI_Global_Player_LowHealth_Loop_Media/916753924.ogg` (11.57 s heartbeat; the same media as Vhenard's resurrection
+heartbeat). `tools/import_audio.py` now takes the export as a third argument (`d4(...)` sources); the two assets are
+`Sounds/low_life_start.wav` and `Sounds/Loops/low_life.wav` (mono 48 kHz like the others, provenance recorded). The loop
+starts mid-beat (first sample about -0.06) and ends at silence, as shipped by Diablo IV.
+- Options (`[Vitals]`): `LowLifeSound` (off), `LowLifeBelow` (40 percent, the user's estimate of Diablo IV's threshold;
+  5-95), `LowLifeVolume` (100 percent). Mod menu: Vitals page; the Sounds page lists "Low life" and "Low life heartbeat".
+- Rule (`LowLifeMixer.IsLow`): alive and under the percent. Entering low life plays the start sound once, unless it is
+  still playing (a flicker over the line does not stack it); the heartbeat glides in and out (0.3 s time constant) and
+  rewinds once silent. Death (0), loading screens, lost focus and unreadable vitals fade it out. Readings come from the
+  vitals poll (100 ms), also when spoken announcements are off.
+- Playback: `LowLifeMixer` (one stereo source, centred, master volume applied) on its own `LoopAudioOutput` (which now
+  accepts any self-mixing source), created only once low life first happens.
+- Tests: WorldLoops 193 (clips whole at the loops' peak, start over loop, no restart while playing, glide out to
+  silence, master), Vitals 132 (readings with speech off, loading screen), NaturalAudio 220 (root one-shots).
+  Unverified live: loudness against the mod's other sounds, and whether 40 percent feels right.

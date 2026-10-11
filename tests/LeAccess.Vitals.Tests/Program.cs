@@ -24,6 +24,7 @@ void Start(bool? lifeFirst = false)
     ProgressionProbe.Available = false;
     VitalsEffectsProbe.Effects.Clear(); GoldReport.Amount = 1234;
     VitalsProbe.Snapshot = new(1,100,100,100,100,false);
+    LowLifeCue.Wanted = false; LowLifeCue.Readings.Clear();
     ScreenReader.Spoken.Clear(); ScreenReader.LifeLines.Clear(); Plugin.Log.Information.Clear(); Plugin.Log.Warnings.Clear();
     Time.unscaledTimeAsDouble = 0;
     VitalsAccessibility.Initialize(config);
@@ -337,6 +338,15 @@ try
     Last(T("vitals.health", 96), false, "and the next percent");
     config.Set("ManaStep", 5); Values(96, 94); Tick(.4);
     Last(T("vitals.mana", 94), false, "mana every 5 percent speaks below 95");
+    // The low-life sound (2026-10-11) gets every life reading, even with spoken announcements off, and -1 when unknown.
+    Start(); Values(35, 100); Tick(0);
+    Check(LowLifeCue.Readings.Last() == 35, "the low-life sound hears the life reading");
+    config.Set("AutomaticAnnouncements", false); Values(30, 100); Tick(.1);
+    Check(LowLifeCue.Readings.Last() == -1, "with speech off and the sound off nothing is read");
+    LowLifeCue.Wanted = true; Tick(.2);
+    Check(LowLifeCue.Readings.Last() == 30 && ScreenReader.Spoken.Count == 0, "with speech off the sound still hears life, silently");
+    LE.UI.LoadingScreen.IsVisible = true; Tick(.4);
+    Check(LowLifeCue.Readings.Last() == -1, "a loading screen silences the low-life sound");
     Start();
     VitalsAccessibility.Cleanup(); int reads = VitalsProbe.Reads;
     Tick(.4,keyboard:true,controller:true);

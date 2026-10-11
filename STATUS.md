@@ -1,6 +1,9 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-11: life and mana steps are configurable (every 1, 5, 10 or 25, then every 10, 5 and 1 below
+**Updated:** 2026-10-11: optional low-life sound: Diablo IV's warning when life drops under 40 percent and its heartbeat
+while it stays there (`Vitals.LowLifeSound`, off; percent and volume in the mod menu) ([details](reference/vitals-api.md#low-life-sound-2026-10-11)).
+Route legs now on by default (4). Unheard.
+Earlier, 2026-10-11: life and mana steps are configurable (every 1, 5, 10 or 25, then every 10, 5 and 1 below
 chosen percents; defaults = the earlier bands) and life comes first (`Vitals.LifeFirst`, on: it cuts any speech and
 nothing cuts it for 2 s) ([vitals](reference/vitals-api.md#configurable-steps-and-life-first-2026-10-11-user-request)). Unheard.
 Earlier, 2026-10-11 11:18: wall tones rebuilt in the Grimdark style as an alternative or companion to the radar

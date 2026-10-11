@@ -77,6 +77,8 @@ happens on its own, by sound and speech, while you play with the game's normal c
 - Automatic speech for the things a sighted player sees at a glance: life and mana when they drop, potion charges, gold
   you pick up, level ups and new points, quest updates, zone and era names, the names of NPCs and players you walk up
   to, boss and elite life, dialogue and subtitles, notifications and minion orders.
+- Optionally, Diablo IV's low-life warning and heartbeat when your life drops under a chosen percent (40 by default;
+  off by default, `Vitals.LowLifeSound`).
 
 The basic flow: walk with the left stick and listen. The radar tells you about walls and openings. When you hear loot,
 walk toward it; Cross picks up or interacts with the nearest thing, and the D-pad up/down chooses which nearby thing
@@ -252,7 +254,7 @@ launch; edit that file only with the game closed. The most useful ones:
 | Enemy cues | `Enabled`, `Bosses`, `Elites`, `Ordinary`, `Volume`, `BossVolume`, `EliteVolume`, `OrdinaryVolume` | Enemy sounds |
 | World object sounds | `Enabled`, `Volume`, `Loops`, `LoopRange` | Loot, objects, portals, exits |
 | NPC sounds | `Enabled`, `AnnounceNames`, `Volume` | NPC taps and names |
-| Vitals | `AutomaticAnnouncements`, `AnnounceLifeChanges`, `AnnounceManaChanges`, `LifeFirst`, `LifeStep`, `LifeEvery10Below`, `LifeEvery5Below`, `LifeEvery1Below`, the same four for `Mana`, `LifeMinimumChange`, `ManaMinimumChange`, `AnnouncePotionCharges`, `AnnounceGoldPickups` | Automatic life, mana, potion and gold speech. Life and mana speak every `Step` percent (1, 5, 10 or 25), then every 10, 5 and 1 percent below the chosen percents (0 = never); the defaults are 75, 50, 40, 30, 20, 10, 5, 4, 3, 2, 1 for life and the same down to 10 for mana. `LifeFirst` (default on) lets life cut any other speech and keeps other speech from cutting it. The minimum-change options hold a band back until the value has moved that many percent (critical life and empty mana always speak) |
+| Vitals | `AutomaticAnnouncements`, `AnnounceLifeChanges`, `AnnounceManaChanges`, `LifeFirst`, `LifeStep`, `LifeEvery10Below`, `LifeEvery5Below`, `LifeEvery1Below`, the same four for `Mana`, `LifeMinimumChange`, `ManaMinimumChange`, `LowLifeSound`, `LowLifeBelow`, `LowLifeVolume`, `AnnouncePotionCharges`, `AnnounceGoldPickups` | Automatic life, mana, potion and gold speech. Life and mana speak every `Step` percent (1, 5, 10 or 25), then every 10, 5 and 1 percent below the chosen percents (0 = never); the defaults are 75, 50, 40, 30, 20, 10, 5, 4, 3, 2, 1 for life and the same down to 10 for mana. `LifeFirst` (default on) lets life cut any other speech and keeps other speech from cutting it. The minimum-change options hold a band back until the value has moved that many percent (critical life and empty mana always speak). `LowLifeSound` (off) plays Diablo IV's low-life warning under `LowLifeBelow` percent (40) and its heartbeat while life stays there |
 | Landmarks | `AnnounceShrineEffects` | Say a shrine's name and effect after you use it |
 | Combat feedback | `AnnounceBossLife`, `AnnounceEliteLife`, `AnnounceNearestEnemy` | Boss, elite and nearest-enemy speech |
 | Quests | `AutomaticUpdates` | Quest progress speech |
@@ -337,7 +339,8 @@ game files, saves or personal configuration. See [test packaging](reference/test
 ## Credits
 
 Some sounds were taken from Diablo IV. They are placeholders that I plan to replace; several of them (gold, potions,
-tomes, portals, waypoints, exits and shrines) already use Last Epoch's own sounds.
+tomes, portals, waypoints, exits and shrines) already use Last Epoch's own sounds. The optional low-life warning and
+heartbeat are Diablo IV's own.
 
 Third-party components and their licenses are listed in
 [THIRD-PARTY-NOTICES.txt](packaging/test-package/THIRD-PARTY-NOTICES.txt).

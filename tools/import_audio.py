@@ -1,4 +1,5 @@
-"""Recreate the embedded cues and full loops from the user's D2R recordings and the installed Last Epoch banks."""
+"""Recreate the embedded cues and full loops from the user's D2R recordings, the installed Last Epoch banks and the
+user's sorted Diablo IV sound export."""
 import argparse
 import functools
 import hashlib
@@ -21,6 +22,14 @@ def le(bank, sample):
     return ("le", bank, sample)
 
 
+def d4(relative):
+    return ("d4", relative)
+
+
+# Diablo IV low-life warning (user request 2026-10-11): its start stinger and its heartbeat loop.
+D4_LOW_LIFE = "sorted/UI/Play_UI_Global_Player_LowHealth_"
+
+
 # Last Epoch choices: user listening, 2026-10-03 (reference/sound-design.md).
 GOLD = le("UI", "sfx_ui_general_goldsmall")
 PORTAL = le("Ingame_Events", "sfx_soundevent_timerift_loop1")
@@ -31,6 +40,7 @@ ZONE_TRANSITION = le("Environmental", "sfx_enviro_waypoint_loop_v2")
 CLIPS = (
     ("discovery", d2r("one shot sounds/exploration/discovered.ogg"), None),
     ("inside_unexplored_room", d2r("item loop sounds/exploration/inside unexplored room.ogg"), None),
+    ("low_life_start", d4(D4_LOW_LIFE + "Start_Media/913678365.ogg"), None),
 )
 
 # D2R loot rarity and type loops (D2RAccess ground_items.cpp); Last Epoch shrine and Nemesis loops
@@ -57,6 +67,7 @@ LOOPS = (
     ("potion", le("Environmental", "sfx_ui_potion")),
     ("tome", le("UI", "sfx_ui_inventory_glyph")),
     ("unexplored_room", d2r("item loop sounds/exploration/unexplored room.ogg")),
+    ("low_life", d4(D4_LOW_LIFE + "Loop_Media/916753924.ogg")),
 )
 
 
@@ -110,6 +121,9 @@ def source_reader(args, scratch):
         if source[0] == "d2r":
             path = args.d2r_repository / "sounds" / source[1]
             return path, "sounds/" + source[1], digest(path)
+        if source[0] == "d4":
+            path = args.d4_sounds / source[1]
+            return path, "d4:" + source[1], digest(path)
         _, bank_name, sample = source
         relative = STREAMING_ASSETS / (bank_name + ".bank")
         bank = args.game / relative
@@ -124,6 +138,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("d2r_repository", type=pathlib.Path)
     parser.add_argument("game", type=pathlib.Path, help="Last Epoch installation folder")
+    parser.add_argument("d4_sounds", type=pathlib.Path, help="Diablo IV sound export (with its sorted/ folder)")
     parser.add_argument("--vgmstream", default="vgmstream-cli",
                         help="vgmstream-cli executable; FFmpeg cannot decode FMOD's FSB5 Vorbis")
     args = parser.parse_args()

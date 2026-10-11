@@ -771,6 +771,10 @@
   "sound.EnemyElite.details": "Une vague montante de l'ennemi rare ou champion le plus proche en vue ; elle se répète plus vite à mesure qu'il approche.",
   "sound.EnemyOrdinary": "Grondement d'ennemi",
   "sound.EnemyOrdinary.details": "Un grondement grave et bref de chacun des ennemis ordinaires les plus proches en vue ; il se répète plus vite à mesure qu'ils approchent.",
+  "sound.LowLifeStart": "Santé faible",
+  "sound.LowLifeStart.details": "L'alerte de Diablo IV, une fois, quand ta santé passe sous le pourcentage de santé faible.",
+  "sound.LowLifeLoop": "Battement de santé faible",
+  "sound.LowLifeLoop.details": "Le battement de cœur de Diablo IV, répété tant que ta santé reste sous le pourcentage de santé faible.",
   "sound.NpcTap": "Tapotement de PNJ",
   "sound.NpcTap.details": "Un léger tapotement d'un personnage à qui vous pouvez parler, placé dans sa direction.",
   "sound.Gold": "Pièces d'or",
@@ -862,6 +866,12 @@
   "menu.option.vitals_mana_ones.details": "Sous ce pourcentage de mana, annonce le mana de 1 en 1. Jamais désactive cette plage.",
   "menu.option.vitals_mana_step": "Variation minimale de mana",
   "menu.option.vitals_mana_step.details": "De combien le mana doit varier depuis la dernière annonce pour qu'un palier soit annoncé à nouveau. Plus élevé, moins d'annonces de mana ; à mana vide, il parle toujours.",
+  "menu.option.vitals_low_life_sound": "Son de santé faible",
+  "menu.option.vitals_low_life_sound.details": "Joue l'alerte de santé faible de Diablo IV quand la santé passe sous le pourcentage ci-dessous, et son battement tant qu'elle y reste.",
+  "menu.option.vitals_low_life_below": "Santé faible sous",
+  "menu.option.vitals_low_life_below.details": "Pourcentage de santé sous lequel le son de santé faible est joué.",
+  "menu.option.vitals_low_life_volume": "Volume de santé faible",
+  "menu.option.vitals_low_life_volume.details": "Volume de l'alerte et du battement de santé faible.",
   "menu.option.landmarks_shrine_effects": "Effets des autels",
   "menu.option.landmarks_shrine_effects.details": "Après avoir utilisé un autel, annonce son nom et l'effet qu'il accorde."
 }

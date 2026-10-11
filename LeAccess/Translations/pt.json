@@ -771,6 +771,10 @@
   "sound.EnemyElite.details": "Uma onda ascendente do inimigo raro ou campeão mais próximo à vista; repete mais rápido quanto mais ele se aproxima.",
   "sound.EnemyOrdinary": "Rugido de inimigo",
   "sound.EnemyOrdinary.details": "Um rugido grave e curto de cada um dos inimigos comuns mais próximos à vista; repete mais rápido quanto mais eles se aproximam.",
+  "sound.LowLifeStart": "Vida baixa",
+  "sound.LowLifeStart.details": "O aviso do Diablo IV, uma vez, quando sua vida fica abaixo da porcentagem de vida baixa.",
+  "sound.LowLifeLoop": "Batimento de vida baixa",
+  "sound.LowLifeLoop.details": "O batimento do Diablo IV, repetido enquanto sua vida continua abaixo da porcentagem de vida baixa.",
   "sound.NpcTap": "Toque de NPC",
   "sound.NpcTap.details": "Um toque suave de um personagem com quem você pode falar, vindo da direção dele.",
   "sound.Gold": "Moedas de ouro",
@@ -862,6 +866,12 @@
   "menu.option.vitals_mana_ones.details": "Abaixo desta porcentagem de mana, diz a mana de 1 em 1. Nunca desativa esta faixa.",
   "menu.option.vitals_mana_step": "Mudança mínima de mana",
   "menu.option.vitals_mana_step.details": "Quanto a mana precisa mudar desde o último aviso para que uma faixa seja dita de novo. Um valor maior dá menos avisos de mana; com a mana vazia, sempre fala.",
+  "menu.option.vitals_low_life_sound": "Som de vida baixa",
+  "menu.option.vitals_low_life_sound.details": "Toca o aviso de vida baixa do Diablo IV quando a vida fica abaixo da porcentagem abaixo, e o batimento enquanto continua ali.",
+  "menu.option.vitals_low_life_below": "Vida baixa abaixo de",
+  "menu.option.vitals_low_life_below.details": "Porcentagem de vida abaixo da qual o som de vida baixa toca.",
+  "menu.option.vitals_low_life_volume": "Volume de vida baixa",
+  "menu.option.vitals_low_life_volume.details": "Volume do aviso e do batimento de vida baixa.",
   "menu.option.landmarks_shrine_effects": "Efeitos de altar",
   "menu.option.landmarks_shrine_effects.details": "Depois de usar um altar, diz o nome dele e o efeito que concede."
 }

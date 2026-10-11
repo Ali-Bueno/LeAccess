@@ -771,6 +771,10 @@
   "sound.EnemyElite.details": "A rising swell from the nearest rare or champion enemy in sight; it repeats faster as it gets closer.",
   "sound.EnemyOrdinary": "Enemy growl",
   "sound.EnemyOrdinary.details": "A short low growl from each of the nearest ordinary enemies in sight; it repeats faster as they get closer.",
+  "sound.LowLifeStart": "Low life",
+  "sound.LowLifeStart.details": "Diablo IV's warning, once, when your life drops under the low-life percent.",
+  "sound.LowLifeLoop": "Low life heartbeat",
+  "sound.LowLifeLoop.details": "Diablo IV's heartbeat, repeating while your life stays under the low-life percent.",
   "sound.NpcTap": "NPC tap",
   "sound.NpcTap.details": "A soft tap from a character you can talk to, placed in that character's direction.",
   "sound.Gold": "Gold coins",
@@ -862,6 +866,12 @@
   "menu.option.vitals_mana_ones.details": "Below this mana percent, say mana every 1 percent. Never turns this range off.",
   "menu.option.vitals_mana_step": "Mana minimum change",
   "menu.option.vitals_mana_step.details": "How much mana must change since the last announcement before a band is said again. Higher means fewer mana announcements; empty mana always speaks.",
+  "menu.option.vitals_low_life_sound": "Low life sound",
+  "menu.option.vitals_low_life_sound.details": "Play Diablo IV's low-life warning when life drops under the percent below, and its heartbeat while it stays there.",
+  "menu.option.vitals_low_life_below": "Low life under",
+  "menu.option.vitals_low_life_below.details": "Life percent under which the low-life sound plays.",
+  "menu.option.vitals_low_life_volume": "Low life volume",
+  "menu.option.vitals_low_life_volume.details": "Volume of the low-life warning and heartbeat.",
   "menu.option.landmarks_shrine_effects": "Shrine effects",
   "menu.option.landmarks_shrine_effects.details": "After you use a shrine, say its name and the effect it grants."
 }
