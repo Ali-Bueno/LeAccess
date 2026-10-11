@@ -1,3 +1,25 @@
+# Handoff — 2026-10-10 night: first outside player report
+
+A player's list (English game, NVDA, controller), every item addressed; the user asked that options which depend on
+taste be optional. New config keys, all default on: `[Dialogue] SpeakNpcLines`, `[Menus] AnnouncePositions`,
+`[Tooltips] ReadKeywordExplanations`, `[Character sheet] ReadSummaryOnOpen`, `[Exploration beacon] TownFullyExplored`
+(README table updated). No new hook: the intro's `Update`, `EndOrSkip` and `ButtonInputListenerManager.IsAnyKeyDown`
+all start with a short `jcc`, checked with Capstone against `MethodAddressToToken.db`. Live checks, with log lines:
+- Intro: Ctrl does not show the skip prompt or skip (`[Intro] skip ignored: screen-reader key`); any other key does.
+- Messenger's letter: a direction push repeats "Pick up the letter" (`[Dialogue] response repeated on direction push`).
+- Name field: typed letters echo; `SpeakNpcLines=false` silences NPC lines but keeps responses.
+- Burning Forest → Keeper's Camp and a town portal: `[Zone] transition: …` spoken.
+- Character sheet: summary on opening and on right stick up (`[Character sheet] …`; unlabeled fields:
+  `no label or value on screen for: …`).
+- Passive/skill details: no "N of M"; Volatile Lightning and the Mage Ward node read "More information …"
+  (`[Tooltips] keyword text: …`); a specialised tree says level and percent (`[Skill level] …`, check `progress=` is 0–1).
+- Backpack: a mixed-height bottom row walks left↔right in order; up/down keep the column.
+- Scanner: quest markers no longer "higher level" (`[Exploration] quest marker icon_y=…`); Keeper's Camp routes to
+  Leena and the stash (`[Exploration beacon] town scene=… seeded cells=…`); shrines and gold piles listed on screen;
+  far loot/enemies audible (`[World loop] … range=` above 12).
+Answered without code: the mod is client-only, so party members do not need it (co-op so far tested only with both
+players modded).
+
 # Handoff — 2026-10-10: L3 mod button, player README, forum post
 
 User: pads with only Start/Select cannot use the radar (Select opens the controller menu); use a game command that

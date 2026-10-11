@@ -132,14 +132,16 @@ public class MenuAccessibility : MonoBehaviour
     {
         try
         {
-            if (CharacterSheet.CharacterSheetSummary.TryReadOnRequest() || PassiveAccessibility.ReadCurrentDetails() || QuestAccessibility.ReadCurrentDetails() ||
+            if (PassiveAccessibility.ReadCurrentDetails() || QuestAccessibility.ReadCurrentDetails() ||
                 Panels.PanelControlReader.ReadDetails() ||
                 Guide.GuideAccessibility.ReadCurrentDetails() ||
                 SettingsFocusAnnouncer.ReadCurrentDetails()) return;
             if (ClassCarouselHandler.TryReadDetails(out string text))
             { ScreenReader.Speak(text, true); return; }
             if (UiFocusOwnership.TryGetSelected(out var selected) &&
-                ElementAnnouncer.TryReadDetails(selected, out text)) ScreenReader.Speak(text, true);
+                ElementAnnouncer.TryReadDetails(selected, out text)) { ScreenReader.Speak(text, true); return; }
+            // Stat lines have no details of their own; there the request repeats the sheet's summary.
+            CharacterSheet.CharacterSheetSummary.TryReadOnRequest();
         }
         catch (System.Exception ex) { Plugin.Log.LogWarning($"Menu details unavailable: {ex.Message}"); }
     }

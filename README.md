@@ -161,7 +161,7 @@ N" when you have seen it but not entered. A target on another floor says "on a h
 
 | Button | Description |
 |---|---|
-| D-pad | Move item by item ("N of M"); up and down change rows. Items say their available actions with the button first |
+| D-pad | Move through the grid as it looks: left and right along the row, up and down along the column ("N of M"). Items say their available actions with the button first |
 | Right stick up | Full item tooltip |
 | L3 (hold) | Compare with what you have equipped: the equipped item, the differences and changed lines |
 | R3 | Explanations of the item's modifiers; L3 then R3 adds the ranges |
@@ -178,9 +178,12 @@ affix, its tier and your shards; right stick up adds the preview and forging pot
   skill into the slot you choose.
 - A skill's tree is a grid by branch. Up from the tree's root reaches Specialise and Respec. Each node says what it
   requires; right stick up gives the route from the start of its branch and what it leads to. Spending or removing
-  points, and unspent points, are spoken.
+  points, and unspent points, are spoken. A specialised skill's tree says its level and the percent to the next one.
+- Right stick up on a skill or passive node also reads the explanations of its status effects and keywords (the
+  game's "more information" tooltip); holding R3 reads that tooltip too.
 - Passive trees go by column: each column says the points it needs, and you can only leave the grid from the first
   column. The mastery banner above them is a list: up and down move through the trees, Cross opens one.
+- The character sheet reads your attributes, resistances and defences when it opens; right stick up repeats them.
 
 ### World map
 
@@ -217,6 +220,11 @@ useful ones:
 | Vitals | `AutomaticAnnouncements`, `AnnouncePotionCharges`, `AnnounceGoldPickups` | Automatic life, mana, potion and gold speech |
 | Combat feedback | `AnnounceBossLife`, `AnnounceEliteLife`, `AnnounceNearestEnemy` | Boss, elite and nearest-enemy speech |
 | Quests | `AutomaticUpdates` | Quest progress speech |
+| Dialogue | `SpeakNpcLines` | NPC lines, barks and cinematic subtitles (default on). Turn it off if you play in English and hear the voices; lines the game does not voice are silenced too |
+| Menus | `AnnouncePositions` | "3 of 8" in lists and grids (default on) |
+| Tooltips | `ReadKeywordExplanations` | Status-effect and keyword explanations (the "more information" tooltip) in skill and passive details (default on) |
+| Character sheet | `ReadSummaryOnOpen` | Attributes, resistances and defences read when the character sheet opens (default on) |
+| Exploration beacon | `TownFullyExplored` | In towns the beacon routes to any NPC or the stash without walking there first (default on) |
 
 ## Language
 

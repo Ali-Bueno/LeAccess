@@ -1,6 +1,21 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-10 morning: on pads other than DualSense/DualShock 4, L3 is the mod button (their Select opens
+**Updated:** 2026-10-10 night: first report from a player outside the project; every item addressed. Name field echoes
+typing ([echo](reference/character-name-reading.md#typing-echo-2026-10-10-user-report)); a lone dialogue response
+repeats on a direction push and `[Dialogue] SpeakNpcLines` (default on) can silence voiced NPC speech
+([dialogue](reference/npc-subtitles.md#optional-silence-for-npc-speech-2026-10-10-user-report)); Ctrl no longer arms
+the intro skip, by polling, no hook ([intro](reference/runtime-feedback.md#intro-skipped-by-screen-reader-keys-2026-10-10-user-report));
+"Entering …"/"Portaling to …" spoken ([transitions](reference/zone-reading.md#transition-pop-ups-2026-10-10-user-report));
+character sheet summary ([sheet](reference/character-sheet.md#upper-half-summary-2026-10-10-user-report)); details
+requests drop the position, `[Menus] AnnouncePositions`, keyword explanations, skill level and progress
+([passives](reference/passive-reading.md#details-request-list-positions-and-keyword-text-2026-10-10-user-report),
+[skills](reference/skill-tree-navigation.md#details-request-keyword-text-and-skill-level-2026-10-10-user-report));
+inventory moves by row and column ([grid](reference/inventory-drop-focus.md#cell-based-grid-navigation-2026-10-10-user-report));
+no false "higher level", towns fully routable, shrines and gold piles listed on screen
+([scanner](reference/exploration-mode.md#2026-10-10-user-report-levels-towns-shrines-gold)); loot, landmarks and
+enemies audible to the screen edge ([sounds](reference/world-object-sounds.md#2026-10-10-user-report-on-screen-objects-are-audible),
+[enemies](reference/enemy-cues.md#2026-10-10-user-report-on-screen-enemies)). Installed (game closed). Unheard; checks in [WHATS_NEXT.md](WHATS_NEXT.md).
+Earlier, 2026-10-10 morning: on pads other than DualSense/DualShock 4, L3 is the mod button (their Select opens
 the controller menu); the overlay map is off on L3 in gameplay only, menus keep L3 ([details](reference/exploration-mode.md#l3-as-the-mod-button-on-non-playstation-pads-2026-10-10)).
 README rewritten as player documentation for the first public test release. Installed. Unverified with an Xbox pad.
 Earlier, 2026-10-10: world map says where the active main quest is, read live from quest state
@@ -203,6 +218,7 @@ releases go to GitHub Releases with the asset name `LeAccess.zip` (see below).
 
 ## Validation and references
 
+- 2026-10-10 22:47: player-report batch installed (`LeAccess.dll` `C517B9A5B6820E59…`, game closed; external catalogs kept, new keys are embedded). All 61 host suites pass (Inventory 390, Exploration 397, ExplorationCatalog 64, Skills 291, Passives 203, Dialogue 97, Classes 148, Localization 5750); PatchSafety 84 declarations / 83 targets, no new hook. No friend ZIP or release.
 - 2026-10-10: release announced in the audiogames.net Play testing room on the user's account, at their request: <https://forum.audiogames.net/topic/60577/>.
 - 2026-10-10: GitHub release `v0.1.0` (first public test release) carries that ZIP as `LeAccess.zip`; every release must keep that asset name so <https://github.com/Ali-Bueno/LeAccess/releases/latest/download/LeAccess.zip> (README, forum post) stays valid, and must not be a prerelease (`latest` skips them).
 - 2026-10-10 10:44: test ZIP `LeAccess-Steam-1.5.1-prueba-20261010-104437.zip` (repo root, ignored by git), SHA-256 `9FD982DCB5465DF81840633E41F97C4BAD8201A1530B32F04820CE8EB84199BD`, 272 files, game build 25816319; L3 as the mod button on non-PlayStation pads (Leeme updated), config texts name the Diablo 2 mod as unreleased. Its `LeAccess.dll` (`8CAAF9ABC684825E…`) is the installed copy (game closed). Package 250. Replaces 20261010-101034.

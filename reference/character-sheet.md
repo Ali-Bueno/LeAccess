@@ -17,7 +17,7 @@ the only focusables found in the interop stubs; the attribute level-up button is
 `CharacterSheet/CharacterSheetSummary` reads `CharacterSheet.instance`:
 - once when the sheet opens, queued behind the panel title (config `[Character sheet] ReadSummaryOnOpen`, default true);
 - again on the menu details input (right stick pushed up, `MenuDetailInput.ReadRequested`) while focus is on the sheet,
-  the same input that reads item and skill details elsewhere.
+  as the last step of `MenuAccessibility.ReadSelectedDetails`: a focused element with details of its own keeps them.
 Each value's label is the nearest visible digit-free text before it in its row (else the first after), up to three
 containers up; attributes use only the active corrupted/uncorrupted variant. Fields with no label and no words are
 skipped and named in the log: `[Character sheet] no label or value on screen for: ...`. The summary is logged as
