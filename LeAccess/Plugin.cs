@@ -64,6 +64,7 @@ public class Plugin : BasePlugin
         GoldPickupAnnouncer.Initialize(Config);
         LeAccess.Accessibility.Progression.ProgressionAccessibility.Initialize(Config);
         BossLifeAccessibility.Initialize(Config);
+        LeAccess.Accessibility.CharacterSheet.CharacterSheetSummary.Initialize(Config);
         LandmarkAccessibility.Initialize(Config);
         MapSectionAccessibility.Initialize(Config);
         NpcSounds.Initialize(Config);

@@ -161,3 +161,16 @@ Unverified: whether the mod's update sees the empty-selection frame or a lost gr
 across the sync (if not, the key changes and the item is still read, without the log line above); the rumble's source.
 Side effect: returning to the grid after it lost focus with nothing spoken meanwhile (for example an alt-tab) stays
 silent. Listening pending: drop and equip online, then R3 on the focused item must not be interrupted.
+
+## Cell-based grid navigation (2026-10-10, user report)
+
+Item-by-item stepping broke rows once items had different heights (ring, spear, sword, shield on one bottom row).
+`InventoryNavigationOrder.Plan` now works on item rectangles (`Box`: top-left cell + size) and a cursor cell inside
+the focused item, set to the item's top-left when focus arrives from elsewhere and kept across steps.
+- Right/Left scan the cursor's row from the item's edge for the first different item and keep the row; past the
+  row's end they continue in reading order with the first/last item of the next/previous row that does not share the
+  cursor row. The list ends keep the old stay/exit semantics.
+- Down/Up scan the cursor's column; with nothing there they take the nearest row with an item and, in it, the item
+  at the smallest column distance.
+- "N of M" is still the reading order by top-left cell. Idol grid, stash, merchant stock and buyback share the code.
+Tests: `tests/LeAccess.Inventory.Tests/NavigationTests.cs` (`RunPlan`). Live check pending on a mixed-height row.

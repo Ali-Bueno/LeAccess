@@ -71,6 +71,7 @@ public class MenuAccessibility : MonoBehaviour
         CharacterNameAccessibility.Update();
         Social.SocialAccessibility.Update();
         Guide.GuideAccessibility.Update();
+        LeAccess.Accessibility.CharacterSheet.CharacterSheetSummary.Update();
         Forge.ForgeInventoryNotices.Observe();
         Gifting.GiftAccessibility.Observe();
         InventoryAccessibility.Update(readDetails);
@@ -128,7 +129,7 @@ public class MenuAccessibility : MonoBehaviour
     {
         try
         {
-            if (PassiveAccessibility.ReadCurrentDetails() || QuestAccessibility.ReadCurrentDetails() ||
+            if (CharacterSheet.CharacterSheetSummary.TryReadOnRequest() || PassiveAccessibility.ReadCurrentDetails() || QuestAccessibility.ReadCurrentDetails() ||
                 Panels.PanelControlReader.ReadDetails() ||
                 Guide.GuideAccessibility.ReadCurrentDetails() ||
                 SettingsFocusAnnouncer.ReadCurrentDetails()) return;

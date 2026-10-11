@@ -8,6 +8,7 @@
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/CharacterTileReader.cs" Link="CharacterTileReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/CharacterSheet/CharacterStatLineReader.cs" Link="CharacterStatLineReader.cs" />
+    <Compile Include="../../LeAccess/Accessibility/CharacterSheet/CharacterSheetSummaryText.cs" Link="CharacterSheetSummaryText.cs" />
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/ClassSelectionReader.cs" Link="ClassSelectionReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/CreationClassTabReader.cs" Link="CreationClassTabReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/CreationRealmReader.cs" Link="CreationRealmReader.cs" />
