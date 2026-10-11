@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using BepInEx.Configuration;
+using LeAccess.Accessibility.Audio;
 using LeAccess.I18n;
 using UnityEngine;
 
@@ -17,10 +17,6 @@ internal static class ModMenu
     private static KeyItem _capturing;
     private static string _language, _failure;
     private static int _heldBackBefore;
-
-    /// <summary>The sound pages (glossary, distances) and the preview stop, provided by the audio side.</summary>
-    internal static Func<IEnumerable<MenuItem>> SoundPages { get; set; } = Array.Empty<MenuItem>;
-    internal static Action StopPreview { get; set; } = () => { };
 
     internal static bool IsOpen => _navigator is not null;
 
@@ -90,14 +86,14 @@ internal static class ModMenu
     {
         _navigator = null;
         _capturing = null;
-        StopPreview();
+        SoundPreview.Stop();
         ScreenReader.MenuOwnsSpeech = false;
         ScreenReader.Speak(ModText.Get("menu.closed"));
         Plugin.Log.LogInfo($"[Mod menu] closed; other announcements held back: {ScreenReader.HeldBack - _heldBackBefore}");
     }
 
     private static MenuPage Build() =>
-        ModMenuPages.Build(_config, () => new MenuReply(null, Close: true), SoundPages());
+        ModMenuPages.Build(_config, () => new MenuReply(null, Close: true), ModMenuSoundPages.Build(_config));
 
     // A language change rebuilds the labels and keeps the cursor where it was.
     private static void Rebuild()

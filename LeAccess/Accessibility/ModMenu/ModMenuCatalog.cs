@@ -14,8 +14,7 @@ internal static class ModMenuCatalog
     internal const string WorldSection = "World object sounds";
 
     internal static readonly SettingSpec MasterVolume = new("MasterVolume", "master_volume", SettingUnit.Percent, 5);
-    internal static readonly SettingSpec KindVolume = new("", "kind_volume", SettingUnit.Percent, 10);
-    internal static readonly SettingSpec KindRange = new("", "kind_range", SettingUnit.Metres, 1);
+    internal static readonly SettingSpec KindRange = new("", null, SettingUnit.Metres, 1);
     internal static readonly SettingSpec GroupRange = new("LoopRange", "world_loop_range", SettingUnit.Metres, 1,
         ZeroText: "menu.value.game_range");
 
@@ -34,7 +33,11 @@ internal static class ModMenuCatalog
             new("OpenDepthInBodyWidths", "radar_open_depth", SettingUnit.BodyWidths, 1),
             new("AudioBufferMilliseconds", "radar_buffer", SettingUnit.Milliseconds, 10, Restart: true),
         }),
-        new("Navigation audio", "sonar", new SettingSpec[] { new("ContinuousWallSonar", "sonar_continuous") }),
+        new("Navigation audio", "sonar", new SettingSpec[]
+        {
+            new("ContinuousWallSonar", "sonar_continuous"),
+            new("SonarVolume", "sonar_volume", SettingUnit.Percent, 5),
+        }),
         new(WorldSection, "world", new SettingSpec[]
         {
             new("Enabled", "world_enabled"),

@@ -802,5 +802,12 @@
   "sound.SonarBehind": "Wall tone behind",
   "sound.SonarBehind.details": "A steady low tone while a wall is close behind; only with the continuous wall sonar on.",
   "sound.SonarSides": "Wall tone at the sides",
-  "sound.SonarSides.details": "A steady mid tone in the left or right ear while a wall is close on that side; only with the continuous wall sonar on."
+  "sound.SonarSides.details": "A steady mid tone in the left or right ear while a wall is close on that side; only with the continuous wall sonar on.",
+  "menu.sounds": "Sounds",
+  "menu.distances": "Sound distances",
+  "menu.sound_hint": "Cross plays it; left and right change its volume.",
+  "menu.distance_hint": "Cross plays it; left and right change how far it carries. Zero follows the object distance.",
+  "menu.value.group_distance": "object distance, {0}",
+  "menu.option.sonar_volume": "Sonar volume",
+  "menu.option.sonar_volume.details": "Volume of the continuous wall tones."
 }
