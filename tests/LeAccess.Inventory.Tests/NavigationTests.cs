@@ -103,47 +103,38 @@ internal static class NavigationTests
         var row = new List<Box> { new(1, 3, 1, 4), new(2, 2, 1, 3), new(3, 1, 2, 2), new(0, 0) };
         const int spear = 0, sword = 1, shield = 2, ring = 3;
         var bottom = new Cell(0, 0);
-        var move = Plan(row, ring, bottom, Direction.RIGHT);
+        // Left and right walk the reading order: every item once, the place moving by one (user report 2026-10-11).
         var visited = new List<int>();
-        int at = ring;
-        var cursor = bottom;
-        for (int step = 0; step < 4 && move.Kind == MoveKind.Select; step++)
+        int at = spear;
+        var move = Plan(row, at, new Cell(1, 3), Direction.RIGHT);
+        for (int step = 0; step < 5 && move.Kind == MoveKind.Select; step++)
         {
             visited.Add(move.Index);
-            (at, cursor) = (move.Index, move.Cursor);
-            move = Plan(row, at, cursor, Direction.RIGHT);
+            at = move.Index;
+            move = Plan(row, at, move.Cursor, Direction.RIGHT);
         }
-        check(visited.SequenceEqual(new[] { spear, sword, shield }) && cursor.Row == 0 && move.Kind == MoveKind.Stay,
-            "Right along a bottom row of mixed heights visits every item in visual order and keeps the row");
+        check(visited.SequenceEqual(new[] { sword, shield, ring }) && move.Kind == MoveKind.Stay,
+            "Right walks the list in reading order, each item once, and stops at its end");
         visited.Clear();
-        for (int step = 0; step < 4; step++)
+        for (int step = 0; step < 5; step++)
         {
-            move = Plan(row, at, cursor, Direction.LEFT);
+            move = Plan(row, at, row[at].TopLeft, Direction.LEFT);
             if (move.Kind != MoveKind.Select) break;
             visited.Add(move.Index);
-            (at, cursor) = (move.Index, move.Cursor);
+            at = move.Index;
         }
-        check(visited.SequenceEqual(new[] { sword, spear, ring }) && move.Kind == MoveKind.Stay,
-            "Left walks the same row back to the first item and stops there");
-
-        move = Plan(row, spear, new Cell(1, 3), Direction.RIGHT);
+        check(visited.SequenceEqual(new[] { shield, sword, spear }) && move.Kind == MoveKind.Stay,
+            "Left walks the same list back to its start and stops there");
+        move = Plan(row, spear, new Cell(1, 0), Direction.RIGHT);
         check(Is(move, MoveKind.Select, sword) && move.Cursor == new Cell(2, 2),
-            "From a tall item's top, Right continues in reading order with the next row's first item");
-        move = Plan(row, shield, new Cell(3, 1), Direction.RIGHT);
-        check(Is(move, MoveKind.Select, ring), "The last row's items follow in reading order");
-        check(Is(Plan(row, ring, bottom, Direction.LEFT), MoveKind.Stay) &&
-            Is(Plan(row, spear, new Cell(1, 3), Direction.LEFT), MoveKind.Stay), "The list start does not wrap");
-        move = Plan(row, sword, new Cell(2, 2), Direction.LEFT);
-        check(Is(move, MoveKind.Select, spear) && move.Cursor == new Cell(1, 2),
-            "Left from the sword's top reaches the spear beside it on the same row");
-        move = Plan(row, shield, new Cell(3, 1), Direction.LEFT);
-        check(Is(move, MoveKind.Select, sword) && move.Cursor == new Cell(2, 1), "Left keeps the cursor row");
+            "The cursor row inside a tall item does not change the next item; the cursor lands on its top-left cell");
+        move = Plan(row, sword, new Cell(2, 0), Direction.LEFT);
+        check(Is(move, MoveKind.Select, spear) && move.Cursor == new Cell(1, 3), "Left lands on the previous item's top-left cell");
 
         var tall = new List<Box> { new(0, 5, 1, 4), new(2, 4), new(2, 2), new(0, 1) };
-        check(Is(Plan(tall, 0, new Cell(0, 2), Direction.RIGHT), MoveKind.Select, 2),
-            "A tall item crossed on its lower row reaches the item on that row");
-        check(Is(Plan(tall, 0, new Cell(0, 5), Direction.RIGHT), MoveKind.Select, 1),
-            "Entered at its top, the same item reaches the item on the top row");
+        check(Is(Plan(tall, 0, new Cell(0, 2), Direction.RIGHT), MoveKind.Select, 1) &&
+            Is(Plan(tall, 0, new Cell(0, 5), Direction.RIGHT), MoveKind.Select, 1),
+            "A tall item's next item is the same from any of its rows");
         move = Plan(tall, 0, new Cell(0, 3), Direction.DOWN);
         check(Is(move, MoveKind.Select, 3) && move.Cursor == new Cell(0, 1), "Down keeps the column");
         move = Plan(tall, 3, new Cell(0, 1), Direction.UP);
@@ -160,18 +151,19 @@ internal static class NavigationTests
 
         check(Is(Plan(row, -1, new Cell(4, 3), Direction.RIGHT), MoveKind.Select, sword) &&
             Is(Plan(row, -1, new Cell(2, 3), Direction.RIGHT), MoveKind.Select, sword) &&
+            Is(Plan(row, -1, new Cell(2, 3), Direction.LEFT), MoveKind.Select, spear) &&
             Is(Plan(row, -1, new Cell(2, 3), Direction.DOWN), MoveKind.Select, sword),
             "An empty focused cell resumes from its own row and column");
         check(Is(Plan(row, spear, new Cell(1, 3), (Direction)9), MoveKind.Native), "Unknown directions fall back to the game");
         const InventoryNavigationOrder.Edges idolExits = InventoryNavigationOrder.Edges.Left | InventoryNavigationOrder.Edges.Up |
             InventoryNavigationOrder.Edges.Down;
-        check(Is(Plan(row, ring, bottom, Direction.LEFT, idolExits), MoveKind.Exit) &&
+        check(Is(Plan(row, spear, new Cell(1, 3), Direction.LEFT, idolExits), MoveKind.Exit) &&
             Is(Plan(row, ring, bottom, Direction.DOWN, idolExits), MoveKind.Exit) &&
             Is(Plan(row, ring, bottom, Direction.UP, idolExits), MoveKind.Select, spear),
             "A grid that the game leaves on several sides exits there when no item remains");
         check(Is(Plan(row, shield, new Cell(3, 1), Direction.RIGHT, idolExits), MoveKind.Select, ring) &&
-            Is(Plan(row, ring, new Cell(0, 0), Direction.RIGHT, idolExits), MoveKind.Select, spear),
-            "Sides that wrap natively still step through the items");
+            Is(Plan(row, ring, new Cell(0, 0), Direction.RIGHT, idolExits), MoveKind.Stay),
+            "Sides that wrap natively step through the items and stay at the list end");
         var none = new List<Box>();
         check(Is(Plan(none, -1, new Cell(0, 4), Direction.RIGHT, idolExits), MoveKind.Stay) &&
             Is(Plan(none, -1, new Cell(0, 4), Direction.LEFT, idolExits), MoveKind.Exit),

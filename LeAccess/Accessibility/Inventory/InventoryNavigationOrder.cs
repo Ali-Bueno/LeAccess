@@ -26,7 +26,8 @@ internal static class InventoryNavigationOrder
     internal static int Compare(Box a, Box b) =>
         a.Top != b.Top ? b.Top.CompareTo(a.Top) : a.Column.CompareTo(b.Column);
 
-    /// <summary>Steps along the cursor's row or column to the next different item, then on to the neighbouring rows.</summary>
+    /// <summary>Left and right walk the reading order one item at a time, so "N of M" always moves by one; up and down
+    /// scan the cursor's column to the next different item, then the nearest row.</summary>
     /// <param name="current">Index of the focused item, or -1 when the focused cell is empty.</param>
     /// <param name="cursor">The cell inside the focused item that the step starts from.</param>
     /// <param name="exits">Sides where running out of items leaves the grid; at the other sides the item repeats.</param>
@@ -37,34 +38,22 @@ internal static class InventoryNavigationOrder
         Move End(Edges side) => new((exits & side) != 0 ? MoveKind.Exit : MoveKind.Stay, -1, cursor);
         return direction switch
         {
-            Direction.RIGHT => Horizontal(items, current, from, cursor, 1) ?? End(Edges.Right),
-            Direction.LEFT => Horizontal(items, current, from, cursor, -1) ?? End(Edges.Left),
+            Direction.RIGHT => Horizontal(items, current, from, 1) ?? End(Edges.Right),
+            Direction.LEFT => Horizontal(items, current, from, -1) ?? End(Edges.Left),
             Direction.DOWN => Vertical(items, current, from, cursor, -1) ?? End(Edges.Down),
             Direction.UP => Vertical(items, current, from, cursor, 1) ?? End(Edges.Up),
             _ => new Move(MoveKind.Native)
         };
     }
 
-    private static Move? Horizontal(IReadOnlyList<Box> items, int current, Box from, Cell cursor, int step)
+    // A row scan revisited tall items through their lower rows, so the place jumped back (user report 2026-10-11).
+    private static Move? Horizontal(IReadOnlyList<Box> items, int current, Box from, int step)
     {
-        var (minColumn, maxColumn, minRow, maxRow) = Extent(items);
-        for (int column = step > 0 ? from.Right + 1 : from.Column - 1; column >= minColumn && column <= maxColumn; column += step)
-        {
-            int hit = At(items, new Cell(column, cursor.Row));
-            if (hit >= 0 && hit != current) return new Move(MoveKind.Select, hit, new Cell(column, cursor.Row));
-        }
-        // Past the row's end, reading continues in the next row (previous row going left) among the items it does not share.
-        for (int row = cursor.Row - step; row >= minRow && row <= maxRow; row -= step)
-        {
-            int best = -1;
-            for (int i = 0; i < items.Count; i++)
-            {
-                if (i == current || !items[i].Spans(row) || items[i].Spans(cursor.Row)) continue;
-                if (best < 0 || (step > 0 ? items[i].Column < items[best].Column : items[i].Right > items[best].Right)) best = i;
-            }
-            if (best >= 0) return new Move(MoveKind.Select, best, new Cell(step > 0 ? items[best].Column : items[best].Right, row));
-        }
-        return null;
+        int target = current >= 0 ? current + step : -1;
+        if (current < 0)
+            for (int i = step > 0 ? 0 : items.Count - 1; i >= 0 && i < items.Count; i += step)
+                if (Math.Sign(Compare(items[i], from)) == step) { target = i; break; }
+        return target >= 0 && target < items.Count ? new Move(MoveKind.Select, target, items[target].TopLeft) : null;
     }
 
     private static Move? Vertical(IReadOnlyList<Box> items, int current, Box from, Cell cursor, int step)

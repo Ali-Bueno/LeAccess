@@ -21,6 +21,12 @@ from the main menu or gameplay alike.
   pad button, key and mouse button is up, so the closing press is not delivered to the game as a new press.
   `Player.isPlaying = false` was tried first and blocks nothing (user report 2026-10-11: Cross activated game menus,
   Circle dodged; log showed `game input paused`). In Rewired it only governs joystick auto-assignment.
+- The game's own menus read the pad through the gamepad template (`UiNavigationMap`/`MainMenuMap`/
+  `PriorityUiNavigationMap.ProcessInput` call `Controller.GetTemplate` once and keep it), so Rewired maps do not
+  reach them. They hand every move, submit and cancel to `NavigationManager.Handle*Input`, which acts only on the static
+  `NavigationManager.currentlySelected` (statics + 0x10; null returns at once, checked with Capstone, build 25816319).
+  While open the menu keeps that static null and gives the last selection back once nothing is held. No hook: all
+  four handlers start with a short `jne` within 16 bytes.
 - The current `EventSystem` also stops sending navigation (`sendNavigationEvents = false`), restored the same way: with
   24 Rewired maps off, the landing screen still moved to "Play offline" and pressed it (user report, same day), so
   that screen reads the pad through Unity's own UI input module.
@@ -87,7 +93,7 @@ output start (their details say so).
 `.Bind(section, "Key")` in the source is in the catalog with both text keys.
 
 Log lines: `[Mod menu] opened`, `closed; other announcements held back: N`, `game input paused: N controller maps
-off, UI navigation off: N` / `resumed: N controller maps on`, `maps turned back on by the game while open: N` (should not appear),
+off, UI navigation off: N, menu selection held: true` / `resumed: N controller maps on`, `maps turned back on by the game while open: N` (should not appear),
 `L1 bindings held back while a chord modifier is down: N`, `option without menu text: Section/Key`.
 
 Verified live (2026-10-11): the L1 guard (9 and 10 L1 bindings held back on a DualSense, no potion). Unverified: that

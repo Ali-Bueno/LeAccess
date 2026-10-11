@@ -164,7 +164,7 @@ N" when you have seen it but not entered. A target on another floor says "on a h
 
 | Button | Description |
 |---|---|
-| D-pad | Move through the grid as it looks: left and right along the row, up and down along the column ("N of M"). Items say their available actions with the button first |
+| D-pad | Left and right go to the previous and next item ("N of M" moves by one); up and down move along the column. Items say their available actions with the button first |
 | Right stick up | Full item tooltip |
 | L3 (hold) | Compare with what you have equipped: the equipped item, the differences and changed lines |
 | R3 | Explanations of the item's modifiers; L3 then R3 adds the ranges |

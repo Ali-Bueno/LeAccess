@@ -174,3 +174,12 @@ the focused item, set to the item's top-left when focus arrives from elsewhere a
   at the smallest column distance.
 - "N of M" is still the reading order by top-left cell. Idol grid, stash, merchant stock and buyback share the code.
 Tests: `tests/LeAccess.Inventory.Tests/NavigationTests.cs` (`RunPlan`). Live check pending on a mixed-height row.
+
+## Left and right follow the list (2026-10-11, user report)
+
+"Estaba en el elemento 6 de 10, de repente volví al 3": Right scanned the cursor's row, then the next row among items
+not on it. With tall items (bows, quivers, shields) the cursor sat on a lower row, so Right revisited earlier items
+(log: 5, 6, 7, 8, then 5, 6, 7, 9). Left and right now step through the reading order (top row first, then column), one
+item each way, landing on the item's top-left cell; from an empty cell, the next or previous item in that order. Up
+and down still scan the cursor's column, then the nearest row. Grid ends still stay, or leave the grid on the sides
+the game leaves (idol grid: left only from the first item). Inventory suite: 386 checks.
