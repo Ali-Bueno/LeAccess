@@ -216,5 +216,5 @@ namespace LeAccess.Accessibility.ControllerMenus
 internal static class SpecialisedAbilityManager
 {
     internal const int maxAbilityLevel = 20;
-    internal static int getAbilityXPLevelRequirement(int level) => level * 100;
+    internal static float getProgressToNextLevel(float xp) => xp % 100 / 100f;
 }

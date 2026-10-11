@@ -205,10 +205,10 @@ internal static class TreeNavigationTests
         var levelled = new SkillTreeState.State((IntPtr)1, true, 3, false, level);
         check(SkillTreeState.Changes(levelled, levelled with { Level = Speech.F("skill.level_max", 4) }).After == Speech.F("skill.level_max", 4),
             "A gained level is spoken");
-        check(SkillLevel.Percent(350, 300, 400) == 50 && SkillLevel.Percent(399, 300, 400) == 99 && SkillLevel.Percent(500, 300, 400) == 99 &&
-            SkillLevel.Percent(100, 300, 400) == 0 && SkillLevel.Percent(5, 0, 0) == 0, "Level progress is a clamped whole percent");
-        check(SkillLevel.Describe(20, 9999, 20, l => l) == Speech.F("skill.level_max", 20) &&
-            SkillLevel.Describe(2, 250, 20, l => l * 100) == Speech.F("skill.level", 2, 50), "The top level has no progress");
+        check(SkillLevel.Percent(0.5f) == 50 && SkillLevel.Percent(0.999f) == 99 && SkillLevel.Percent(1.5f) == 99 &&
+            SkillLevel.Percent(-0.2f) == 0 && SkillLevel.Percent(float.NaN) == 0, "Level progress is a clamped whole percent");
+        check(SkillLevel.Describe(20, 0.3f, 20) == Speech.F("skill.level_max", 20) &&
+            SkillLevel.Describe(2, 0.5f, 20) == Speech.F("skill.level", 2, 50), "The top level has no progress");
         ListPosition.Enabled = false;
         check(ListPosition.Text(2, 3) is null && Speech.Join("Name", ListPosition.Text(2, 3)) == "Name", "Positions off drop out of combined speech");
         ListPosition.Enabled = true;
