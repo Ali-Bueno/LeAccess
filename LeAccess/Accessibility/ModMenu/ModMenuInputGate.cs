@@ -95,6 +95,7 @@ internal static class InputBlock
     private static readonly List<ControllerMap> Disabled = new();
     private static readonly List<UnityEngine.EventSystems.EventSystem> Navigation = new();
     private static INavigable _selection;
+    private static readonly List<ButtonInputListener> Listeners = new();
     private static bool _open;
     private static int _atOpen;
     private static string _failure;
@@ -105,7 +106,7 @@ internal static class InputBlock
         Hold();
         _atOpen = Disabled.Count;
         Plugin.Log.LogInfo($"[Mod menu] game input paused: {Disabled.Count} controller maps off, UI navigation off: {Navigation.Count}, " +
-            $"menu selection held: {_selection is not null}");
+            $"menu selection held: {_selection is not null}, button listeners off: {Listeners.Count}");
     }
 
     /// <summary>Each frame while open: a map the game turns on meanwhile goes off too.</summary>
@@ -121,6 +122,7 @@ internal static class InputBlock
         catch (Exception ex) { Report(ex); }
         HoldNavigation();
         HoldSelection();
+        HoldListeners();
     }
 
     internal static void Close()
@@ -133,7 +135,7 @@ internal static class InputBlock
     /// <summary>Waiting for release keeps the closing press from reaching the game as a new press.</summary>
     internal static void EndWhenIdle()
     {
-        if (_open || Disabled.Count == 0 && Navigation.Count == 0 && _selection is null) return;
+        if (_open || Disabled.Count == 0 && Navigation.Count == 0 && _selection is null && Listeners.Count == 0) return;
         if (AnythingHeld()) { Hold(); return; }
         End();
     }
@@ -142,6 +144,12 @@ internal static class InputBlock
     {
         _open = false;
         RestoreSelection();
+        foreach (var listener in Listeners)
+        {
+            try { if (!listener.WasCollected) listener.enabled = true; }
+            catch (Exception ex) { Report(ex); }
+        }
+        Listeners.Clear();
         foreach (var events in Navigation)
         {
             try { if (!events.WasCollected) events.sendNavigationEvents = true; }
@@ -169,6 +177,29 @@ internal static class InputBlock
             if (current is null || current.WasCollected) return;
             _selection = current;
             NavigationManager.currentlySelected = null;
+        }
+        catch (Exception ex) { Report(ex); }
+    }
+
+    // Buttons such as the landing screen's Play answer a key of their own (ButtonInputListener.key, read through Unity's
+    // input, pad buttons included); disabled, they leave ButtonInputListenerManager until enabled again.
+    private static void HoldListeners()
+    {
+        try
+        {
+            var registered = ButtonInputListenerManager._inputListeners;
+            if (registered is null || registered.WasCollected) return;
+            var held = new List<ButtonInputListener>();
+            for (int index = 0; index < registered.Count; index++)
+            {
+                var listener = registered[index]?.TryCast<ButtonInputListener>();
+                if (listener is not null && !listener.WasCollected && listener.enabled) held.Add(listener);
+            }
+            foreach (var listener in held)
+            {
+                listener.enabled = false;
+                Listeners.Add(listener);
+            }
         }
         catch (Exception ex) { Report(ex); }
     }

@@ -27,6 +27,10 @@ from the main menu or gameplay alike.
   `NavigationManager.currentlySelected` (statics + 0x10; null returns at once, checked with Capstone, build 25816319).
   While open the menu keeps that static null and gives the last selection back once nothing is held. No hook: all
   four handlers start with a short `jne` within 16 bytes.
+- Buttons with a `ButtonInputListener` (the landing screen's Play) answer their own `key` through Unity's input, pad
+  buttons included, past all of the above (user report: Cross still pressed Play with the selection held). Every
+  enabled listener registered in `ButtonInputListenerManager._inputListeners` is disabled while open and re-enabled
+  with the rest.
 - The current `EventSystem` also stops sending navigation (`sendNavigationEvents = false`), restored the same way: with
   24 Rewired maps off, the landing screen still moved to "Play offline" and pressed it (user report, same day), so
   that screen reads the pad through Unity's own UI input module.
@@ -93,7 +97,7 @@ output start (their details say so).
 `.Bind(section, "Key")` in the source is in the catalog with both text keys.
 
 Log lines: `[Mod menu] opened`, `closed; other announcements held back: N`, `game input paused: N controller maps
-off, UI navigation off: N, menu selection held: true` / `resumed: N controller maps on`, `maps turned back on by the game while open: N` (should not appear),
+off, UI navigation off: N, menu selection held: True, button listeners off: N` / `resumed: N controller maps on`, `maps turned back on by the game while open: N` (should not appear),
 `L1 bindings held back while a chord modifier is down: N`, `option without menu text: Section/Key`.
 
 Verified live (2026-10-11): the L1 guard (9 and 10 L1 bindings held back on a DualSense, no potion). Unverified: that
