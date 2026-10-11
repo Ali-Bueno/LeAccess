@@ -97,7 +97,7 @@ else
         Check(NaturalCueBank.Build(kind, 0, 1, .5f).SequenceEqual(center.Select(x => x * .5f)), $"{kind} gain follows user volume linearly");
         Check(NaturalCueBank.Build(kind, float.NaN, float.NaN, float.NaN).All(x => x == 0), $"{kind} invalid gain is silent");
         Check(NaturalCueBank.Build(kind, float.NaN, float.NaN, 1).SequenceEqual(center), $"{kind} invalid direction safely centers in front");
-        Check(NaturalCueBank.Build(kind, -2, -2, 2).SequenceEqual(NaturalCueBank.Build(kind, -1, -1, 1)), $"{kind} clamps finite inputs");
+        Check(NaturalCueBank.Build(kind, -2, -2, CuePlacement.MaxGain + 1).SequenceEqual(NaturalCueBank.Build(kind, -1, -1, CuePlacement.MaxGain)), $"{kind} clamps finite inputs");
         center[center.Length / 2] = 100;
         Check(NaturalCueBank.Build(kind, 0, 1, 1).All(x => Math.Abs(x) <= .24), $"{kind} callers cannot mutate the cached recording");
     }
@@ -128,4 +128,45 @@ bad = pcm.ToArray(); bad[34] = 8; Reject(bad, "Wrong PCM bit depth is rejected")
 bad = pcm.ToArray(); bad[40] = 9; Reject(bad, "Incomplete PCM frames are rejected");
 Reject(Wave(Array.Empty<short>()), "Zero-length sample data is rejected");
 Reject(Wave(new short[48001]), "Oversized cues cannot allocate an unbounded playback buffer");
+// Sound glossary: unique letter-only ids, text keys in the English catalog, every world kind present with its levels.
+{
+    using var catalog = typeof(SoundGlossary).Assembly.GetManifestResourceStream("LeAccess.Translations.en.json")!;
+    var keys = System.Text.Json.JsonDocument.Parse(catalog).RootElement.EnumerateObject().Select(p => p.Name).ToHashSet();
+    var entries = SoundGlossary.Entries;
+    Check(entries.Count > 0 && entries.Select(e => e.Id).Distinct().Count() == entries.Count, "Glossary ids are unique");
+    Check(entries.All(e => e.Id.Length > 0 && e.Id.All(char.IsLetter) && char.IsUpper(e.Id[0])), "Glossary ids are PascalCase letters");
+    Check(entries.All(e => keys.Contains("sound." + e.Id) && keys.Contains("sound." + e.Id + ".details")), "Every sound has a name and details text");
+    Check(keys.Where(k => k.StartsWith("sound.") && !k.EndsWith(".details")).All(k => entries.Any(e => "sound." + e.Id == k)),
+        "No sound text is left without a glossary entry");
+    Check(entries.All(e => !string.IsNullOrEmpty(e.VolumeSection) && !string.IsNullOrEmpty(e.VolumeKey)), "Every sound names its volume entry");
+    foreach (var world in SoundLevels.WorldKinds)
+    {
+        var entry = entries.SingleOrDefault(e => e.Id == world.Key);
+        Check(entry.Id != null && entry.VolumeSection == SoundLevels.VolumeSection && entry.VolumeKey == world.Key,
+            $"{world.Kind} has a glossary entry with its own volume key");
+        Check(world.HasRange == (entry.RangeKey != null) && (!world.HasRange || entry.RangeSection == SoundLevels.RangeSection && entry.RangeKey == world.Key),
+            $"{world.Kind} lists a range only when it has one");
+    }
+    Check(Enum.GetValues<NaturalCueKind>().All(k => SoundLevels.WorldKinds.Any(w => w.Kind == k)), "Every natural cue kind has a config key");
+    Check(SoundLevels.WorldKinds.Select(w => w.Kind).Distinct().Count() == SoundLevels.WorldKinds.Length &&
+        SoundLevels.WorldKinds.Select(w => w.Key).Distinct().Count() == SoundLevels.WorldKinds.Length, "Kinds and keys are unique");
+    Check(SoundLevels.EnemyKeys.All(k => entries.Any(e => e.VolumeSection == SoundLevels.EnemySection && e.VolumeKey == k)),
+        "Each enemy type has a glossary entry");
+    Check(entries.Where(e => e.RangeKey == null).All(e => e.VolumeSection != SoundLevels.RangeSection), "Only world kinds use range entries");
+}
+
+// Preview buffers: centred, faded at both ends, bounded to the requested length.
+{
+    var clip = Enumerable.Range(0, 480).Select(i => i % 2 == 0 ? 0.8f : -0.8f).ToArray();
+    var loop = PreviewClips.Loop(clip, 0.5f, 1);
+    Check(loop.Length == PreviewClips.SampleRate * PreviewClips.Channels, "A loop preview lasts the requested time (shorter loops repeat)");
+    Check(Enumerable.Range(0, loop.Length / 2).All(i => loop[2 * i] == loop[2 * i + 1]), "A preview is centred");
+    Check(Math.Abs(loop[0]) < 0.01f && Math.Abs(loop[^1]) < 0.01f && loop.Max() <= 0.8f * 0.5f + 1e-4f, "A preview fades in and out and keeps its gain");
+    Check(PreviewClips.Loop(Array.Empty<float>(), 1, 1).Length == 0 && PreviewClips.Loop(clip, 0, 1).Length == 0 &&
+        PreviewClips.Loop(clip, float.NaN, 1).Length == 0, "A silent or invalid preview is empty");
+    var tone = PreviewClips.Tone(500, 0.05f, 0.5);
+    Check(tone.Length == PreviewClips.SampleRate * PreviewClips.Channels / 2 && tone.Max() <= 0.05f && tone.Max() > 0.02f, "A tone preview holds its amplitude");
+    Check(PreviewClips.Tone(0, 0.05f, 1).Length == 0 && PreviewClips.Tone(500, 0, 1).Length == 0, "An invalid tone is empty");
+}
+
 Console.WriteLine($"Natural audio tests passed: {checks} checks; no audio device opened.");

@@ -115,4 +115,19 @@ int at = Rate - 1100;
 Check(Math.Abs(pitched[at * 2] - ramp[(int)(at * 0.5) % 100]) < 0.02, "Rear pitch slows playback through the loop");
 Check(slow.FramesMixed == Rate, "Mixed frames are counted for diagnostics");
 
+// The master volume scales the mixer's output live, and zero silences it.
+{
+    var fullMix = new WorldLoopMixer(Clip, Glide);
+    var halfMix = new WorldLoopMixer(Clip, Glide);
+    foreach (var target in new[] { fullMix, halfMix }) target.SetVoices(new[] { new LoopVoice(7, NaturalCueKind.Gold, 0.5f, 0.5f, 1) });
+    SoundLevels.Reset();
+    var full = Read(fullMix, Rate / 4);
+    SoundLevels.SetMaster(50);
+    var scaled = Read(halfMix, Rate / 4);
+    Check(Math.Abs(scaled.Max() - full.Max() * 0.5f) < 1e-4, "Master volume scales the mixed loops");
+    SoundLevels.SetMaster(0);
+    Check(Read(halfMix, 256).All(x => x == 0), "Master zero silences the loops");
+    SoundLevels.Reset();
+}
+
 Console.WriteLine($"World loop tests passed: {checks} checks.");

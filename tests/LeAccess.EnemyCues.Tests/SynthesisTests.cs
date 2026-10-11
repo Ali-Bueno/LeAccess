@@ -110,7 +110,7 @@ internal static partial class Program
             float[] half = EnemyCueSynthesizer.Synthesize(kind, 0.3f, 0.2f, 0.5f);
             Check(half.Zip(full).All(pair => Math.Abs(pair.First * 2 - pair.Second) < 1e-6),
                 $"Volume scales the {kind} cue without changing its timbre.");
-            Check(full.SequenceEqual(EnemyCueSynthesizer.Synthesize(kind, 0.3f, 0.2f, 3)), "Excessive gain clamps to full.");
+            Check(EnemyCueSynthesizer.Synthesize(kind, 0.3f, 0.2f, CuePlacement.MaxGain + 1).SequenceEqual(EnemyCueSynthesizer.Synthesize(kind, 0.3f, 0.2f, CuePlacement.MaxGain)), "Excessive gain clamps to the boost limit.");
             foreach (float gain in new[] { 0f, -1f, float.NaN, float.PositiveInfinity })
                 Check(EnemyCueSynthesizer.Synthesize(kind, 0, 1, gain).All(sample => sample == 0),
                     $"Gain {gain} silences the {kind} cue.");

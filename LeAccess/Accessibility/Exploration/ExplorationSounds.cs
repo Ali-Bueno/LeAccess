@@ -47,7 +47,8 @@ internal static class ExplorationSounds
             if (Pending.Count > 0 && EnsureCues(now) && !_cues.IsPlaying)
             {
                 var kind = Pending.Dequeue();
-                if (volume > 0 && NaturalCueBank.TryBuild(kind, 0, 1, volume, out var samples)) _cues.Play(samples);
+                float level = volume * SoundLevels.Volume(kind);
+                if (level > 0 && NaturalCueBank.TryBuild(kind, 0, 1, level, out var samples)) _cues.Play(samples);
             }
         }
         catch (Exception ex) { Report($"Exploration sounds unavailable: {ex.Message}"); }

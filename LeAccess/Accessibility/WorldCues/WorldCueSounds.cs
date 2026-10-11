@@ -74,10 +74,9 @@ internal static class WorldCueSounds
             if (suspension != null) { ReportStatus(suspension, now); Suspend(); return; }
             if (now < _nextPoll) return;
             _nextPoll = now + PollSeconds;
-            float loopRange = Math.Clamp(_loopRange.Value, 0, MaxLoopRangeMetres);
-            World.LandmarkRange = loopRange;
-            World.LoopRange = loopRange;
-            World.Loopable = _loops.Value && loopRange > 0 ? WorldLoopBank.Has : null;
+            float groupRange = Math.Clamp(_loopRange.Value, 0, MaxLoopRangeMetres);
+            World.LandmarkRange = World.LoopRange = groupRange;
+            World.Loopable = _loops.Value && SoundLevels.LargestRange(groupRange, WorldLoopBank.Has) > 0 ? WorldLoopBank.Has : null;
             bool found = World.TryCapture(out var target);
             if (World.LastFailure != null) ReportFailure(World.LastFailure);
             if (!World.HasWorld)
@@ -94,7 +93,7 @@ internal static class WorldCueSounds
                 WorldAudioReservation.Cancel(WorldAudioSource.Object);
                 _session = World.Session;
             }
-            UpdateLoops(now, World.LoopReach);
+            UpdateLoops(now, groupRange);
             ReportStatus(found || LoopVoices.Count > 0 ? "targets available" : "no eligible targets", now);
             if (_playingTarget.HasValue && World.Targets[(int)_playingTarget.Value.Category]?.Key != _playingTarget.Value)
             {

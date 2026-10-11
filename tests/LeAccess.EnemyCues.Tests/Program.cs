@@ -23,6 +23,7 @@ internal static partial class Program
             SelectionFilters();
             SelectionClasses();
             SelectionElites();
+            SelectionLevels();
             TrackerCadence();
             TrackerFairness();
             TrackerContinuity();
@@ -70,12 +71,40 @@ internal static partial class Program
         new(id, null, boss ? EnemyClass.Boss : enemyClass, Player + new Vector3(dx, dy, dz));
 
     private static List<EnemyCue> Select(IReadOnlyList<EnemyContact> contacts, bool bosses = true, bool ordinary = true,
-        Func<EnemyContact, TerrainSight> sight = null, float range = Range, Vector3? player = null, bool elites = true)
+        Func<EnemyContact, TerrainSight> sight = null, float range = Range, Vector3? player = null, bool elites = true,
+        Func<EnemyCueKind, bool> audible = null)
     {
         var selected = new List<EnemyCue>();
         new EnemyCueSelector().Select(contacts, player ?? Player, Up, Right, range, bosses, ordinary,
-            sight ?? (_ => TerrainSight.Clear), selected, elites);
+            sight ?? (_ => TerrainSight.Clear), selected, elites, audible);
         return selected;
+    }
+
+    // A type at volume zero is silent and leaves its stream to the others.
+    private static void SelectionLevels()
+    {
+        var rare = EnemyClass.Rare;
+        var mixed = new[] { At(1, 0, 2, enemyClass: rare), At(2, 0, 6, boss: true), At(3, 0, 1), At(4, 0, 3) };
+        var noBoss = Select(mixed, audible: kind => kind != EnemyCueKind.Boss);
+        Check(noBoss.All(cue => cue.Kind != EnemyCueKind.Boss) && noBoss.Count == EnemyCueSelector.MaxStreams,
+            "A silenced boss type gives its stream to the others.");
+        var noElite = Select(mixed, audible: kind => kind != EnemyCueKind.Elite);
+        Check(noElite.Select(cue => cue.Id).SequenceEqual(new[] { 2, 3, 4 }) && noElite.All(cue => cue.Kind != EnemyCueKind.Elite),
+            "A silenced elite is not heard even as an ordinary enemy.");
+        var onlyBoss = Select(mixed, audible: kind => kind == EnemyCueKind.Boss);
+        Check(onlyBoss.Count == 1 && onlyBoss[0].Kind == EnemyCueKind.Boss, "Only the audible type sounds.");
+        Check(Select(mixed, audible: _ => true).SequenceEqual(Select(mixed)), "Everything audible changes nothing.");
+        SoundLevels.Reset();
+        Check(SoundLevels.Enemy(EnemyCueKind.Boss) == 1, "Enemy types start at the reference level.");
+        SoundLevels.SetEnemy(EnemyCueKind.Elite, 150);
+        SoundLevels.SetEnemy(EnemyCueKind.Ordinary, 500);
+        Check(SoundLevels.Enemy(EnemyCueKind.Elite) == 1.5f && SoundLevels.Enemy(EnemyCueKind.Ordinary) == 2f &&
+            SoundLevels.Enemy(EnemyCueKind.Boss) == 1, "Enemy volumes are per type and capped at 200 percent.");
+        float Peak(float[] samples) => samples.Max(Math.Abs);
+        float quiet = Peak(EnemyCueSynthesizer.Synthesize(EnemyCueKind.Ordinary, 0, 1, 0.5f));
+        float boosted = Peak(EnemyCueSynthesizer.Synthesize(EnemyCueKind.Ordinary, 0, 1, 0.5f * SoundLevels.Enemy(EnemyCueKind.Ordinary)));
+        Check(Math.Abs(boosted - quiet * 2) < quiet * 0.01, "A boosted enemy type plays louder than the reference.");
+        SoundLevels.Reset();
     }
 
     private static void SelectionStreams()

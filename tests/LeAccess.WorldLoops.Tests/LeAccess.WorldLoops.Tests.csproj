@@ -7,6 +7,9 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NAudio" Version="2.2.1" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/SoundLevels.cs" Link="SoundLevels.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/NaturalCueKind.cs" Link="NaturalCueKind.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Combat/EnemyCueKind.cs" Link="EnemyCueKind.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/WorldLoopMixer.cs" Link="WorldLoopMixer.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/WorldLoopBank.cs" Link="WorldLoopBank.cs" />
     <Compile Include="../../LeAccess/Accessibility/WorldCues/WorldLoopSelection.cs" Link="WorldLoopSelection.cs" />

@@ -66,6 +66,7 @@ public class Plugin : BasePlugin
         // Initialize audio cues
         _continuousSonar = Config.Bind("Navigation audio", "ContinuousWallSonar", false,
             "Play the previous continuous wall tones alongside the reactive radar.");
+        SoundLevels.Initialize(Config);
         ReactiveRadar.Initialize(Config);
         QuestUpdateAccessibility.Initialize(Config);
         CombatAccessibility.Initialize(Config);
@@ -148,6 +149,7 @@ public class Plugin : BasePlugin
         EnemyCueSounds.Cleanup();
         ReactiveRadar.Cleanup();
         WallSonar.Cleanup();
+        SoundPreview.Cleanup();
         WorldAudioReservation.Reset();
         _harmony?.UnpatchSelf();
         ScreenReader.Shutdown();

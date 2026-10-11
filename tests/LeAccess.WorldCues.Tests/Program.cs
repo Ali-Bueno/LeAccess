@@ -412,10 +412,12 @@ probe.TryCapture(out _);
 Check(probe.Loops.Count == 2 && probe.Loops.All(l => l.OnScreen) &&
     probe.Loops.All(l => l.Distance > probe.LoopRange) && !probe.Loops.Any(l => l.Distance > 25),
     "Loot and landmarks on screen past the loop range are listed; off screen they are not");
-Check(Math.Abs(probe.LoopReach - 20) < 1e-4, "The gains fall against the farthest on-screen loop");
+var reachVoices = new List<LoopVoice>();
+WorldLoopSelection.Select(probe.Loops, probe.LoopRange, 1, reachVoices);
+Check(reachVoices.Count == 2 && reachVoices.All(v => v.Left + v.Right > 0), "Selection lets the gains fall against the farthest on-screen loop");
 LeAccess.Accessibility.Combat.BossLifeProbe.Screen = _ => false;
 probe.TryCapture(out _);
-Check(probe.Loops.Count == 0 && probe.LoopReach == 12, "Nothing on screen keeps the configured range");
+Check(probe.Loops.Count == 0, "Nothing on screen and out of range lists nothing");
 LeAccess.Accessibility.Combat.BossLifeProbe.Screen = _ => true;
 coin = Coin(5);
 probe.TryCapture(out _);
@@ -474,6 +476,95 @@ WorldLoopSelection.Select(single, 12, 0.5f, voices);
 Check(Math.Abs(Scalar(voices.Single()) - WorldLoopSelection.Gain(single[0], 12) * 0.5f) < 1e-5, "Volume scales a single voice below the pile limit");
 WorldLoopSelection.Select(single, 0, 1, voices);
 Check(voices.Count == 0, "A zero range plays nothing");
+
+// Per-kind levels: own volume multiplies the gain, own range replaces the group range, zero volume takes no voice.
+{
+    SoundLevels.Reset();
+    var runeAndGold = new List<LoopCandidate> { new(1, NaturalCueKind.Gold, 4, 0, 1), new(2, NaturalCueKind.Rune, 4, 0, 1) };
+    WorldLoopSelection.Select(runeAndGold, 12, 1, voices);
+    float baseGold = Scalar(voices.Single(v => v.Id == 1)), baseRune = Scalar(voices.Single(v => v.Id == 2));
+    SoundLevels.SetVolume(NaturalCueKind.Gem, 50);
+    runeAndGold[1] = new(2, NaturalCueKind.Gem, 4, 0, 1);
+    WorldLoopSelection.Select(runeAndGold, 12, 1, voices);
+    Check(Math.Abs(Scalar(voices.Single(v => v.Kind == NaturalCueKind.Gem)) - baseRune * 0.5f) < 1e-5 &&
+        Math.Abs(Scalar(voices.Single(v => v.Id == 1)) - baseGold) < 1e-5, "A kind's volume scales only that kind");
+    SoundLevels.SetVolume(NaturalCueKind.Gem, 0);
+    WorldLoopSelection.Select(runeAndGold, 12, 1, voices);
+    Check(voices.Count == 1 && voices[0].Id == 1, "A silenced kind takes no voice");
+    var crowd = Enumerable.Range(1, 12).Select(i => new LoopCandidate(i, NaturalCueKind.Gold, 1 + i * 0.1f, 0, 1)).ToList();
+    crowd.Add(new(99, NaturalCueKind.Rune, 5, 0, 1));
+    SoundLevels.SetVolume(NaturalCueKind.Rune, 0);
+    WorldLoopSelection.Select(crowd, 12, 1, voices);
+    Check(voices.Count == WorldLoopSelection.MaxVoices && voices.All(v => v.Kind == NaturalCueKind.Gold),
+        "A silenced kind leaves every voice to the others");
+    SoundLevels.Reset();
+    var boostedCrowd = Enumerable.Range(1, 8).Select(i => new LoopCandidate(i, NaturalCueKind.Gold, 0.5f, 0, 1)).ToList();
+    SoundLevels.SetVolume(NaturalCueKind.Gold, 200);
+    WorldLoopSelection.Select(boostedCrowd, 12, 1, voices);
+    Check(voices.Sum(Scalar) <= WorldLoopSelection.MixGainLimit + 1e-4, "Boosted kinds still share the mix headroom");
+    boostedCrowd = new() { new(1, NaturalCueKind.Gold, 6, 0, 1) };
+    SoundLevels.Reset();
+    WorldLoopSelection.Select(boostedCrowd, 12, 1, voices);
+    float unboosted = Scalar(voices.Single());
+    SoundLevels.SetVolume(NaturalCueKind.Gold, 200);
+    WorldLoopSelection.Select(boostedCrowd, 12, 1, voices);
+    Check(Math.Abs(Scalar(voices.Single()) - unboosted * 2) < 1e-5, "A boost above 100 percent doubles a quiet voice");
+    SoundLevels.Reset();
+
+    var far = new List<LoopCandidate> { new(1, NaturalCueKind.Stash, 20, 0, 1), new(2, NaturalCueKind.Portal, 20, 0, 1) };
+    WorldLoopSelection.Select(far, 12, 1, voices);
+    Check(voices.Count == 0, "Beyond the group range nothing off screen sounds");
+    SoundLevels.SetRange(NaturalCueKind.Stash, 25);
+    WorldLoopSelection.Select(far, 12, 1, voices);
+    Check(voices.Count == 1 && voices[0].Kind == NaturalCueKind.Stash, "A kind with its own longer range sounds there");
+    far[0] = far[0] with { Distance = 5 };
+    SoundLevels.SetRange(NaturalCueKind.Stash, 0);
+    WorldLoopSelection.Select(far, 12, 1, voices);
+    float groupLevel = Scalar(voices.Single());
+    SoundLevels.SetRange(NaturalCueKind.Stash, 6);
+    WorldLoopSelection.Select(far, 12, 1, voices);
+    Check(voices.Count == 1 && Scalar(voices[0]) < groupLevel, "A shorter own range fades by its own distance");
+    far[0] = far[0] with { Distance = 8 };
+    WorldLoopSelection.Select(far, 12, 1, voices);
+    Check(voices.Count == 0, "A shorter own range cuts the kind off before the group range");
+    far[0] = far[0] with { OnScreen = true };
+    WorldLoopSelection.Select(far, 12, 1, voices);
+    Check(voices.Count == 1, "An on-screen object sounds past its own range");
+    Check(SoundLevels.Range(NaturalCueKind.Portal, 12) == 12 && SoundLevels.Range(NaturalCueKind.Stash, 12) == 6 &&
+        SoundLevels.LargestRange(12, k => WorldCueReach.IsLandmark(k)) == 12 &&
+        SoundLevels.LargestRange(3, k => k == NaturalCueKind.Stash) == 6, "Range follows the group unless the kind sets its own");
+    SoundLevels.SetVolume(NaturalCueKind.Stash, 0);
+    Check(SoundLevels.LargestRange(3, k => k == NaturalCueKind.Stash) == 0, "A silenced kind needs no collection range");
+    SoundLevels.Reset();
+    Check(SoundLevels.Master == 1 && SoundLevels.Volume((NaturalCueKind)99) == 1 && SoundLevels.Range((NaturalCueKind)99, 7) == 7,
+        "Unknown kinds follow the defaults");
+    SoundLevels.SetMaster(150); Check(SoundLevels.Master == 1, "Master is capped at full");
+    SoundLevels.SetMaster(40); Check(Math.Abs(SoundLevels.Master - 0.4f) < 1e-6, "Master is a percentage");
+    SoundLevels.Reset();
+
+    // The probe collects out to the farthest kind range and skips silenced kinds.
+    Reset(); WorldLoopBank.Available = true; probe = new();
+    probe.Loopable = WorldLoopBank.Has; probe.LoopRange = 12; probe.LandmarkRange = 12;
+    LeAccess.Accessibility.Combat.BossLifeProbe.Screen = _ => false;
+    coin = Coin(15);
+    probe.TryCapture(out _);
+    Check(probe.Loops.Count == 0, "A coin beyond the group range is not collected");
+    SoundLevels.SetRange(NaturalCueKind.Gold, 20);
+    probe.TryCapture(out _);
+    Check(probe.Loops.Count == 1, "A coin within its own longer range is collected");
+    SoundLevels.SetRange(NaturalCueKind.Gold, 10);
+    probe.TryCapture(out _);
+    Check(probe.Loops.Count == 0, "A coin beyond its own shorter range is not collected");
+    SoundLevels.Reset(); GroundGoldVisuals.all.Clear(); coin = Coin(3);
+    SoundLevels.SetVolume(NaturalCueKind.Gold, 0);
+    probe.TryCapture(out _);
+    Check(probe.Loops.Count == 0 && probe.Targets[(int)WorldCueCategory.Coins] == null, "A silenced kind is neither a loop nor a cue target");
+    probe.Loopable = null;
+    SoundLevels.SetVolume(NaturalCueKind.Gold, 150);
+    probe.TryCapture(out _);
+    Check(probe.Targets[(int)WorldCueCategory.Coins]?.Gain == 1.5f, "A boosted repeated cue carries its volume as gain");
+    SoundLevels.Reset(); GroundGoldVisuals.all.Clear();
+}
 
 // Playback wiring.
 Reset(); WorldLoopBank.Available = true; LoopAudioOutput.Instances.Clear();

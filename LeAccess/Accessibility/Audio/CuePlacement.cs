@@ -21,5 +21,8 @@ internal readonly struct CuePlacement
     internal double Right { get; }
     internal double Pitch { get; }
 
-    internal static double Gain(float gain) => float.IsFinite(gain) ? Math.Clamp(gain, 0f, 1f) : 0;
+    // Up to twice the reference level so a boosted sound kind can exceed 100%.
+    internal const float MaxGain = 2f;
+
+    internal static double Gain(float gain) => float.IsFinite(gain) ? Math.Clamp(gain, 0f, MaxGain) : 0;
 }

@@ -262,8 +262,9 @@ public sealed class RadarAudioOutput : IDisposable
                 if (available > 0)
                 {
                     // NAudio may supply a byte-backed WaveBuffer view: Array.Copy/Clear use its byte[] runtime type.
+                    float master = SoundLevels.Master;
                     for (int index = 0; index < available; index++)
-                        buffer[offset + index] = _cue[_offset + index];
+                        buffer[offset + index] = _cue[_offset + index] * master;
                     _offset += available;
                     Interlocked.Add(ref _consumedSamples, available);
                 }

@@ -78,7 +78,7 @@ internal static class EnemyCueSounds
             if (!WorldAudioReservation.TryBegin(WorldAudioSource.Enemy, now,
                 EnemyCueSynthesizer.DurationSeconds, AudioBufferMilliseconds)) return;
             Tracker.MarkPlayed(cue, now);
-            _audio.Play(EnemyCueSynthesizer.Synthesize(cue.Kind, cue.Pan, cue.Forward, _volume.Value / 100f));
+            _audio.Play(EnemyCueSynthesizer.Synthesize(cue.Kind, cue.Pan, cue.Forward, _volume.Value / 100f * SoundLevels.Enemy(cue.Kind)));
             _played++;
             _lastError = null;
         }

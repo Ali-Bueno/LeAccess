@@ -214,5 +214,13 @@ summed channels were never the cause.
 
 ## 2026-10-10, user report: on-screen objects are audible
 
-- Loot and landmark loops: an object the camera sees (`BossLifeProbe.OnScreen`) is a candidate past `LoopRange`. `WorldCueProbe.LoopReach` is `LoopRange` or the farthest on-screen loop; gains fall against it. On-screen loot keeps `WorldLoopSelection.ScreenEdgeShare` (10 percent of `NearGain`, about -20 dB) at the edge, so it is quiet but audible.
+- Loot and landmark loops: an object the camera sees (`BossLifeProbe.OnScreen`) is a candidate past `LoopRange`. `WorldLoopSelection.Select` takes the larger of the range and the farthest on-screen loop; gains fall against it. On-screen loot keeps `WorldLoopSelection.ScreenEdgeShare` (10 percent of `NearGain`, about -20 dB) at the edge, so it is quiet but audible.
 - Landmark loops (portal, exit, stash, shrine, Nemesis) fade linearly to `WorldCueReach.FarGain` instead of the quadratic law, so a shrine is clearly audible across the screen. Repeated-cue landmarks past their range also sound when on screen. Plain interactables keep the native range.
+
+## Per-kind levels and distances, 2026-10-11
+
+- `SoundLevels` holds the live levels (`[Audio] MasterVolume`, `[World object sound volumes] <Kind>` 0-200, `[World object sound ranges] <Kind>` 0-30 m, `[Enemy cues] Boss/Elite/OrdinaryVolume`, `[Navigation audio] SonarVolume`); config changes update it as they happen.
+- Master scales the output stage of `RadarAudioOutput`, `WorldLoopMixer` and the wall sonar tones. Speech is untouched.
+- A kind's volume multiplies its loop gain inside `WorldLoopSelection` before the `MixGainLimit` headroom is applied, so boosted kinds still share the same headroom (a lone voice tops out at that limit). The repeated cue carries it in `WorldCueTarget.Gain` (`CuePlacement.MaxGain` is 2). Volume 0 skips the kind in the probe and in selection, so it takes no voice or cue slot.
+- A kind's range replaces the group `LoopRange` (0 follows it) for collection, the cut-off and the fade (landmarks linear to `FarGain`, loot quadratic). The probe collects out to the largest range of an audible kind; on-screen objects still sound past their range, with gains falling against the farthest of them (computed in `Select`).
+- `SoundGlossary` lists every sound with its volume (and range) config entries; `SoundPreview.Play(id)` plays one centred for at most about 2 s on its own output.

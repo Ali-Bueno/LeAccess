@@ -75,7 +75,7 @@ internal static class Program
         float[] half = NpcCueSynthesizer.Synthesize(0, 1, 0.5f);
         Check(half.Zip(full).All(pair => Math.Abs(pair.First * 2 - pair.Second) < 0.000001),
             "Gain changes amplitude without changing timbre or duration.");
-        Check(full.SequenceEqual(NpcCueSynthesizer.Synthesize(0, 1, 2)), "Excessive gain clamps to full volume.");
+        Check(NpcCueSynthesizer.Synthesize(0, 1, CuePlacement.MaxGain + 1).SequenceEqual(NpcCueSynthesizer.Synthesize(0, 1, CuePlacement.MaxGain)), "Excessive gain clamps to the boost limit.");
         foreach (float gain in new[] { 0f, -1f, float.NaN, float.PositiveInfinity, float.NegativeInfinity })
             Check(NpcCueSynthesizer.Synthesize(0, 1, gain).All(sample => sample == 0),
                 "Disabled or invalid gain produces silence.");

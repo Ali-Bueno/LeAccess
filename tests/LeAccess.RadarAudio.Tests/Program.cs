@@ -13,6 +13,7 @@ internal static class Program
         try
         {
             AdapterReadsRealByteBuffer();
+            MasterVolumeScalesOutput();
             FragmentedCuesRemainContinuous();
             CallbackTimingSeparatesStallsFromPlayback();
             RecoveryWaitsForPlaybackCompletion();
@@ -44,6 +45,34 @@ internal static class Program
             "Idle output clears every byte of every requested float sample.");
         Check(bytes.Take(8).Concat(bytes.Skip(32)).All(value => value == 0x7F),
             "Idle output also preserves bytes outside the requested range.");
+    }
+
+    private static void MasterVolumeScalesOutput()
+    {
+        var providerType = typeof(RadarAudioOutput).GetNestedType("CueSampleProvider", BindingFlags.NonPublic);
+        var provider = (ISampleProvider)Activator.CreateInstance(providerType, nonPublic: true);
+        float[] cue = { 0.4f, -0.8f };
+        float[] buffer = new float[2];
+        SoundLevels.SetMaster(25);
+        providerType.GetMethod("Play").Invoke(provider, new object[] { cue });
+        provider.Read(buffer, 0, 2);
+        Check(Math.Abs(buffer[0] - 0.1f) < 1e-6 && Math.Abs(buffer[1] + 0.2f) < 1e-6, "Master volume scales cues at the output.");
+        SoundLevels.Reset();
+        providerType.GetMethod("Play").Invoke(provider, new object[] { cue });
+        provider.Read(buffer, 0, 2);
+        Check(buffer[0] == 0.4f && buffer[1] == -0.8f, "Full master leaves cues untouched.");
+        var generator = new SmoothSineGenerator(500, 0.05f);
+        float[] tone = new float[2000];
+        generator.Read(tone, 0, tone.Length);
+        float full = tone.Max(Math.Abs);
+        SoundLevels.SetMaster(50);
+        generator = new SmoothSineGenerator(500, 0.05f);
+        generator.Read(tone, 0, tone.Length);
+        Check(Math.Abs(tone.Max(Math.Abs) - full * 0.5f) < full * 0.01f, "Master volume scales the wall sonar tones.");
+        SoundLevels.SetSonar(0);
+        generator.Read(tone, 0, tone.Length);
+        Check(tone.All(x => x == 0), "The sonar volume silences the wall tones.");
+        SoundLevels.Reset();
     }
 
     private static void FragmentedCuesRemainContinuous()
