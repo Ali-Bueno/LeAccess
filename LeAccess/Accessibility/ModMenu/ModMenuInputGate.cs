@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using LeAccess.Accessibility.Exploration;
 using Rewired;
+using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.ModMenu;
 
@@ -88,50 +89,40 @@ internal static class ShoulderGuard
     }
 }
 
-/// <summary>While the menu is open the game hears nothing: its menus lose their selection, every Rewired controller map
-/// is off and the UI event system stops navigating; each comes back once nothing is held (reference/mod-menu.md).</summary>
+/// <summary>While the menu is open the game hears nothing: every Rewired controller map is off, the game's controller map
+/// stops reading the pad and the UI event system stops navigating; each comes back once nothing is held (reference/mod-menu.md).</summary>
 internal static class InputBlock
 {
-    private static readonly List<ControllerMap> Disabled = new();
+    private readonly record struct MapKey(int Player, ControllerType Type, int Controller, int Category, int Layout);
+
+    private static readonly HashSet<MapKey> Disabled = new();
     private static readonly List<UnityEngine.EventSystems.EventSystem> Navigation = new();
-    private static INavigable _selection;
     private static readonly List<ButtonInputListener> Listeners = new();
-    private static int _holdsCancelled;
+    private static int _holdsCancelled, _turnedBackOn;
     private static UnityEngine.GameObject _eventSelection;
-    private static NavigationManager _priorityOwner;
-    private static Il2CppSystem.Collections.Generic.List<IPrioritizedNavigable> _priorities, _noPriorities;
-    private static bool _open;
-    private static int _atOpen;
+    private static bool _open, _controllerMapHeld;
     private static string _failure;
 
     /// <summary>True while open and until the closing press is released.</summary>
-    internal static bool Blocking => _open || Disabled.Count > 0 || Navigation.Count > 0 || _selection is not null ||
-        Listeners.Count > 0 || _priorities is not null;
+    internal static bool Blocking => _open || Disabled.Count > 0 || Navigation.Count > 0 || Listeners.Count > 0 ||
+        _controllerMapHeld;
 
     internal static void Begin()
     {
         _open = true;
-        _holdsCancelled = 0;
+        _holdsCancelled = _turnedBackOn = 0;
         Hold();
-        _atOpen = Disabled.Count;
         Plugin.Log.LogInfo($"[Mod menu] game input paused: {Disabled.Count} controller maps off, UI navigation off: {Navigation.Count}, " +
-            $"menu selection held: {_selection is not null}, priority list held: {_priorities is not null}, button listeners off: {Listeners.Count}");
+            $"game controller map held: {_controllerMapHeld}, button listeners off: {Listeners.Count}");
     }
 
     /// <summary>Each frame while open: a map the game turns on meanwhile goes off too.</summary>
     internal static void Hold()
     {
-        try
-        {
-            var players = ReInput.players;
-            if (players is null) return;
-            for (int index = 0; index < players.playerCount; index++) HoldPlayer(players.GetPlayer(index));
-            HoldPlayer(players.GetSystemPlayer());
-        }
+        try { ForEachMap(HoldMap); }
         catch (Exception ex) { Report("maps", ex); }
         HoldNavigation();
-        HoldPriorities();
-        HoldSelection();
+        HoldControllerMap();
         HoldListeners();
         CancelButtonHold();
     }
@@ -139,8 +130,7 @@ internal static class InputBlock
     internal static void Close()
     {
         _open = false;
-        // More maps than at opening means the game turned some back on while the menu was open.
-        if (Disabled.Count != _atOpen) Plugin.Log.LogInfo($"[Mod menu] maps turned back on by the game while open: {Disabled.Count - _atOpen}");
+        if (_turnedBackOn > 0) Plugin.Log.LogInfo($"[Mod menu] maps turned back on by the game while open: {_turnedBackOn}");
         if (_holdsCancelled > 0) Plugin.Log.LogInfo($"[Mod menu] game button holds cancelled while open: {_holdsCancelled}");
     }
 
@@ -155,10 +145,6 @@ internal static class InputBlock
     internal static void End()
     {
         _open = false;
-        bool priorities = _priorities is not null;
-        RestorePriorities();
-        RestoreSelection();
-        if (priorities) ReevaluateMap();
         foreach (var listener in Listeners)
         {
             try { if (!listener.WasCollected) listener.enabled = true; }
@@ -172,29 +158,65 @@ internal static class InputBlock
         }
         Navigation.Clear();
         RestoreEventSelection();
-        if (Disabled.Count == 0) return;
-        int restored = 0;
-        foreach (var map in Disabled)
-        {
-            try { if (!map.WasCollected) { map.enabled = true; restored++; } }
-            catch (Exception ex) { Report("map restore", ex); }
-        }
-        Disabled.Clear();
-        Plugin.Log.LogInfo($"[Mod menu] game input resumed: {restored} controller maps on");
+        RestoreMaps();
+        RestoreControllerMap();
     }
 
-    // The game's menus read the pad through its template and act only on NavigationManager.currentlySelected:
-    // with none they move, submit and cancel nothing. A selection the game makes meanwhile is the one given back.
-    private static void HoldSelection()
+    private static void HoldMap(Player player, ControllerMap map)
+    {
+        if (!map.enabled) return;
+        map.enabled = false;
+        if (!Disabled.Add(Key(player, map))) _turnedBackOn++;
+    }
+
+    // A change of controller mode or active pad makes Rewired replace that pad's maps, each copying the off state of the
+    // one it replaces; the live map with the same player, controller, category and layout is the one turned back on.
+    private static void RestoreMaps()
+    {
+        if (Disabled.Count == 0) return;
+        int restored = 0;
+        try
+        {
+            ForEachMap((player, map) =>
+            {
+                if (map.enabled || !Disabled.Contains(Key(player, map))) return;
+                map.enabled = true;
+                restored++;
+            });
+        }
+        catch (Exception ex) { Report("map restore", ex); }
+        Plugin.Log.LogInfo($"[Mod menu] game input resumed: {restored} of {Disabled.Count} controller maps on");
+        Disabled.Clear();
+    }
+
+    // The game's controller maps read the pad through its template in a coroutine that ends, before reading, once
+    // ControllerManager's current map is not itself. DefaultMap reads no buttons, so it stands in while open.
+    private static void HoldControllerMap()
     {
         try
         {
-            var current = NavigationManager.currentlySelected;
-            if (current is null || current.WasCollected) return;
-            _selection = current;
-            NavigationManager.currentlySelected = null;
+            var manager = ControllerManager.instance;
+            var standIn = ControllerMapsManager.defaultMap?.TryCast<IControllerMap>();
+            if (!IsAlive(manager) || standIn is null || standIn.WasCollected) return;
+            var current = manager._CurrentMap_k__BackingField;
+            if (current is not null && !current.WasCollected && current.Pointer == standIn.Pointer) return;
+            manager._CurrentMap_k__BackingField = standIn;
+            _controllerMapHeld = true;
         }
-        catch (Exception ex) { Report("selection", ex); }
+        catch (Exception ex) { Report("controller map", ex); }
+    }
+
+    // The game chooses the map for whatever screen is open now; SetMap starts that map's coroutine again.
+    private static void RestoreControllerMap()
+    {
+        if (!_controllerMapHeld) return;
+        _controllerMapHeld = false;
+        try
+        {
+            ControllerMapsManager.UpdateMap();
+            Plugin.Log.LogInfo("[Mod menu] game controller map chosen again");
+        }
+        catch (Exception ex) { Report("map update", ex); }
     }
 
     // Buttons such as the landing screen's Play answer a key of their own (ButtonInputListener.key, read through Unity's
@@ -220,66 +242,6 @@ internal static class InputBlock
         catch (Exception ex) { Report("listeners", ex); }
     }
 
-    // The priority map re-selects NavigationManager's highest priority navigable every frame before reading the pad
-    // (the landing screen); an empty list of priority navigables leaves it nothing to select.
-    private static void HoldPriorities()
-    {
-        try
-        {
-            var manager = NavigationManager.instance;
-            if (manager is null || manager.WasCollected) return;
-            var list = manager.registeredPrioritizedNavigables;
-            if (list is null || list.WasCollected || _noPriorities is not null && list.Pointer == _noPriorities.Pointer) return;
-            if (_priorities is null)
-            {
-                _priorityOwner = manager;
-                _priorities = list;
-            }
-            _noPriorities ??= new Il2CppSystem.Collections.Generic.List<IPrioritizedNavigable>();
-            manager.registeredPrioritizedNavigables = _noPriorities;
-        }
-        catch (Exception ex) { Report("priorities", ex); }
-    }
-
-    // Navigables registered while the menu was open join the original list.
-    private static void RestorePriorities()
-    {
-        var owner = _priorityOwner;
-        var original = _priorities;
-        var added = _noPriorities;
-        _priorityOwner = null;
-        _priorities = _noPriorities = null;
-        if (owner is null || original is null) return;
-        try
-        {
-            if (owner.WasCollected || original.WasCollected) return;
-            for (int index = 0; added is not null && index < added.Count; index++)
-                if (!original.Contains(added[index])) original.Add(added[index]);
-            // One removed while the menu was open left the empty list, not this one.
-            for (int index = original.Count - 1; index >= 0; index--)
-            {
-                var navigable = original[index]?.TryCast<INavigable>();
-                if (original[index] is null || navigable is not null && NavigationManager.IsDestroyedNavigable(navigable))
-                    original.RemoveAt(index);
-            }
-            var current = owner.registeredPrioritizedNavigables;
-            if (current is null || added is not null && current.Pointer == added.Pointer) owner.registeredPrioritizedNavigables = original;
-        }
-        catch (Exception ex) { Report("priorities restore", ex); }
-    }
-
-    // With no priority navigable the priority map hands over to ControllerMapsManager.UpdateMap and ends; once the list
-    // is back the game must choose its map again, or the screen keeps a map that does not serve it.
-    private static void ReevaluateMap()
-    {
-        try
-        {
-            ControllerMapsManager.UpdateMap();
-            Plugin.Log.LogInfo("[Mod menu] game controller map chosen again");
-        }
-        catch (Exception ex) { Report("map update", ex); }
-    }
-
     // A menu panel with a hold action starts ControllerButtonHoldManager's hold on Cross before the selection is asked;
     // its update then vibrates the pad and plays the hold feedback. Resetting stops both and clears the hold.
     private static void CancelButtonHold()
@@ -292,19 +254,6 @@ internal static class InputBlock
             _holdsCancelled++;
         }
         catch (Exception ex) { Report("button hold", ex); }
-    }
-
-    private static void RestoreSelection()
-    {
-        var selection = _selection;
-        _selection = null;
-        if (selection is null) return;
-        try
-        {
-            if (NavigationManager.currentlySelected is null && !selection.WasCollected &&
-                !NavigationManager.IsDestroyedNavigable(selection)) NavigationManager.currentlySelected = selection;
-        }
-        catch (Exception ex) { Report("selection restore", ex); }
     }
 
     // Unity UI modules (the login screen reads the pad through Unity's own input) send no move, submit or cancel then.
@@ -335,31 +284,42 @@ internal static class InputBlock
         catch (Exception ex) { Report("focus restore", ex); }
     }
 
-    private static void HoldPlayer(Player player)
+    private static MapKey Key(Player player, ControllerMap map) =>
+        new(player.id, map.controllerType, map.controllerId, map.categoryId, map.layoutId);
+
+    // Every player's keyboard, mouse and joystick maps, the system player included.
+    private static void ForEachMap(Action<Player, ControllerMap> visit)
+    {
+        var players = ReInput.players;
+        if (players is null) return;
+        for (int index = 0; index < players.playerCount; index++) VisitPlayer(players.GetPlayer(index), visit);
+        VisitPlayer(players.GetSystemPlayer(), visit);
+    }
+
+    private static void VisitPlayer(Player player, Action<Player, ControllerMap> visit)
     {
         if (player is null || player.WasCollected) return;
         var maps = player.controllers?.maps;
         if (maps is null) return;
-        HoldMaps(maps.GetMaps(ControllerType.Keyboard, 0));
-        HoldMaps(maps.GetMaps(ControllerType.Mouse, 0));
+        VisitMaps(player, maps.GetMaps(ControllerType.Keyboard, 0), visit);
+        VisitMaps(player, maps.GetMaps(ControllerType.Mouse, 0), visit);
         var joysticks = player.controllers.Joysticks;
         var collection = joysticks?.TryCast<Il2CppSystem.Collections.Generic.ICollection<Joystick>>();
         for (int index = 0; collection is not null && index < collection.Count; index++)
         {
             var joystick = joysticks[index];
-            if (joystick is not null && !joystick.WasCollected) HoldMaps(maps.GetMaps(ControllerType.Joystick, joystick.id));
+            if (joystick is not null && !joystick.WasCollected) VisitMaps(player, maps.GetMaps(ControllerType.Joystick, joystick.id), visit);
         }
     }
 
-    private static void HoldMaps(Il2CppSystem.Collections.Generic.IList<ControllerMap> maps)
+    private static void VisitMaps(Player player, Il2CppSystem.Collections.Generic.IList<ControllerMap> maps,
+        Action<Player, ControllerMap> visit)
     {
         int count = maps?.TryCast<Il2CppSystem.Collections.Generic.ICollection<ControllerMap>>()?.Count ?? 0;
         for (int index = 0; index < count; index++)
         {
             var map = maps[index];
-            if (map is null || map.WasCollected || !map.enabled) continue;
-            map.enabled = false;
-            Disabled.Add(map);
+            if (map is not null && !map.WasCollected) visit(player, map);
         }
     }
 

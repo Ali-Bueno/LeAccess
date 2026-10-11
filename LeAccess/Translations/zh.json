@@ -1,5 +1,5 @@
 {
-  "mod.loaded": "最后纪元无障碍模组已加载",
+  "mod.loaded": "LeAccess 版本 {0} 已加载",
   "update.available": "LeAccess 有新版本：{0}。当前版本：{1}。请从模组的 GitHub 页面下载。",
   "login.waiting": "正在加载。游戏准备好后将继续你的选择。",
   "state.on": "开",

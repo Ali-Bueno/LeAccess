@@ -1,5 +1,5 @@
 {
-  "mod.loaded": "Last Epoch アクセシビリティMODを読み込みました",
+  "mod.loaded": "LeAccess バージョン {0} を読み込みました",
   "update.available": "LeAccess の新しいバージョンがあります: {0}。現在のバージョン: {1}。Mod の GitHub ページからダウンロードしてください。",
   "login.waiting": "読み込み中です。ゲームの準備ができ次第、選択を続行します。",
   "state.on": "オン",

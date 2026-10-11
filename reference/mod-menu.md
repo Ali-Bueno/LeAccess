@@ -17,39 +17,46 @@ from the main menu or gameplay alike.
 ## While open
 
 - The game gets no input: every enabled Rewired controller map (keyboard, mouse, each joystick) of every player,
-  the system player included, is turned off, re-checked each frame, and only those maps are turned back on once every
-  pad button, key and mouse button is up, so the closing press is not delivered to the game as a new press.
+  the system player included, is turned off, re-checked each frame, and turned back on once every pad button, key and
+  mouse button is up, so the closing press is not delivered to the game as a new press.
   `Player.isPlaying = false` was tried first and blocks nothing (user report 2026-10-11: Cross activated game menus,
   Circle dodged; log showed `game input paused`). In Rewired it only governs joystick auto-assignment.
-- The game's own menus read the pad through the gamepad template (`UiNavigationMap`/`MainMenuMap`/
-  `PriorityUiNavigationMap.ProcessInput` call `Controller.GetTemplate` once and keep it), so Rewired maps do not
-  reach them. They hand every move, submit and cancel to `NavigationManager.Handle*Input`, which acts only on the static
-  `NavigationManager.currentlySelected` (statics + 0x10; null returns at once, checked with Capstone, build 25816319).
-  While open the menu keeps that static null and gives the last selection back once nothing is held. No hook: all
-  four handlers start with a short `jne` within 16 bytes.
+- Maps are remembered by player, controller type and id, category and layout, and on closing the live map with that
+  identity is turned on, not the object turned off. A change of controller mode or active pad makes
+  `EpochInputManager.set_IsControllerActive` load the pad's maps again (`LoadControllerData`), and Rewired's
+  replacement copies the off state of the map it replaces; turning the old objects back on left the pad's 14 maps off
+  for the rest of the session (tester log 2026-10-11, XInput pad: the player never moved again after the first close,
+  the next opens counted 10 maps instead of 24). Static analysis, build 25816319, `set_IsControllerActive` 0x10c9860
+  +0x39d.
+- While the block is up the controller mode stays as it was: `ControllerModeGuard` answers `ControllerShouldBeActive`
+  with the current mode, so Ctrl+F1, the arrows or Alt+Tab do not switch to keyboard and the pad does not switch back,
+  and nothing reloads the maps. A change of active pad still reloads them; the identity restore covers it.
+- The game's own menus read the pad through the gamepad template in their `IControllerMap.ProcessInput` coroutine
+  (`UiNavigationMap`, `InventoryMap`, `MainMenuMap`, `PriorityUiNavigationMap`), so Rewired maps do not reach them.
+  Each loop of those coroutines first compares `ControllerManager.instance.CurrentMap` (+0x48) with itself and ends
+  when it differs, before reading the pad (Capstone: `InventoryMap` 0x10398b8, `UiNavigationMap` 0x103f662). While
+  open the mod sets `CurrentMap` to `ControllerMapsManager.defaultMap` (its coroutine yields once and reads no
+  buttons) each frame, and on closing calls `ControllerMapsManager.UpdateMap()`; with `defaultMap` current, `SetMap`
+  does not return early, so the map of the open screen starts again and `SetRewiredMap` reapplies the game's map rules.
+- Before 2026-10-11 afternoon the mod kept `NavigationManager.currentlySelected` null instead. Move and submit then do
+  nothing, but `NavigationManager.HandleCancelInput` with no selection calls `UIBase.CloseAll` (0x1080c90 +0x72), so
+  Circle in the mod menu closed the inventory or any open panel (user report). The empty priority-navigable list used
+  against the landing screen's `PriorityUiNavigationMap` is gone too: that map's coroutine ends like the others.
 - Buttons with a `ButtonInputListener` (the landing screen's Play) answer their own `key` through Unity's input, pad
   buttons included, past all of the above (user report: Cross still pressed Play with the selection held). Every
   enabled listener registered in `ButtonInputListenerManager._inputListeners` is disabled while open and re-enabled
   with the rest.
-- Panels with a hold action make the navigation map start `ControllerButtonHoldManager.StartHoldingButton` on Cross
-  before the selection is asked; `UpdateButtonsHold` then vibrates the pad (`ControllerHapticsManager.Play`) and fires
-  the hold feedback (user report: vibration and a cursor sound, nothing activated). While open, a hold in progress is
-  reset each frame (`ResetHoldingButton`, which also stops the haptics). Call targets checked with Capstone.
-- Even so, Cross on the landing screen still reached Play (log: every block in place, then
-  `Application state changed to CharacterSelect`); the path is unknown. The existing `LandingZonePanel.OnPlay*Clicked`
-  prefix (`LoginTransitionGuard.MayExecute`) now refuses both while `InputBlock.Blocking` (open, or closing with a
-  button still down): `[Mod menu] landing click ignored: online|offline`. The event system's selected object is put
-  back on closing, since the landing focus still moved to Play offline. Failures name their stage
+- Panels with a hold action make the navigation map start `ControllerButtonHoldManager.StartHoldingButton` on Cross;
+  `UpdateButtonsHold` then vibrates the pad (`ControllerHapticsManager.Play`) and fires the hold feedback (user report:
+  vibration and a cursor sound, nothing activated). While open, a hold in progress is reset each frame
+  (`ResetHoldingButton`, which also stops the haptics). Call targets checked with Capstone.
+- The existing `LandingZonePanel.OnPlay*Clicked` prefix (`LoginTransitionGuard.MayExecute`) refuses both while
+  `InputBlock.Blocking` (open, or closing with a button still down): `[Mod menu] landing click ignored: online|offline`
+  (Cross once reached Play with every other block in place). Failures name their stage
   (`Mod menu input block unavailable (stage: …)`).
-- With the selection held, the landing focus still moved and Cross still reached Play 50 times: `PriorityUiNavigationMap`
-  re-selects `NavigationManager.GetPriorityNavigable()` every frame before `ProcessDpadInput` (Capstone, MoveNext
-  +0x177 → +0x24a → +0x259). That getter walks `registeredPrioritizedNavigables` (instance + 0x28). While open the
-  manager gets an empty list; on closing the original comes back with anything registered meanwhile, minus destroyed
-  navigables. With no priority navigable the map calls `ControllerMapsManager.UpdateMap` (+0x182 → +0x202) and ends,
-  so on closing the mod calls `UpdateMap` itself; without it every command stayed dead after closing (user report).
-- The current `EventSystem` also stops sending navigation (`sendNavigationEvents = false`), restored the same way: with
-  24 Rewired maps off, the landing screen still moved to "Play offline" and pressed it (user report, same day), so
-  that screen reads the pad through Unity's own UI input module.
+- The current `EventSystem` also stops sending navigation (`sendNavigationEvents = false`), restored the same way, and
+  its selected object is put back on closing: the landing screen reads the pad through Unity's own UI input module
+  (it moved to "Play offline" and pressed it with 24 Rewired maps off; user report).
 - The game keeps running (it is not a pause); the world sounds keep playing, so volume and distance changes are heard
   live.
 - Other mod speech is held back (dropped, not queued) so the menu is not talked over; the menu speaks through
@@ -113,9 +120,15 @@ output start (their details say so).
 `.Bind(section, "Key")` in the source is in the catalog with both text keys.
 
 Log lines: `[Mod menu] opened`, `closed; other announcements held back: N`, `game input paused: N controller maps
-off, UI navigation off: N, menu selection held: True, priority list held: True, button listeners off: N` / `resumed: N controller maps on`, `maps turned back on by the game while open: N` (should not appear), `game button holds cancelled while open: N`,
+off, UI navigation off: N, game controller map held: True, button listeners off: N` / `resumed: N of M controller maps on`
+(N below M: a controller left while open), `game controller map chosen again` (only when a panel map was held), `maps turned back on by the game while open: N` (should not appear), `game button holds cancelled while open: N`,
 `L1 bindings held back while a chord modifier is down: N`, `option without menu text: Section/Key`.
 
-Verified live (2026-10-11): the L1 guard (9 and 10 L1 bindings held back on a DualSense, no potion). Unverified: that
+Verified live (2026-10-11): the L1 guard (9 and 10 L1 bindings held back on a DualSense, no potion). Verified live
+(2026-10-11 afternoon, virtual XInput pad through ViGEm, online, Lagoon): open with Ctrl+F1, arrows, D-pad and stick in
+the menu, Ctrl+F1 to close, then walk. 0.2.0 left the player still (position unchanged) and the next open counted 25
+maps instead of 39. With the fix the player walks and closing logs `resumed: 24 of 24`. Mod menu over the inventory,
+Cross into a page, Circle back, Circle to close: 0.2.0 closed the inventory; with the fix it stays open and its cursor
+moves. On the landing screen Cross and Circle in the menu did not press Play, and the D-pad navigated after closing. Unverified: that
 turning the maps off silences every game input path (anything reading `UnityEngine.Input` directly is not blocked),
 the L1 guard on an Xbox pad, and the preview levels.

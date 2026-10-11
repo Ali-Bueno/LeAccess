@@ -98,7 +98,7 @@ public class Plugin : BasePlugin
         AddComponent<MenuAccessibility>();
 
         Log.LogInfo("LeAccess loaded successfully!");
-        ScreenReader.Speak(ModText.Get("mod.loaded"));
+        ScreenReader.Speak(ModText.Format("mod.loaded", MyPluginInfo.PLUGIN_VERSION));
     }
 
     public override bool Unload()

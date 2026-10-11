@@ -3,6 +3,20 @@
 What changed in LeAccess, day by day, newest first. Each heading gives the day and the version that first shipped
 those changes. It is written from the commit history; internal notes, status updates and merges are left out.
 
+## 11 October 2026, afternoon — version 0.2.1
+
+New:
+
+- At startup the mod says its name and version ("LeAccess version 0.2.1 loaded"), so you know whether you have the
+  latest.
+
+Fixed:
+
+- After closing the mod menu, the controller could stop moving the character until the game was restarted. It happened
+  on any pad when the keyboard was used while the menu was open (Ctrl+F1, the arrows, Alt+Tab). The controller now keeps
+  working.
+- Circle in the mod menu no longer closes the game's inventory or another panel open behind it.
+
 ## 11 October 2026 — version 0.2.0
 
 New:

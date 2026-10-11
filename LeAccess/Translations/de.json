@@ -1,5 +1,5 @@
 {
-  "mod.loaded": "Last-Epoch-Barrierefreiheits-Mod geladen",
+  "mod.loaded": "LeAccess Version {0} geladen",
   "update.available": "Eine neue Version von LeAccess ist verfügbar: {0}. Du hast {1}. Lade sie von der GitHub-Seite der Mod herunter.",
   "login.waiting": "Wird geladen. Deine Auswahl wird fortgesetzt, sobald das Spiel bereit ist.",
   "state.on": "An",

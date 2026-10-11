@@ -19,6 +19,8 @@ internal static class ControllerModeGuard
     /// <summary>Turns the game's "leave controller mode" verdict back when the keyboard activity was only screen-reader keys.</summary>
     internal static void Review(EpochInputManager manager, ref bool shouldBeActive)
     {
+        // A mode change reloads the pad's maps under the mod menu's block (reference/mod-menu.md), so the mode stays.
+        if (ModMenu.InputBlock.Blocking) { shouldBeActive = EpochInputManager.IsControllerActive; return; }
         if (shouldBeActive) { ScreenKeyboardTyping.KeyboardIdle(); return; }
         try
         {

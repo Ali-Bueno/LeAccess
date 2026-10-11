@@ -1,5 +1,5 @@
 {
-  "mod.loaded": "라스트 에포크 접근성 모드가 로드되었습니다",
+  "mod.loaded": "LeAccess 버전 {0} 로드됨",
   "update.available": "LeAccess 새 버전이 있습니다: {0}. 현재 버전: {1}. 모드의 GitHub 페이지에서 받으세요.",
   "login.waiting": "로딩 중입니다. 게임이 준비되면 선택한 항목이 이어집니다.",
   "state.on": "켜짐",

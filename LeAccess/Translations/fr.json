@@ -1,5 +1,5 @@
 {
-  "mod.loaded": "Mod d'accessibilité de Last Epoch chargé",
+  "mod.loaded": "LeAccess version {0} chargé",
   "update.available": "Une nouvelle version de LeAccess est disponible : {0}. Vous avez la {1}. Téléchargez-la depuis la page GitHub du mod.",
   "login.waiting": "Chargement. Votre sélection se poursuivra quand le jeu sera prêt.",
   "state.on": "Activé",
