@@ -228,6 +228,7 @@ releases go to GitHub Releases with the asset name `LeAccess.zip` (see below).
 
 ## Validation and references
 
+- 2026-10-11: visited minimap rooms seeded as explored ground, installed (`LeAccess.dll` `1EC9F7A98C6CA021…`, game closed); Exploration 443 checks, related suites pass, PatchSafety unchanged.
 - 2026-10-11 08:57: settings menu and tester batch installed (`LeAccess.dll` `ECC6B942930F0B00…`, game closed). All 62 host suites pass (new ModMenu 262; Exploration 425, ExplorationCatalog 91, Localization 8410, WorldLoops 181); PatchSafety 84 declarations / 83 targets, no new hook. No friend ZIP or release.
 - 2026-10-10 22:47: player-report batch installed (`LeAccess.dll` `C517B9A5B6820E59…`, game closed; external catalogs kept, new keys are embedded). All 61 host suites pass (Inventory 390, Exploration 397, ExplorationCatalog 64, Skills 291, Passives 203, Dialogue 97, Classes 148, Localization 5750); PatchSafety 84 declarations / 83 targets, no new hook. No friend ZIP or release.
 - 2026-10-10: release announced in the audiogames.net Play testing room on the user's account, at their request: <https://forum.audiogames.net/topic/60577/>.
