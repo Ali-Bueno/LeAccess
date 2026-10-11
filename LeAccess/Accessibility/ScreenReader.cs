@@ -36,6 +36,12 @@ public static class ScreenReader
 
     private static bool PickupSpeaking => UnityEngine.Time.unscaledTimeAsDouble < _pickupUntil;
 
+    // A life line is two or three words; for this long other speech queues behind it instead of cutting it.
+    private const double LifeSpeechSeconds = 2;
+    private static double _lifeUntil = double.NegativeInfinity;
+
+    private static bool LifeSpeaking => UnityEngine.Time.unscaledTimeAsDouble < _lifeUntil;
+
     /// <summary>
     /// Initialize the screen reader connection.
     /// </summary>
@@ -96,7 +102,17 @@ public static class ScreenReader
     /// Return whether Tolk accepted speech or braille output, not whether playback completed.
     /// Failed output is not queued; callers retain responsibility for current content ownership.
     /// </summary>
-    public static bool TrySpeak(string text, bool interrupt = true)
+    public static bool TrySpeak(string text, bool interrupt = true) => Accept(text, interrupt && !LifeSpeaking);
+
+    /// <summary>The player's life, first of all: it cuts any speech, and nothing cuts it for a moment.</summary>
+    internal static bool TrySpeakLife(string text)
+    {
+        if (!Accept(text, true)) return false;
+        if (!MenuOwnsSpeech) _lifeUntil = UnityEngine.Time.unscaledTimeAsDouble + LifeSpeechSeconds;
+        return true;
+    }
+
+    private static bool Accept(string text, bool interrupt)
     {
         if (MenuOwnsSpeech && !string.IsNullOrEmpty(text)) { HeldBack++; return true; }
         if (!Output(text, interrupt)) return false;
@@ -234,7 +250,7 @@ public static class ScreenReader
         _connectionRequested = false;
         _nextProbeTime = 0;
         _lastSpeechFrame = -1;
-        _pickupUntil = double.NegativeInfinity;
+        _pickupUntil = _lifeUntil = double.NegativeInfinity;
         _lastDetectedName = _lastFailure = null;
         DetectedScreenReader = "None";
         if (_nvdaClient != IntPtr.Zero)

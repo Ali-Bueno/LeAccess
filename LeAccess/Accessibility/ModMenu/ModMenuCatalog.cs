@@ -22,6 +22,8 @@ internal static class ModMenuCatalog
     internal static readonly HashSet<string> SoundPageSections = new() { AudioSection, WorldVolumesSection, WorldRangesSection };
 
     internal static readonly string[] Languages = { "auto", "en", "es", "fr", "de", "pt", "pl", "ru", "ko", "zh", "ja" };
+    // The steps life and mana can be announced at (VitalsAccessibility.Choices).
+    internal static readonly string[] VitalSteps = { "1", "5", "10", "25" };
 
     internal static readonly SectionSpec[] Sections =
     {
@@ -108,8 +110,17 @@ internal static class ModMenuCatalog
         {
             new("AutomaticAnnouncements", "vitals_automatic"),
             new("AnnounceLifeChanges", "vitals_life"),
+            new("LifeFirst", "vitals_life_first"),
+            new("LifeStep", "vitals_life_every", SettingUnit.Percent, Choices: VitalSteps),
+            new("LifeEvery10Below", "vitals_life_tens", SettingUnit.Percent, 5, 0, 100, ZeroText: "menu.value.never"),
+            new("LifeEvery5Below", "vitals_life_fives", SettingUnit.Percent, 5, 0, 100, ZeroText: "menu.value.never"),
+            new("LifeEvery1Below", "vitals_life_ones", SettingUnit.Percent, 5, 0, 100, ZeroText: "menu.value.never"),
             new("LifeMinimumChange", "vitals_life_step", SettingUnit.Percent, 5, 0, 50),
             new("AnnounceManaChanges", "vitals_mana"),
+            new("ManaStep", "vitals_mana_every", SettingUnit.Percent, Choices: VitalSteps),
+            new("ManaEvery10Below", "vitals_mana_tens", SettingUnit.Percent, 5, 0, 100, ZeroText: "menu.value.never"),
+            new("ManaEvery5Below", "vitals_mana_fives", SettingUnit.Percent, 5, 0, 100, ZeroText: "menu.value.never"),
+            new("ManaEvery1Below", "vitals_mana_ones", SettingUnit.Percent, 5, 0, 100, ZeroText: "menu.value.never"),
             new("ManaMinimumChange", "vitals_mana_step", SettingUnit.Percent, 5, 0, 50),
             new("AnnouncePotionCharges", "vitals_potions"),
             new("AnnounceGoldPickups", "vitals_gold"),

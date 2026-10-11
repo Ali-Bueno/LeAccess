@@ -87,7 +87,9 @@ opens a portal to town.
 When you do not know where to go, hold the mod button and flick the right stick up or down to pick a category (exit,
 waypoint, quest, unexplored room...), then left or right to step through it. Each entry says its name, how far it is in
 steps and one of eight screen directions. Mod button and Cross locks the beacon on it; follow the pings. The scanner
-learns places as you see them and remembers them per character.
+learns places as you see them and remembers them per character. When the walkable way is not the straight line, the
+entry gives the route length and the way to head first; with `Exploration.RouteLegs` above 0 it reads the route's
+straight stretches instead ("down 40 steps, then right 60 steps, going up, then up 30 steps").
 
 The game assumes you know what you are doing, so a few things are worth knowing:
 
@@ -242,6 +244,7 @@ launch; edit that file only with the game closed. The most useful ones:
 |---|---|---|
 | Localization | `Language` | `auto` follows the game's text language; or force `en`, `es`, `fr`, `de`, `pt`, `pl`, `ru`, `ko`, `zh` or `ja` |
 | Exploration | `LeftStickOnOtherPads` | L3 as the mod button on non-PlayStation pads (default on) |
+| Exploration | `RouteLegs` | How many stretches of a detour the scanner reads (0, the default, reads only the first heading) |
 | Audio | `MasterVolume` | Volume of every mod sound (speech is not affected) |
 | World object sound volumes / ranges | One key per kind (`Gold`, `Rune`, `Shrine`, `ZoneExit`...) | Each object sound's own volume (0-200%) and distance (0 follows `LoopRange`) |
 | Reactive radar | `Enabled`, `Volume`, `WallBump`, `WallBumpVolume`, `MuteFootstepsAtWalls` | The wall radar, the wall bump and quiet footsteps against a wall |
@@ -249,7 +252,7 @@ launch; edit that file only with the game closed. The most useful ones:
 | Enemy cues | `Enabled`, `Bosses`, `Elites`, `Ordinary`, `Volume`, `BossVolume`, `EliteVolume`, `OrdinaryVolume` | Enemy sounds |
 | World object sounds | `Enabled`, `Volume`, `Loops`, `LoopRange` | Loot, objects, portals, exits |
 | NPC sounds | `Enabled`, `AnnounceNames`, `Volume` | NPC taps and names |
-| Vitals | `AutomaticAnnouncements`, `AnnounceLifeChanges`, `AnnounceManaChanges`, `LifeMinimumChange`, `ManaMinimumChange`, `AnnouncePotionCharges`, `AnnounceGoldPickups` | Automatic life, mana, potion and gold speech. Life and mana speak when they cross a band (75, 50, 40, 30, 20, 10, 5...); the minimum-change options hold a band back until the value has moved that many percent (critical life and empty mana always speak) |
+| Vitals | `AutomaticAnnouncements`, `AnnounceLifeChanges`, `AnnounceManaChanges`, `LifeFirst`, `LifeStep`, `LifeEvery10Below`, `LifeEvery5Below`, `LifeEvery1Below`, the same four for `Mana`, `LifeMinimumChange`, `ManaMinimumChange`, `AnnouncePotionCharges`, `AnnounceGoldPickups` | Automatic life, mana, potion and gold speech. Life and mana speak every `Step` percent (1, 5, 10 or 25), then every 10, 5 and 1 percent below the chosen percents (0 = never); the defaults are 75, 50, 40, 30, 20, 10, 5, 4, 3, 2, 1 for life and the same down to 10 for mana. `LifeFirst` (default on) lets life cut any other speech and keeps other speech from cutting it. The minimum-change options hold a band back until the value has moved that many percent (critical life and empty mana always speak) |
 | Landmarks | `AnnounceShrineEffects` | Say a shrine's name and effect after you use it |
 | Combat feedback | `AnnounceBossLife`, `AnnounceEliteLife`, `AnnounceNearestEnemy` | Boss, elite and nearest-enemy speech |
 | Quests | `AutomaticUpdates` | Quest progress speech |

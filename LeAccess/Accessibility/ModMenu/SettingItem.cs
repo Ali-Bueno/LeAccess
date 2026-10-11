@@ -86,9 +86,11 @@ internal sealed class SettingItem : MenuItem
         if (_setting.Type == typeof(bool)) return !(bool)value;
         if (Choices != null)
         {
-            int index = Array.IndexOf(Choices, value as string);
+            // Number choices are listed as invariant text and stored as the option's own type.
+            int index = Array.IndexOf(Choices, Convert.ToString(value, CultureInfo.InvariantCulture));
             int target = index < 0 ? 0 : Math.Clamp(index + Math.Sign(direction), 0, Choices.Length - 1);
-            return Choices[target];
+            return _setting.Type == typeof(string) ? Choices[target]
+                : Convert.ChangeType(Choices[target], _setting.Type, CultureInfo.InvariantCulture);
         }
         if (!IsNumber) return null;
         double step = _spec.Step > 0 ? _spec.Step : _setting.Type == typeof(int) ? 1 : 0.1;
@@ -116,7 +118,7 @@ internal sealed class SettingItem : MenuItem
     private string Text(object value)
     {
         if (value is bool flag) return ModText.Get(flag ? "state.on" : "state.off");
-        if (Choices != null) return _choiceText?.Invoke(value as string) ?? value as string;
+        if (Choices != null && value is string choice) return _choiceText?.Invoke(choice) ?? choice;
         if (value is string text) return string.IsNullOrEmpty(text) ? ModText.Get("menu.empty") : text;
         double number = Convert.ToDouble(value, CultureInfo.InvariantCulture);
         if (number == 0 && _spec.ZeroText != null) return ModText.Get(_spec.ZeroText);

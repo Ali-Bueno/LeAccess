@@ -22,6 +22,8 @@ internal static class VitalsAccessibility
     private static ConfigEntry<bool> _manaChanges;
     private static ConfigEntry<int> _lifeStep;
     private static ConfigEntry<int> _manaStep;
+    private static ConfigEntry<bool> _lifeFirst;
+    private static Steps _lifeSteps, _manaSteps;
     private static double _nextPoll;
     private static int _potions = -1;
     private static long _session;
@@ -40,6 +42,10 @@ internal static class VitalsAccessibility
             "Smallest drop or rise in life percent (0 to 50), since the last announced reading, that earns a new band announcement. 0 announces every band; critical life (10 percent and below) always speaks.");
         _manaStep = config.Bind("Vitals", "ManaMinimumChange", 0,
             "Smallest drop or rise in mana percent (0 to 50), since the last announced reading, that earns a new band announcement. 0 announces every band; a larger value means fewer mana announcements; empty mana always speaks.");
+        _lifeFirst = config.Bind("Vitals", "LifeFirst", true,
+            "Automatic life announcements cut any other speech, and for a moment other speech waits behind them instead of cutting them.");
+        _lifeSteps = new Steps(config, "Life", VitalsSteps.Life);
+        _manaSteps = new Steps(config, "Mana", VitalsSteps.Mana);
         _reportKey = config.Bind("Vitals", "ReportKey", KeyCode.R,
             "Read life, mana, level and experience, potions and effects during gameplay. Use None to disable the keyboard shortcut.");
         _controllerReport = config.Bind("Vitals", "ReportWithControllerView", true,
@@ -116,7 +122,8 @@ internal static class VitalsAccessibility
                 string vitals = Join(change.HealthPercent < 0 ? null : HealthText(change.HealthPercent),
                     change.ManaPercent < 0 ? null : ManaText(change.ManaPercent));
                 // A potion count alone is a pickup line; a life or mana crossing goes before pickups.
-                if (Speak(Join(vitals, potionChanged ? potionText : null), change.Interrupt, pickup: vitals is null))
+                bool lifeFirst = _lifeFirst.Value && change.HealthPercent >= 0;
+                if (Speak(Join(vitals, potionChanged ? potionText : null), change.Interrupt, pickup: vitals is null, lifeFirst))
                 {
                     Announcements.Acknowledge(change.HealthPercent, change.ManaPercent);
                     if (potionChanged) _potions = potions;
@@ -133,7 +140,33 @@ internal static class VitalsAccessibility
     }
 
     private static VitalsPolicy Policy() => new(_lifeChanges.Value, _manaChanges.Value,
-        Math.Clamp(_lifeStep.Value, 0, MaximumStep), Math.Clamp(_manaStep.Value, 0, MaximumStep));
+        Math.Clamp(_lifeStep.Value, 0, MaximumStep), Math.Clamp(_manaStep.Value, 0, MaximumStep),
+        _lifeSteps.Read(), _manaSteps.Read());
+
+    // One meter's steps: every N percent, then every 10, 5 and 1 below the chosen percents (0 = never).
+    private sealed class Steps
+    {
+        private readonly ConfigEntry<int> _every, _tens, _fives, _ones;
+
+        internal Steps(ConfigFile config, string meter, VitalsSteps defaults)
+        {
+            string name = meter.ToLowerInvariant();
+            _every = config.Bind("Vitals", meter + "Step", defaults.Every, new ConfigDescription(
+                $"Announce {name} every this many percent (1, 5, 10 or 25), above the finer ranges below.",
+                new AcceptableValueList<int>(Choices)));
+            _tens = Below(config, meter + "Every10Below", defaults.TensBelow, $"Below this {name} percent, announce every 10 percent; 0 never.");
+            _fives = Below(config, meter + "Every5Below", defaults.FivesBelow, $"Below this {name} percent, announce every 5 percent; 0 never.");
+            _ones = Below(config, meter + "Every1Below", defaults.OnesBelow, $"Below this {name} percent, announce every 1 percent; 0 never.");
+        }
+
+        internal VitalsSteps Read() => new(_every.Value, _tens.Value, _fives.Value, _ones.Value);
+
+        private static ConfigEntry<int> Below(ConfigFile config, string key, int value, string description) =>
+            config.Bind("Vitals", key, value, new ConfigDescription(description, new AcceptableValueRange<int>(0, 100)));
+    }
+
+    /// <summary>The steps a meter can announce at (ModMenuCatalog.VitalSteps).</summary>
+    internal static readonly int[] Choices = { 1, 5, 10, 25 };
 
     // The Triangle readout: gold, then unspent passive points, skills that can take a point and the zone.
     private static string GoldAndPointsText()
@@ -160,9 +193,11 @@ internal static class VitalsAccessibility
     private static string Join(string health, string mana) => string.IsNullOrEmpty(health) ? mana
         : string.IsNullOrEmpty(mana) ? health : health + ". " + mana;
 
-    private static bool Speak(string text, bool interrupt, bool pickup = false)
+    private static bool Speak(string text, bool interrupt, bool pickup = false, bool lifeFirst = false)
     {
-        if (!(pickup ? ScreenReader.TrySpeakPickup(text) : ScreenReader.TrySpeakOverPickup(text, interrupt))) return false;
+        bool spoken = lifeFirst ? ScreenReader.TrySpeakLife(text)
+            : pickup ? ScreenReader.TrySpeakPickup(text) : ScreenReader.TrySpeakOverPickup(text, interrupt);
+        if (!spoken) return false;
         Plugin.Log.LogInfo($"[Vitals] {text}");
         return true;
     }

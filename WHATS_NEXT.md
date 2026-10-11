@@ -1,3 +1,12 @@
+# Handoff — 2026-10-11: life first and life/mana steps
+
+User request: life before any other announcement, and choosable percent steps. Mod menu, Vitals page: `Vida primero`
+(on), `Paso de vida` 1/5/10/25 and `Vida de 10 en 10 / 5 en 5 / 1 en 1 por debajo de` a percent (0 = never), the same
+for mana ([design](reference/vitals-api.md#configurable-steps-and-life-first-2026-10-11-user-request)). Defaults keep
+today's bands. Live checks: with life first, a life line cuts a menu or NPC line and a line right after it waits;
+`[Vitals] …` in the log; try life step 5 and 1 below 20 in a fight and judge the amount of speech; check the 2 s
+window is long enough at the user's speech rate.
+
 # Handoff — 2026-10-11 11:18: wall tones
 
 User: an option in the mod menu to use wall tones like Grimdark's, softer but with distance still clearly audible, for

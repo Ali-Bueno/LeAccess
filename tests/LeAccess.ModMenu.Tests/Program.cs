@@ -97,6 +97,20 @@ Equal("en", (string)language.Value, "Cross moves to the next choice");
 language.Value = "pt-BR";
 choice.Adjust(1);
 Equal("auto", (string)language.Value, "an unknown value restarts at the first");
+// Number choices (life and mana steps): stored as numbers, read with their unit, no wrap.
+var lifeStep = new FakeSetting(typeof(int), 25, 25);
+var steps = new SettingItem(lifeStep, new SettingSpec("LifeStep", "vitals_life_every", SettingUnit.Percent, Choices: ModMenuCatalog.VitalSteps),
+    "Life step", null);
+Equal(SettingItem.UnitText(SettingUnit.Percent, 25), steps.Value, "a number choice reads with its unit");
+steps.Adjust(1);
+Equal(25, (int)lifeStep.Value, "no wrap after the last step");
+steps.Adjust(-1);
+Equal(10, (int)lifeStep.Value, "left moves to the previous step");
+steps.Activate();
+Equal(25, (int)lifeStep.Value, "Cross moves to the next step");
+lifeStep.Value = 7;
+steps.Adjust(1);
+Equal(1, (int)lifeStep.Value, "an unlisted number restarts at the first step");
 var text = new FakeSetting(typeof(string), "{0}", "{0}");
 var free = new SettingItem(text, new SettingSpec("F", "f"), "Format", null);
 Check(!free.Adjust(1), "free text does not step");

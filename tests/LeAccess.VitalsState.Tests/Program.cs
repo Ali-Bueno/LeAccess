@@ -147,4 +147,34 @@ Change(criticalStep.Observe(18, 11, policy: lifeStep), -1, -1, false, "small cha
 Change(criticalStep.Observe(9, 9, policy: lifeStep), 9, -1, true, "critical life ignores the minimum change");
 Change(criticalStep.Observe(9, 0, policy: lifeStep), -1, 0, false, "empty mana ignores the minimum change");
 
+// Configurable steps (2026-10-11, user request): every N percent, then every 10, 5 and 1 below chosen percents.
+string Bands(VitalsSteps steps) => string.Join(",", steps.Bands());
+Equal("75,50,40,30,20,10,5,4,3,2,1", Bands(VitalsSteps.Life), "life defaults are the D2R steps");
+Equal("75,50,40,30,20,10,1", Bands(VitalsSteps.Mana), "mana defaults stop at ten, then empty");
+Equal(string.Join(",", Enumerable.Range(1, 99).Reverse()), Bands(new VitalsSteps(1, 0, 0, 0)), "every 1 percent below full");
+Equal("90,80,70,60,50,40,30,20,10,1", Bands(new VitalsSteps(10, 0, 0, 0)), "every 10 percent");
+Equal("75,50,40,30,20,15,10,9,8,7,6,5,4,3,2,1", Bands(new VitalsSteps(25, 50, 25, 10)), "25, then 10 below 50, 5 below 25, 1 below 10");
+Equal("75,50,25,20,15,10,5,1", Bands(new VitalsSteps(25, 0, 30, 0)), "a range at 0 is off");
+Equal("75,50,25,20,15,10,5,1", Bands(new VitalsSteps(25, 20, 30, 0)), "the finest step that applies wins");
+Equal(Bands(new VitalsSteps(1, 0, 0, 0)), Bands(new VitalsSteps(0, 0, 0, 0)), "a step under 1 is read as 1");
+var everyOne = new VitalsPolicy(true, true, 0, 0, new VitalsSteps(1, 0, 0, 0));
+var fine = new VitalsAnnouncementState();
+fine.Observe(100, 100, policy: everyOne);
+Change(fine.Observe(99, 100, policy: everyOne), -1, -1, false, "every 1: a scratch from full stays quiet");
+Change(fine.Observe(98, 100, policy: everyOne), 98, -1, false, "every 1: each percent lost speaks");
+Change(fine.Observe(97, 100, policy: everyOne), 97, -1, false, "every 1: the next percent speaks");
+Change(fine.Observe(98, 100, policy: everyOne), -1, -1, false, "every 1: one percent back is regeneration");
+Change(fine.Observe(99, 100, policy: everyOne), 99, -1, false, "every 1: two percent back speaks");
+var switched = new VitalsAnnouncementState();
+switched.Observe(100, 100);
+Change(switched.Observe(100, 100, policy: everyOne), -1, -1, false, "new steps replay nothing");
+Change(switched.Observe(60, 100, policy: everyOne), 60, -1, false, "new steps speak the next crossing");
+Change(switched.Observe(60, 100), -1, -1, false, "back to the defaults keeps the last reading");
+Change(switched.Observe(45, 100), 45, -1, false, "the defaults speak their next band");
+var finerMana = new VitalsPolicy(true, true, 0, 0, ManaSteps: new VitalsSteps(25, 50, 10, 5));
+var caster = new VitalsAnnouncementState();
+caster.Observe(100, 12, policy: finerMana);
+Change(caster.Observe(100, 7, policy: finerMana), -1, 7, false, "mana with finer steps below ten speaks them");
+Change(caster.Observe(100, 4, policy: finerMana), -1, 4, false, "and every 1 below five");
+
 Console.WriteLine($"Passed {checks} vitals state checks.");

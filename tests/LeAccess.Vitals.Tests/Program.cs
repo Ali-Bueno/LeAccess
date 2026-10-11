@@ -10,7 +10,8 @@ using UnityEngine;
 int checks = 0;
 void Check(bool value, string name) { checks++; if (!value) throw new Exception(name); }
 ConfigFile config = null;
-void Start()
+// Life first is off unless asked: most checks here are about the queue and interrupt rules beneath it.
+void Start(bool? lifeFirst = false)
 {
     VitalsAccessibility.Cleanup();
     ModText.Initialize(null,null);
@@ -23,9 +24,10 @@ void Start()
     ProgressionProbe.Available = false;
     VitalsEffectsProbe.Effects.Clear(); GoldReport.Amount = 1234;
     VitalsProbe.Snapshot = new(1,100,100,100,100,false);
-    ScreenReader.Spoken.Clear(); Plugin.Log.Information.Clear(); Plugin.Log.Warnings.Clear();
+    ScreenReader.Spoken.Clear(); ScreenReader.LifeLines.Clear(); Plugin.Log.Information.Clear(); Plugin.Log.Warnings.Clear();
     Time.unscaledTimeAsDouble = 0;
     VitalsAccessibility.Initialize(config);
+    if (lifeFirst is { } first) config.Set("LifeFirst", first);
 }
 void Tick(double time, bool keyboard = false, bool controller = false, bool ui = false, bool alreadySpoke = false)
 {
@@ -314,6 +316,27 @@ try
     Values(60, 60); Tick(.1);
     Last(T("vitals.mana", 60), false, "out-of-range steps are clamped: a huge life step holds life, a negative mana step is zero");
     Check(ScreenReader.Spoken.Count == 1, "only mana spoke under the clamped steps");
+    // Life first (2026-10-11, on by default): every life line goes through the life channel and cuts other speech.
+    Start(null); Check(config.Get<bool>("LifeFirst"), "life first is on by default");
+    Tick(0);
+    Values(74, 100); Tick(.1);
+    Last(T("vitals.health", 74), true, "life first: an ordinary life crossing interrupts");
+    Check(ScreenReader.LifeLines.Count == 1, "life first: life goes through the life channel");
+    Values(74, 60); Tick(.2);
+    Last(T("vitals.mana", 60), false, "life first: mana alone still queues");
+    Check(ScreenReader.LifeLines.Count == 1, "life first: mana alone is not a life line");
+    // Steps (2026-10-11): every N percent, then 10, 5 and 1 below chosen percents, read live.
+    Start(); Tick(0);
+    Check(config.Get<int>("LifeStep") == 25 && config.Get<int>("LifeEvery10Below") == 50 && config.Get<int>("LifeEvery5Below") == 10 &&
+        config.Get<int>("LifeEvery1Below") == 5 && config.Get<int>("ManaStep") == 25 && config.Get<int>("ManaEvery10Below") == 50 &&
+        config.Get<int>("ManaEvery5Below") == 0 && config.Get<int>("ManaEvery1Below") == 0, "step defaults are today's bands");
+    config.Set("LifeStep", 1); config.Set("LifeEvery10Below", 0); config.Set("LifeEvery5Below", 0); config.Set("LifeEvery1Below", 0);
+    Values(97, 100); Tick(.1);
+    Last(T("vitals.health", 97), false, "life every 1 percent speaks a small drop");
+    Values(96, 100); Tick(.2);
+    Last(T("vitals.health", 96), false, "and the next percent");
+    config.Set("ManaStep", 5); Values(96, 94); Tick(.4);
+    Last(T("vitals.mana", 94), false, "mana every 5 percent speaks below 95");
     Start();
     VitalsAccessibility.Cleanup(); int reads = VitalsProbe.Reads;
     Tick(.4,keyboard:true,controller:true);

@@ -1,6 +1,9 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-11 11:18: wall tones rebuilt in the Grimdark style as an alternative or companion to the radar
+**Updated:** 2026-10-11: life and mana steps are configurable (every 1, 5, 10 or 25, then every 10, 5 and 1 below
+chosen percents; defaults = the earlier bands) and life comes first (`Vitals.LifeFirst`, on: it cuts any speech and
+nothing cuts it for 2 s) ([vitals](reference/vitals-api.md#configurable-steps-and-life-first-2026-10-11-user-request)). Unheard.
+Earlier, 2026-10-11 11:18: wall tones rebuilt in the Grimdark style as an alternative or companion to the radar
 (mod menu "Wall tones", off by default): a soft steady tone per screen direction, louder as a wall comes closer
 ((1 - d/12 m)²), high ahead, low behind, mid in each ear, the farthest of three lanes per direction; about 6 dB under
 Grimdark ([wall tones](reference/navigation-radar.md#wall-tones-2026-10-11)). Unheard.

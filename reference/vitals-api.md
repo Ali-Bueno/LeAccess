@@ -205,3 +205,23 @@ Today's options (`[Vitals]`):
 - New: `AnnounceLifeChanges` / `AnnounceManaChanges` (true each) switch one meter off while the other and the master stay on; a silenced meter keeps following its value, so turning it on never replays old crossings. `LifeMinimumChange` / `ManaMinimumChange` (0-50, default 0 = today): a band crossing is spoken only once the value has moved at least this many percent from the last accepted reading, so a larger mana step means fewer mana announcements; critical life (10 percent and below) and empty mana always speak. All are read each poll (`VitalsPolicy`, `VitalsAnnouncementState.Observe`).
 - Readouts: the report (R, Square) is life, mana, level and experience percent (`ProgressionState.LevelText`), potions, debuffs. The gold readout (Ctrl+G, Triangle) is gold plus `ProgressionState.PointsText` (passive points, skills that can take a point, new skill, zone).
 - Unverified live: how often a typical caster crosses bands with a given step.
+
+## Configurable steps and life first (2026-10-11, user request)
+
+The user asked for life to come before any other announcement and for the percent steps of life and mana to be
+chosen: every 1, 5, 10 or 25, finer from some percent down.
+- Steps (`VitalsSteps`, `VitalsAnnouncementState`): per meter `Step` (1, 5, 10 or 25; the mod menu's number choices),
+  then `Every10Below`, `Every5Below`, `Every1Below` (percent, 0 = never). The step at a percent is the finest whose
+  range includes it; the bands are the percents from 99 down that are multiples of their step, plus 1, so empty stays
+  its own band. Full (100) is never a band: a scratch from full is quiet, as before. Defaults reproduce the earlier
+  fixed bands: life 25/50/10/5 = 75, 50, 40, 30, 20, 10, 5, 4, 3, 2, 1 (D2R); mana 25/50/0/0 = the same down to 10, then
+  empty, which replaces the old "mana below ten speaks its first step and empty" rule with the same behaviour (all 372
+  earlier state checks pass unchanged). Steps are read every poll; a change keeps the last accepted reading, placed in
+  the new bands, so nothing is replayed. Recovery still needs two bands, so with step 1 a 2 percent regeneration speaks.
+- `LifeFirst` (default on): automatic lines with a life value go through `ScreenReader.TrySpeakLife`, which interrupts
+  any speech and, for `LifeSpeechSeconds` (2 s), turns every other interrupting line into a queued one so nothing cuts
+  the life line ([lifecycle](announcement-lifecycle.md#life-first-2026-10-11-user-request)). Mana alone, potions and the
+  manual report are unchanged. Off restores the earlier rule (only critical falling life interrupts).
+- Tests: VitalsState 402 (bands, finest step, off ranges, live step changes, finer mana), Vitals 128 (defaults, life
+  channel, steps read live), ScreenReader 56, ModMenu 298 (number choices). Unverified live: whether 2 s covers a life
+  line at the user's speech rate, and how busy step 1 or 5 sounds in combat.

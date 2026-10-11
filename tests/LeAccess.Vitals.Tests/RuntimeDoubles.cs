@@ -1,6 +1,9 @@
 namespace BepInEx.Configuration
 {
     public class ConfigEntry<T> { public T Value; }
+    public class ConfigDescription { public ConfigDescription(string description, object acceptable = null) { } }
+    public class AcceptableValueList<T> { public AcceptableValueList(params T[] values) { } }
+    public class AcceptableValueRange<T> { public AcceptableValueRange(T minimum, T maximum) { } }
     public class ConfigFile
     {
         private readonly Dictionary<string, object> entries = new();
@@ -8,6 +11,8 @@ namespace BepInEx.Configuration
         {
             var entry = new ConfigEntry<T> { Value = value }; entries[key] = entry; return entry;
         }
+        public ConfigEntry<T> Bind<T>(string section, string key, T value, ConfigDescription description) =>
+            Bind(section, key, value, (string)null);
         public void Set<T>(string key, T value) => ((ConfigEntry<T>)entries[key]).Value = value;
         public T Get<T>(string key) => ((ConfigEntry<T>)entries[key]).Value;
     }
@@ -108,6 +113,13 @@ namespace LeAccess.Accessibility
         }
         internal static bool TrySpeakPickup(string text) => TrySpeak(text, false);
         internal static bool TrySpeakOverPickup(string text, bool interrupt) => TrySpeak(text, interrupt);
+        internal static readonly List<string> LifeLines = new();
+        internal static bool TrySpeakLife(string text)
+        {
+            if (!TrySpeak(text, true)) return false;
+            LifeLines.Add(text);
+            return true;
+        }
     }
 }
 namespace LeAccess

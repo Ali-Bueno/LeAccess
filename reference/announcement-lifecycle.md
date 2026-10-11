@@ -110,3 +110,11 @@ to delay combat and life warnings. Pickup lines are the gold gain (`GoldPickupAn
 nearest enemy and boss/elite life use `TrySpeakOverPickup`, which interrupts a pickup line still in that window and
 otherwise keeps its own interrupt flag. Any other accepted speech closes the window, so a pickup never cuts it and is
 never cut for it. Tests: `LeAccess.ScreenReader.Tests` (8 checks). Unverified live: whether 4 s fits long item names.
+
+## Life first (2026-10-11, user request)
+
+`ScreenReader.TrySpeakLife`: an automatic life line (option `Vitals.LifeFirst`, default on) always interrupts and opens
+a `LifeSpeechSeconds` (2 s) window in which `TrySpeak` sends every other line queued, whatever its own interrupt flag,
+so menus, combat and pickups wait behind it instead of cutting it. A newer life line still cuts the older one; the mod
+menu's own speech is unaffected, and a life line held back by the open menu opens no window. Tests:
+`LeAccess.ScreenReader.Tests` (56 checks). Details of the meters: [vitals](vitals-api.md#configurable-steps-and-life-first-2026-10-11-user-request).
