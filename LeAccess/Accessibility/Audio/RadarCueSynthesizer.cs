@@ -18,6 +18,8 @@ public static class RadarCueSynthesizer
     // User request 2026-10-09: the radar was hard to hear under Last Epoch combat (spinning hammers), +3 dB.
     private const double BoostDb = 3;
     private static readonly double Level = D2RLevel * Math.Pow(10, BoostDb / 20);
+    /// <summary>Peak of the wall knock at full volume, the reference for other terrain cues.</summary>
+    internal static double KnockLevel => Level;
     private const double WallFrequency = 260;
     private const double WallHarmonic = 1.5;
     private const double HarmonicLevel = 0.2;

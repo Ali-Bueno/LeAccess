@@ -168,6 +168,17 @@ internal sealed class RadarWorldProbe
             ? TerrainSight.Blocked : TerrainSight.Clear;
     }
 
+    /// <summary>Walkable distance from the last captured origin along a horizontal direction, at most <paramref name="distance"/>.</summary>
+    public float Clearance(Vector3 direction, float distance)
+    {
+        direction.y = 0f;
+        if (!_hasOrigin || direction.sqrMagnitude <= Mathf.Epsilon) return float.NaN;
+        direction.Normalize();
+        Vector3 target = _origin + direction * distance;
+        return NavMesh.RaycastFilter(_origin, target, out var hit, _originAgentType, _originAreaMask)
+            ? HorizontalDistance(_origin, hit.position) : distance;
+    }
+
     // The baked edge lies one build radius inside walls; the build step height bounds the surface's vertical offset.
     private float SightRadius()
     {

@@ -25,6 +25,21 @@ internal static class LifecycleTests
         CoopJoinClearedCacheKeepsLocalRig();
         StaleSceneAndInactiveCameraSuspendRadar();
         OwnedDetachedVisualsRemainPlayable();
+        ClearanceFollowsThePush();
+    }
+
+    private static void ClearanceFollowsThePush()
+    {
+        ResetHost();
+        var probe = new RadarWorldProbe();
+        Program.Check(float.IsNaN(probe.Clearance(new Vector3(1, 0, 0), 1)), "No clearance before a capture");
+        NavMesh.DepthFor = (_, direction) => direction.x > 0.5f ? 0.2f : 20;
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out _, probeWalls: false),
+            "A capture without wall probes still sets the origin");
+        Program.Near(probe.Clearance(new Vector3(2, 5, 0), 1), 0.2f, "A near wall that way gives its distance; height is ignored");
+        Program.Near(probe.Clearance(new Vector3(-1, 0, 0), 1), 1, "A clear push reaches the asked distance");
+        Program.Check(float.IsNaN(probe.Clearance(new Vector3(0, 1, 0), 1)), "A vertical push has no ground direction");
+        NavMesh.DepthFor = null;
     }
 
     private static void ProbeReacquiresCollectedObjects()

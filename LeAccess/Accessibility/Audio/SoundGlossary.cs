@@ -17,6 +17,7 @@ internal static class SoundGlossary
         new("RadarOpen", RadarSection, "Volume"),
         new("RadarBlocked", RadarSection, "Volume"),
         new("RadarUnexplored", RadarSection, "Volume"),
+        new("WallBump", RadarSection, "WallBumpVolume"),
         new("EnemyBoss", SoundLevels.EnemySection, SoundLevels.EnemyKeys[0]),
         new("EnemyElite", SoundLevels.EnemySection, SoundLevels.EnemyKeys[1]),
         new("EnemyOrdinary", SoundLevels.EnemySection, SoundLevels.EnemyKeys[2]),

@@ -68,6 +68,7 @@ public class Plugin : BasePlugin
             "Play the previous continuous wall tones alongside the reactive radar.");
         SoundLevels.Initialize(Config);
         ReactiveRadar.Initialize(Config);
+        WallBump.Initialize(Config);
         QuestUpdateAccessibility.Initialize(Config);
         CombatAccessibility.Initialize(Config);
         VitalsAccessibility.Initialize(Config);
@@ -150,6 +151,7 @@ public class Plugin : BasePlugin
         WorldCueSounds.Cleanup();
         EnemyCueSounds.Cleanup();
         ReactiveRadar.Cleanup();
+        WallBump.Cleanup();
         WallSonar.Cleanup();
         SoundPreview.Cleanup();
         WorldAudioReservation.Reset();

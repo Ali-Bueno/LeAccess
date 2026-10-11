@@ -65,6 +65,8 @@ happens on its own, by sound and speech, while you play with the game's normal c
 - A wall radar: a knock when a wall comes within about two metres, and a breath when you slip past a wall's edge into
   space that goes on (a doorway, a side passage, the end of a wall). A breath that ends in a quick double pip leads
   toward somewhere you have not explored.
+- A wall bump: a dull thud from the side you push when you walk into a wall and stop, and your footsteps go quiet
+  while you keep pushing, so you know you are no longer walking.
 - Things in the world have sounds: loot by rarity, gold, potions, chests, the stash, portals, waypoints, exits, shrines,
   rifts, NPCs (wooden taps) and enemies (growls), all panned and faster or louder as you get closer.
 - An exploration scanner: hold the mod button and move the right stick to go through exits, waypoints, rooms, NPCs, enemies, loot and more, nearest first, with distance and direction. Mod
@@ -239,7 +241,7 @@ launch; edit that file only with the game closed. The most useful ones:
 | Exploration | `LeftStickOnOtherPads` | L3 as the mod button on non-PlayStation pads (default on) |
 | Audio | `MasterVolume` | Volume of every mod sound (speech is not affected) |
 | World object sound volumes / ranges | One key per kind (`Gold`, `Rune`, `Shrine`, `ZoneExit`...) | Each object sound's own volume (0-200%) and distance (0 follows `LoopRange`) |
-| Reactive radar | `Enabled`, `Volume` | The wall radar |
+| Reactive radar | `Enabled`, `Volume`, `WallBump`, `WallBumpVolume`, `MuteFootstepsAtWalls` | The wall radar, the wall bump and quiet footsteps against a wall |
 | Enemy cues | `Enabled`, `Bosses`, `Elites`, `Ordinary`, `Volume`, `BossVolume`, `EliteVolume`, `OrdinaryVolume` | Enemy sounds |
 | World object sounds | `Enabled`, `Volume`, `Loops`, `LoopRange` | Loot, objects, portals, exits |
 | NPC sounds | `Enabled`, `AnnounceNames`, `Volume` | NPC taps and names |

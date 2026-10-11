@@ -183,6 +183,7 @@ public class MenuAccessibility : MonoBehaviour
         NavigationAudioState.Refresh();
         LocalPlayerDiagnostics.Update();
         ReactiveRadar.Update();
+        WallBump.Update();
         WallSonar.Update();
     }
 

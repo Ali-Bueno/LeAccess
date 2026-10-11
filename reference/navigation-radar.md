@@ -447,3 +447,84 @@ report. It is replaced by two dynamic tests; the 6 m depth (D2 reach) remains on
 Tests: Navigation 834 checks (edge vs. gradual, niche vs. passage, passage depth without continuation, the probe's
 branch rays, plus the diagonal, retreat, doorway and wall-end cases above). Listening pending: narrow side passages
 and bends should breathe, niches and receding walls should not; report doorways that stay silent.
+
+## Wall bump (2026-10-11)
+
+User request: know when walking into a wall stops the character, online and offline; the game keeps the run
+animation and its footsteps while the stick pushes into a wall, and in some places the footsteps are very quiet.
+
+- **Push.** `MovementIntent` reads the game's own thumbstick state, the one that walks the player: online
+  `LocalPlayer.clientStateController.currentState` as `ClientThumbstickMovingPlayer`, offline
+  `Actor.stateController.currentState` as `MovingPlayerThumbstick` (client first, then actor; the log names the
+  source once). `WorldMovementDir`, or `input` on the camera's ground axes when it is zero. Any other state (an ability,
+  a stun, standing) is no push.
+- **Stall and contact** (`WallBumpDetector`, pure). Stalled: the player has not moved the radar's confirmation
+  distance (body width / 3) within its stopped time (200 ms), i.e. under about 1.5 m/s for a 0.9 m body, so sliding
+  along a wall is still walking. Contact: a NavMesh ray from the radar's sampled origin along the push hits within the
+  body radius (`RadarWorldProbe.Clearance`). A stall without contact (an enemy, a root) stays silent and logs
+  `[Wall bump] stopped without a wall within …` once.
+- **Bump.** Once per contact: again after moving one confirmation step, releasing the stick, or turning the push by
+  45° or more (half a radar sector: the other side of a corner), never twice within the radar's opening interval
+  (0.5 s). A poll gap over 250 ms (menu, loading) starts over quietly.
+- **Sound** (`BumpCueSynthesizer`): 90 ms thud, 150→70 Hz body with a muffled noise click, panned by the push's screen
+  side, own NAudio output (master volume applies), never queued behind radar or world cues. Config `[Reactive radar]
+  WallBump` (on) and `WallBumpVolume`; glossary entry `WallBump`.
+- **Footsteps** (`FootstepMute`, `[Reactive radar] MuteFootstepsAtWalls`, on). While pressing (stalled with contact)
+  each `FootstepRaycastTrigger` under the local visuals has its `emitter` set to null and restored when the push ends,
+  on suspension and on teardown (only if the game has not assigned one since); re-applied every poll, so a form change
+  is covered. No hook. Native evidence (build `GameAssembly.dll` SHA-256 `d5f9fb45…6567`, Capstone, RVAs from
+  `MethodAddressToToken.db`): `AnimatorMessagePropagator.Step` 0x15A4D90 calls each trigger's `Step` with no `enabled`
+  check; `FootstepRaycastTrigger.Step` 0x15CA6D0 returns when `HandleStepRaycast` (0x15C9EE0) misses, then calls
+  `emitter.FootstepTrigger` only when `emitter` is non-null (test 0x15CA922, call 0x15CA99C); surface and boots/armour
+  sounds (`PlayFootstepSound` 0x15CB4D0, `TryPlayExtraSound` 0x15CB770/0x15D17A0) are all behind that call; footprint
+  visuals (`actorVisuals.Step`) still run. `FootstepRuntimePlayerLinker.Awake` (0x15CAA30) is the only runtime writer of
+  `emitter`. Rejected: disabling components (never checked), `raycastDistance` 0 (a zero-length cast from inside a
+  collider may still hit), the emitter's override fields (the game rewrites them on area overrides and scene loads).
+  Side effect if a trigger starts or is destroyed while detached: the game logs "No Footstep Sound Emitter assigned!"
+  and skips its override-event subscription. Unverified: whether the player also carries a collider-driven
+  `FootstepTrigger` (0x15CB9C0, own `emitter`); the log line `footsteps silenced: N foot triggers, M collider triggers`
+  shows it. Fallback if needed: a prefix on `FootstepRaycastTrigger.Step`, whose first 16 bytes hold no relative branch.
+- Log: `[Wall bump] push read from the Client|Actor state`, `[Wall bump] bump pan=… clearance=…`,
+  `[Wall bump] footsteps silenced: …`.
+
+Tests: Navigation 877 checks (walking up to a wall, stopping, sliding, held contact, corner turn, release and poll
+gaps, the clearance ray, the sound). Not heard: check online and offline that a straight push into a wall thuds once,
+sliding along it does not, an enemy blocking the way does not, how late the thud feels (stopped time plus buffer),
+and that footsteps stop while pushing and come back on the first real step (offline and online, after a form change).
+
+## Review of outside proposals and the 2026-10-10 log (2026-10-11)
+
+The user felt navigation was sometimes inconsistent and brought four suggestions from another assistant: a fan of
+about 7 rays per direction (±30°) merged into one reading; open only when a body-wide, connected gap exists; follow
+the boundary instead of depth jumps; optional physics checks for obstacles the NavMesh lacks. Nothing below is
+implemented.
+
+Log of 2026-10-10 evening (66 active minutes, times interpolated from Unity's timestamped lines, so ±0.3 s):
+2,726 cues (~41/min), 55 % knocks. 40 % of breaths were followed by a knock in the same direction within 1.5 s;
+224 open/blocked/open (or reverse) triples within 2 s, 32 within 1 s, runs of 4-6 alternations, Left worst. Not all
+are wrong: passing a doorway is a legitimate breath then knock. Delivery is fine (`max_wait_ms` median 0, p90 183,
+max 367), resets are only `Initial` (66) and `PollGap` (2), no audio faults. Heartbeat depths: 217 of 780 windows
+have at least one direction under 0.1 m and 169 have two or more (`12,12,0,0`; `0,12,0,12`): the player is pressed
+against a wall or corner (two zeros at once is a diagonal wall under the isometric camera). A single ray that starts on
+the NavMesh edge and runs along an irregular wall is the likeliest source of the flips; cue lines carry no depth, so
+this is inferred.
+
+Assessment:
+1. **Several rays per direction**: the useful part. One ray samples a line, not the body. But an angular fan from one
+   origin widens each direction into the diagonals and, from a point on the wall's edge, every ray grazes the same
+   wall. Better: three parallel rays across the body width, an origin moved off the edge when pressed against it, and
+   a state change only when most rays agree. D2R's eight-ray and diagonal experiments were rejected by ear; this keeps
+   four directions.
+2. **Width and continuity**: mostly present. The NavMesh is baked for the agent's footprint, so a clear ray is
+   passable; the continuation branches (2026-10-09) already reject niches. Requiring several adjacent rays clear is
+   the new part, and it is item 1.
+3. **Boundary following**: present in reduced form (edge rule, wall following after a silent retreat). A wall that
+   curves away gradually stays silent on purpose: the 2026-10-08 report was false "open" on stepping away from a wall.
+   Changing it risks that regression.
+4. **Physics checks**: not advised. The player walks on the NavMesh; decoration, enemies and effects have colliders
+   that do not block, so false walls would follow. NavMesh obstacles the game does use: `ActorVisuals.obstacle`
+   (actors) and `DisableNavMeshObstacleInteraction.navMeshObstacle` (interactable barriers). Whether these carve the
+   NavMesh is unverified; a closed barrier that does not carve would be the one real gap, checkable without physics.
+
+Proposed next step if the user agrees: depth and agreement in each cue's log line first, then the three-ray reading.
+

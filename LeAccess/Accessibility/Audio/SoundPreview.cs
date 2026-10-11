@@ -46,6 +46,7 @@ internal static class SoundPreview
             "RadarOpen" => Radar(RadarState.Open, false),
             "RadarBlocked" => Radar(RadarState.Blocked, false),
             "RadarUnexplored" => Radar(RadarState.Open, true),
+            "WallBump" => BumpCueSynthesizer.Synthesize(0, Group("Reactive radar", "WallBumpVolume")),
             "EnemyBoss" => Enemy(EnemyCueKind.Boss),
             "EnemyElite" => Enemy(EnemyCueKind.Elite),
             "EnemyOrdinary" => Enemy(EnemyCueKind.Ordinary),

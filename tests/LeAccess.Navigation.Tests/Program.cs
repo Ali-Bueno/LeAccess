@@ -13,6 +13,7 @@ internal static class Program
             AudioTests.Run();
             MarkTests.Run();
             LifecycleTests.Run();
+            BumpTests.Run();
             Console.WriteLine($"Navigation tests passed: {_checks} checks.");
             return 0;
         }
