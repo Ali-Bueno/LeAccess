@@ -535,15 +535,15 @@ The user asked for a better diagnosis before any radar change: play a while, the
 lines (numbers invariant, `t=` is `Time.unscaledTimeAsDouble`, the radar's own clock):
 
 - `Reactive radar event: t= dir= state= [flip=] pos=x,z edge= depth=… cont=…` for every generated cue: the last 8
-  polls (0.4 s) of that direction, oldest first, depth and continuation flags (`-` = unknown). Until 11:20 the line
+  polls (0.4 s) of that direction, oldest first, depth and continuation flags (`-` = unknown). Until 11:04 the line
   also carried the shadow readings (`shadow=`, then `origin=` and `lanes=`). `flip=` gives the seconds since the opposite cue in the same direction when under 1.5 s.
   `edge=` is the distance from the origin to the nearest NavMesh edge (`NavMesh.FindClosestEdgeFilter`).
 - `Reactive radar cue: t= direction= state=` as before, with the time: what was played.
 - The five-second status ends with `edge= trace: events= flips= pressed_polls=a/b` (polls with the origin within the
   agent radius of an edge; the edge query is `NavMesh.FindClosestEdgeFilter`, one per poll).
 
-**Shadow readings (removed 11:20, see the second trace)**: `origin` is the live ray from an origin moved off a
-touching wall; `lanes` adds two parallel lanes (since 10:00; at 09:30 only `lanes` existed, logged as `shadow=`). The
+**Shadow readings (removed 11:04, see the second trace)**: `origin` is the live ray from an origin moved off a
+touching wall; `lanes` adds two parallel lanes (since 09:49; at 09:30 only `lanes` existed, logged as `shadow=`). The
 live rays, but from an origin moved off a touching wall (to one body radius from the nearest edge, away from it; on the edge itself, away from the live rays that read
 under a body radius), three parallel lanes per direction across the body width (centre, ±body radius; a lane whose
 start lies beyond a wall reads 0), merged by their median, depths measured along the axis from the player's origin,
@@ -594,3 +594,30 @@ engine are removed (≈26 NavMesh queries per poll saved); the event lines, flip
 radar feels too busy, the data supports one optional filter to discuss with the user: a breath only after the
 opening has lasted 1.5 body widths (1.35 m, ≈0.2 s at running speed), which would drop the 8 short gaps and delay
 every breath by that distance; knocks would stay immediate.
+
+## Wall tones (2026-10-11)
+
+User request: an option in the mod menu to use wall tones instead of (or with) the radar, working like Grimdark
+(`https://github.com/ahicks92/grimdark`, `src/screens/in_game.cpp`, `src/audio.cpp`), but softer while the distance
+still sounds clearly different. The existing `[Navigation audio] ContinuousWallSonar` (default off) and `SonarVolume`
+keep their keys; the old tones (500/180/300 Hz, the game's `NavMeshHelper` from the raw player position, offline
+`PlayerFinder` only, a device always open) are replaced.
+
+- **Grimdark's design** (read from its source): four always-running loops on screen axes (its camera yaw is fixed),
+  ahead ≈1265 Hz centre, sides ≈856 Hz hard left/right (equal-power pan), behind ≈432 Hz centre +3 dB; distance only
+  in volume, `(1 - d/range)²`, silent at the range (10 units there); updated every frame; loops about -20 dBFS RMS;
+  its probe simulates the game's own walking, earlier the farthest of several parallel NavMesh lanes.
+- **Here** (`WallToneSynth`, `WallSonar`): the same pitches, pans, trim and curve; the range is the radar's probe reach
+  (12 m for a 0.9 m body); each direction takes the farthest of three lanes (centre and one body radius to each side,
+  `RadarWorldProbe.LaneDepth`; a lane whose start lies beyond a wall is skipped), so a wall brushed or a corner beside
+  the way does not sound like a wall ahead. Polled at the radar's 50 ms with a 25 ms glide per sample (no clicks), on
+  the radar's validated origin, camera axes and NavMesh filter, online and offline. Softer: 0.07 peak at a touching
+  wall, about 6 dB under Grimdark's loops; a light second and third harmonic keep soft tones audible. Silent in menus,
+  pauses, conversations and unfocused, and when the player or NavMesh is unavailable; the output opens only once the
+  tones are first enabled and retries every 5 s.
+- Mod menu: the page and option read "Wall tones"; the details say they are an alternative or companion and that the
+  radar can be turned off on its own page. Glossary previews play each direction at a touching wall.
+- Log: `[Wall tones] playing`, `[Wall tones] silent: <reason>`, `[Wall tones] audio unavailable: …`.
+
+Tests: RadarAudio 71 (curve, pitch order, pans, trim, glide in and out, levels, preview), Navigation 901 (lanes).
+Not heard: the level against game audio, and whether the high tone ahead is pleasant at length.

@@ -11,7 +11,8 @@
     <Compile Include="../../LeAccess/Accessibility/Combat/EnemyCueKind.cs" Link="EnemyCueKind.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/RadarAudioOutput.cs" Link="RadarAudioOutput.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/RadarCueSynthesizer.cs" Link="RadarCueSynthesizer.cs" />
-    <Compile Include="../../LeAccess/Accessibility/Audio/WallSonar.cs" Link="WallSonar.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/WallToneSynth.cs" Link="WallToneSynth.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/RadarEngine.cs" Link="RadarEngine.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/RadarModel.cs" Link="RadarModel.cs" />
   </ItemGroup>
 </Project>

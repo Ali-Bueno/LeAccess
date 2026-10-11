@@ -175,6 +175,22 @@ internal sealed class RadarWorldProbe
             ? TerrainSight.Blocked : TerrainSight.Clear;
     }
 
+    /// <summary>Walkable depth along a captured screen direction from a start moved sideways by <paramref name="lateral"/>
+    /// (positive to the right of that direction), at most <paramref name="reach"/>; NaN when a wall separates that start.</summary>
+    public float LaneDepth(RadarDirection direction, float lateral, float reach)
+    {
+        if (!_hasOrigin || !_hasCameraFrame) return float.NaN;
+        var axis = new Vector3(_axes[(int)direction].X, 0f, _axes[(int)direction].Y);
+        Vector3 start = _origin;
+        if (lateral != 0f)
+        {
+            start = _origin + new Vector3(axis.z, 0f, -axis.x) * lateral;
+            if (NavMesh.RaycastFilter(_origin, start, out _, _originAgentType, _originAreaMask)) return float.NaN;
+        }
+        return NavMesh.RaycastFilter(start, start + axis * reach, out var hit, _originAgentType, _originAreaMask)
+            ? HorizontalDistance(start, hit.position) : reach;
+    }
+
     /// <summary>Walkable distance from the last captured origin along a horizontal direction, at most <paramref name="distance"/>.</summary>
     public float Clearance(Vector3 direction, float distance)
     {

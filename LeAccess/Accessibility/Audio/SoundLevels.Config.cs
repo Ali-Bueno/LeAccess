@@ -17,7 +17,7 @@ internal static partial class SoundLevels
             "Percent that scales every mod sound (radar, world objects, enemies, beacon, sonar); speech is not affected.",
             SetMaster);
         Bind(config, SonarSection, SonarKey, 100, MaxMasterPercent,
-            "Percent volume of the continuous wall sonar tones.", SetSonar);
+            "Percent volume of the wall tones.", SetSonar);
         foreach (var world in WorldKinds)
         {
             var kind = world.Kind;

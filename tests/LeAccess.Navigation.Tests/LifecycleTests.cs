@@ -27,6 +27,24 @@ internal static class LifecycleTests
         OwnedDetachedVisualsRemainPlayable();
         ClearanceFollowsThePush();
         EdgeDistanceIsMeasured();
+        LanesMoveSideways();
+    }
+
+    // Facing +z with a wall 0.4 to the left of the origin and a pillar ahead of the centre lane only.
+    private static void LanesMoveSideways()
+    {
+        ResetHost();
+        var probe = new RadarWorldProbe();
+        Program.Check(float.IsNaN(probe.LaneDepth(RadarDirection.Up, 0, 12)), "No lane before a capture");
+        Program.Check(probe.TryCapture(RadarSettings.DefaultOpenDepthInBodyWidths, out var origin, probeWalls: false), "Origin capture");
+        float x = origin.Position.X;
+        NavMesh.DepthFor = (from, direction) => direction.x < -0.5f ? Math.Max(0, from.x - (x - 0.4f))
+            : direction.z > 0.5f && Math.Abs(from.x - x) < 0.1f ? 1.5f : 20;
+        Program.Near(probe.LaneDepth(RadarDirection.Up, 0, 12), 1.5f, "The centre lane meets the pillar");
+        Program.Near(probe.LaneDepth(RadarDirection.Up, 0.5f, 12), 12, "The right lane passes it up to the reach");
+        Program.Check(float.IsNaN(probe.LaneDepth(RadarDirection.Up, -0.5f, 12)), "A lane starting beyond the left wall is unusable");
+        Program.Near(probe.LaneDepth(RadarDirection.Left, 0, 12), 0.4f, "The left wall is measured from the centre");
+        NavMesh.DepthFor = null;
     }
 
     private static void EdgeDistanceIsMeasured()

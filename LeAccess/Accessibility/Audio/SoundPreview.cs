@@ -56,9 +56,9 @@ internal static class SoundPreview
             "BeaconCleared" => Beacon(BeaconSound.Cleared),
             "BeaconArrived" => Beacon(BeaconSound.Arrived),
             "BeaconClick" => BeaconCueSynthesizer.Click(Group("Exploration beacon", "Volume")),
-            "SonarAhead" => Sonar(WallSonar.FreqForward),
-            "SonarBehind" => Sonar(WallSonar.FreqBack),
-            "SonarSides" => Sonar(WallSonar.FreqSides),
+            "SonarAhead" => WallTone(RadarDirection.Up),
+            "SonarBehind" => WallTone(RadarDirection.Down),
+            "SonarSides" => WallTone(RadarDirection.Right),
             _ => Array.Empty<float>()
         };
     }
@@ -82,8 +82,8 @@ internal static class SoundPreview
     private static float[] Beacon(BeaconSound sound) =>
         BeaconCueSynthesizer.Synthesize(sound, 0, 1, Group("Exploration beacon", "Volume"));
 
-    private static float[] Sonar(double frequency) =>
-        PreviewClips.Tone(frequency, WallSonar.BaseVolume * SoundLevels.Sonar, LoopSeconds);
+    private static float[] WallTone(RadarDirection direction) =>
+        WallToneSynth.Preview(direction, SoundLevels.Sonar, LoopSeconds);
 
     // A group's Volume entry in percent as a factor; 1 when the module has not bound it.
     private static float Group(string section, string key) =>

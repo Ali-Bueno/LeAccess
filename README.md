@@ -65,6 +65,9 @@ happens on its own, by sound and speech, while you play with the game's normal c
 - A wall radar: a knock when a wall comes within about two metres, and a breath when you slip past a wall's edge into
   space that goes on (a doorway, a side passage, the end of a wall). A breath that ends in a quick double pip leads
   toward somewhere you have not explored.
+- Wall tones, off by default: an alternative or companion to the radar, in the Grimdark style. A soft steady tone per
+  direction grows louder as a wall comes closer: high ahead, low behind, mid in the left or right ear. Turn them on in
+  the mod menu (Wall tones page); turn the radar off there to use them instead of it.
 - A wall bump: a dull thud from the side you push when you walk into a wall and stop, and your footsteps go quiet
   while you keep pushing, so you know you are no longer walking.
 - Things in the world have sounds: loot by rarity, gold, potions, chests, the stash, portals, waypoints, exits, shrines,
@@ -242,6 +245,7 @@ launch; edit that file only with the game closed. The most useful ones:
 | Audio | `MasterVolume` | Volume of every mod sound (speech is not affected) |
 | World object sound volumes / ranges | One key per kind (`Gold`, `Rune`, `Shrine`, `ZoneExit`...) | Each object sound's own volume (0-200%) and distance (0 follows `LoopRange`) |
 | Reactive radar | `Enabled`, `Volume`, `WallBump`, `WallBumpVolume`, `MuteFootstepsAtWalls` | The wall radar, the wall bump and quiet footsteps against a wall |
+| Navigation audio | `ContinuousWallSonar`, `SonarVolume` | Wall tones (off by default) and their volume |
 | Enemy cues | `Enabled`, `Bosses`, `Elites`, `Ordinary`, `Volume`, `BossVolume`, `EliteVolume`, `OrdinaryVolume` | Enemy sounds |
 | World object sounds | `Enabled`, `Volume`, `Loops`, `LoopRange` | Loot, objects, portals, exits |
 | NPC sounds | `Enabled`, `AnnounceNames`, `Volume` | NPC taps and names |

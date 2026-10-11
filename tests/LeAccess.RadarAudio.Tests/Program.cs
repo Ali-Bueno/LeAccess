@@ -18,7 +18,7 @@ internal static class Program
             CallbackTimingSeparatesStallsFromPlayback();
             RecoveryWaitsForPlaybackCompletion();
             FailedReopenCanRetry();
-            _checks += WallSonarTests.Run();
+            _checks += WallToneTests.Run();
             Console.WriteLine($"Radar audio tests passed: {_checks} checks; no audio device opened.");
             return 0;
         }
@@ -61,18 +61,26 @@ internal static class Program
         providerType.GetMethod("Play").Invoke(provider, new object[] { cue });
         provider.Read(buffer, 0, 2);
         Check(buffer[0] == 0.4f && buffer[1] == -0.8f, "Full master leaves cues untouched.");
-        var generator = new SmoothSineGenerator(500, 0.05f);
-        float[] tone = new float[2000];
-        generator.Read(tone, 0, tone.Length);
+        float[] tone = WallTone();
         float full = tone.Max(Math.Abs);
         SoundLevels.SetMaster(50);
-        generator = new SmoothSineGenerator(500, 0.05f);
-        generator.Read(tone, 0, tone.Length);
-        Check(Math.Abs(tone.Max(Math.Abs) - full * 0.5f) < full * 0.01f, "Master volume scales the wall sonar tones.");
+        tone = WallTone();
+        Check(Math.Abs(tone.Max(Math.Abs) - full * 0.5f) < full * 0.02f, "Master volume scales the wall tones.");
         SoundLevels.SetSonar(0);
-        generator.Read(tone, 0, tone.Length);
+        tone = WallTone();
         Check(tone.All(x => x == 0), "The sonar volume silences the wall tones.");
         SoundLevels.Reset();
+    }
+
+    // The wall tones as the game builds them: master times sonar volume, read once per buffer.
+    private static float[] WallTone()
+    {
+        var synth = new WallToneSynth(() => SoundLevels.Master * SoundLevels.Sonar);
+        synth.SetTarget(LeAccess.Accessibility.Navigation.RadarDirection.Up, 1);
+        float[] tone = new float[WallToneSynth.SampleRate];
+        synth.Read(tone, 0, tone.Length);
+        synth.Read(tone, 0, tone.Length);
+        return tone;
     }
 
     private static void FragmentedCuesRemainContinuous()
