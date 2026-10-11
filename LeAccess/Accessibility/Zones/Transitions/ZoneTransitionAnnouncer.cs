@@ -11,12 +11,10 @@ namespace LeAccess.Accessibility.Zones.Transitions;
 /// <summary>Reads the "Entering ..." and "Portaling to ..." pop-ups the game shows before a zone loads.</summary>
 internal static class ZoneTransitionAnnouncer
 {
-    // The additive (pinnacle and boss) loader has no singleton; looking it up is retried at this pace.
-    private const double ResolveIntervalSeconds = 2;
     private static readonly ZoneTransitionState Zone = new();
     private static readonly ZoneTransitionState Additive = new();
     private static AdditiveLoadingStatusUI _additive;
-    private static double _nextResolveSeconds;
+    private static string _searchedScene;
     private static string _lastFailure;
 
     internal static void Update()
@@ -40,7 +38,6 @@ internal static class ZoneTransitionAnnouncer
     {
         Zone.Reset();
         Additive.Reset();
-        _additive = null;
     }
 
     private static void Speak(ZoneTransitionState state, string visibleText)
@@ -64,12 +61,13 @@ internal static class ZoneTransitionAnnouncer
         return shown ? ScreenContentTracker.Combine(new[] { Read(ui.zoneNameTMP), Read(ui.zoneDetails) }) : null;
     }
 
+    // The additive (pinnacle and boss) loader has no singleton: one global search per active scene.
     private static AdditiveLoadingStatusUI ResolveAdditive()
     {
         if (IsAlive(_additive)) return _additive;
-        double now = (double)System.Diagnostics.Stopwatch.GetTimestamp() / System.Diagnostics.Stopwatch.Frequency;
-        if (now < _nextResolveSeconds) return null;
-        _nextResolveSeconds = now + ResolveIntervalSeconds;
+        string scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        if (scene == _searchedScene) return null;
+        _searchedScene = scene;
         _additive = UnityEngine.Object.FindObjectOfType<AdditiveLoadingStatusUI>(true);
         return _additive;
     }
