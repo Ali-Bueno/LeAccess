@@ -264,6 +264,10 @@ These game-specific components don't use Unity's Toggle system:
 - **IMPORTANT**: `Selectable.OnSubmit` does NOT exist in IL2CPP - use navigable `HandleSubmitInput` patches instead
 - **IMPORTANT**: `ListNavigable` does NOT have `HandleSubmitInput` - it inherits from PrioritizedNavigable but doesn't override it
 - When patching methods, check they exist first - a failed patch will prevent the entire plugin from loading
+- **IMPORTANT**: never call an interop *generic* method with an `out`/`ref` of a non-blittable IL2CPP struct
+  (e.g. `ConcurrentDictionary<string, FriendStatus>.TryGetValue`): the wrapper reserves a pointer-sized slot, the
+  struct overruns it and the game hard-crashes. Use `ContainsKey` + the indexer (returns boxed). Enums and primitives
+  are fine. [Evidence](reference/nearby-player-names.md#crash-when-a-friend-is-nearby-2026-10-12)
 
 ## Screen Reader (Tolk)
 - Namespace: `DavyKager`

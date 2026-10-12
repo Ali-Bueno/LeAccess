@@ -16,8 +16,10 @@ internal static class FriendCharacterNames
             if (!IsAlive(manager) || identity is null || identity.WasCollected) return null;
             var cache = manager._friendStatusCache;
             string key = identity.MasterAccountID;
-            if (cache is null || cache.WasCollected || string.IsNullOrEmpty(key) ||
-                !cache.TryGetValue(key, out FriendStatus status) || status is null || status.WasCollected) return null;
+            if (cache is null || cache.WasCollected || string.IsNullOrEmpty(key) || !cache.ContainsKey(key)) return null;
+            // Never TryGetValue: its interop out slot is pointer-sized and the native struct overruns it (reference/nearby-player-names.md).
+            FriendStatus status = cache[key];
+            if (status is null || status.WasCollected) return null;
             // The cache entry must belong to this exact player.
             if (!string.Equals(status.UserIdentity?.MasterAccountID, key, StringComparison.Ordinal)) return null;
             var summary = status.CharacterSummary;

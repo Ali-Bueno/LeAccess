@@ -78,3 +78,14 @@ spoken memory so the 5 s repeat gap never applied, and any menu, window or dialo
 loss or a menu calls `Names.Lost(now)`, and players use a 60 s gap (`NearbyPlayerAccessibility.RepeatGapSeconds`,
 `NpcNameAnnouncementState` takes the gap; NPCs keep 5 s): a partner walking with the player is named once,
 and again only after a minute away. Players 53 checks. Listening pending in co-op.
+
+## Crash when a friend is nearby (2026-10-12)
+
+A tester's game closed with a fatal `AccessViolationException` (ErrorLog) as soon as a friend's player was scanned:
+`FriendCharacterNames.Read` → `ConcurrentDictionary<string, FriendStatus>.TryGetValue` →
+`Il2CppException.RaiseExceptionIfNecessary` → `il2cpp_format_exception`. `FriendStatus` is an IL2CPP struct but its
+interop wrapper is a class, so the generated `TryGetValue` (`typeof(TValue).IsValueType` is false) passes a
+pointer-sized slot for the `out` value. The native method writes the whole struct there and overwrites the exception
+slot next to it, and the runtime then formats garbage as an exception. Only a found key writes data, so only friends
+crash. Every release from v0.1.0 to v0.2.1 has this bug. The reader now uses `ContainsKey` and the indexer, which returns the value
+boxed. Rule: [CLAUDE.md, IL2CPP Notes](../CLAUDE.md#il2cpp-notes). Players 53 checks; not yet run with a friend.

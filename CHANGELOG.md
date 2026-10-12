@@ -3,6 +3,13 @@
 What changed in LeAccess, day by day, newest first. Each heading gives the day and the version that first shipped
 those changes. It is written from the commit history; internal notes, status updates and merges are left out.
 
+## 12 October 2026 — version 0.2.2
+
+Fixed:
+
+- The game closed (crashed to the desktop) when a player from your friends list came near you in an online game. It
+  happened while the mod read that friend's character name, which it now reads in a safe way.
+
 ## 11 October 2026, afternoon — version 0.2.1
 
 New:
