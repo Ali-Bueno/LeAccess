@@ -86,6 +86,7 @@ A tester's game closed with a fatal `AccessViolationException` (ErrorLog) as soo
 `Il2CppException.RaiseExceptionIfNecessary` → `il2cpp_format_exception`. `FriendStatus` is an IL2CPP struct but its
 interop wrapper is a class, so the generated `TryGetValue` (`typeof(TValue).IsValueType` is false) passes a
 pointer-sized slot for the `out` value. The native method writes the whole struct there and overwrites the exception
-slot next to it, and the runtime then formats garbage as an exception. Only a found key writes data, so only friends
-crash. Every release from v0.1.0 to v0.2.1 has this bug. The reader now uses `ContainsKey` and the indexer, which returns the value
+slot next to it, and the runtime then formats garbage as an exception. A missing key writes zeros, which read as "no
+exception", so only friends crash. The tester's log shows the friend in their online friends list joining the zone a
+second before the crash; the 2026-10-08 co-op session with a non-friend ran two hours without one. Every release from v0.1.0 to v0.2.1 has this bug. The reader now uses `ContainsKey` and the indexer, which returns the value
 boxed. Rule: [CLAUDE.md, IL2CPP Notes](../CLAUDE.md#il2cpp-notes). Players 53 checks; not yet run with a friend.
