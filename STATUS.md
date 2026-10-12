@@ -6,7 +6,7 @@ and closing turned on the old objects. Maps now come back by identity, the mode 
 and the game's controller map is held with `CurrentMap` = `defaultMap` instead of a null selection, whose Circle ran
 `UIBase.CloseAll` and closed the inventory ([menu](reference/mod-menu.md#while-open)). Startup speech says
 "LeAccess version 0.2.1 loaded". Verified in game with a virtual XInput pad: 0.2.0 reproduced both bugs, 0.2.1 fixes
-them. Released as `v0.2.1`.
+them. Released as `v0.2.1`. Confirmed 2026-10-11 22:03 by the tester who reported it: their pad works with 0.2.1.
 Earlier, 2026-10-11 afternoon (user report and requests): wall tones are now soft bands of air like Grimdark's
 loops (measured: band noise, not tones), warmer (800/450/250 Hz, nothing above about 2 kHz), same level, curve and pans
 ([warm sounds](reference/navigation-radar.md#warm-wall-sounds-2026-10-11)); a startup update check says when GitHub has

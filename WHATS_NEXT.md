@@ -8,8 +8,9 @@ player never moved again and later opens counted 10 maps instead of 24. Cause an
 Verified by Claude in game with a virtual Xbox 360 pad (ViGEm, the user away): 0.2.0 reproduced the dead pad (Ctrl+F1,
 arrows and D-pad in the menu, close: no movement, next open 25 maps instead of 39) and Circle closing the inventory;
 0.2.1 walks after the same steps, keeps the inventory open with a working cursor, and Cross/Circle in the menu on the
-landing screen did not press Play ([evidence](reference/mod-menu.md#code)). Still unheard by a player: the DualSense
-chord (L1 with Create), the tester's own pad, the startup sentence (the dev install keeps old translation files, so
+landing screen did not press Play ([evidence](reference/mod-menu.md#code)). Confirmed 2026-10-11 22:03 by the tester
+who reported it: their own pad works with 0.2.1. Still unheard by a player: the DualSense chord (L1 with Create), the
+startup sentence (the dev install keeps old translation files, so
 its log warns `Invalid translation mod.loaded … keeping fallback`; a fresh ZIP has the new ones).
 
 # Handoff — 2026-10-11 afternoon: warm wall sounds, update check, every interactable in the scanner

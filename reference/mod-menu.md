@@ -129,6 +129,7 @@ Verified live (2026-10-11): the L1 guard (9 and 10 L1 bindings held back on a Du
 the menu, Ctrl+F1 to close, then walk. 0.2.0 left the player still (position unchanged) and the next open counted 25
 maps instead of 39. With the fix the player walks and closing logs `resumed: 24 of 24`. Mod menu over the inventory,
 Cross into a page, Circle back, Circle to close: 0.2.0 closed the inventory; with the fix it stays open and its cursor
-moves. On the landing screen Cross and Circle in the menu did not press Play, and the D-pad navigated after closing. Unverified: that
+moves. On the landing screen Cross and Circle in the menu did not press Play, and the D-pad navigated after closing. The reporting tester
+confirmed their own pad works with 0.2.1 (2026-10-11). Unverified: that
 turning the maps off silences every game input path (anything reading `UnityEngine.Input` directly is not blocked),
 the L1 guard on an Xbox pad, and the preview levels.
