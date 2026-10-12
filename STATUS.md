@@ -1,9 +1,10 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-12 (tester crash log): the game closed when a friend's player was nearby. Reading the friend's
-character name from the social cache with `TryGetValue` corrupted memory. It now uses `ContainsKey` and the indexer
+**Updated:** 2026-10-12 (tester crash log): the game closed when a friend's player joined the zone, not on contact as
+reported; non-friends never crashed. Reading the friend's character name from the social cache with `TryGetValue`
+corrupted memory. It now uses `ContainsKey` and the indexer
 ([cause](reference/nearby-player-names.md#crash-when-a-friend-is-nearby-2026-10-12)). Players 53, Social 74, package 250;
-installed; not yet run with a friend. Released as `v0.2.2`.
+installed. Released as `v0.2.2`. Next: testers confirm 0.2.2 with a friend in the zone.
 Earlier, 2026-10-11 14:00 (tester log, user report and request): the pad went dead after the mod menu when the
 controller mode changed while it was open (Ctrl+F1, arrows, Alt+Tab): the game reloaded the pad's maps, which came in off,
 and closing turned on the old objects. Maps now come back by identity, the mode stays frozen while the menu blocks input,
