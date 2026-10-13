@@ -9,7 +9,7 @@ using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 namespace LeAccess.Accessibility.CharacterCreation;
 
 /// <summary>Requires an explicit submit or click before the screen keyboard takes focus on the character-name
-/// field or a Social username field.</summary>
+/// field, a Social username field or a first-login account field.</summary>
 internal static class CharacterNameKeyboard
 {
     private static TMP_InputField _requestedInput;
@@ -259,7 +259,8 @@ internal static class CharacterNameKeyboard
             character.newCharacterNameInputField.Pointer == input.Pointer) return true;
         var slots = LocalCharacterSlots.instance;
         if (IsAlive(slots) && IsAlive(slots.inputTextTMP) && slots.inputTextTMP.Pointer == input.Pointer) return true;
-        return Social.SocialWindows.TryGetField(input.gameObject, out var username, out _) && username.Pointer == input.Pointer;
+        return Social.SocialWindows.TryGetField(input.gameObject, out var username, out _) && username.Pointer == input.Pointer ||
+            Login.LoginPrompts.IsPromptInput(input);
     }
 
     internal static void Reset() { _requestedInput = null; _controllerRequest = false; }

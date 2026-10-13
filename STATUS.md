@@ -1,6 +1,13 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-12 (tester crash log): the game closed when a friend's player joined the zone, not on contact as
+**Updated:** 2026-10-13 (tester report, no log): first-login screens reworked: the terms say Accept unlocks only
+once the text reaches its end and announce when it does; the display-name and email fields work like the character
+name (Cross opens the keyboard, physical typing, Back keeps the text) and their title, help and errors are read
+([first login](reference/first-login.md)); Settings opened from the pause menu over class selection now returns to
+the classes ([pause](reference/pause-focus.md#2026-10-13-tester-report-settings-from-the-pause-menu-over-class-selection)).
+Why Settings was silent there is still unknown (a `[PauseFocus] waiting` log line now names the selection). Unheard;
+needs a fresh account or the tester's log. Not released.
+Earlier, 2026-10-12 (tester crash log): the game closed when a friend's player joined the zone, not on contact as
 reported; non-friends never crashed. Reading the friend's character name from the social cache with `TryGetValue`
 corrupted memory. It now uses `ContainsKey` and the indexer
 ([cause](reference/nearby-player-names.md#crash-when-a-friend-is-nearby-2026-10-12)). Players 53, Social 74, package 250;
@@ -254,7 +261,7 @@ releases go to GitHub Releases with the asset name `LeAccess.zip` (see below).
 | Quest journal | Current state/objectives and manual history retained; rejected briefs/details retry only while selection remains owned. 136 checks; listening pending. |
 | Automatic quest updates | 2026-10-08: never spoke online (no saved character data online); identity now from `LocalPlayer`. Failed output preserves current pending changes, shared pacing and fair turns with dynamic objectives. 116 checks. [Evidence](reference/quest-updates.md). Listening pending. |
 | Social panel | Dedicated reader (rows, sections with counts, tabs, own username, region, username windows, player options, invitation prompt), social chat results and typing echo; 58 checks. [Details](reference/social-reading.md); listening pending. |
-| Character name editing | 2026-10-08: with the screen keyboard open, physical keys type from the first press (controller mode kept, text through the keyboard's own `SubmitEvent`), Enter submits, Escape keeps the text like Circle; name and Social username fields; 198 checks, listening pending. Earlier: user confirms the latest typing/return fix works. Circle keeps the name; physical entry and owned device transitions retain focus. Eight hooks, 160 checks. |
+| Character name editing | 2026-10-13: the first-login display-name and email fields get the same handling, title/help/errors read ([first login](reference/first-login.md)); unheard. 2026-10-08: with the screen keyboard open, physical keys type from the first press (controller mode kept, text through the keyboard's own `SubmitEvent`), Enter submits, Escape keeps the text like Circle; name and Social username fields; 198 checks, listening pending. Earlier: user confirms the latest typing/return fix works. Circle keeps the name; physical entry and owned device transitions retain focus. Eight hooks, 160 checks. |
 | Inventory/merchants | 2026-10-09: online sync (`receiveContainerContents` re-adds every item) left the focus empty for a frame and erased the spoken record; the same item regained with nothing said since stays silent (log `[Inventory] same item after a refresh; not repeated`); Inventory 378; the pad's vibration is the game's own. 2026-10-08 night: idol grid and altar reachable and read. 2026-10-08 evening: no re-read after an online sync (item id key; "N de M"-only changes silent). Current stash/shop/buyback and [equipped selections](reference/equipped-items.md); rejected briefs/details retry while owned. After a drop, focus moves to the nearest item instead of the first slot ([drop focus](reference/inventory-drop-focus.md)); holding compare reads the equipped item, differences and changed lines ([comparison](reference/item-comparison.md)). 236 service + 111 model checks. Listening pending. Backpack and merchant stock/buyback move item by item with "N de M", rows by Down/Up, no wrap ([navigation](reference/inventory-drop-focus.md#controller-navigation-2026-10-04)). |
 | Forge/filter controls | Typed selections, filter-range labels and manual visible preview/potential/unavailable reason. 118 regressions within 296 menu checks. [Scope/limits](reference/crafting-reading.md); listening pending. |
 | Ground loot | New targeting API, brief current-item names; 67 checks. Listening pending. |
@@ -281,6 +288,7 @@ releases go to GitHub Releases with the asset name `LeAccess.zip` (see below).
 
 ## Validation and references
 
+- 2026-10-13: first-login and pause/Settings batch installed (`LeAccess.dll` `43932F2F12C86F9F…`, game closed; external catalogs kept, new keys are embedded). All 63 host suites pass (ScreenContent 252, CharacterName 235, MenuReading 557, PauseFocus 147, Localization 9180). No new hook. No ZIP or release.
 - 2026-10-11 wall tones: installed `LeAccess.dll` `37B1F1117ED3A954…` (game closed, includes the route legs). RadarAudio 71, Navigation 901, ModMenu 274, Localization 8580. No new hook. No friend ZIP or release.
 - 2026-10-11 11:04: shadow removed, live radar unchanged; installed `LeAccess.dll` `73E1116F6291670D…` (game closed, built from main with the other session's menu and inventory work). Navigation 895. No friend ZIP or release.
 - 2026-10-11 09:49: two-variant radar trace installed (`LeAccess.dll` `BB10550884A7FB48…`, game closed, includes the pickup speech from 99a8778). Navigation 909. No friend ZIP or release.

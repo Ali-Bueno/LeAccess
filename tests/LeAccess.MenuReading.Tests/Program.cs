@@ -399,4 +399,5 @@ checks += PanelTextTests.Run();
 checks += CosmeticsTextTests.Run();
 checks += FactionTreeTextTests.Run();
 checks += MarketTests.Run();
+checks += LoginReadingTests.Run();
 Console.WriteLine($"Menu reading tests passed: {checks} checks.");

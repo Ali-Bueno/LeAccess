@@ -16,6 +16,8 @@ internal static class ScreenContentAnnouncer
     private static readonly List<int> Expired = new();
     private static readonly ScreenContentTracker Tracker = new();
     private static long _sequence;
+    private static int _termsId;
+    private static string _termsBody;
     private static string _lastFailure;
     internal static bool HasPendingContent { get; private set; }
     // Tutorial callouts remain readable while gameplay and controller menus keep their own input.
@@ -85,17 +87,27 @@ internal static class ScreenContentAnnouncer
         try
         {
             if (!IsAlive(panel)) return;
+            int id = panel.gameObject.GetInstanceID();
+            string body = ReadTermsBody(panel);
+            // The update reader only announces the unlocked Accept, so a new document reopens the window.
+            if (body != null && _termsId == id && _termsBody != null && body != _termsBody) Remove(panel.gameObject);
+            if (body != null || _termsId != id) { _termsId = id; _termsBody = body; }
             Track(panel.gameObject, readText: () =>
             {
-                if (!IsAlive(panel)) return null;
-                var content = panel._displayedContent;
-                if (content is null || content.WasCollected) return null;
-                string body = Utils.TextUtils.CleanText(content.Content);
-                if (string.IsNullOrWhiteSpace(body)) return null;
-                return ScreenContentTracker.Combine(new[] { Utils.TextUtils.CleanText(panel.Title), body });
-            });
+                string text = IsAlive(panel) ? ReadTermsBody(panel) : null;
+                return text is null ? null : ScreenContentTracker.Combine(new[]
+                    { Utils.TextUtils.CleanText(panel.Title), TermsGate.ReadHint(panel), text });
+            }, readUpdate: () => IsAlive(panel) ? TermsGate.ReadReady(panel) : null);
         }
         catch (Exception ex) { ReportFailure(ex); }
+    }
+
+    private static string ReadTermsBody(LE.Tos.TosPanel panel)
+    {
+        var content = panel._displayedContent;
+        if (content is null || content.WasCollected) return null;
+        string body = Utils.TextUtils.CleanText(content.Content);
+        return string.IsNullOrWhiteSpace(body) ? null : body;
     }
 
     internal static void Track(GameObject root, TMP_Text header = null, TMP_Text body = null,
@@ -302,6 +314,8 @@ internal static class ScreenContentAnnouncer
         Tracker.Reset();
         HasPendingContent = false;
         _sequence = 0;
+        _termsId = 0;
+        _termsBody = null;
         _lastFailure = null;
     }
 

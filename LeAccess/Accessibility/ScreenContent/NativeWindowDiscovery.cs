@@ -21,6 +21,12 @@ internal static class NativeWindowDiscovery
             Panels.CostModalReader.TryCreate(panel, out var skip, out var extra);
             modal = new GenericModalText(root, skip, extra);
         }
+        else if (Login.LoginPrompts.TryFind(root, out var form) && form.Panel.Pointer == foreground.Pointer)
+        {
+            // The form's field reader speaks errors while the screen keyboard owns focus; the window reads them otherwise.
+            modal = new GenericModalText(root, form.IsError, form.ReadError);
+            Plugin.Log.LogInfo($"[Login] form: {root.name}");
+        }
         var endgame = IsAlive(panel) ? Endgame.EndgameWindows.Reader(panel) : null;
         ScreenContentAnnouncer.Track(root, retainWhenHidden: true, separateWindow: true,
             readText: endgame ?? (modal is null ? null : modal.ReadOpening), ownsWindow: () => OwnsWindow(foreground),
@@ -72,6 +78,7 @@ internal static class NativeWindowDiscovery
         Behaviour owner = element.GetComponentInParent<DungeonEnterPanelUI>();
         if (!IsAlive(owner)) owner = element.GetComponentInParent<DungeonFloorExitPanelUI>();
         if (!IsAlive(owner)) owner = element.GetComponentInParent<LE.UI.Dungeons.BossConfirmationPanelUI>();
+        if (!IsAlive(owner) && Login.LoginPrompts.TryFind(element, out var form)) owner = form.Panel;
         return IsVisibleOwner(owner) ? owner : null;
     }
 

@@ -3,6 +3,17 @@
 What changed in LeAccess, day by day, newest first. Each heading gives the day and the version that first shipped
 those changes. It is written from the commit history; internal notes, status updates and merges are left out.
 
+## 13 October 2026 — not released yet
+
+Fixed:
+
+- First start of the game with a new account: the terms now explain that Accept stays disabled until the text has been
+  scrolled to the end, name the button that jumps there, and say when Accept becomes available.
+- The display name and email screens read their title, explanation and any error. Their fields work like the character
+  name: Cross opens the screen keyboard, you can type on it or with the physical keyboard, and Circle keeps what you
+  typed. Disabled Submit and Accept buttons say so.
+- After opening Settings from the pause menu while choosing a class, closing it brings you back to the class list.
+
 ## 12 October 2026 — version 0.2.2
 
 Fixed:

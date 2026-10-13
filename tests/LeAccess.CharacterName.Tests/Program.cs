@@ -157,4 +157,5 @@ Check(ScreenReader.Messages.Count == 0, "A name that is not owned never echoes, 
 if (failures.Count != 0) throw new InvalidOperationException(string.Join(Environment.NewLine, failures));
 checks += KeyboardTests.Run();
 checks += TypingTests.Run();
+checks += LoginTests.Run();
 Console.WriteLine($"Character name tests passed: {checks} checks.");

@@ -61,3 +61,29 @@ DLL hash is recorded in STATUS.md. A fresh Steam launch loaded the plugin and al
 Harmony patches and detected NVDA without mod errors. Confirmation of the actual
 Start / Continue sequence was subsequently confirmed working by the user, who
 then entered gameplay. The temporary read-only probe has now been removed.
+
+## 2026-10-13 tester report: Settings from the pause menu over class selection
+
+Symptom: new account, no characters, class carousel. Start, then Settings; the
+tester could not get back to the class list (and Settings over character
+creation was silent).
+
+Cause: choosing Settings closes the pause panel, so the single queued restore
+ran one frame later, saw Settings open or opening and discarded the snapshot.
+Nothing restored the carousel when Settings closed (`currentlySelected` stays
+null), and reopening the pause menu had no snapshot to bind.
+
+Fix (`PauseMenuFocusRecovery`): a pending restore that finds a panel open or
+opening (or `menuOpen`) stays pending while the same screen/state/scene holds;
+only the owner object must be alive while waiting, visibility is checked at the
+actual restore. Once no panel is open, a null selection and an available owner
+restore; any selection the game made itself discards. If the pause menu reopens
+while waiting, `Capture` binds the waiting snapshot so Continue restores it.
+One log line per wait: `[PauseFocus] waiting: another panel is open
+(selection=<object name or none>)`, to explain the silent Settings screen.
+
+Tests: PauseFocus suite now 147 checks (Settings wait/restore, pause reopened
+then Continue, state/scene change while waiting, native selection kept, hidden
+owner at restore).
+
+Unverified in game.

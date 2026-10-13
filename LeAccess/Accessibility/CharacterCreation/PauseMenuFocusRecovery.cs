@@ -21,12 +21,8 @@ internal static class PauseMenuFocusRecovery
             if (!TryGetContext(out var character)) { Clear(); return; }
             if (_latest != null && !SameSession(_latest, character)) _latest = null;
             if (_bound != null && !SameSession(_bound, character)) _bound = null;
-            if (_pending != null && Time.frameCount > _closedFrame)
-            {
-                var pending = _pending;
-                _pending = null;
-                Restore(pending, character);
-            }
+            if (_pending != null && !SameSession(_pending, character)) _pending = null;
+            if (_pending != null && Time.frameCount > _closedFrame && Restore(_pending, character)) _pending = null;
             var ui = UIBase.instance;
             if (IsAlive(ui) && !ui.menuOpen) _latest = Observe(character) ?? _latest;
         }
@@ -37,17 +33,21 @@ internal static class PauseMenuFocusRecovery
     {
         try
         {
+            var waiting = _pending;
             _pending = null;
             if (!IsAlive(panel) || !IsAlive(system) || !TryGetContext(out var character)) { Clear(); return; }
             if (_bound != null && Same(_bound.Panel, panel) && Same(_bound.System, system)) return;
             var snapshot = Observe(character);
             if (snapshot == null && _latest != null && SameSession(_latest, character) && OwnerAvailable(_latest))
                 snapshot = _latest;
+            if (snapshot == null && waiting != null && SameSession(waiting, character) && OwnerAvailable(waiting))
+                snapshot = waiting;
             _latest = null;
             _bound = snapshot;
             if (snapshot == null) return;
             snapshot.Panel = panel;
             snapshot.System = system;
+            snapshot.Waited = false;
             Plugin.Log.LogInfo($"[PauseFocus] captured owner={snapshot.Owner.GetInstanceID()} state={snapshot.State} scene={snapshot.Scene}");
         }
         catch (Exception ex) { Clear(); ReportFailure(ex); }
@@ -123,22 +123,33 @@ internal static class PauseMenuFocusRecovery
         snapshot.Owner.isActiveAndEnabled && snapshot.Owner.gameObject.scene.isLoaded &&
         UiVisibility.IsVisible(snapshot.Owner.gameObject);
 
-    private static void Restore(Snapshot snapshot, CharacterSelect character)
+    // Returns true when the attempt is finished (restored or discarded); false keeps it pending.
+    private static bool Restore(Snapshot snapshot, CharacterSelect character)
     {
         var ui = UIBase.instance;
-        if (!SameSession(snapshot, character) || !OwnerAvailable(snapshot) ||
-            NavigationManager.currentlySelected is not null || !IsAlive(snapshot.System) ||
-            snapshot.System.IsAnyPanelOpen || !IsAlive(ui) || ui.menuOpen)
-        { Plugin.Log.LogDebug("[PauseFocus] discarded: context or ownership changed"); return; }
+        if (!SameSession(snapshot, character) || !IsAlive(snapshot.Owner) || !IsAlive(snapshot.System) || !IsAlive(ui))
+        { Plugin.Log.LogDebug("[PauseFocus] discarded: context or ownership changed"); return true; }
         var opening = snapshot.System._openingPanels;
-        if (opening is not null && (opening.WasCollected || opening.Count > 0))
-        { Plugin.Log.LogDebug("[PauseFocus] discarded: another panel is opening"); return; }
+        if (opening is not null && opening.WasCollected)
+        { Plugin.Log.LogDebug("[PauseFocus] discarded: opening list unavailable"); return true; }
+        if (snapshot.System.IsAnyPanelOpen || ui.menuOpen || opening is not null && opening.Count > 0)
+        {
+            if (snapshot.Waited) return false;
+            snapshot.Waited = true;
+            var current = NavigationManager.currentlySelected;
+            var holder = current is null || current.WasCollected ? null : current.TryCast<Behaviour>();
+            string selection = IsAlive(holder) ? holder.name : current is null ? "none" : "unknown";
+            Plugin.Log.LogInfo($"[PauseFocus] waiting: another panel is open (selection={selection})");
+            return false;
+        }
+        if (!OwnerAvailable(snapshot) || NavigationManager.currentlySelected is not null)
+        { Plugin.Log.LogDebug("[PauseFocus] discarded: context or ownership changed"); return true; }
 
         PanelSystem.RestoreFocus(snapshot.Navigation);
         ControllerMapsManager.UpdateMap();
         var selected = NavigationManager.currentlySelected;
         if (selected is null || selected.WasCollected || selected.Pointer != snapshot.Navigation.Pointer)
-        { Plugin.Log.LogDebug("[PauseFocus] native restoration did not select saved owner"); return; }
+        { Plugin.Log.LogDebug("[PauseFocus] native restoration did not select saved owner"); return true; }
         var owner = selected.TryCast<Navigable>();
         var control = snapshot.Control;
         if (IsAlive(owner) && IsAlive(control) && control.isActiveAndEnabled && control.IsInteractable() &&
@@ -146,6 +157,7 @@ internal static class PauseMenuFocusRecovery
             !owner.ShouldExcludeSelectable(control) && !Same(owner._activeSelectable, control))
             owner.TrySelect(control);
         Plugin.Log.LogInfo($"[PauseFocus] restored owner={snapshot.Owner.GetInstanceID()} state={snapshot.State}");
+        return true;
     }
 
     private static bool Same(UnityEngine.Object first, UnityEngine.Object second) =>
@@ -171,5 +183,6 @@ internal static class PauseMenuFocusRecovery
         internal int Scene;
         internal MainMenuPanel Panel;
         internal PanelSystem System;
+        internal bool Waited;
     }
 }

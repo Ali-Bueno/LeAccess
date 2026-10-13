@@ -1,3 +1,18 @@
+# Handoff — 2026-10-13: first login (terms, display name, email) and Settings over class selection
+
+Tester report, no log: could not get through the first-login screens with a pad; after Submit on the display name
+nothing worked; Settings from the pause menu over class selection was silent and the class list unreachable after it.
+Changes ([first login](reference/first-login.md), [pause](reference/pause-focus.md)), all unheard, not released:
+- Terms: hint that Accept unlocks at the end of the text (and the jump button's caption), "Accept is now available"
+  once, locked Accept says "(Disabled)".
+- Display-name and email forms: title, help and errors read; fields open the keyboard only on Cross ("Cross to type"),
+  physical typing through the open keyboard, Back keeps the text; locked Submit says "(Disabled)".
+- Pause → Settings → back: the class carousel focus is restored once Settings closes (or on Continue).
+Live checks need a fresh account (or clear the `TosAcceptedVersion` setting for the terms): log lines
+`[ScreenContent]` for the terms, `[Login] form: AddDisplayName` / `AddEmail`, `[CharacterKeyboard]`, and
+`[PauseFocus] waiting: … (selection=…)` while Settings is open over class selection — that selection name is the
+evidence for why Settings was silent there. Ask the reporting tester for `BepInEx/LogOutput.log`.
+
 # Handoff — 2026-10-11 14:00: dead pad and Circle after the mod menu, version at startup
 
 A tester (XInput pad, also keyboard/NVDA) could not move after closing the mod menu; Circle in the mod menu closed the

@@ -336,18 +336,12 @@ public static class ElementAnnouncer
                     return FormatAnnouncement(label, inputText, includeDetails ? description : null, go, isDisabledOption);
             }
 
-            if (!string.IsNullOrEmpty(inputText))
-            {
-                if (!string.IsNullOrEmpty(placeholder))
-                    return ModText.Format("control.field_value", placeholder, inputText);
-                return ModText.Format("control.field_value", ModText.Get("control.text_field"), inputText);
-            }
-            else
-            {
-                if (!string.IsNullOrEmpty(placeholder))
-                    return ModText.Format("control.empty_field", placeholder);
-                return ModText.Format("control.empty_field", ModText.Get("control.text_field"));
-            }
+            string name = !string.IsNullOrEmpty(placeholder) ? placeholder : ModText.Get("control.text_field");
+            string field = !string.IsNullOrEmpty(inputText) ? ModText.Format("control.field_value", name, inputText) :
+                ModText.Format("control.empty_field", name);
+            // Account fields open the screen keyboard only on Cross, like the Social username fields.
+            return EpochInputManager.IsControllerActive && Login.LoginPrompts.IsPromptInput(inputField)
+                ? ScreenContentTracker.Combine(new[] { field, ModText.Get("social.field_hint") }) : field;
         }
 
         Toggle toggle = null;
@@ -364,6 +358,8 @@ public static class ElementAnnouncer
         if (button != null)
         {
             var buttonText = TextUtils.GetTextFromHierarchy(button.gameObject);
+            if (!string.IsNullOrEmpty(buttonText) && Login.LoginPrompts.IsLockedButton(button))
+                buttonText = ModText.Format("control.disabled", buttonText);
             if (!string.IsNullOrEmpty(buttonText))
                 return ScreenContentTracker.Combine(new[] { buttonText, includeDetails ? description : null });
         }

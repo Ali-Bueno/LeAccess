@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/*.cs" Link="%(Filename)%(Extension)" />
+    <Compile Include="../../LeAccess/Accessibility/Login/LoginPrompts.cs" Link="LoginPrompts.cs" />
     <Compile Include="../../LeAccess/Accessibility/Dialogue/DialogueAnnouncer.cs" Link="DialogueAnnouncer.cs" />
     <Compile Include="../../LeAccess/Accessibility/Dialogue/DialogueResponseRepeat.cs" Link="DialogueResponseRepeat.cs" />
     <Compile Include="../../LeAccess/Accessibility/Dialogue/NpcLines.cs" Link="NpcLines.cs" />

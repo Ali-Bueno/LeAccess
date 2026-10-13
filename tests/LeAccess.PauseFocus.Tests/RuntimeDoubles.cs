@@ -19,6 +19,7 @@ namespace UnityEngine
     internal class Object : NativeObject
     {
         public bool Destroyed;
+        public string name = "";
         public int GetInstanceID() { Guard(); return Pointer.ToInt32(); }
         public static bool operator ==(Object a, Object b)
         {
@@ -61,7 +62,7 @@ namespace UnityEngine
     }
     internal sealed class GameObject : Object
     {
-        public string name = "Test control";
+        public new string name = "Test control";
         public bool Active = true;
         public GameObject Parent;
         public readonly List<Component> Components = new();

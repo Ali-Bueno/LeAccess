@@ -12,7 +12,7 @@ using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.CharacterCreation;
 
-/// <summary>Reads visible name-validation errors from the currently owned character form.</summary>
+/// <summary>Reads visible name-validation errors from the currently owned character or account form.</summary>
 internal static class CharacterNameAccessibility
 {
     private static readonly ScreenContentTracker Tracker = new();
@@ -64,7 +64,18 @@ internal static class CharacterNameAccessibility
         var slots = LocalCharacterSlots.instance;
         if (IsAlive(slots) && TryReadForm(slots, slots.inputTextTMP, slots.errorTextTMP, out text))
         { context = slots.inputTextTMP.GetInstanceID(); return true; }
+        if (Login.LoginPrompts.TryFind(FocusedElement(), out var form) && TryReadForm(form.Panel, form.Input, form.Error, out text))
+        { context = form.Input.GetInstanceID(); return true; }
         return false;
+    }
+
+    private static GameObject FocusedElement()
+    {
+        var keyboard = ScreenKeyboardManager.Instance;
+        if (IsAlive(keyboard) && keyboard._enabled && IsAlive(keyboard._selectedGameObject)) return keyboard._selectedGameObject;
+        var navigation = NavigationManager.currentlySelected;
+        var prioritized = navigation is null || navigation.WasCollected ? null : navigation.TryCast<PrioritizedNavigable>();
+        return IsAlive(prioritized) && IsAlive(prioritized.ActiveSelectable) ? prioritized.ActiveSelectable.gameObject : null;
     }
 
     private static bool TryReadForm(Behaviour owner, TMP_InputField input, TMP_Text error, out string text)

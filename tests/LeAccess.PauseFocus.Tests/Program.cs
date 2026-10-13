@@ -198,6 +198,58 @@ PanelSystem.DuringRestore = _ => NavigationManager.currentlySelected = new GameO
 Scenario.Frame();
 Check(s.Owner.SelectionCalls == 0, "Native selection of another owner is respected");
 
+// Pause -> Settings: the restore waits while Settings is open and runs once it closes.
+static Scenario ToSettings()
+{
+    var t = new Scenario(); t.Open(); t.Close();
+    t.System.IsAnyPanelOpen = true; Scenario.Frame();
+    return t;
+}
+s = ToSettings();
+for (var i = 0; i < 5; i++) Scenario.Frame();
+Check(Scenario.RestoreCount == 0, "Restore waits while Settings is open");
+Check(LeAccess.Plugin.Log.Messages.Count(m => m.StartsWith("[PauseFocus] waiting: another panel is open (selection=none)")) == 1, "Waiting is logged once");
+s.System._openingPanels.Value = 1; Scenario.Frame(); s.System._openingPanels.Value = 0;
+s.System.IsAnyPanelOpen = false; Scenario.Frame();
+Check(Scenario.RestoreCount == 1 && ReferenceEquals(PanelSystem.Restored[0], s.Owner), "Closing Settings restores the class screen owner");
+Scenario.Frame(); Scenario.Frame();
+Check(Scenario.RestoreCount == 1, "Waiting restore fires only once");
+Safe("settings wait");
+
+s = ToSettings(); s.Owner.gameObject.Active = false; Scenario.Frame();
+s.Owner.gameObject.Active = true; s.System.IsAnyPanelOpen = false; Scenario.Frame();
+Check(Scenario.RestoreCount == 1, "Owner hidden under Settings is only checked at restore time");
+s = ToSettings(); s.Owner.gameObject.Active = false; s.System.IsAnyPanelOpen = false; Scenario.Frame();
+Check(Scenario.RestoreCount == 0, "Owner still hidden when panels close is discarded");
+
+// Settings closes back to the pause menu: the waiting snapshot is bound again.
+s = ToSettings(); NavigationManager.currentlySelected = null;
+PauseMenuFocusRecovery.Update(); PauseMenuFocusRecovery.Capture(s.Pause, s.System);
+NavigationManager.currentlySelected = s.PauseNavigation; UIBase.instance.menuOpen = s.System.IsAnyPanelOpen = true;
+Scenario.Frame(); Scenario.Frame();
+Check(Scenario.RestoreCount == 0, "Reopened pause does not restore while open");
+s.Close(); Scenario.Frame();
+Check(Scenario.RestoreCount == 1 && ReferenceEquals(PanelSystem.Restored[0], s.Owner), "Continue restores snapshot kept across Settings");
+Safe("settings reopen pause");
+
+foreach (var mode in new[] { "state", "scene" })
+{
+    s = ToSettings(); Scenario.Frame();
+    if (mode == "state") s.Character.currentState = CharacterSelect.CharacterSelectState.ClassSelection;
+    else SceneManager.Current = new Scene { handle = 2, isLoaded = true };
+    Scenario.Frame();
+    if (mode == "state") s.Character.currentState = CharacterSelect.CharacterSelectState.NameCreation;
+    else SceneManager.Current = new Scene { handle = 1, isLoaded = true };
+    s.System.IsAnyPanelOpen = false; Scenario.Frame(); Scenario.Frame();
+    Check(Scenario.RestoreCount == 0, "Change while waiting discards: " + mode);
+}
+
+s = ToSettings(); var native = new GameObject().Add(new Navigable());
+NavigationManager.currentlySelected = native; s.System.IsAnyPanelOpen = false; Scenario.Frame();
+NavigationManager.currentlySelected = null; Scenario.Frame();
+Check(Scenario.RestoreCount == 0 && s.Owner.SelectionCalls == 0, "Native selection after Settings is not overwritten or revived");
+
+
 s = new Scenario(); s.Open(); s.Close(); PauseMenuFocusRecovery.Reset(); Scenario.Frame();
 Check(Scenario.RestoreCount == 0, "Lifecycle reset drops pending recovery");
 Console.WriteLine($"Pause focus tests passed: {checks} checks.");

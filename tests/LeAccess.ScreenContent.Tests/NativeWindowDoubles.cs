@@ -1,5 +1,6 @@
 namespace UnityEngine
 {
+    internal partial class Object { public IntPtr Pointer => new(GetInstanceID()); }
     internal class Behaviour : Component { public bool isActiveAndEnabled = true; }
 }
 
@@ -33,7 +34,7 @@ namespace LE.UI.Components
 
 namespace UnityEngine.UI
 {
-    internal class Selectable : UnityEngine.Component { }
+    internal class Selectable : UnityEngine.Behaviour { public bool interactable = true; }
     internal sealed class Button : Selectable { }
     internal sealed class ScrollRect : UnityEngine.Component { }
 }
@@ -54,5 +55,23 @@ namespace LeAccess.Accessibility.Panels
     {
         internal static bool TryCreate(LE.UI.PanelSystem.Panel panel, out System.Func<UnityEngine.Component, bool> skip, out System.Func<string> extra)
         { skip = null; extra = null; return false; }
+    }
+}
+
+namespace LE.UI.Login.UnityUI
+{
+    internal sealed class LoginHeader : UnityEngine.Behaviour { public TMPro.TMP_Text label; }
+    internal sealed class DisplayNamePromptPanel : UnityEngine.Behaviour
+    { public TMPro.TMP_InputField displayNameText; public UnityEngine.UI.Button submitButton; public LoginHeader errorHeader; }
+    internal sealed class EmailPromptPanel : UnityEngine.Behaviour
+    { public TMPro.TMP_InputField emailText; public UnityEngine.UI.Button submitButton; public LoginHeader errorHeader; }
+}
+
+namespace LE.Tos
+{
+    internal sealed partial class TosPanel
+    {
+        public bool _requireAcceptance, _hasScrolledToEnd;
+        public UnityEngine.UI.Button _acceptButton, _scrollToEndButton;
     }
 }

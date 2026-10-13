@@ -3,6 +3,7 @@
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/CharacterNameAccessibility.cs" Link="CharacterNameAccessibility.cs" />
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/CharacterNameKeyboard.cs" Link="CharacterNameKeyboard.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Login/LoginPrompts.cs" Link="LoginPrompts.cs" />
     <Compile Include="../../LeAccess/Accessibility/Patches/CharacterNameKeyboardPatches.cs" Link="CharacterNameKeyboardPatches.cs" />
     <Compile Include="../../LeAccess/Accessibility/CharacterCreation/CharacterNameEcho.cs" Link="CharacterNameEcho.cs" />
     <Compile Include="../../LeAccess/Accessibility/Utils/FieldEcho.cs" Link="FieldEcho.cs" />

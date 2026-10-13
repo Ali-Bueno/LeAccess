@@ -52,6 +52,7 @@ namespace UnityEngine
     {
         public bool Active = true;
         public bool Visible = true;
+        public string name;
         public GameObject Parent;
         public readonly List<Component> Components = new();
         public readonly List<GameObject> Children = new();
@@ -173,7 +174,7 @@ namespace LE.UI.Generic.UnityUI
 namespace LE.UI { internal static class LoadingScreen { public static bool IsVisible { get; set; } } }
 namespace LE.Tos
 {
-    internal sealed class TosPanel : UnityEngine.Component
+    internal sealed partial class TosPanel : UnityEngine.Component
     {
         public string Title;
         public TosContent _displayedContent;
@@ -222,6 +223,8 @@ namespace LeAccess.Accessibility.Utils
     internal static class TextUtils
     {
         public static string CleanText(string text) => text?.Trim();
+        public static string GetTextFromHierarchy(UnityEngine.GameObject go) => go.GetComponentsInChildren<TMPro.TMP_Text>(false)
+            .Where(IsVisibleLabel).Select(label => CleanText(label.text)).FirstOrDefault(text => !string.IsNullOrWhiteSpace(text));
         public static bool IsVisibleLabel(TMPro.TMP_Text label) =>
             LeAccess.Accessibility.Announcements.UiVisibility.IsVisibleGraphic(label);
     }
