@@ -1,3 +1,18 @@
+# Handoff — 2026-10-13 evening: ways toward unexplored targets, exploration shared by all characters
+
+User request: the scanner only said "up right, no known route" for a quest beyond explored ground; a sighted player
+plans on the minimap. Decided with the user: only what the minimap shows (no NavMesh path through the fog), explored
+ground shared by every character. Done, built and installed, unheard, not released
+([ways](reference/exploration-mode.md#ways-toward-a-target-beyond-explored-ground-2026-10-13-user-request),
+[saved](reference/exploration-mode.md#saved-exploration)). Live checks:
+- First start: `[Exploration saved] loaded merged N character files …`, then `saved key=…` within 30 s and
+  `Exploration/shared.bin` present; a second character sees the first one's rooms and routes.
+- A quest in unexplored ground (Z62 "Escapa de la cámara de los guardianes" was the original case): the readout adds
+  "Mejor de N caminos: sala inexplorada …; desde allí, …"; next category "caminos hacia …"; log `[Exploration] ways …`.
+- Lock the quest: "Guiando hacia …, por …"; walk it; watch `[Exploration beacon] way … news=` lines. False "Sin salida"
+  right after entering a room would mean the 1.3 s settle is too short (onward rooms seeded late).
+- Frame time with the beacon guided on a large saved map (two capped searches per 0.4 s refresh).
+
 # Handoff — 2026-10-13: first login (terms, display name, email) and Settings over class selection
 
 Tester report, no log: could not get through the first-login screens with a pad; after Submit on the display name

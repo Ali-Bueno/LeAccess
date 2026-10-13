@@ -84,7 +84,8 @@ happens on its own, by sound and speech, while you play with the game's normal c
 - Things in the world have sounds: loot by rarity, gold, potions, chests, the stash, portals, waypoints, exits, shrines,
   rifts, NPCs (wooden taps) and enemies (growls), all panned and faster or louder as you get closer.
 - An exploration scanner: hold the mod button and move the right stick to go through exits, waypoints, rooms, NPCs, enemies, loot and more, nearest first, with distance and direction. Mod
-  button and Cross starts a beacon that leads you there through ground you have already explored.
+  button and Cross starts a beacon that leads you there through ground you have already explored. When a quest lies
+  beyond what you have explored, the scanner names the best way toward it, as a sighted player plans one on the minimap.
 - Automatic speech for the things a sighted player sees at a glance: life and mana when they drop, potion charges, gold
   you pick up, level ups and new points, quest updates, zone and era names, the names of NPCs and players you walk up
   to, boss and elite life, dialogue and subtitles, notifications and minion orders.
@@ -100,9 +101,19 @@ opens a portal to town.
 When you do not know where to go, hold the mod button and flick the right stick up or down to pick a category (exit,
 waypoint, quest, unexplored room...), then left or right to step through it. Each entry says its name, how far it is in
 steps and one of eight screen directions. Mod button and Cross locks the beacon on it; follow the pings. The scanner
-learns places as you see them and remembers them per character. When the walkable way is not the straight line, the
-entry gives the route length and the way to head first; with `Exploration.RouteLegs` above 0 it reads the route's
-straight stretches instead ("down 40 steps, then right 60 steps, going up, then up 30 steps").
+learns places as you see them and remembers them for all your characters, the way you would remember a map you have
+played. When the walkable way is not the straight line, the entry gives the route length and the way to head first;
+with `Exploration.RouteLegs` above 0 it reads the route's straight stretches instead ("down 40 steps, then right 60
+steps, going up, then up 30 steps").
+
+When there is no known route to an entry, typically a quest in ground you have not explored yet, the scanner says which
+edge of the explored map leads toward it: "Quest, 190 steps, up right, no known route. Best of 3 ways: unexplored room
+4, 30 steps by route, head left; from there, 90 steps, up". It ranks the ways by the walk to that edge plus the
+straight line from there to the target, which is what the minimap shows; it does not know what lies in the unexplored
+part, so a way can turn out to be a dead end. The next category, "ways to …", lists every way, best first; Cross on one
+of them starts the beacon toward the quest by that way. Locking the quest itself takes the best way. The beacon keeps
+leading on as new ground opens, says "Dead end. Next way: …" when the ground it led into went nowhere new, and "Known
+route to …" once the explored map reaches the target.
 
 The game assumes you know what you are doing, so a few things are worth knowing:
 
@@ -167,7 +178,7 @@ everything else.
 |---|---|
 | Right stick up / down | Previous / next scanner category (says the category and its nearest entry) |
 | Right stick left / right | Previous / next entry in the category, nearest first |
-| Cross | Start the beacon toward the selected entry; again cancels it. It pings along a route through ground you have explored, faster as you get closer, and refuses if there is no explored route |
+| Cross | Start the beacon toward the selected entry; again cancels it. It pings along a route through ground you have explored, faster as you get closer. With no explored route it leads by the best way toward the target, and refuses only when no way leaves the explored ground |
 | Square | Life, mana, level and experience percent, potion charges and debuffs |
 | Triangle | Gold, unspent passive points, skills that can take a point, and the zone |
 | Circle | Repeat the selected scanner entry with its current distance and direction |
@@ -177,6 +188,7 @@ The scanner categories, in order: exit, portal, waypoint, unexplored room, room,
 enemy (everything on screen), treasure (chests), shrine, object (levers, notes, the forge and other things you can use),
 breakable (barrels, crates and pots) and item (loot on the ground). Rooms are the game's minimap rooms: "room N" once you have been inside, "unexplored room
 N" when you have seen it but not entered. A target on another floor says "on a higher level" or "on a lower level".
+After an entry with no known route, a "ways to …" category follows its own category.
 
 ### Inventory, merchants and the forge
 

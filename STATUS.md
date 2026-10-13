@@ -1,6 +1,14 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-13 (tester report, no log): first-login screens reworked: the terms say Accept unlocks only
+**Updated:** 2026-10-13 evening (user request): the scanner plans like the minimap. An entry with no explored route
+(a quest in unexplored ground) names its best way: the edge of the explored map (unexplored room or frontier) whose
+walk plus straight line on to the target is shortest, with "from there, N steps, direction"; a "ways to …" category
+lists up to 5; locking the target follows a way, says "Dead end. Next way: …" and "Known route to …"
+([ways](reference/exploration-mode.md#ways-toward-a-target-beyond-explored-ground-2026-10-13-user-request)).
+Explored ground and seen places are now shared by all characters, offline and online (`shared.bin`, old files
+merged; last death stays per character) ([saved](reference/exploration-mode.md#saved-exploration)). Exploration 500,
+ExplorationCatalog 123; built and installed. Unheard; not released.
+Earlier, 2026-10-13 (tester report, no log): first-login screens reworked: the terms say Accept unlocks only
 once the text reaches its end and announce when it does; the display-name and email fields work like the character
 name (Cross opens the keyboard, physical typing, Back keeps the text) and their title, help and errors are read
 ([first login](reference/first-login.md)); Settings opened from the pause menu over class selection now returns to

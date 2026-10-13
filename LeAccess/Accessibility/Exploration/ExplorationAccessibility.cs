@@ -126,6 +126,8 @@ internal static class ExplorationAccessibility
             if (entry.Category == ExplorationCategory.UnexploredRoom)
                 UnexploredPositions.Add(new System.Numerics.Vector2(entry.Position.X, entry.Position.Z));
         RadarUnexploredMarks.Publish(UnexploredPositions, ExplorationBeacon.ExploreRadius * 2, now);
+        // A failed refresh keeps the last openings, as the locked target keeps its last position.
+        if (_hasEntries) ExplorationBeacon.SetOpenings(Entries);
     }
 
     private static void Handle(ExplorationCommand command)
@@ -149,8 +151,11 @@ internal static class ExplorationAccessibility
         else Catalog.Ground = null;
         // Routes go through the explored ground of this scene session, computed only for the entry spoken.
         Catalog.LegsSpoken = _routeLegs.Value;
-        Catalog.Route = nav != null && ExplorationBeacon.CurrentMap(_world.Session) != null
+        bool mapped = nav != null && ExplorationBeacon.CurrentMap(_world.Session) != null;
+        Catalog.Route = mapped
             ? (entry, from) => ExplorationBeacon.RouteFor(ExplorationTarget.From(entry), from, Catalog.LegsSpoken > 0) : null;
+        Catalog.Ways = mapped
+            ? (entry, from) => ExplorationBeacon.WaysFor(ExplorationTarget.From(entry), from, Catalog.LegsSpoken > 0) : null;
         ExplorationText text = ModText.Format;
         string sentence = command switch
         {
@@ -164,12 +169,16 @@ internal static class ExplorationAccessibility
         Speak(sentence, interrupt: true);
     }
 
+    // A way entry locks the target it leads toward, starting by that way.
     private static string Lock()
     {
-        if (Catalog.Selected(Entries) is not { } entry)
+        var selected = Catalog.Selected(Entries);
+        string way = selected is { } chosen ? ExplorationCatalog.OpeningKey(chosen) : null;
+        var entry = way != null ? Catalog.WaysTarget : selected;
+        if (entry is not { } target)
             return ModText.Get(ExplorationInput.LeftStickIsModifier ? "exploration.scanner.no_selection_l3" : "exploration.scanner.no_selection");
-        _lastTarget = ExplorationTarget.From(entry);
-        return ExplorationBeacon.Lock(_lastTarget.Value);
+        _lastTarget = ExplorationTarget.From(target);
+        return ExplorationBeacon.Lock(_lastTarget.Value, way);
     }
 
     // Latest position of the locked entry. A failed refresh keeps the last one; a place that briefly

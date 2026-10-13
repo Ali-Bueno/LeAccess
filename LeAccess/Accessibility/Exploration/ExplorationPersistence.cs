@@ -8,11 +8,12 @@ using LeAccess.Accessibility.Players;
 
 namespace LeAccess.Accessibility.Exploration;
 
-// Saves each character's explored ground and seen places (fixed-layout scenes only) between game runs.
+// Saves the explored ground and seen places (fixed-layout scenes only) all characters share between game runs.
 internal static class ExplorationPersistence
 {
     private const double SaveSeconds = 30;
     private static string _key;
+    private static bool _sharedLoaded, _migrated;
     private static long _session;
     private static int _savedCells, _savedSeenVersion;
     private static double _nextSave;
@@ -55,6 +56,7 @@ internal static class ExplorationPersistence
     {
         Flush();
         _key = null;
+        _sharedLoaded = false;
         _session = 0;
         _savedCells = _savedSeenVersion = 0;
         _nextSave = 0;
@@ -111,50 +113,84 @@ internal static class ExplorationPersistence
         return identity is null || identity.WasCollected ? null : identity.Username;
     }
 
-    private static string PathFor(string key) =>
-        Path.Combine(BepInEx.Paths.ConfigPath, "LeAccess", "Exploration", key + ".bin");
+    private static string Folder() => Path.Combine(BepInEx.Paths.ConfigPath, "LeAccess", "Exploration");
 
     private static bool IsDirty() => Cells() != _savedCells || ExplorationProbe.SeenMemory.Version != _savedSeenVersion;
 
     private static int Cells() =>
         ExplorationBeacon.ExploredGround.FixedScopes.Sum(scope => scope.Value.CellCount);
 
+    // Ground and places are shared by every character and stay in memory across a switch;
+    // only the last death place belongs to the character.
     private static void Switch(string key)
     {
-        ExplorationBeacon.ExploredGround.Clear();
-        ExplorationProbe.SeenMemory.Clear();
-        ExplorationBeacon.ForgetMap();
+        if (!_sharedLoaded)
+        {
+            ExplorationBeacon.ExploredGround.Clear();
+            ExplorationProbe.SeenMemory.Clear();
+            ExplorationBeacon.ForgetMap();
+            _migrated = LoadShared();
+            _sharedLoaded = true;
+        }
+        else
+        {
+            foreach (var scope in ExplorationProbe.SeenMemory.FixedScopes()) scope.Value.RemoveWhere(ExplorationShared.IsDeath);
+        }
         _key = key;
-        Load(key);
-        _savedCells = Cells();
+        LoadDeaths(key);
+        _savedCells = _migrated ? -1 : Cells();
         _savedSeenVersion = ExplorationProbe.SeenMemory.Version;
+        _migrated = false;
     }
 
-    private static void Load(string key)
+    // True when the shared file was built from the old per-character files and still has to be written.
+    private static bool LoadShared()
     {
-        string path = PathFor(key);
+        string folder = Folder(), path = ExplorationShared.SharedPath(folder);
         try
         {
-            if (!File.Exists(path)) return;
             ExplorationSnapshot snapshot;
-            string reason;
-            long size;
-            using (var stream = File.OpenRead(path))
+            string source;
+            if (File.Exists(path) && TryRead(path, out snapshot)) source = "shared";
+            else
             {
-                size = stream.Length;
-                if (!ExplorationStore.TryRead(stream, out snapshot, out reason))
-                {
-                    stream.Close();
-                    Quarantine(path, reason);
-                    return;
-                }
+                snapshot = ExplorationShared.MergeLegacy(folder, Quarantine, out int files);
+                source = $"merged {files} character files";
             }
-            int cells = 0, places = 0;
-            foreach (var scope in snapshot.Explored) cells += ExplorationBeacon.ExploredGround.ImportFixed(scope.Key, scope.Value);
-            foreach (var scope in snapshot.Seen) places += ExplorationProbe.SeenMemory.ImportFixed(scope.Key, scope.Value);
-            Plugin.Log.LogInfo($"[Exploration saved] loaded key={key} scopes={snapshot.Explored.Count}+{snapshot.Seen.Count} cells={cells} places={places} bytes={size}");
+            Import(snapshot, source);
+            return source != "shared";
+        }
+        catch (Exception ex) { Warn($"load failed for the shared file: {ex.Message}"); }
+        return false;
+    }
+
+    // A character's death places, from its own file or, before that exists, from its old whole-character file.
+    private static void LoadDeaths(string key)
+    {
+        string folder = Folder();
+        try
+        {
+            string path = ExplorationShared.DeathsPath(folder, key);
+            if (!File.Exists(path)) path = ExplorationShared.LegacyPath(folder, key);
+            if (!File.Exists(path) || !TryRead(path, out var snapshot)) return;
+            Import(ExplorationShared.DeathsOf(snapshot), $"deaths of {key}");
         }
         catch (Exception ex) { Warn($"load failed for {key}: {ex.Message}"); }
+    }
+
+    private static bool TryRead(string path, out ExplorationSnapshot snapshot)
+    {
+        if (ExplorationShared.TryReadFile(path, out snapshot, out string reason)) return true;
+        Quarantine(path, reason);
+        return false;
+    }
+
+    private static void Import(ExplorationSnapshot snapshot, string what)
+    {
+        int cells = 0, places = 0;
+        foreach (var scope in snapshot.Explored) cells += ExplorationBeacon.ExploredGround.ImportFixed(scope.Key, scope.Value);
+        foreach (var scope in snapshot.Seen) places += ExplorationProbe.SeenMemory.ImportFixed(scope.Key, scope.Value);
+        Plugin.Log.LogInfo($"[Exploration saved] loaded {what} scopes={snapshot.Explored.Count}+{snapshot.Seen.Count} cells={cells} places={places}");
     }
 
     private static void Quarantine(string path, string reason)
@@ -166,16 +202,30 @@ internal static class ExplorationPersistence
 
     private static void Save()
     {
-        var snapshot = new ExplorationSnapshot();
+        var shared = new ExplorationSnapshot();
+        var deaths = new ExplorationSnapshot();
         foreach (var scope in ExplorationBeacon.ExploredGround.FixedScopes)
-            if (scope.Value.CellCount > 0) snapshot.Explored[scope.Key] = scope.Value.Points.ToList();
+            if (scope.Value.CellCount > 0) shared.Explored[scope.Key] = scope.Value.Points.ToList();
         foreach (var scope in ExplorationProbe.SeenMemory.FixedScopes())
         {
             var keys = scope.Value.Where(ExplorationSeenMemory.Persistent).ToList();
-            if (keys.Count > 0) snapshot.Seen[scope.Key] = keys;
+            var own = keys.Where(ExplorationShared.IsDeath).ToList();
+            keys.RemoveAll(ExplorationShared.IsDeath);
+            if (keys.Count > 0) shared.Seen[scope.Key] = keys;
+            if (own.Count > 0) deaths.Seen[scope.Key] = own;
         }
-        string path = PathFor(_key), temp = path + ".tmp";
-        Directory.CreateDirectory(Path.GetDirectoryName(path));
+        string folder = Folder();
+        Directory.CreateDirectory(folder);
+        long size = Write(ExplorationShared.SharedPath(folder), shared);
+        if (deaths.Seen.Count > 0) Write(ExplorationShared.DeathsPath(folder, _key), deaths);
+        _savedCells = Cells();
+        _savedSeenVersion = ExplorationProbe.SeenMemory.Version;
+        Plugin.Log.LogInfo($"[Exploration saved] saved key={_key} scopes={shared.Explored.Count}+{shared.Seen.Count} cells={shared.Explored.Values.Sum(p => p.Count)} places={shared.Seen.Values.Sum(k => k.Count)} bytes={size}");
+    }
+
+    private static long Write(string path, ExplorationSnapshot snapshot)
+    {
+        string temp = path + ".tmp";
         long size;
         using (var stream = File.Create(temp))
         {
@@ -183,9 +233,7 @@ internal static class ExplorationPersistence
             size = stream.Length;
         }
         File.Move(temp, path, overwrite: true);
-        _savedCells = Cells();
-        _savedSeenVersion = ExplorationProbe.SeenMemory.Version;
-        Plugin.Log.LogInfo($"[Exploration saved] saved key={_key} scopes={snapshot.Explored.Count}+{snapshot.Seen.Count} cells={snapshot.Explored.Values.Sum(p => p.Count)} places={snapshot.Seen.Values.Sum(k => k.Count)} bytes={size}");
+        return size;
     }
 
     private static void Warn(string message)

@@ -3,6 +3,17 @@
 What changed in LeAccess, day by day, newest first. Each heading gives the day and the version that first shipped
 those changes. It is written from the commit history; internal notes, status updates and merges are left out.
 
+## 13 October 2026, evening — not released yet
+
+New:
+
+- When there is no known route to something in the scanner, usually a quest in ground you have not explored, the
+  scanner names the best way toward it: the edge of the explored map that leads that way, how to walk there, and how
+  far the target is from there. A "ways to …" category lists the other ways. The beacon can follow them, tells you when
+  a way was a dead end and when the route to the target becomes known.
+- What you explore is remembered for all your characters, offline and online. Maps explored before this version are
+  merged automatically.
+
 ## 13 October 2026 — version 0.2.3
 
 Fixed:

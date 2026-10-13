@@ -6,7 +6,7 @@ using System.Text;
 
 namespace LeAccess.Accessibility.Exploration;
 
-// What one character has explored on fixed-layout scenes; the binary file format is in reference/exploration-mode.md.
+// What the characters have explored on fixed-layout scenes; the binary file format is in reference/exploration-mode.md.
 internal sealed class ExplorationSnapshot
 {
     internal Dictionary<string, List<Vector3>> Explored { get; } = new(StringComparer.Ordinal);

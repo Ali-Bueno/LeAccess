@@ -33,6 +33,10 @@ internal static class ExplorationBeacon
     private static readonly ExploredMemory Memory = new(() => new ExploredMap(ExploredMap.DefaultCellSize, Walkability.LevelHeight));
     private static readonly BeaconState State = new() { AtHand = TargetAtHand };
     private static readonly BeaconRouter Router = RouteExplored;
+    private static readonly BeaconWays Ways = WaysToward;
+    private static readonly List<ExplorationEntry> Openings = new();
+    private static readonly List<ExploredOpening> OpeningAreas = new();
+    private static readonly List<ExploredWay> Found = new();
     private static ExploredMap _map;
     private static Camera _camera;
     private static BeaconUpdate _last;
@@ -40,7 +44,7 @@ internal static class ExplorationBeacon
     private static bool _active;
     private static double _nextTick, _nextStatus;
     private static int _refusals, _routeLosses;
-    private static string _lastFailure, _heldLog, _routeLog;
+    private static string _lastFailure, _heldLog, _routeLog, _wayLog;
 
     internal static string LockedKey => State.LockedKey;
     internal static float ExploreRadius => _exploreRadius?.Value ?? ExploredMap.DefaultExploreRadius;
@@ -76,8 +80,9 @@ internal static class ExplorationBeacon
         catch (Exception ex) { ReportFailure(ex); return false; }
     }
 
-    // Returns the sentence to speak: locked with its reach word, cancelled (same key) or refused.
-    internal static string Lock(ExplorationTarget target)
+    // Returns the sentence to speak: locked with its reach word or the way it takes, cancelled (same key) or refused.
+    // Without an explored route the preferred way (an opening's key) is taken when it is listed.
+    internal static string Lock(ExplorationTarget target, string preferredWay = null)
     {
         if (_volume == null) return null;
         try
@@ -88,7 +93,7 @@ internal static class ExplorationBeacon
             _map.Observe(player, Walkability);
             string previous = State.Target.Name;
             _heldLog = null;
-            switch (State.Lock(target, player, now, Router))
+            switch (State.Lock(target, player, now, Router, Ways, preferredWay))
             {
                 case BeaconLock.Refused:
                     _refusals++;
@@ -105,6 +110,13 @@ internal static class ExplorationBeacon
             _lockSession = world.Session;
             _nextStatus = now + StatusSeconds;
             BeaconAudio.Queue(BeaconSound.Locked);
+            if (State.Way is { } way)
+            {
+                _wayLog = way.Opening.Key;
+                Plugin.Log.LogInfo(string.Create(CultureInfo.InvariantCulture,
+                    $"[Exploration beacon] locked key={target.Key} name={target.Name} via={way.Opening.Name} route={way.Length:F1} beyond={way.Beyond:F1} preferred={preferredWay ?? "none"} cells={_map.CellCount}"));
+                return ModText.Format("exploration.beacon.locked_via", target.Name, way.Opening.Name);
+            }
             bool straight = ExploredMap.StraightClear(player, target.Position, Walkability);
             Plugin.Log.LogInfo(string.Create(CultureInfo.InvariantCulture,
                 $"[Exploration beacon] locked key={target.Key} name={target.Name} straight={(straight ? 1 : 0)} route={State.RouteLength:F1} cells={_map.CellCount} {GoalText(target)}"));
@@ -196,7 +208,7 @@ internal static class ExplorationBeacon
         SeedVisitedRooms(world, now);
         if (!MinimapRoomReader.HasRooms) _map.UpdateFrontier(Walkability);
         if (State.LockedKey == null || !TryAxes(out var forward, out var right)) return null;
-        _last = State.Tick(player, target, forward, right, now, Router);
+        _last = State.Tick(player, target, forward, right, now, Router, Ways);
         string name = _last.Target.Name;
         // An unexplored room leaves the scanner once entered (D2R arrives on entry, its room cue the sound);
         // a frontier edge once seen.
@@ -211,16 +223,87 @@ internal static class ExplorationBeacon
                 return ModText.Format("exploration.beacon.arrived", name);
             case BeaconRelease.RouteLost:
                 _routeLosses++;
-                Released($"route-lost failure={_map.LastFailure ?? "none"}", name);
+                Released($"route-lost failure={_map.LastFailure ?? "none"} way={_last.Way.Name ?? "none"}", name);
                 BeaconAudio.Queue(BeaconSound.Cleared);
-                return ModText.Format("exploration.beacon.route_lost", name);
+                return ModText.Format(_last.Way.Key != null ? "exploration.beacon.no_ways" : "exploration.beacon.route_lost", name);
             case BeaconRelease.TargetLost:
                 Released("target-lost", name);
                 BeaconAudio.Queue(BeaconSound.Cleared);
                 return ModText.Format("exploration.beacon.target_lost", name);
         }
         if (_last.Ping) BeaconAudio.QueuePing(_last.Pan, _last.Ahead);
-        return null;
+        LogWay();
+        return _last.News switch
+        {
+            BeaconNews.RouteKnown => ModText.Format("exploration.beacon.route_known", name),
+            BeaconNews.DeadEnd => ModText.Format("exploration.beacon.dead_end", _last.Way.Name),
+            _ => null
+        };
+    }
+
+    private static void LogWay()
+    {
+        string key = _last.Way.Key;
+        if (key == _wayLog && _last.News == BeaconNews.None) return;
+        _wayLog = key;
+        Plugin.Log.LogInfo(string.Create(CultureInfo.InvariantCulture,
+            $"[Exploration beacon] way name={_last.Target.Name} via={_last.Way.Name ?? "route"} news={_last.News} remaining={_last.Remaining:F1} distance={_last.Distance:F1} openings={Openings.Count}"));
+    }
+
+    // The scanner's unexplored rooms and frontier edges: the openings a way toward unexplored ground leaves by.
+    internal static void SetOpenings(IReadOnlyList<ExplorationEntry> entries)
+    {
+        Openings.Clear();
+        foreach (var entry in entries)
+            if (entry.Category == ExplorationCategory.UnexploredRoom) Openings.Add(entry);
+    }
+
+    // Ways toward a target with no explored route, best first, into Found; none toward an opening itself.
+    private static void FindWays(NVector3 from, ExplorationTarget target)
+    {
+        Found.Clear();
+        if (_map == null || RoomTracker.IsUnexplored(target.Key) || Openings.Count == 0) return;
+        OpeningAreas.Clear();
+        foreach (var opening in Openings)
+            OpeningAreas.Add(new ExploredOpening(opening.Position, BeaconState.ArrivalRadius(ExplorationTarget.From(opening))));
+        _map.FindWays(from, target.Position, OpeningAreas, BeaconState.MaxWays, Walkability, Found);
+    }
+
+    private static IReadOnlyList<BeaconWay> WaysToward(NVector3 from, ExplorationTarget target)
+    {
+        FindWays(from, target);
+        var ways = new List<BeaconWay>(Found.Count);
+        foreach (var way in Found)
+            ways.Add(new BeaconWay(ExplorationTarget.From(Openings[way.Opening]), way.Path, way.Length, way.Beyond));
+        return ways;
+    }
+
+    // The scanner's ways toward a target with no explored route, measured and aimed as the beacon would follow them.
+    internal static IReadOnlyList<ExplorationWay> WaysFor(ExplorationTarget target, NVector3 player, bool corners)
+    {
+        try
+        {
+            var map = _map;
+            FindWays(player, target);
+            var ways = new List<ExplorationWay>(Found.Count);
+            foreach (var way in Found)
+            {
+                var opening = Openings[way.Opening];
+                float remaining = BeaconState.Follow(way.Path, player, opening.Position, out var aim);
+                ways.Add(new ExplorationWay(opening, new ExplorationRoute(remaining, aim, way.Path.Count == 2,
+                    corners && map != null ? map.Corners(way.Path, Walkability) : null)));
+            }
+            string best = Found.Count > 0
+                ? string.Create(CultureInfo.InvariantCulture, $"best={Openings[Found[0].Opening].Name} route={Found[0].Length:F1} beyond={Found[0].Beyond:F1}")
+                : $"failure={map?.LastFailure ?? "no map"}";
+            Plugin.Log.LogInfo($"[Exploration] ways name={target.Name} openings={Openings.Count} found={Found.Count} {best} expansions={map?.LastExpansions ?? 0}");
+            return ways;
+        }
+        catch (Exception ex)
+        {
+            ReportFailure(ex);
+            return Array.Empty<ExplorationWay>();
+        }
     }
 
     private static bool TryCapture(out MapSectionWorldSnapshot world, out NVector3 player)
@@ -235,6 +318,7 @@ internal static class ExplorationBeacon
             _mapSession = world.Session;
         }
         _map.ExploreRadius = _exploreRadius.Value;
+        State.WaySettleSeconds = _map.PlanSeconds(TickSeconds);
         return true;
     }
 
@@ -317,7 +401,7 @@ internal static class ExplorationBeacon
         Plugin.Log.LogInfo($"[Exploration beacon] released reason={reason} name={name}");
 
     private static void LogStatus() => Plugin.Log.LogInfo(string.Create(CultureInfo.InvariantCulture,
-        $"[Exploration beacon] status name={State.Target.Name} routed={(State.Routed ? 1 : 0)} route={State.RouteLength:F1} " +
+        $"[Exploration beacon] status name={State.Target.Name} routed={(State.Routed ? 1 : 0)} route={State.RouteLength:F1} way={State.Way?.Opening.Name ?? "none"} " +
         $"remaining={_last.Remaining:F1} distance={_last.Distance:F1} cells={_map?.CellCount ?? 0} fixed_maps={Memory.FixedCount} " +
         $"refusals={_refusals} route_losses={_routeLosses} failure={_map?.LastFailure ?? "none"} " +
         $"expansions={_map?.LastExpansions ?? 0} edge_checks={_map?.EdgeChecks ?? 0} " +
@@ -350,6 +434,9 @@ internal static class ExplorationBeacon
         Memory.Clear();
         Walkability.Reset();
         TownExplored.Cleanup();
+        Openings.Clear();
+        OpeningAreas.Clear();
+        Found.Clear();
         _map = null;
         _camera = null;
         _last = default;
@@ -357,7 +444,7 @@ internal static class ExplorationBeacon
         _lockSession = _mapSession = 0;
         _nextTick = _nextStatus = 0;
         _refusals = _routeLosses = 0;
-        _lastFailure = _heldLog = _routeLog = null;
+        _lastFailure = _heldLog = _routeLog = _wayLog = null;
         _volume = null;
         _exploreRadius = null;
         _audioBuffer = null;

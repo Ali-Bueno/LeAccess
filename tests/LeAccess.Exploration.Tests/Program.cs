@@ -10,12 +10,14 @@ internal static class Program
             BeaconTests.Run();
             SynthTests.Run();
             StoreTests.Run();
+            SharedTests.Run();
             KeyTests.Run();
             UnexploredTests.Run();
             ArrivalTests.Run();
             TownTests.Run();
             VisitedRoomTests.Run();
             RouteTests.Run();
+            WayTests.Run();
             Console.WriteLine($"Exploration tests passed: {_checks} checks.");
             return 0;
         }

@@ -196,16 +196,27 @@ run before vitals in `MenuAccessibility.LateUpdate`). Tests: `LeAccess.Explorati
 
 ## Saved exploration
 
-- File: `<BepInEx config>/LeAccess/Exploration/<key>.bin`, key `offline-<name>-<classId>` (`online-` when
-  `GameplayEnvironment.IsOnlineClient`); the name keeps Unicode letters, invalid file-name characters and spaces become `_`.
-  No character name, no persistence.
+- Shared by every character, offline and online (2026-10-13; a sighted veteran knows the campaign maps):
+  `<BepInEx config>/LeAccess/Exploration/shared.bin` holds the explored ground and the seen places (exits, waypoints,
+  stash, NPCs, visited minimap rooms `room|...`). The character key (`offline-<name>-<classId>`, `online-` when
+  `GameplayEnvironment.IsOnlineClient`; Unicode letters kept, invalid characters and spaces `_`) is still needed to
+  know a character is present (no name, no persistence) and names the one per-character file,
+  `<key>.deaths.bin`, which holds only the last death place (`death|...`): that is the character's own, so it is
+  not shared.
+- Migration (`ExplorationShared.MergeLegacy`): when `shared.bin` is missing (or corrupt and set aside), the first
+  load merges every old `<key>.bin` in the folder: points are deduplicated through `ExploredMap.Import` (same
+  column and floor collapse; capped at 100000 per scope), keys are united (50000 per scope), scopes capped at 4096,
+  old death keys are dropped. A corrupt old file is renamed `.corrupt` and skipped. The old files stay in place
+  untouched; they are never read again except that a character without a `.deaths.bin` takes its death place from
+  its own old file. The merged result is saved at the next 30 s tick.
 - Format (`ExplorationStore`, little endian): `LEXP`, int32 version (1); explored scopes: int32 count, each
   ushort-prefixed UTF-8 scope (`scene|variant`), int32 point count, x/y/z float32; seen scopes: int32 count, each
   scope (scene name), int32 key count, ushort-prefixed keys. Reading rejects the whole file on bad magic/version,
   counts over the caps (4096 scopes, 100000 points, 50000 keys per scope), non-finite floats, truncation or trailing
   bytes; a rejected file is renamed `.corrupt` and ignored.
-- Cadence (`ExplorationPersistence.Update`, from `ExplorationAccessibility.Refresh`): load on first sight of a
-  character or a switch (the previous one is saved first, memories cleared); save when dirty every 30 s, on a scene
+- Cadence (`ExplorationPersistence.Update`, from `ExplorationAccessibility.Refresh`): load the shared file on first
+  sight of a character (and that character's death place; a switch saves, swaps only the death place and keeps
+  the shared memories); save when dirty every 30 s, on a scene
   session change and on `Cleanup`. Writes go to `.tmp`, then replace the file.
 - Imported cells carry no links: `ExploredMap.Import` makes no NavMesh calls and routing proves each uncached edge
   when the search reaches it (bounded by `MaxExpansions` x 8 per search).
@@ -618,3 +629,54 @@ Morditas label text resolves; the unnamed-interactable log will show what is sti
 prison have no listener field found and are not implemented.
 
 Tests: WorldCues 304, NpcProbe 116, LandmarkProbe 111, ExplorationCatalog 103, Exploration 448, Localization 9110.
+
+## Ways toward a target beyond explored ground (2026-10-13, user request)
+
+Request: the scanner said only "quest, 190 steps, up right, no known route", while a sighted player plans a route on
+the minimap. A sighted player cannot see under the fog either: they pick the edge of the known map that heads toward
+the marker. User decisions: use only what the minimap shows (no NavMesh path through unexplored ground, PRINCIPLES
+"prefer manual exploration"), and share the explored ground between characters like a veteran's memory of the
+campaign maps ([saved exploration](#saved-exploration)).
+
+**Ranking** (`ExploredMap.FindWays`, `ExploredWays.cs`). Openings are the scanner's `UnexploredRoom` entries (unexplored
+minimap rooms, or frontier edges in scenes without rooms). One A* from the player over explored cells toward the
+target: a cell that reaches an opening (the area-goal rule of routes) may finish there, costing its walk so far, the
+step into the opening and the straight horizontal line from the opening's sampled point to the target. The queue's
+estimate is the horizontal distance to the target, which no finish undercuts, so finishes leave in estimate order and
+the search stops after `BeaconState.MaxWays` (5). Paths are straightened like routes and the list re-sorted by the
+straightened estimates. An opening no explored cell reaches is no way; an opening as target gets no ways.
+
+**Scanner** (`ExplorationCatalogWays.cs`). An entry with no explored route (other than an opening) reads its best way
+after the unrouted readout: "Quest, 190 steps, up right, no known route. Best of 3 ways: unexplored room 4, 30 steps by
+route, left 10 steps, then up 20 steps; from there, 90 steps, up". The opening part is its ordinary routed readout
+(route legs apply); "from there" is the straight line from the opening's position to the target. The ways then form a
+category, "ways to <name>", right after the target's own category, best first (not nearest first), until the target
+has a route or leaves the list; an opening explored since drops out. Create+Cross on a way locks the target, starting
+by that way (`ExplorationCatalog.OpeningKey`, `WaysTarget`).
+
+**Beacon** (`BeaconState`, `ExplorationBeacon.WaysToward`). Locking an entry with no explored route refuses only when
+there is no way: "Guiding to <target>, by <opening>". Each route refresh tries the explored route to the target first;
+without one it follows a way, pinging and pacing along it to its opening:
+- the current way is kept while listed, unless another estimate is lower by `WaySwitchMargin` (two cells);
+- once its opening is gone (entered, or the frontier seen), it keeps leading into it for `WaySettleSeconds`, the time
+  one observe plan of the explore radius takes to drain at the beacon tick (pi r^2 / cell^2 / `QueriesPerObserve` x
+  0.05 s, about 1.3 s at 20 units), then takes the best way. If that way was already listed when the gone one was
+  chosen, the gone one led nowhere new: "Dead end. Next way: <opening>". A new opening is followed silently;
+- a route found to the target: "Known route to <target>", once per lock, then the ordinary route;
+- no way left: after the usual 3 s, "No ways left to <target>" and the lock ends.
+
+**Log lines**: `[Exploration] ways name= openings= found= best= route= beyond= expansions=` (or `failure=`) per readout
+with no route; `[Exploration beacon] locked … via= route= beyond= preferred=`; `[Exploration beacon] way name= via=
+news= remaining= distance= openings=` on every change of way; `way=` in the status line; `released reason=route-lost …
+way=`.
+
+**Evidence and limits.** ExplorationCatalog 123 checks (best way and its count, a single way, none, the ways category
+placed and named after its target, kept order, a selected way's opening, an explored opening dropped, ways dropped
+once the target is routed or gone, no ways for an opening), Exploration 500 (a fork whose farther-promising opening
+ranks first, an opening off the explored ground, walkable paths ending in their opening, limit, failures; beacon:
+refused without ways, preferred way, margin, settling, dead end said once, a new opening followed silently, route
+known said once, no ways left). Not heard in game. Unverified live: the cost of a failed route plus a way search per
+refresh on large shared maps (each capped at 6000 expansions; uncached edges of saved cells cost a NavMesh raycast);
+whether 1.3 s lets an entered room's onward openings appear (visited rooms are also seeded over several ticks), which
+would show as false dead ends; speech length with route legs at 4; how often the straight line from an opening misleads
+on real campaign maps.

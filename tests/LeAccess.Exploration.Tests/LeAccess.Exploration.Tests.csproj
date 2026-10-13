@@ -13,6 +13,7 @@
     <Compile Include="../../LeAccess/Accessibility/Combat/EnemyCueKind.cs" Link="EnemyCueKind.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExploredMap.cs" Link="ExploredMap.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExploredMapRouting.cs" Link="ExploredMapRouting.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Exploration/ExploredWays.cs" Link="ExploredWays.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExploredGoal.cs" Link="ExploredGoal.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/NavMeshSeed.cs" Link="NavMeshSeed.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/VisitedRoomSeed.cs" Link="VisitedRoomSeed.cs" />
@@ -20,10 +21,12 @@
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExploredFrontier.cs" Link="ExploredFrontier.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/RoomTracker.cs" Link="RoomTracker.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationCatalog.cs" Link="ExplorationCatalog.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationCatalogWays.cs" Link="ExplorationCatalogWays.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/RouteLegs.cs" Link="RouteLegs.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationSeenMemory.cs" Link="ExplorationSeenMemory.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationArrival.cs" Link="ExplorationArrival.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationStore.cs" Link="ExplorationStore.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationShared.cs" Link="ExplorationShared.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationKey.cs" Link="ExplorationKey.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/BeaconState.cs" Link="BeaconState.cs" />
     <Compile Include="../../LeAccess/Accessibility/Exploration/BeaconCueSynthesizer.cs" Link="BeaconCueSynthesizer.cs" />

@@ -49,7 +49,9 @@ Equal(string.Join(",", new[]
         ExplorationCategory.LastDeath, ExplorationCategory.Stash, ExplorationCategory.Enemy, ExplorationCategory.Treasure,
         ExplorationCategory.Shrine, ExplorationCategory.Interactable, ExplorationCategory.Breakable, ExplorationCategory.Item
     }), string.Join(",", ExplorationCatalog.Order), "D2R category order");
-Equal(Enum.GetValues<ExplorationCategory>().Length, ExplorationCatalog.Order.Distinct().Count(), "every category is in the order once");
+// Ways have no fixed place: they follow the category of the entry they lead toward.
+Equal(Enum.GetValues<ExplorationCategory>().Length - 1, ExplorationCatalog.Order.Distinct().Count(), "every category but ways is in the order once");
+Equal(false, ExplorationCatalog.Order.Contains(ExplorationCategory.Way), "ways are not in the fixed order");
 Equal(Enum.GetValues<ExplorationCategory>().Length,
     Enum.GetValues<ExplorationCategory>().Select(ExplorationCatalog.CategoryKey).Distinct().Count(), "every category has its own name");
 
@@ -337,5 +339,85 @@ Equal(0, restored.ImportFixed("PCG#3", new[] { "x" }), "procedural scope import 
 restored.Enter("Town");
 Equal(true, restored.Contains("1|Exit|5|1"), "imported key is remembered");
 Equal(1, restored.Count, "entering an imported scope reuses it");
+
+// Ways toward an entry with no explored route (reference/exploration-mode.md "Ways toward a target beyond explored ground").
+words["exploration.category.way"] = "<ways to {0}>";
+words["exploration.way_only"] = "{0} <one way:> {1}";
+words["exploration.way_best"] = "{0} <best of {1}:> {2}";
+words["exploration.way_beyond"] = "{0} <from there {1} {2}>";
+var gate = Entry("q", "Gate", ExplorationCategory.Quest, 0, 100);
+var farRoom = Entry("unexplored:1", "Room 1", ExplorationCategory.UnexploredRoom, -20, 10);
+var nearRoom = Entry("unexplored:2", "Room 2", ExplorationCategory.UnexploredRoom, 8, 3);
+var wayExit = Entry("e", "Exit", ExplorationCategory.Exit, 0, -10);
+var farRoute = new ExplorationRoute(25, new Vector3(-4, 0, 0), false);
+var nearRoute = new ExplorationRoute(9, new Vector3(4, 0, 0), false);
+var knownRoutes = new Dictionary<string, ExplorationRoute>
+{
+    [farRoom.Key] = farRoute, [nearRoom.Key] = nearRoute, [wayExit.Key] = new ExplorationRoute(10, wayExit.Position, true)
+};
+ExplorationWay[] gateWays = { new(farRoom, farRoute), new(nearRoom, nearRoute) };
+ExplorationCatalog WaysCatalog(IReadOnlyList<ExplorationWay> ways) => new()
+{
+    Route = (entry, _) => knownRoutes.TryGetValue(entry.Key, out var known) ? known : null,
+    Ways = (entry, _) => entry.Key == gate.Key ? ways : Array.Empty<ExplorationWay>()
+};
+string Opening(ExplorationEntry opening, ExplorationRoute route) =>
+    ExplorationCatalog.Describe(opening, player, forward, right, step, text, route: (_, _) => route);
+string WayLine(ExplorationEntry opening, ExplorationRoute route, int steps, string direction) =>
+    text("exploration.way_beyond", Opening(opening, route), Steps(steps), text($"guidance.direction.{direction}"));
+string GateUnrouted = text("exploration.entry_unrouted", Line("Gate", 100, "up"));
+var wayEntries = new List<ExplorationEntry> { gate, farRoom, nearRoom, wayExit };
+
+var ways = WaysCatalog(gateWays);
+// Room 1 is a longer walk but promises more: 25 by route, then about 92 straight up to the gate.
+Equal(Category(ExplorationCategory.Quest) + ". " + text("exploration.way_best", GateUnrouted, 2, WayLine(farRoom, farRoute, 92, "up")),
+    ways.StepCategory(-1, wayEntries, player, forward, right, step, text), "an unrouted target reads its best way and how many there are");
+Equal(gate.Key, ways.WaysTarget?.Key, "the ways lead toward the entry read");
+Equal(text("exploration.category.way", "Gate") + ". " + WayLine(farRoom, farRoute, 92, "up"),
+    ways.StepCategory(1, wayEntries, player, forward, right, step, text), "the ways follow their target's category, named after it");
+Equal(ExplorationCategory.Way, ways.Category, "ways category");
+Equal(WayLine(nearRoom, nearRoute, 97, "up"), ways.StepEntry(1, wayEntries, player, forward, right, step, text),
+    "ways keep their order, not nearest first");
+Equal(nearRoom.Key, ways.Selected(wayEntries) is { } chosenWay ? ExplorationCatalog.OpeningKey(chosenWay) : null,
+    "a selected way names its opening");
+Equal(null, ExplorationCatalog.OpeningKey(gate), "an ordinary entry has no opening");
+Equal(WayLine(farRoom, farRoute, 92, "up"), ways.StepEntry(1, wayEntries, player, forward, right, step, text), "ways wrap");
+
+// An opening explored since is no longer offered; the rest stay.
+var nearExplored = new List<ExplorationEntry> { gate, farRoom, wayExit };
+Equal(WayLine(farRoom, farRoute, 92, "up"), ways.StepEntry(1, nearExplored, player, forward, right, step, text), "an explored opening leaves the ways");
+Equal(WayLine(farRoom, farRoute, 92, "up"), ways.StepEntry(1, nearExplored, player, forward, right, step, text), "one way left");
+
+// A route found since makes the ways moot: the target reads its route and the category goes.
+knownRoutes[gate.Key] = new ExplorationRoute(100, gate.Position, true);
+Equal(Category(ExplorationCategory.Quest) + ". " + Line("Gate", 100, "up"),
+    ways.StepCategory(-1, nearExplored, player, forward, right, step, text), "a routed target reads its route alone");
+Equal(null, ways.WaysTarget, "ways dropped once the target is routed");
+ways.StepCategory(1, nearExplored, player, forward, right, step, text);
+Equal(ExplorationCategory.Exit, ways.Category, "no ways category after the target is routed");
+knownRoutes.Remove(gate.Key);
+
+// One way only.
+var single = WaysCatalog(new[] { new ExplorationWay(nearRoom, nearRoute) });
+Equal(Category(ExplorationCategory.Quest) + ". " + text("exploration.way_only", GateUnrouted, WayLine(nearRoom, nearRoute, 97, "up")),
+    single.StepCategory(-1, wayEntries, player, forward, right, step, text), "a single way");
+
+// No ways: the unrouted readout alone, and no ways category.
+var none = WaysCatalog(Array.Empty<ExplorationWay>());
+Equal(Category(ExplorationCategory.Quest) + ". " + GateUnrouted, none.StepCategory(-1, wayEntries, player, forward, right, step, text),
+    "no openings reached");
+Equal(null, none.WaysTarget, "no ways listed");
+
+// Openings themselves never get ways, even unrouted.
+var openingAsked = new ExplorationCatalog { Route = (_, _) => null, Ways = (_, _) => gateWays };
+openingAsked.StepCategory(1, new List<ExplorationEntry> { farRoom }, player, forward, right, step, text);
+Equal(null, openingAsked.WaysTarget, "an unexplored room is not given ways");
+
+// The target gone (quest done): the ways go with it.
+var gone = WaysCatalog(gateWays);
+gone.StepCategory(-1, wayEntries, player, forward, right, step, text);
+gone.StepCategory(1, new List<ExplorationEntry> { farRoom, nearRoom, wayExit }, player, forward, right, step, text);
+Equal(null, gone.WaysTarget, "ways leave with their target");
+Equal(ExplorationCategory.Exit, gone.Category, "next category after the ways' target left");
 
 Console.WriteLine($"Exploration catalog tests passed: {checks} checks");
