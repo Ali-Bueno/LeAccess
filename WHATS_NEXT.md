@@ -2,7 +2,7 @@
 
 Tester report, no log: could not get through the first-login screens with a pad; after Submit on the display name
 nothing worked; Settings from the pause menu over class selection was silent and the class list unreachable after it.
-Changes ([first login](reference/first-login.md), [pause](reference/pause-focus.md)), all unheard, not released:
+Changes ([first login](reference/first-login.md), [pause](reference/pause-focus.md)), all unheard, released as `v0.2.3`:
 - Terms: hint that Accept unlocks at the end of the text (and the jump button's caption), "Accept is now available"
   once, locked Accept says "(Disabled)".
 - Display-name and email forms: title, help and errors read; fields open the keyboard only on Cross ("Cross to type"),

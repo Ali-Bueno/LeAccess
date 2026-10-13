@@ -3,7 +3,7 @@
 What changed in LeAccess, day by day, newest first. Each heading gives the day and the version that first shipped
 those changes. It is written from the commit history; internal notes, status updates and merges are left out.
 
-## 13 October 2026 — not released yet
+## 13 October 2026 — version 0.2.3
 
 Fixed:
 

@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>LeAccess</AssemblyName>
     <Product>Last Epoch Accessibility Mod</Product>
-    <Version>0.2.2</Version>
+    <Version>0.2.3</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
     <RestoreAdditionalProjectSources>

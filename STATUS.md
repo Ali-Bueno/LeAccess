@@ -6,7 +6,7 @@ name (Cross opens the keyboard, physical typing, Back keeps the text) and their 
 ([first login](reference/first-login.md)); Settings opened from the pause menu over class selection now returns to
 the classes ([pause](reference/pause-focus.md#2026-10-13-tester-report-settings-from-the-pause-menu-over-class-selection)).
 Why Settings was silent there is still unknown (a `[PauseFocus] waiting` log line now names the selection). Unheard;
-needs a fresh account or the tester's log. Not released.
+needs a fresh account or the tester's log. Released as `v0.2.3`.
 Earlier, 2026-10-12 (tester crash log): the game closed when a friend's player joined the zone, not on contact as
 reported; non-friends never crashed. Reading the friend's character name from the social cache with `TryGetValue`
 corrupted memory. It now uses `ContainsKey` and the indexer
@@ -288,6 +288,7 @@ releases go to GitHub Releases with the asset name `LeAccess.zip` (see below).
 
 ## Validation and references
 
+- 2026-10-13 10:51: GitHub release `v0.2.3` carries `LeAccess-Steam-1.5.1-prueba-20261013-105137.zip` (repo root, ignored by git) as `LeAccess.zip`, SHA-256 `3BE41BD134BAC7A9FAA5A37398CB686AA303A88634123E7D82E24644F8AE5E0B`, 272 files; its `LeAccess.dll` (`552A628291656742…`, 0.2.3) is the installed copy. Package 250. First-login screens and Settings over class selection; README and Leeme explain the first login.
 - 2026-10-13: first-login and pause/Settings batch installed (`LeAccess.dll` `43932F2F12C86F9F…`, game closed; external catalogs kept, new keys are embedded). All 63 host suites pass (ScreenContent 252, CharacterName 235, MenuReading 557, PauseFocus 147, Localization 9180). No new hook. No ZIP or release.
 - 2026-10-11 wall tones: installed `LeAccess.dll` `37B1F1117ED3A954…` (game closed, includes the route legs). RadarAudio 71, Navigation 901, ModMenu 274, Localization 8580. No new hook. No friend ZIP or release.
 - 2026-10-11 11:04: shadow removed, live radar unchanged; installed `LeAccess.dll` `73E1116F6291670D…` (game closed, built from main with the other session's menu and inventory work). Navigation 895. No friend ZIP or release.

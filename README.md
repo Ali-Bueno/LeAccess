@@ -51,6 +51,11 @@ The first launch can take several minutes while the loader (BepInEx) prepares it
 do not close the game. Later launches are fast. After a game update the next launch takes longer again for the same
 reason.
 
+With a new account the game first asks you to accept its terms, then for a display name and an email (optional: "no
+thanks"). Accept only unlocks once the terms text has been scrolled to the end: the mod says so, names the button that
+jumps there and tells you when Accept is available. In the name and email fields Cross opens the screen keyboard, as
+in the other name fields below; then go down to Submit.
+
 If you already use BepInEx or other mods, back up their files and `BepInEx/config` before mixing installations.
 
 When a newer version is published, the mod says so each time the game starts (it asks GitHub once per start; turn it
@@ -111,7 +116,7 @@ The game assumes you know what you are doing, so a few things are worth knowing:
 - The right stick on its own still gives your minions orders, and the mod says them ("Minions: attack X").
 - The screen readers' keys (Ctrl, Shift, Alt, Insert, Caps Lock) do not throw the game out of controller mode, so you
   can silence speech without losing your place in a menu.
-- Name fields (character name, usernames) open the game's screen keyboard with Cross. While it is open you can type on
+- Name fields (character name, usernames, account name and email) open the game's screen keyboard with Cross. While it is open you can type on
   your physical keyboard; Enter accepts and Escape leaves.
 - For co-op both characters must be online, in the same realm and mode (Normal or Hard), and neither can be on Solo
   Loot. Your username for invitations is read in the Social panel. Careful: on the character creation screen, pressing

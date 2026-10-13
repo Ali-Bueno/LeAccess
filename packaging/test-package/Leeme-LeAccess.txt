@@ -33,6 +33,13 @@ interrumpe la preparacion. Los siguientes inicios suelen ser mas rapidos.
 No necesitas instalar .NET por separado: el runtime viene en la carpeta dotnet.
 Steam y el juego conservan sus propios requisitos de instalacion.
 
+Con una cuenta nueva el juego pide aceptar sus terminos y luego un nombre
+visible y un email (opcional: boton "no thanks"). Aceptar solo se habilita
+cuando el texto llega al final: el mod lo dice, nombra el boton que salta al
+final y avisa cuando Aceptar ya esta disponible. En los campos de nombre y
+email, Cruz abre el teclado en pantalla; mientras esta abierto tambien puedes
+escribir con el teclado fisico. Despues baja al boton Enviar.
+
 BOTON DEL MOD
 En DualSense y DualShock 4 es Create (Share). En mandos Xbox y otros, el boton
 View/Select abre el menu del mando del juego, asi que el boton del mod es L3
