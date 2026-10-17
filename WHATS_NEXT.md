@@ -1,3 +1,16 @@
+# Handoff — 2026-10-17: sheet life and mana, menu in groups, repeat speed; keyboard parked
+
+Built and installed, unheard, not released ([changelog](CHANGELOG.md)). Live checks:
+- Character sheet on open: life, regeneration, mana and mana regeneration right after the level; right stick reads
+  every stat line on screen ([sheet](reference/character-sheet.md)). Check where the game shows them and the length.
+- Mod menu: groups Sounds / Exploration / Speech / Reading / General; sound pages hold volume, repeat speed and
+  "Listen: …" previews ([pages](reference/mod-menu.md#pages)).
+- `RepeatSpeed` 50-300 % for enemy, NPC, world object and beacon pulses.
+
+Keyboard play: parked by the user for a later session. Plan and open checks in
+[keyboard-support](reference/keyboard-support.md): in-process XInput pad for players without one, and the game's own
+shortcuts kept over controller mode; first step a test build with `ControllerModeGuard` widened to every key.
+
 # Handoff — 2026-10-13 evening: ways toward unexplored targets, exploration shared by all characters
 
 User request: the scanner only said "up right, no known route" for a quest beyond explored ground; a sighted player

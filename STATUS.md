@@ -5,7 +5,7 @@
 ([sheet](reference/character-sheet.md#life-mana-and-every-stat-line-2026-10-17-user-report)); the mod menu is five
 groups (Sounds, Exploration, Announcements, Menus and screens, General) with "Listen" entries on each sound page, and
 enemy, NPC, object and beacon pulses have `RepeatSpeed` 50-300 % ([menu](reference/mod-menu.md#pages)). Keyboard play
-investigated, nothing built: some players have no pad, others want the game's own keyboard shortcuts; plan: in-process virtual XInput pad (no driver) plus the game's keys over controller mode; awaiting the user's go-ahead ([options](reference/keyboard-support.md)). ModMenu 354, Localization 9420, NpcLifecycle 110; installed. Unheard.
+investigated, nothing built: some players have no pad, others want the game's own keyboard shortcuts; plan: in-process virtual XInput pad (no driver) plus the game's keys over controller mode; parked by the user for a later session ([options](reference/keyboard-support.md)). ModMenu 354, Localization 9420, NpcLifecycle 110; installed. Unheard.
 Earlier, 2026-10-13 evening (user request): the scanner plans like the minimap. An entry with no explored route
 (a quest in unexplored ground) names its best way: the edge of the explored map (unexplored room or frontier) whose
 walk plus straight line on to the target is shortest, with "from there, N steps, direction"; a "ways to …" category
