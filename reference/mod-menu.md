@@ -78,15 +78,21 @@ from the main menu or gameplay alike.
 
 ## Pages
 
-The first page: master volume (an option), Sounds, Sound distances, then one page per config section in the order of
-`ModMenuCatalog.Sections`, then Close. `World object sound volumes` and `World object sound ranges` appear only through Sounds and Sound distances.
+Since 2026-10-17 (user request: "split it into sections, Sounds with volume, loop and preview inside") the first page
+holds five groups and Close (`ModMenuCatalog.Groups`, title `menu.group.<id>`), each a page of section pages:
+- **Sounds**: master volume, wall radar, wall tones, object sounds, enemy sounds, NPC sounds, beacon, low life
+  (`[Vitals] LowLife*`, a second page of the Vitals section).
+- **Exploration**: scanner and exploration, points of interest, map zones.
+- **Announcements**: combat speech, life and mana, quests, level and progress, dialogue.
+- **Menus and screens**: menus, tooltips, character sheet.
+- **General**: language, mod menu, updates, diagnostics.
 
-- **Sounds** (glossary and volumes): every distinct sound the mod plays. Cross or Square plays it centred at its
-  configured level; left/right change that sound's volume (its own, or its group's where it has no own volume); details
-  say what it means.
-- **Sound distances**: the group distance (`World object sounds/LoopRange`) and each world object kind's own distance;
-  0 follows the group distance.
-- Section pages list every bound option of the section. Labels and details are `ModText` keys
+A sound page lists its options (volume, repeat speed, toggles) and then "Listen: <sound>" for every glossary sound whose
+volume one of its options sets (`PreviewItem`; Cross or Square plays it, details say what it means). The object sounds
+page ends with **Volume of each object** (each kind's own volume; Cross plays it, left/right change it) and **Sound
+distances** (each kind's own distance; 0 follows `World object sounds/LoopRange`). `World object sound volumes` and
+`World object sound ranges` appear only there.
+- Section pages list every bound option of the section; a section split over two pages lists unknown options on its first. Labels and details are `ModText` keys
   (`menu.option.<id>`, `menu.option.<id>.details`); an option missing from the catalog still appears under its key name
   and is logged.
 
@@ -108,6 +114,11 @@ output start (their details say so).
   the loop and the repeated cue of that kind.
 - `[Enemy cues] BossVolume`, `EliteVolume`, `OrdinaryVolume` 0-200 (100); `[Navigation audio] SonarVolume` 0-100 (100);
   Discovery and RoomEntered have their own `[World object sound volumes]` keys (no range).
+- `RepeatSpeed` 50-300 (100) in `[Enemy cues]`, `[NPC sounds]`, `[World object sounds]` and `[Exploration beacon]`
+  (user request 2026-10-17): divides the designed interval of the cues that repeat instead of looping
+  (`SoundLevels.RepeatSpeed`): enemy and NPC pulses (`EntityCueCadence`, 0.15-0.45 s by distance), the gap between
+  pulsing object cues (`WorldCueState`, 0.45 s; loops are unchanged) and the beacon ping (`BeaconState`, 0.16-1.2 s).
+  Enemy pulses cannot go below the tracker's 0.1 s poll, and a cue never starts before the previous one ends.
 - `SoundGlossary.Entries`: id, name and details keys (`sound.<id>`, `sound.<id>.details`) and the config entry that sets
   its volume. `SoundPreview.Play(id)` plays the sound centred at master x group x own level, at most about 2 s.
 
@@ -115,7 +126,7 @@ output start (their details say so).
 
 `LeAccess/Accessibility/ModMenu/`: `MenuModel` (navigator, items; pure), `SettingItem` (stepping and units; pure),
 `ModMenuCatalog` (order, units, steps; pure), `ModMenuPages` (config adapter, pages, options missing from the catalog),
-`ModMenuSoundPages` (glossary and distances), `ModMenuInput` and `ModMenuInputGate` (chord, commands, `ShoulderGuard`,
+`ModMenuSoundPages` (listen entries, object volumes and distances), `ModMenuInput` and `ModMenuInputGate` (chord, commands, `ShoulderGuard`,
 `InputBlock`), `ModMenu` (open/close, speech). Host suite `tests/LeAccess.ModMenu.Tests` also checks that every
 `.Bind(section, "Key")` in the source is in the catalog with both text keys.
 

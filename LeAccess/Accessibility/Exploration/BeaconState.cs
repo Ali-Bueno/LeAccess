@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using LeAccess.Accessibility.Audio;
 using LeAccess.Accessibility.Navigation.Guidance;
 
 namespace LeAccess.Accessibility.Exploration;
@@ -81,10 +82,10 @@ internal sealed class BeaconState
     internal static float ArrivalRadius(ExplorationTarget target) =>
         float.IsFinite(target.ArrivalRadius) && target.ArrivalRadius > MinimumArrival ? target.ArrivalRadius : MinimumArrival;
 
-    internal static double PingInterval(float remaining)
+    internal static double PingInterval(float remaining, float speed = 1)
     {
         double part = float.IsFinite(remaining) ? Math.Clamp(remaining / FarDistance, 0, 1) : 1;
-        return NearPingSeconds + part * (FarPingSeconds - NearPingSeconds);
+        return (NearPingSeconds + part * (FarPingSeconds - NearPingSeconds)) / speed;
     }
 
     // The same key again cancels; another key retargets only when it has a route or a way, keeping the old lock
@@ -198,7 +199,8 @@ internal sealed class BeaconState
         float remaining = Follow(_path, player, _way?.Opening.Position ?? _target.Position, out var aim);
         GuidanceGeometry.Bearing(aim - player, forward, right, out float pan, out float ahead);
         bool ping = now >= _nextPing;
-        if (ping || _nextPing - now > FarPingSeconds) _nextPing = now + PingInterval(remaining);
+        float speed = SoundLevels.RepeatSpeed(RepeatGroup.Beacon);
+        if (ping || _nextPing - now > FarPingSeconds / speed) _nextPing = now + PingInterval(remaining, speed);
         return new BeaconUpdate(ping, pan, ahead, true, remaining, distance, BeaconRelease.None, _target, news,
             _way?.Opening ?? default);
     }

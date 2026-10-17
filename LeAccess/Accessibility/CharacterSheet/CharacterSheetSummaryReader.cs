@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using LE.UI.PanelSystem;
 using LeAccess.Accessibility.Utils;
 using TMPro;
 using UnityEngine;
@@ -13,9 +15,11 @@ internal static class CharacterSheetSummaryReader
 {
     // A value's label sits in its row, or in the row group one or two containers up.
     private const int LabelSearchLevels = 3;
+    // Life and mana are stat lines, not plain fields; they follow the level.
+    private static readonly SP[] ResourceStats = { SP.Health, SP.HealthRegen, SP.Mana, SP.ManaRegen };
 
-    /// <summary>The summary and the names of the fields that had no label or value on screen.</summary>
-    internal static string Build(global::CharacterSheet sheet, List<string> skipped)
+    /// <summary>The summary, with every other stat line on screen when asked, and the fields with nothing on screen.</summary>
+    internal static string Build(global::CharacterSheet sheet, List<string> skipped, bool everyLine)
     {
         var fields = new (string Name, TMP_Text Value)[]
         {
@@ -23,7 +27,12 @@ internal static class CharacterSheetSummaryReader
             (nameof(sheet.experienceTillNextLevelText), sheet.experienceTillNextLevelText)
         };
         var entries = new List<string>();
+        var read = new HashSet<IntPtr>();
+        var lines = ActiveLines(sheet);
         AddAll(entries, skipped, fields);
+        int before = entries.Count;
+        AddLines(entries, read, lines.Where(IsResource));
+        if (entries.Count == before) skipped.Add(nameof(ResourceStats));
         AddAttributes(entries, sheet);
         AddAll(entries, skipped, new (string, TMP_Text)[]
         {
@@ -35,9 +44,34 @@ internal static class CharacterSheetSummaryReader
             (nameof(sheet.blockChance), sheet.blockChance), (nameof(sheet.blockEffectiveness), sheet.blockEffectiveness),
             (nameof(sheet.blockMitigation), sheet.blockMitigation), (nameof(sheet.dps), sheet.dps)
         });
-        foreach (var line in new[] { sheet.parryChance, sheet.glancingBlow, sheet.enduranceThreshold })
-            if (IsAlive(line) && CharacterStatLineReader.TryRead(line.gameObject, out string text)) entries.Add(text);
+        AddLines(entries, read, new[]
+        {
+            sheet.parryChance, sheet.glancingBlow, sheet.enduranceThreshold,
+            sheet.PotionHealth, sheet.maximumCompanions, sheet.minionPower
+        });
+        if (everyLine) AddLines(entries, read, lines);
         return CharacterSheetSummaryText.Compose(entries);
+    }
+
+    // The detailed stat lists can sit beside the sheet in its panel.
+    private static List<CharacterStatDisplayLineItem> ActiveLines(global::CharacterSheet sheet)
+    {
+        var panel = sheet.GetComponentInParent<Panel>();
+        var root = IsAlive(panel) ? panel.transform : sheet.transform;
+        return root.GetComponentsInChildren<CharacterStatDisplayLineItem>().ToList();
+    }
+
+    private static bool IsResource(CharacterStatDisplayLineItem line)
+    {
+        var display = line._characterStatDisplay;
+        return IsAlive(display) && !display.minionStat && ResourceStats.Contains(display.property);
+    }
+
+    private static void AddLines(List<string> entries, HashSet<IntPtr> read, IEnumerable<CharacterStatDisplayLineItem> lines)
+    {
+        foreach (var line in lines)
+            if (IsAlive(line) && read.Add(line.Pointer) && CharacterStatLineReader.TryRead(line.gameObject, out string text))
+                entries.Add(text);
     }
 
     private static void AddAll(List<string> entries, List<string> skipped, IEnumerable<(string Name, TMP_Text Value)> fields)

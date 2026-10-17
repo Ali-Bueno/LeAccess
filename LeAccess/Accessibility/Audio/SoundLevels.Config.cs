@@ -9,6 +9,13 @@ internal static partial class SoundLevels
     /// <summary>The plugin's config, for reading the group volumes of other modules.</summary>
     internal static ConfigFile Config { get; private set; }
 
+    /// <summary>The config section holding each repeat group's speed.</summary>
+    internal static readonly (RepeatGroup Group, string Section)[] RepeatSections =
+    {
+        (RepeatGroup.Enemies, EnemySection), (RepeatGroup.Npcs, "NPC sounds"),
+        (RepeatGroup.WorldObjects, "World object sounds"), (RepeatGroup.Beacon, "Exploration beacon"),
+    };
+
     internal static void Initialize(ConfigFile config)
     {
         Config = config;
@@ -36,13 +43,17 @@ internal static partial class SoundLevels
                 $"Percent of the enemy cue volume for {kind.ToString().ToLowerInvariant()} enemies; 0 silences them, above 100 boosts them.",
                 percent => SetEnemy(kind, percent));
         }
+        foreach (var (group, section) in RepeatSections)
+            Bind(config, section, RepeatKey, 100, MaxRepeatPercent,
+                "Percent of the designed repeat pace of these cues: 200 repeats twice as often, 50 half as often.",
+                percent => SetRepeatSpeed(group, percent), MinRepeatPercent);
     }
 
     private static void Bind(ConfigFile config, string section, string key, int defaultValue, int max,
-        string description, System.Action<int> apply)
+        string description, System.Action<int> apply, int min = 0)
     {
         var entry = config.Bind(section, key, defaultValue,
-            new ConfigDescription(description, new AcceptableValueRange<int>(0, max)));
+            new ConfigDescription(description, new AcceptableValueRange<int>(min, max)));
         apply(entry.Value);
         entry.SettingChanged += (_, _) => apply(entry.Value);
     }

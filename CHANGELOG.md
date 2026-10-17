@@ -3,6 +3,21 @@
 What changed in LeAccess, day by day, newest first. Each heading gives the day and the version that first shipped
 those changes. It is written from the commit history; internal notes, status updates and merges are left out.
 
+## 17 October 2026 — not released yet
+
+New:
+
+- The settings menu is split into five sections: Sounds, Exploration, Announcements, Menus and screens, and General.
+  Every sound page has its volume and options together, then "Listen" entries that play each of its sounds. The low
+  life sound has its own page under Sounds.
+- Enemy, NPC, object and beacon sounds that repeat have a repeat speed (50 to 300 percent) to make them repeat faster
+  or slower. Continuous loops are not affected.
+
+Fixed:
+
+- The character sheet reads life, mana and their regeneration. Right stick up on the sheet now reads every stat on it,
+  not only the upper half.
+
 ## 13 October 2026, evening — not released yet
 
 New:

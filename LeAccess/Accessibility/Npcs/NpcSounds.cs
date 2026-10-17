@@ -109,7 +109,7 @@ internal static class NpcSounds
                 !Timing.IsDue(target.Session, now, target.Distance, target.Range)) return;
             if (!WorldAudioReservation.TryBegin(WorldAudioSource.Npc, now,
                 NpcCueSynthesizer.DurationSeconds, AudioBufferMilliseconds)) return;
-            Timing.TryTake(target.Session, now, target.Distance, target.Range);
+            Timing.TryTake(target.Session, now, target.Distance, target.Range, SoundLevels.RepeatSpeed(RepeatGroup.Npcs));
             _audio.Play(NpcCueSynthesizer.Synthesize(target.Pan, target.Forward, _volume.Value / 100f));
             _lastFailure = null;
         }

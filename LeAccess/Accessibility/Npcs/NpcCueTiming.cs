@@ -9,12 +9,12 @@ internal sealed class NpcCueTiming
     private long _session;
     private double _nextCue;
 
-    internal bool TryTake(long session, double now, float distance, float range)
+    internal bool TryTake(long session, double now, float distance, float range, float speed = 1)
     {
         if (!IsDue(session, now, distance, range)) return false;
         if (session != _session) { Reset(); _session = session; }
         if (now < _nextCue) return false;
-        _nextCue = now + EntityCueCadence.Interval(distance, range);
+        _nextCue = now + EntityCueCadence.Interval(distance, range, speed);
         return true;
     }
 

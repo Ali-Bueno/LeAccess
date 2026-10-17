@@ -23,3 +23,17 @@ containers up; attributes use only the active corrupted/uncorrupted variant. Fie
 skipped and named in the log: `[Character sheet] no label or value on screen for: ...`. The summary is logged as
 `[Character sheet] <text>`. Pure assembly: `CharacterSheetSummaryText` (tests in `CharacterSheetSummaryTests`).
 Live check pending: that labels pair correctly (armour and armour percent share a row), and which fields get skipped.
+
+## Life, mana and every stat line (2026-10-17, user report)
+
+"Right stick shows dexterity, intelligence and so on, but not life, mana or regeneration; it must read every stat on
+that screen." `CharacterSheet` has no plain field for life or mana (interop stub; only `UIGlobeHealth` and `ManaBar`
+have health/mana text fields), so they are `CharacterStatDisplayLineItem`s, whose `_characterStatDisplay.property` is an
+`SP`. The 2026-10-17 log's focus walk met only `CharacterStatsFirst`/`CharacterStatsSecond` lines (attack speeds,
+criticals, damage), none for life or mana. Now the summary takes every active line item under the sheet's panel:
+- right after the level, the lines whose property is `SP.Health`, `HealthRegen`, `Mana` or `ManaRegen` (minion
+  stats excluded), on opening and on request;
+- after block, the sheet's typed line items (parry, glancing blow, endurance, potion health, companions, minion power);
+- on request only (right stick up), every other visible line item in hierarchy order, each read once.
+When no life or mana line is on screen the log names `ResourceStats` among the skipped fields. Live check pending: where
+the game shows life and mana, and whether the request summary is too long.

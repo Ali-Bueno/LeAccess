@@ -134,6 +134,16 @@ foreach (var section in ModMenuCatalog.Sections)
             $"texts for {spec.Id}");
     }
 }
+var grouped = new HashSet<string>();
+foreach (var group in ModMenuCatalog.Groups)
+{
+    Check(english.ContainsKey($"menu.group.{group.Id}"), $"group title {group.Id}");
+    foreach (var section in group.Sections) Check(grouped.Add(section.Id), $"section {section.Id} in one group");
+}
+Check(grouped.SetEquals(ModMenuCatalog.Sections.Select(section => section.Id)), "every section page is in a group");
+Check(ModMenuCatalog.Groups.Any(group => group.Id == ModMenuCatalog.SoundsGroup), "the sounds group holds the master volume");
+foreach (string key in new[] { "menu.listen", "menu.preview_hint", "menu.world_volumes", "menu.distances", "menu.sound_hint" })
+    Check(english.ContainsKey(key), $"sound page text {key}");
 Check(english.ContainsKey($"menu.option.{ModMenuCatalog.MasterVolume.Id}.details"), "master volume texts");
 foreach (string code in ModMenuCatalog.Languages)
     Check(english.ContainsKey($"menu.language.{code}"), $"language name {code}");

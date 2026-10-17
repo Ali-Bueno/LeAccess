@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using BepInEx.Configuration;
 using LeAccess.I18n;
 using UnityEngine;
@@ -53,31 +54,44 @@ internal static class ModMenuPages
 {
     private static readonly HashSet<string> LoggedUnlisted = new();
 
-    internal static MenuPage Build(ConfigFile config, Func<MenuReply> close, IEnumerable<MenuItem> soundPages)
+    /// <summary>The root of groups; extras adds a section page's own entries after its options, such as its sounds.</summary>
+    internal static MenuPage Build(ConfigFile config, Func<MenuReply> close, Func<SectionSpec, IEnumerable<MenuItem>> extras)
     {
         var root = new List<MenuItem>();
-        if (Find(config, ModMenuCatalog.AudioSection, ModMenuCatalog.MasterVolume.Key) is { } master)
-            root.Add(Item(master, ModMenuCatalog.MasterVolume));
-        root.AddRange(soundPages);
         var listed = new HashSet<string>(ModMenuCatalog.SoundPageSections);
-        foreach (var section in ModMenuCatalog.Sections)
+        foreach (var group in ModMenuCatalog.Groups)
         {
-            listed.Add(section.Section);
-            var items = new List<MenuItem>();
-            var known = new HashSet<string>();
-            foreach (var spec in section.Options)
+            var pages = new List<MenuItem>();
+            if (group.Id == ModMenuCatalog.SoundsGroup &&
+                Find(config, ModMenuCatalog.AudioSection, ModMenuCatalog.MasterVolume.Key) is { } master)
+                pages.Add(Item(master, ModMenuCatalog.MasterVolume));
+            foreach (var section in group.Sections)
             {
-                known.Add(spec.Key);
-                if (Find(config, section.Section, spec.Key) is { } entry) items.Add(Item(entry, spec));
+                listed.Add(section.Section);
+                var items = SectionItems(config, section);
+                items.AddRange(extras(section));
+                if (items.Count > 0) pages.Add(new PageItem(new MenuPage(ModText.Get($"menu.section.{section.Id}"), items)));
             }
-            items.AddRange(Unlisted(config, section.Section, known));
-            if (items.Count > 0) root.Add(new PageItem(new MenuPage(ModText.Get($"menu.section.{section.Id}"), items)));
+            if (pages.Count > 0) root.Add(new PageItem(new MenuPage(ModText.Get($"menu.group.{group.Id}"), pages)));
         }
         foreach (string section in Sections(config))
             if (!listed.Contains(section))
                 root.Add(new PageItem(new MenuPage(section, Unlisted(config, section, new HashSet<string>()))));
         root.Add(new ActionItem(ModText.Get("menu.close"), close));
         return new MenuPage(ModText.Get("menu.title"), root);
+    }
+
+    // A section split over several pages lists options the catalog does not know on its first page only.
+    private static List<MenuItem> SectionItems(ConfigFile config, SectionSpec section)
+    {
+        var items = new List<MenuItem>();
+        foreach (var spec in section.Options)
+            if (Find(config, section.Section, spec.Key) is { } entry) items.Add(Item(entry, spec));
+        var pages = ModMenuCatalog.Sections.Where(other => other.Section == section.Section).ToList();
+        if (pages[0].Id == section.Id)
+            items.AddRange(Unlisted(config, section.Section,
+                new HashSet<string>(pages.SelectMany(page => page.Options).Select(spec => spec.Key))));
+        return items;
     }
 
     internal static ConfigEntryBase Find(ConfigFile config, string section, string key)

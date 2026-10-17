@@ -48,7 +48,7 @@ internal sealed class EnemyCueSelector
             if (!float.IsFinite(distance) || distance > range && !contact.OnScreen) continue;
             GuidanceGeometry.Bearing(delta, forward, right, out float pan, out float ahead);
             var cue = new EnemyCue(contact.Id, kind, distance, pan, ahead,
-                EntityCueCadence.Interval(distance, reach), BossSlot);
+                EntityCueCadence.Interval(distance, reach, SoundLevels.RepeatSpeed(RepeatGroup.Enemies)), BossSlot);
             // Elites and ordinary enemies are ranked first so only the nearest few pay for a terrain ray.
             if (kind != EnemyCueKind.Boss) { (kind == EnemyCueKind.Elite ? _elites : _ordinary).Add((cue, contact)); continue; }
             if (boss.HasValue && !Nearer(cue, boss.Value) || !InSight(contact, sight(contact))) continue;

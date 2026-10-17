@@ -8,7 +8,7 @@ using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.CharacterSheet;
 
-/// <summary>Speaks the character sheet's upper half once on opening and again on the menu details input.</summary>
+/// <summary>Speaks the character sheet's upper half once on opening, and every stat on screen on the menu details input.</summary>
 /// <remarks>See reference/character-sheet.md.</remarks>
 internal static class CharacterSheetSummary
 {
@@ -22,7 +22,7 @@ internal static class CharacterSheetSummary
 
     internal static void Initialize(ConfigFile config) =>
         _readOnOpen = config.Bind("Character sheet", "ReadSummaryOnOpen", true,
-            "Read the sheet's level, attributes, resistances, armour, dodge, block and damage once when it opens.");
+            "Read the sheet's level, life, mana, attributes, resistances, armour, dodge and block once when it opens.");
 
     internal static void Update()
     {
@@ -37,7 +37,7 @@ internal static class CharacterSheetSummary
             // Queued behind the panel title and the first focus, never over them.
             if (ScreenReader.SpokeThisFrame || ScreenReader.IsSpeaking()) return;
             _pending = false;
-            Speak(sheet, interrupt: false);
+            Speak(sheet, interrupt: false, everyLine: false);
         }
         catch (Exception ex) { ReportFailure(ex); }
     }
@@ -49,7 +49,7 @@ internal static class CharacterSheetSummary
         {
             var sheet = OpenSheet();
             if (sheet is null || !UiFocusOwnership.TryGetSelected(out var selected) || !Owns(sheet, selected)) return false;
-            return Speak(sheet, interrupt: true);
+            return Speak(sheet, interrupt: true, everyLine: true);
         }
         catch (Exception ex) { ReportFailure(ex); return false; }
     }
@@ -67,10 +67,10 @@ internal static class CharacterSheetSummary
         return IsAlive(panel) && selected.transform.IsChildOf(panel.transform);
     }
 
-    private static bool Speak(global::CharacterSheet sheet, bool interrupt)
+    private static bool Speak(global::CharacterSheet sheet, bool interrupt, bool everyLine)
     {
         var skipped = new List<string>();
-        string text = CharacterSheetSummaryReader.Build(sheet, skipped);
+        string text = CharacterSheetSummaryReader.Build(sheet, skipped, everyLine);
         if (skipped.Count > 0) Plugin.Log.LogInfo($"{LogPrefix} no label or value on screen for: {string.Join(", ", skipped)}");
         if (string.IsNullOrWhiteSpace(text) || !ScreenReader.TrySpeak(text, interrupt)) return false;
         Plugin.Log.LogInfo($"{LogPrefix} {text}");

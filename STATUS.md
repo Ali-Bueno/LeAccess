@@ -1,6 +1,12 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-13 evening (user request): the scanner plans like the minimap. An entry with no explored route
+**Updated:** 2026-10-17 (user report and requests): the character sheet summary reads life, mana and regeneration
+(stat lines found by their `SP` property) and, on right stick up, every other stat line
+([sheet](reference/character-sheet.md#life-mana-and-every-stat-line-2026-10-17-user-report)); the mod menu is five
+groups (Sounds, Exploration, Announcements, Menus and screens, General) with "Listen" entries on each sound page, and
+enemy, NPC, object and beacon pulses have `RepeatSpeed` 50-300 % ([menu](reference/mod-menu.md#pages)). Keyboard play
+investigated, nothing built; needs the user's choice ([options](reference/keyboard-support.md)). ModMenu 354, Localization 9420, NpcLifecycle 110; installed. Unheard.
+Earlier, 2026-10-13 evening (user request): the scanner plans like the minimap. An entry with no explored route
 (a quest in unexplored ground) names its best way: the edge of the explored map (unexplored room or frontier) whose
 walk plus straight line on to the target is shortest, with "from there, N steps, direction"; a "ways to …" category
 lists up to 5; locking the target follows a way, says "Dead end. Next way: …" and "Known route to …"

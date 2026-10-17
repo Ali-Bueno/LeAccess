@@ -3,6 +3,9 @@ using LeAccess.Accessibility.Combat;
 
 namespace LeAccess.Accessibility.Audio;
 
+/// <summary>Sound groups whose cues repeat at an interval instead of looping.</summary>
+internal enum RepeatGroup { Enemies, Npcs, WorldObjects, Beacon }
+
 /// <summary>The player's live sound levels: master, per world kind (volume, range) and per enemy type.</summary>
 internal static partial class SoundLevels
 {
@@ -10,6 +13,8 @@ internal static partial class SoundLevels
     internal const string VolumeSection = "World object sound volumes", RangeSection = "World object sound ranges";
     internal const string EnemySection = "Enemy cues", SonarSection = "Navigation audio", SonarKey = "SonarVolume";
     internal const int MaxVolumePercent = 200, MaxMasterPercent = 100, MaxRangeMetres = 30;
+    internal const string RepeatKey = "RepeatSpeed";
+    internal const int MinRepeatPercent = 50, MaxRepeatPercent = 300;
 
     /// <summary>A sound kind with a config key; HasRange is false for one-shots that have no distance.</summary>
     internal readonly record struct WorldKind(NaturalCueKind Kind, string Key, bool HasRange = true);
@@ -34,6 +39,7 @@ internal static partial class SoundLevels
     private static readonly float[] Volumes = Filled(Enum.GetValues<NaturalCueKind>().Length);
     private static readonly float[] Ranges = new float[Enum.GetValues<NaturalCueKind>().Length];
     private static readonly float[] Enemies = Filled(Enum.GetValues<EnemyCueKind>().Length);
+    private static readonly float[] Repeats = Filled(Enum.GetValues<RepeatGroup>().Length);
 
     /// <summary>Scale on every mod sound at its output stage, 0 to 1; speech is not affected.</summary>
     internal static float Master => _master;
@@ -57,6 +63,9 @@ internal static partial class SoundLevels
 
     internal static float Enemy(EnemyCueKind kind) => InRange((int)kind, Enemies.Length) ? Enemies[(int)kind] : 1;
 
+    /// <summary>How much faster than designed a group's cues repeat: 1 is the designed pace, 2 twice as often.</summary>
+    internal static float RepeatSpeed(RepeatGroup group) => InRange((int)group, Repeats.Length) ? Repeats[(int)group] : 1;
+
     /// <summary>Volume of the continuous wall sonar tones, 0 to 1.</summary>
     internal static float Sonar => _sonar;
 
@@ -79,13 +88,20 @@ internal static partial class SoundLevels
         if (InRange((int)kind, Enemies.Length)) Enemies[(int)kind] = Math.Clamp(percent, 0, MaxVolumePercent) / 100f;
     }
 
-    /// <summary>Back to the defaults: full master, every kind at 100% and following its group.</summary>
+    internal static void SetRepeatSpeed(RepeatGroup group, int percent)
+    {
+        if (InRange((int)group, Repeats.Length))
+            Repeats[(int)group] = Math.Clamp(percent, MinRepeatPercent, MaxRepeatPercent) / 100f;
+    }
+
+    /// <summary>Back to the defaults: full master, every kind at 100% and following its group, designed repeat pace.</summary>
     internal static void Reset()
     {
         _master = _sonar = 1;
         Array.Fill(Volumes, 1f);
         Array.Clear(Ranges);
         Array.Fill(Enemies, 1f);
+        Array.Fill(Repeats, 1f);
     }
 
     private static bool InRange(int index, int length) => index >= 0 && index < length;

@@ -216,7 +216,8 @@ affix, its tier and your shards; right stick up adds the preview and forging pot
   game's "more information" tooltip); holding R3 reads that tooltip too.
 - Passive trees go by column: each column says the points it needs, and you can only leave the grid from the first
   column. The mastery banner above them is a list: up and down move through the trees, Cross opens one.
-- The character sheet reads your attributes, resistances and defences when it opens; right stick up repeats them.
+- The character sheet reads your level, life, mana, attributes, resistances and defences when it opens; right stick up
+  reads them again followed by every other stat on the sheet.
 
 ### World map
 
@@ -256,9 +257,11 @@ keeps running, so open it somewhere safe. Changes are saved at once.
 | Right stick up | I | What the option does, its default and its range |
 | Options | | Close |
 
-The first page has the master volume, then **Sounds** (every sound the mod plays: Cross plays it, left and right change
-its own volume), **Sound distances** (how far each kind of object carries; 0 follows the object distance) and one page
-per group of options.
+The first page has five sections: **Sounds**, **Exploration**, **Announcements**, **Menus and screens** and **General**.
+Sounds starts with the master volume, then one page per kind of sound (wall radar, wall tones, objects, enemies, NPCs,
+beacon, low life). Each of those pages has its volume, its repeat speed where the sound repeats, its other options, and
+then "Listen" entries: Cross plays the sound. The object sounds page also has **Volume of each object** and **Sound
+distances** (how far each kind of object carries; 0 follows the object distance).
 
 ## Configuration
 
@@ -274,9 +277,9 @@ launch; edit that file only with the game closed. The most useful ones:
 | World object sound volumes / ranges | One key per kind (`Gold`, `Rune`, `Shrine`, `ZoneExit`...) | Each object sound's own volume (0-200%) and distance (0 follows `LoopRange`) |
 | Reactive radar | `Enabled`, `Volume`, `WallBump`, `WallBumpVolume`, `MuteFootstepsAtWalls` | The wall radar, the wall bump and quiet footsteps against a wall |
 | Navigation audio | `ContinuousWallSonar`, `SonarVolume` | Wall tones (off by default) and their volume |
-| Enemy cues | `Enabled`, `Bosses`, `Elites`, `Ordinary`, `Volume`, `BossVolume`, `EliteVolume`, `OrdinaryVolume` | Enemy sounds |
-| World object sounds | `Enabled`, `Volume`, `Loops`, `LoopRange` | Loot, objects, portals, exits |
-| NPC sounds | `Enabled`, `AnnounceNames`, `Volume` | NPC taps and names |
+| Enemy cues | `Enabled`, `Bosses`, `Elites`, `Ordinary`, `Volume`, `BossVolume`, `EliteVolume`, `OrdinaryVolume`, `RepeatSpeed` | Enemy sounds. `RepeatSpeed` (percent, 50 to 300, default 100) makes the pulses repeat faster or slower; the same option exists for objects, NPCs and the beacon |
+| World object sounds | `Enabled`, `Volume`, `Loops`, `LoopRange`, `RepeatSpeed` | Loot, objects, portals, exits |
+| NPC sounds | `Enabled`, `AnnounceNames`, `Volume`, `RepeatSpeed` | NPC taps and names |
 | Vitals | `AutomaticAnnouncements`, `AnnounceLifeChanges`, `AnnounceManaChanges`, `LifeFirst`, `LifeStep`, `LifeEvery10Below`, `LifeEvery5Below`, `LifeEvery1Below`, the same four for `Mana`, `LifeMinimumChange`, `ManaMinimumChange`, `LowLifeSound`, `LowLifeBelow`, `LowLifeVolume`, `AnnouncePotionCharges`, `AnnounceGoldPickups` | Automatic life, mana, potion and gold speech. Life and mana speak every `Step` percent (1, 5, 10 or 25), then every 10, 5 and 1 percent below the chosen percents (0 = never); the defaults are 75, 50, 40, 30, 20, 10, 5, 4, 3, 2, 1 for life and the same down to 10 for mana. `LifeFirst` (default on) lets life cut any other speech and keeps other speech from cutting it. The minimum-change options hold a band back until the value has moved that many percent (critical life and empty mana always speak). `LowLifeSound` (off) plays Diablo IV's low-life warning under `LowLifeBelow` percent (40) and its heartbeat while life stays there |
 | Landmarks | `AnnounceShrineEffects` | Say a shrine's name and effect after you use it |
 | Combat feedback | `AnnounceBossLife`, `AnnounceEliteLife`, `AnnounceNearestEnemy` | Boss, elite and nearest-enemy speech |
@@ -285,8 +288,8 @@ launch; edit that file only with the game closed. The most useful ones:
 | Menus | `AnnouncePositions` | "3 of 8" in lists and grids (default on) |
 | Updates | `CheckAtStartup` | Say at startup when a newer LeAccess release exists (default on) |
 | Tooltips | `ReadKeywordExplanations` | Status-effect and keyword explanations (the "more information" tooltip) in skill and passive details (default on) |
-| Character sheet | `ReadSummaryOnOpen` | Attributes, resistances and defences read when the character sheet opens (default on) |
-| Exploration beacon | `TownFullyExplored` | In towns the beacon routes to any NPC or the stash without walking there first (default on) |
+| Character sheet | `ReadSummaryOnOpen` | Level, life, mana, attributes, resistances and defences read when the character sheet opens (default on) |
+| Exploration beacon | `TownFullyExplored`, `RepeatSpeed` | In towns the beacon routes to any NPC or the stash without walking there first (default on) |
 
 ## Language
 

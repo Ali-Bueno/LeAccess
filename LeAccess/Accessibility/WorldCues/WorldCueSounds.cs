@@ -115,7 +115,7 @@ internal static class WorldCueSounds
                 Plugin.Log.LogWarning($"Natural world cue unavailable; retaining synthesized fallback: {_lastSampleFailure}");
             }
             _playingTarget = target.Key;
-            State.MarkPlayed(target, now);
+            State.MarkPlayed(target, now, SoundLevels.RepeatSpeed(RepeatGroup.WorldObjects));
             _lastFailure = null;
             if (LoggedTargets[(int)target.Key.Category] != target.Key)
             {

@@ -95,7 +95,7 @@ internal static class ModMenu
     }
 
     private static MenuPage Build() =>
-        ModMenuPages.Build(_config, () => new MenuReply(null, Close: true), ModMenuSoundPages.Build(_config));
+        ModMenuPages.Build(_config, () => new MenuReply(null, Close: true), section => ModMenuSoundPages.Extras(_config, section));
 
     // A language change rebuilds the labels and keeps the cursor where it was.
     private static void Rebuild()

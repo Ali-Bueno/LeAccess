@@ -73,11 +73,11 @@ internal sealed class WorldCueState
         return found;
     }
 
-    internal void MarkPlayed(WorldCueTarget target, double now)
+    internal void MarkPlayed(WorldCueTarget target, double now, float speed = 1)
     {
         _session = target.Session;
         _lastPlayed[(int)target.Key.Category] = now;
-        _nextCue = now + MinimumIntervalSeconds;
+        _nextCue = now + MinimumIntervalSeconds / speed;
         _lastTime = now;
     }
 
