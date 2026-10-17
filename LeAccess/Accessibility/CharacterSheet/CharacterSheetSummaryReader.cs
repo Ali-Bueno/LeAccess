@@ -1,89 +1,193 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using LE.UI.PanelSystem;
+using LeAccess.Accessibility.Announcements;
 using LeAccess.Accessibility.Utils;
+using LeAccess.I18n;
 using TMPro;
 using UnityEngine;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.CharacterSheet;
 
-/// <summary>Reads the character sheet's plain value fields with the game's own labels beside them.</summary>
+/// <summary>A titled group of the sheet's stats as displayed.</summary>
+internal readonly record struct SheetSection(string Title, IReadOnlyList<string> Entries);
+
+/// <summary>Reads the character sheet in the game's own layout: main stats, resistances, additional defences, then the
+/// open detail tab's lines in groups, each with the game's labels.</summary>
 /// <remarks>See reference/character-sheet.md.</remarks>
 internal static class CharacterSheetSummaryReader
 {
     // A value's label sits in its row, or in the row group one or two containers up.
     private const int LabelSearchLevels = 3;
-    // Life and mana are stat lines, not plain fields; they follow the level.
-    private static readonly SP[] ResourceStats = { SP.Health, SP.HealthRegen, SP.Mana, SP.ManaRegen };
+    // Detail lines the sheet fills itself (parry, endurance threshold...) have no stat display.
+    private const int NoStatKind = -1;
 
-    /// <summary>The summary, with every other stat line on screen when asked, and the fields with nothing on screen.</summary>
-    internal static string Build(global::CharacterSheet sheet, List<string> skipped, bool everyLine)
+    /// <summary>The sheet's sections in screen order; hasLife is false when no life line was found.</summary>
+    internal static List<SheetSection> Sections(global::CharacterSheet sheet, out bool hasLife)
     {
-        var fields = new (string Name, TMP_Text Value)[]
+        var sections = new List<SheetSection>();
+        var content = CommonParent(sheet.PhysicalRes, sheet.armour) ?? sheet.transform;
+        var values = ValueTexts(sheet, content);
+        var main = new List<string>();
+        AddField(main, sheet.Level);
+        // Life, mana and their regeneration are bare stat displays in their own block, not line items.
+        var life = BareDisplays(content).FirstOrDefault(display => !display.minionStat && display.property == SP.Health);
+        hasLife = life is not null;
+        if (hasLife && SectionOf(life.transform, content) is { } mainStats) main.AddRange(Rows(mainStats, values));
+        AddAttributes(main, sheet);
+        Add(sections, ModText.Get("sheet.section.main"), main);
+        foreach (var anchor in new[] { sheet.PhysicalRes, sheet.armour })
+            if (IsAlive(anchor) && SectionOf(anchor.transform, content) is { } section)
+                Add(sections, Heading(section, values), Rows(section, values));
+        AddDetailSections(sections, content);
+        return sections;
+    }
+
+    private static void Add(List<SheetSection> sections, string title, List<string> entries)
+    {
+        if (entries.Count > 0) sections.Add(new SheetSection(title, entries));
+    }
+
+    // The sheet's plain value fields and every bare stat display shown outside the detail lines.
+    private static HashSet<IntPtr> ValueTexts(global::CharacterSheet sheet, Transform content)
+    {
+        var values = new HashSet<IntPtr>();
+        foreach (var field in new[]
+                 {
+                     sheet.PhysicalRes, sheet.LightningRes, sheet.ColdRes, sheet.FireRes, sheet.VoidRes, sheet.NecroticRes,
+                     sheet.PoisonRes, sheet.armour, sheet.armourPercent, sheet.dodge, sheet.DodgeChance, sheet.blockChance,
+                     sheet.blockEffectiveness, sheet.blockMitigation
+                 })
+            if (IsAlive(field)) values.Add(field.Pointer);
+        foreach (var display in BareDisplays(content))
         {
-            (nameof(sheet.Level), sheet.Level), (nameof(sheet.Experience), sheet.Experience),
-            (nameof(sheet.experienceTillNextLevelText), sheet.experienceTillNextLevelText)
-        };
+            var text = IsAlive(display.statText) ? display.statText : display.GetComponent<TMP_Text>();
+            if (IsAlive(text)) values.Add(text.Pointer);
+        }
+        return values;
+    }
+
+    private static IEnumerable<CharacterStatDisplay> BareDisplays(Transform content) =>
+        content.GetComponentsInChildren<CharacterStatDisplay>()
+            .Where(display => IsAlive(display) && !IsAlive(display.GetComponentInParent<CharacterStatDisplayLineItem>()));
+
+    // The sheet's blocks (header, main stats, resistances, defences, detail tabs) share one parent.
+    private static Transform CommonParent(Component first, Component second)
+    {
+        if (!IsAlive(first) || !IsAlive(second)) return null;
+        var ancestors = new HashSet<IntPtr>();
+        for (var t = first.transform.parent; t is not null; t = t.parent) ancestors.Add(t.Pointer);
+        for (var t = second.transform.parent; t is not null; t = t.parent)
+            if (ancestors.Contains(t.Pointer)) return t;
+        return null;
+    }
+
+    private static Transform SectionOf(Transform item, Transform content)
+    {
+        for (var t = item; t is not null; t = t.parent)
+            if (t.parent is not null && t.parent.Pointer == content.Pointer) return t;
+        return null;
+    }
+
+    // Values in screen order; the values of one row are read under its label.
+    private static List<string> Rows(Transform section, HashSet<IntPtr> values)
+    {
+        var rows = new List<string>();
+        TMP_Text first = null;
+        var shown = new List<string>();
+        foreach (var text in section.GetComponentsInChildren<TMP_Text>())
+        {
+            if (!values.Contains(text.Pointer) || !TextUtils.IsVisibleLabel(text)) continue;
+            string value = TextUtils.CleanText(text.text);
+            if (string.IsNullOrWhiteSpace(value)) continue;
+            if (first is null || text.transform.parent.Pointer != first.transform.parent.Pointer)
+            {
+                AddRow(rows, first, shown);
+                first = text;
+            }
+            shown.Add(value);
+        }
+        AddRow(rows, first, shown);
+        return rows;
+    }
+
+    private static void AddRow(List<string> rows, TMP_Text first, List<string> shown)
+    {
+        if (first is not null && CharacterSheetSummaryText.Row(LabelFor(first), shown) is { } row) rows.Add(row);
+        shown.Clear();
+    }
+
+    // The section's title: its first visible words before the values, outside their rows.
+    private static string Heading(Transform section, HashSet<IntPtr> values)
+    {
+        var texts = section.GetComponentsInChildren<TMP_Text>();
+        var rows = new HashSet<IntPtr>();
+        foreach (var text in texts)
+            if (values.Contains(text.Pointer)) rows.Add(text.transform.parent.Pointer);
+        foreach (var text in texts)
+        {
+            if (values.Contains(text.Pointer)) return null;
+            if (!TextUtils.IsVisibleLabel(text) || rows.Contains(text.transform.parent.Pointer)) continue;
+            string heading = TextUtils.CleanText(text.text);
+            if (!string.IsNullOrWhiteSpace(heading) && !HasDigit(heading)) return heading;
+        }
+        return null;
+    }
+
+    // Only the open tab is active; its lines are cut into groups by column, the game's spacers and stat kind.
+    private static void AddDetailSections(List<SheetSection> sections, Transform content)
+    {
+        var lines = new List<CharacterStatDisplayLineItem>();
+        var kinds = new List<(int Block, int Kind)>();
+        int block = 0;
+        foreach (var tab in content.GetComponentsInChildren<DetailedCharacterStatsTab>())
+        {
+            CharacterStatDisplayLineItem previous = null;
+            foreach (var line in tab.GetComponentsInChildren<CharacterStatDisplayLineItem>())
+            {
+                if (!IsAlive(line) || !UiVisibility.IsVisible(line.gameObject)) continue;
+                if (previous is not null && SplitsFrom(previous, line)) block++;
+                previous = line;
+                lines.Add(line);
+                kinds.Add((block, Kind(line)));
+            }
+            block++;
+        }
+        var groups = CharacterSheetSummaryText.Groups(kinds);
         var entries = new List<string>();
-        var read = new HashSet<IntPtr>();
-        var lines = ActiveLines(sheet);
-        AddAll(entries, skipped, fields);
-        int before = entries.Count;
-        AddLines(entries, read, lines.Where(IsResource));
-        if (entries.Count == before) skipped.Add(nameof(ResourceStats));
-        AddAttributes(entries, sheet);
-        AddAll(entries, skipped, new (string, TMP_Text)[]
+        for (int i = 0; i < lines.Count; i++)
         {
-            (nameof(sheet.PhysicalRes), sheet.PhysicalRes), (nameof(sheet.LightningRes), sheet.LightningRes),
-            (nameof(sheet.ColdRes), sheet.ColdRes), (nameof(sheet.FireRes), sheet.FireRes), (nameof(sheet.VoidRes), sheet.VoidRes),
-            (nameof(sheet.NecroticRes), sheet.NecroticRes), (nameof(sheet.PoisonRes), sheet.PoisonRes),
-            (nameof(sheet.armour), sheet.armour), (nameof(sheet.armourPercent), sheet.armourPercent),
-            (nameof(sheet.dodge), sheet.dodge), (nameof(sheet.DodgeChance), sheet.DodgeChance),
-            (nameof(sheet.blockChance), sheet.blockChance), (nameof(sheet.blockEffectiveness), sheet.blockEffectiveness),
-            (nameof(sheet.blockMitigation), sheet.blockMitigation), (nameof(sheet.dps), sheet.dps)
-        });
-        AddLines(entries, read, new[]
-        {
-            sheet.parryChance, sheet.glancingBlow, sheet.enduranceThreshold,
-            sheet.PotionHealth, sheet.maximumCompanions, sheet.minionPower
-        });
-        if (everyLine) AddLines(entries, read, lines);
-        return CharacterSheetSummaryText.Compose(entries);
+            if (i > 0 && groups[i] != groups[i - 1]) { Add(sections, null, entries); entries = new List<string>(); }
+            if (CharacterStatLineReader.TryReadParts(lines[i].gameObject, out string name, out string value) &&
+                CharacterSheetSummaryText.Entry(name, value) is { } entry) entries.Add(entry);
+        }
+        Add(sections, null, entries);
     }
 
-    // The detailed stat lists can sit beside the sheet in its panel.
-    private static List<CharacterStatDisplayLineItem> ActiveLines(global::CharacterSheet sheet)
-    {
-        var panel = sheet.GetComponentInParent<Panel>();
-        var root = IsAlive(panel) ? panel.transform : sheet.transform;
-        return root.GetComponentsInChildren<CharacterStatDisplayLineItem>().ToList();
-    }
-
-    private static bool IsResource(CharacterStatDisplayLineItem line)
+    private static int Kind(CharacterStatDisplayLineItem line)
     {
         var display = line._characterStatDisplay;
-        return IsAlive(display) && !display.minionStat && ResourceStats.Contains(display.property);
+        return IsAlive(display) ? (int)display.property : NoStatKind;
     }
 
-    private static void AddLines(List<string> entries, HashSet<IntPtr> read, IEnumerable<CharacterStatDisplayLineItem> lines)
+    // The detail lines sit in two columns, with spacer objects between the game's groups.
+    private static bool SplitsFrom(CharacterStatDisplayLineItem previous, CharacterStatDisplayLineItem line)
     {
-        foreach (var line in lines)
-            if (IsAlive(line) && read.Add(line.Pointer) && CharacterStatLineReader.TryRead(line.gameObject, out string text))
-                entries.Add(text);
-    }
-
-    private static void AddAll(List<string> entries, List<string> skipped, IEnumerable<(string Name, TMP_Text Value)> fields)
-    {
-        foreach (var (name, value) in fields)
+        var column = line.transform.parent;
+        if (column is null || previous.transform.parent is null || previous.transform.parent.Pointer != column.Pointer) return true;
+        for (int i = previous.transform.GetSiblingIndex() + 1; i < line.transform.GetSiblingIndex(); i++)
         {
-            string text = TextUtils.IsVisibleLabel(value) ? TextUtils.CleanText(value.text) : null;
-            // A field that already shows words ("Level 95") is its own label.
-            string entry = CharacterSheetSummaryText.Entry(LabelFor(value), text) ??
-                (text is not null && text.Any(char.IsLetter) ? text : null);
-            if (entry is null) skipped.Add(name); else entries.Add(entry);
+            var between = column.GetChild(i);
+            if (between.gameObject.activeSelf && !IsAlive(between.GetComponent<CharacterStatDisplayLineItem>())) return true;
         }
+        return false;
+    }
+
+    private static void AddField(List<string> entries, TMP_Text value)
+    {
+        string text = TextUtils.IsVisibleLabel(value) ? TextUtils.CleanText(value.text) : null;
+        if (text is not null && CharacterSheetSummaryText.Row(LabelFor(value), new[] { text }) is { } entry) entries.Add(entry);
     }
 
     // Only the corrupted or the uncorrupted variant of an attribute is shown at a time.

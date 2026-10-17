@@ -26,14 +26,49 @@ Live check pending: that labels pair correctly (armour and armour percent share 
 
 ## Life, mana and every stat line (2026-10-17, user report)
 
-"Right stick shows dexterity, intelligence and so on, but not life, mana or regeneration; it must read every stat on
-that screen." `CharacterSheet` has no plain field for life or mana (interop stub; only `UIGlobeHealth` and `ManaBar`
-have health/mana text fields), so they are `CharacterStatDisplayLineItem`s, whose `_characterStatDisplay.property` is an
-`SP`. The 2026-10-17 log's focus walk met only `CharacterStatsFirst`/`CharacterStatsSecond` lines (attack speeds,
-criticals, damage), none for life or mana. Now the summary takes every active line item under the sheet's panel:
-- right after the level, the lines whose property is `SP.Health`, `HealthRegen`, `Mana` or `ManaRegen` (minion
-  stats excluded), on opening and on request;
-- after block, the sheet's typed line items (parry, glancing blow, endurance, potion health, companions, minion power);
-- on request only (right stick up), every other visible line item in hierarchy order, each read once.
-When no life or mana line is on screen the log names `ResourceStats` among the skipped fields. Live check pending: where
-the game shows life and mana, and whether the request summary is too long.
+"Right stick shows dexterity, intelligence and so on, but not life, mana or regeneration." First fix looked for
+`CharacterStatDisplayLineItem`s with `SP.Health`/`Mana` and found none (`[Character sheet] no label or value on screen
+for: ... ResourceStats`), online and offline. Replaced by the sections below.
+
+## Sections and life from the prefab (2026-10-17, second report)
+
+User: life and mana still missing; read the sheet in sections, right stick up for the next ("stats: life, mana, mana
+regen, int, dex", then "critical chances", then "armour, dodge"), down for the previous.
+
+Prefab evidence (read-only UnityPy dump of `CharacterStatsPanel` in `assets_d25ec10094c4285d.bundle`, game closed;
+runtime unobserved). `CharacterStatsPanel/Content` children in order:
+- `Header` (level; `Xp` inactive), `AttributesPanel` (corrupted variants inactive);
+- `MainStats`: `HealthHolder`, `HealthRegenHolder`, `ManaHolder`, `ManaRegenHolder` rows (label TMP + value TMP) and
+  bare `MoveSpeed`/`MoveSpeedStat`. Each value TMP carries a bare `CharacterStatDisplay` (`property` Health 7,
+  HealthRegen 17, Mana 8, ManaRegen 18, Movespeed 9; `minionStat` 0; no line item parent). This is why line-item
+  searches never found life;
+- `Resistances` (heading TMP `ResistanceHeader`, key `Resistances_Title`; seven `ResHolder` rows, the typed `*Stat`
+  values are plain TMP, their stat displays sit on inactive `*Value` siblings);
+- `Defenses` (heading `DefensesHeader`, key `StatsPanel_Defenses_Header`; rows Block, Armour (value + mitigation),
+  Stun Avoidance and WardRetention (bare displays), Block Protection, Dodge (chance + rating); Potion Slots inactive);
+- four tab pages `DamageStats` (only one active by default), `DefenseStats`, `MinionStats`, `OtherStats`, each a
+  `ScrollRect` with one `DetailedCharacterStatsTab` and two side-by-side columns `CharacterStatsFirst`/`Second`
+  (not pages). No headings inside; the game's groups are separated by `Space` objects (not always in
+  `_characterStatSpacers`), and `_characterStatDisplayLineItems` omits some lines, so hierarchy order is used. No
+  culling script: off-screen lines stay active. The typed line items (parry, glancing blow, endurance threshold,
+  potion health, companions, minion power) live in the Defence, Minion and Other tabs.
+
+Reading (`CharacterSheetSummaryReader.Sections`): the blocks' parent is the common parent of `PhysicalRes` and
+`armour`. Sections, each spoken as "title, N of M, entries":
+1. main stats (mod title `sheet.section.main`): level, every bare display row of the block holding the Health display,
+   attributes;
+2. the resistances block, 3. the defences block: game heading (first visible words before the values, outside their
+   rows), then rows in screen order, several values of one row under its label ("Armour: 92, 17%");
+4. onward: the active tab's visible line items, cut at each column and spacer, and inside those by stat kind: a run of
+   2+ lines of one `property` starts a section, a shorter run joins the lines before it
+   (`CharacterSheetSummaryText.Groups`). Damage tab, first column: speeds (with cast speed), critical chances,
+   critical multipliers, then area, stun, and the mana-cost line; the second column's damage and penetration lines stay
+   one section.
+
+Opening reads section 1 (config `ReadSummaryOnOpen`); right stick up/down (`MenuDetailInput.ReadRequested` /
+`PreviousRequested`) while focus is on the sheet step through the sections, no wrap, re-read afresh each push so values
+and the open tab are current. It runs before the generic details chain, which it replaces on the sheet. Log:
+`[Character sheet] section N/M: <text>`, and `no life line on screen` once when the Health display is missing.
+Tests: `CharacterSheetSummaryTests` (Classes 160). Live check pending: labels as shown at runtime (the prefab texts are
+English placeholders; the game localizes them), the section sizes, and that the right stick's own scrolling of the tab
+does not get in the way.

@@ -1,8 +1,10 @@
 # Handoff — 2026-10-17: sheet life and mana, menu in groups, repeat speed; keyboard parked
 
 Built and installed, unheard, not released ([changelog](CHANGELOG.md)). Live checks:
-- Character sheet on open: life, regeneration, mana and mana regeneration right after the level; right stick reads
-  every stat line on screen ([sheet](reference/character-sheet.md)). Check where the game shows them and the length.
+- Character sheet (second fix, the first found no life line): opening reads "main stats" (level, life, regeneration,
+  mana, mana regeneration, movement speed, attributes); right stick up/down step through resistances, additional
+  defences and the open tab's groups, "N of M" each ([sheet](reference/character-sheet.md#sections-and-life-from-the-prefab-2026-10-17-second-report)).
+  Log `[Character sheet] section N/M: …`; check the labels, the group sizes, and the other tabs.
 - Mod menu: groups Sounds / Exploration / Speech / Reading / General; sound pages hold volume, repeat speed and
   "Listen: …" previews ([pages](reference/mod-menu.md#pages)).
 - `RepeatSpeed` 50-300 % for enemy, NPC, world object and beacon pulses.

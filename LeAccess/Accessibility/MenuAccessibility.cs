@@ -63,6 +63,7 @@ public class MenuAccessibility : MonoBehaviour
         DropdownValueWatcher.Poll();
         ControllerMenuAccessibility.Update();
         bool readDetails = MenuDetailInput.ReadRequested();
+        bool readPrevious = MenuDetailInput.PreviousRequested();
         PassiveAccessibility.Update();
         QuestAccessibility.Update();
         SkillAccessibility.Update(readDetails);
@@ -75,14 +76,14 @@ public class MenuAccessibility : MonoBehaviour
         CharacterNameAccessibility.Update();
         Social.SocialAccessibility.Update();
         Guide.GuideAccessibility.Update();
-        LeAccess.Accessibility.CharacterSheet.CharacterSheetSummary.Update();
+        bool sheetRead = LeAccess.Accessibility.CharacterSheet.CharacterSheetSummary.Update(readDetails, readPrevious);
         Forge.ForgeInventoryNotices.Observe();
         Gifting.GiftAccessibility.Observe();
         InventoryAccessibility.Update(readDetails);
         Forge.ForgeAccessibility.Update(readDetails);
         Gifting.GiftAccessibility.Update(readDetails);
         Endgame.EndgameAccessibility.Update(readDetails);
-        if (readDetails && !SkillAccessibility.HasActiveContent && !InventoryAccessibility.HasActiveContent &&
+        if (readDetails && !sheetRead && !SkillAccessibility.HasActiveContent && !InventoryAccessibility.HasActiveContent &&
             !Forge.ForgeAccessibility.HasActiveContent && !Gifting.GiftAccessibility.HasActiveContent &&
             !Endgame.EndgameAccessibility.HasActiveContent)
             ReadSelectedDetails();
@@ -142,9 +143,7 @@ public class MenuAccessibility : MonoBehaviour
             if (ClassCarouselHandler.TryReadDetails(out string text))
             { ScreenReader.Speak(text, true); return; }
             if (UiFocusOwnership.TryGetSelected(out var selected) &&
-                ElementAnnouncer.TryReadDetails(selected, out text)) { ScreenReader.Speak(text, true); return; }
-            // Stat lines have no details of their own; there the request repeats the sheet's summary.
-            CharacterSheet.CharacterSheetSummary.TryReadOnRequest();
+                ElementAnnouncer.TryReadDetails(selected, out text)) ScreenReader.Speak(text, true);
         }
         catch (System.Exception ex) { Plugin.Log.LogWarning($"Menu details unavailable: {ex.Message}"); }
     }

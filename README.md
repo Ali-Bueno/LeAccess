@@ -216,8 +216,9 @@ affix, its tier and your shards; right stick up adds the preview and forging pot
   game's "more information" tooltip); holding R3 reads that tooltip too.
 - Passive trees go by column: each column says the points it needs, and you can only leave the grid from the first
   column. The mastery banner above them is a list: up and down move through the trees, Cross opens one.
-- The character sheet reads your level, life, mana, attributes, resistances and defences when it opens; right stick up
-  reads them again followed by every other stat on the sheet.
+- The character sheet reads your level, life, mana and attributes when it opens. Right stick up and down move through
+  its sections as laid out on screen: main stats, resistances, additional defences, then the open tab's stats in
+  groups; each section says its place ("2 of 9").
 
 ### World map
 
@@ -288,7 +289,7 @@ launch; edit that file only with the game closed. The most useful ones:
 | Menus | `AnnouncePositions` | "3 of 8" in lists and grids (default on) |
 | Updates | `CheckAtStartup` | Say at startup when a newer LeAccess release exists (default on) |
 | Tooltips | `ReadKeywordExplanations` | Status-effect and keyword explanations (the "more information" tooltip) in skill and passive details (default on) |
-| Character sheet | `ReadSummaryOnOpen` | Level, life, mana, attributes, resistances and defences read when the character sheet opens (default on) |
+| Character sheet | `ReadSummaryOnOpen` | Level, life, mana and attributes read when the character sheet opens (default on) |
 | Exploration beacon | `TownFullyExplored`, `RepeatSpeed` | In towns the beacon routes to any NPC or the stash without walking there first (default on) |
 
 ## Language

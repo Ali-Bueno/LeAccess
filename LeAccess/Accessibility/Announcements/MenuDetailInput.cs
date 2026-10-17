@@ -31,6 +31,9 @@ internal static class MenuDetailInput
 
     internal static bool ReadRequested() => ReadStickRequested(up: true);
 
+    /// <summary>Right stick pushed down: back to the previous part where a screen reads in parts.</summary>
+    internal static bool PreviousRequested() => ReadStickRequested(up: false);
+
     private static bool ReadStickRequested(bool up)
     {
         if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible) return false;

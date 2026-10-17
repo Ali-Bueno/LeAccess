@@ -1,8 +1,8 @@
 # STATUS — Last Epoch
 
-**Updated:** 2026-10-17 (user report and requests): the character sheet summary reads life, mana and regeneration
-(stat lines found by their `SP` property) and, on right stick up, every other stat line
-([sheet](reference/character-sheet.md#life-mana-and-every-stat-line-2026-10-17-user-report)); the mod menu is five
+**Updated:** 2026-10-17 (user reports and requests): the character sheet reads in sections, right stick up/down, with
+life, mana and regeneration found as the bare stat displays they are (the first fix looked for line items and found
+none) ([sheet](reference/character-sheet.md#sections-and-life-from-the-prefab-2026-10-17-second-report)); Classes 160; the mod menu is five
 groups (Sounds, Exploration, Announcements, Menus and screens, General) with "Listen" entries on each sound page, and
 enemy, NPC, object and beacon pulses have `RepeatSpeed` 50-300 % ([menu](reference/mod-menu.md#pages)). Keyboard play
 investigated, nothing built: some players have no pad, others want the game's own keyboard shortcuts; plan: in-process virtual XInput pad (no driver) plus the game's keys over controller mode; parked by the user for a later session ([options](reference/keyboard-support.md)). ModMenu 354, Localization 9420, NpcLifecycle 110; installed. Unheard.

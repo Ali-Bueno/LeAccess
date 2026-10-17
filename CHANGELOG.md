@@ -15,8 +15,10 @@ New:
 
 Fixed:
 
-- The character sheet reads life, mana and their regeneration. Right stick up on the sheet now reads every stat on it,
-  not only the upper half.
+- The character sheet reads life, mana, their regeneration and movement speed, which were never found before, online
+  or offline. It reads in sections like the screen: main stats, resistances, additional defences, then the open tab's
+  stats in groups (speeds, critical chances, critical multipliers…). Right stick up goes to the next section, down
+  back to the previous one; opening the sheet reads the main stats.
 
 ## 13 October 2026, evening — not released yet
 
