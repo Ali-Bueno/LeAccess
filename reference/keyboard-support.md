@@ -24,9 +24,23 @@ status, R vitals report (`[Vitals] ReportKey`). All read with `UnityEngine.Input
 too. No key for menu details (right stick up) or minion commands. Untested: whether these keys drop controller mode
 while a pad is in use, since they are not screen-reader keys.
 
+## The game reads pads through XInput only (2026-10-17)
+
+`Player.log` on this machine: "Rewired Windows Gaming Input support is not available ... Attempting to fallback to
+XInput ... XInput initialized." The x64 install ships no `Rewired_WindowsGamingInput.dll` (only
+`Plugins/ARM64` has one; `Plugins/x86_64` has `Rewired_DirectInput.dll`), so every x64 player should get the same
+fallback. Rewired then loads one of `Xinput1_1`..`Xinput1_4`/`Xinput9_1_0.dll` (metadata strings) and calls
+`XInputGetState`, `XInputGetCapabilities` and `XInputSetState` (GameAssembly strings). A pad can therefore be offered
+inside the game process, with no driver: a native detour of those exports in the loaded XInput DLL (BepInEx's own
+detour support, `dobby.dll`/MonoMod in `BepInEx/core`, no new dependency) reports a connected pad in a free slot and
+fills its state from the keyboard. Unverified: that Rewired creates and the game assigns a joystick from XInput calls
+alone, how Steam Input's own XInput hook interacts, and that `ControllerShouldBeActive` accepts it while keys are held
+(the mod's guard would have to count the pad's keys as its own).
+
 ## Options
 
-1. **Virtual pad fed from the keyboard** (full play): the mod creates a virtual Xbox 360 or DualShock 4 pad through the
+1. **Virtual pad fed from the keyboard** (full play; the only option for players without a pad, user 2026-10-17): first
+   try the in-process XInput pad above; failing that, the mod creates a virtual Xbox 360 or DualShock 4 pad through the
    ViGEmBus driver and writes its state from keys; the game then behaves exactly as with a pad (controller mode, every
    map, auto-targeting). The game already ran correctly with a ViGEm Xbox 360 pad in test sessions
    ([while open](mod-menu.md#while-open)). Needs a separate driver install with admin rights, the client library as a
