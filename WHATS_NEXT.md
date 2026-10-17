@@ -1,6 +1,6 @@
 # Handoff — 2026-10-17: sheet life and mana, menu in groups, repeat speed; keyboard parked
 
-Built and installed, unheard, not released ([changelog](CHANGELOG.md)). Live checks:
+Released as `v0.2.4` ([changelog](CHANGELOG.md)); the sheet sections work (user, 2026-10-17). Still to hear:
 - Character sheet (second fix, the first found no life line): opening reads "main stats" (level, life, regeneration,
   mana, mana regeneration, movement speed, attributes); right stick up/down step through resistances, additional
   defences and the open tab's groups, "N of M" each ([sheet](reference/character-sheet.md#sections-and-life-from-the-prefab-2026-10-17-second-report)).

@@ -23,7 +23,14 @@ ACTUALIZACIONES
 Al iniciar el juego, el mod consulta GitHub y avisa si hay una version nueva.
 Para actualizar, cierra el juego y extrae el ZIP nuevo igual que en la
 instalacion; tus opciones de LeAccess se conservan. El aviso se desactiva en el
-menu del mod, pagina Actualizaciones.
+menu del mod, seccion General, pagina Actualizaciones.
+
+MENU DEL MOD
+Esta dividido en secciones: Sonidos, Exploracion, Avisos de voz, Menus y
+pantallas, y General. Cada pagina de Sonidos tiene juntos su volumen, sus
+opciones y entradas "Escuchar" que reproducen cada sonido. Los sonidos de
+enemigos, personajes, objetos y la baliza tienen velocidad de repeticion
+(50 a 300 por ciento); los bucles continuos no cambian.
 
 PRIMER INICIO
 La primera ejecucion puede tardar varios minutos mientras BepInEx genera sus
@@ -81,6 +88,12 @@ Maestria de epoca: la primera entrada de la lista de misiones, Conocimiento de
 Orobyss, dice su progreso y que hacer; stick derecho arriba lista cada linea
 temporal como conseguida o pendiente. Al completarla, derecha enfoca el panel y
 Cruz confirma y viaja.
+Hoja de personaje: al abrirla se leen nivel, vida, regeneracion de vida, mana,
+regeneracion de mana, velocidad de movimiento y atributos. Stick derecho arriba
+pasa a la seccion siguiente y abajo vuelve a la anterior, como en pantalla:
+resistencias, defensas adicionales y luego la pestana abierta en grupos
+(velocidades, probabilidad de critico, multiplicador de critico...). Cada
+seccion dice "N de M".
 Nivel: manten Create y pulsa Circulo (teclado: Ctrl+L) para oir nivel, porcentaje de
 experiencia, puntos de pasiva y habilidades por mejorar, y la zona. Sin pulsar nada
 se dicen al subir de nivel y al tener un punto nuevo.

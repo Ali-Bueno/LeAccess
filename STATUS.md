@@ -5,7 +5,7 @@ life, mana and regeneration found as the bare stat displays they are (the first 
 none) ([sheet](reference/character-sheet.md#sections-and-life-from-the-prefab-2026-10-17-second-report)); Classes 160; the mod menu is five
 groups (Sounds, Exploration, Announcements, Menus and screens, General) with "Listen" entries on each sound page, and
 enemy, NPC, object and beacon pulses have `RepeatSpeed` 50-300 % ([menu](reference/mod-menu.md#pages)). Keyboard play
-investigated, nothing built: some players have no pad, others want the game's own keyboard shortcuts; plan: in-process virtual XInput pad (no driver) plus the game's keys over controller mode; parked by the user for a later session ([options](reference/keyboard-support.md)). ModMenu 354, Localization 9420, NpcLifecycle 110; installed. Unheard.
+investigated, nothing built: some players have no pad, others want the game's own keyboard shortcuts; plan: in-process virtual XInput pad (no driver) plus the game's keys over controller mode; parked by the user for a later session ([options](reference/keyboard-support.md)). ModMenu 354, Localization 9430, NpcLifecycle 110. Sheet sections confirmed by the user ("funcionó"); menu and repeat speed unheard. Released as `v0.2.4`.
 Earlier, 2026-10-13 evening (user request): the scanner plans like the minimap. An entry with no explored route
 (a quest in unexplored ground) names its best way: the edge of the explored map (unexplored room or frontier) whose
 walk plus straight line on to the target is shortest, with "from there, N steps, direction"; a "ways to …" category
@@ -302,6 +302,7 @@ releases go to GitHub Releases with the asset name `LeAccess.zip` (see below).
 
 ## Validation and references
 
+- 2026-10-17 15:13: GitHub release `v0.2.4` carries `LeAccess-Steam-1.5.1-prueba-20261017-151320.zip` (repo root, ignored by git) as `LeAccess.zip`, SHA-256 `F5DF94963A7037250D54C7DAC3619CE977EE36EBD03D0C49E494539C330A4CF2`, 272 files; its `LeAccess.dll` (`647B3A2657BDB708…`, 0.2.4) is the installed copy. Character sheet sections, menu groups, repeat speed, scanner ways beyond explored ground, shared exploration; Leeme explains the menu and the sheet.
 - 2026-10-13 10:51: GitHub release `v0.2.3` carries `LeAccess-Steam-1.5.1-prueba-20261013-105137.zip` (repo root, ignored by git) as `LeAccess.zip`, SHA-256 `3BE41BD134BAC7A9FAA5A37398CB686AA303A88634123E7D82E24644F8AE5E0B`, 272 files; its `LeAccess.dll` (`552A628291656742…`, 0.2.3) is the installed copy. Package 250. First-login screens and Settings over class selection; README and Leeme explain the first login.
 - 2026-10-13: first-login and pause/Settings batch installed (`LeAccess.dll` `43932F2F12C86F9F…`, game closed; external catalogs kept, new keys are embedded). All 63 host suites pass (ScreenContent 252, CharacterName 235, MenuReading 557, PauseFocus 147, Localization 9180). No new hook. No ZIP or release.
 - 2026-10-11 wall tones: installed `LeAccess.dll` `37B1F1117ED3A954…` (game closed, includes the route legs). RadarAudio 71, Navigation 901, ModMenu 274, Localization 8580. No new hook. No friend ZIP or release.
