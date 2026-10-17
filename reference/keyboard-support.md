@@ -3,6 +3,9 @@
 User request: players want to play with the keyboard (menus, scanner, mod settings) without changing the game's own
 settings. Static analysis of the interop stubs and earlier notes only; nothing below has been tried in game.
 
+Two groups ask (user, 2026-10-17): players with no pad at all, and players who do not want the controller interface
+and want the game's own keyboard shortcuts (inventory, character, ability keys, their own rebinds).
+
 ## Why the keyboard cannot drive the mod today
 
 - The game reads input through Rewired. Controller mode needs a gamepad connected and assigned, and no key, mouse
@@ -51,6 +54,16 @@ alone, how Steam Input's own XInput hook interacts, and that `ControllerShouldBe
    pad owners.
 3. **Mod-only shortcuts**: keys for menu details and minion commands, and mod keys counted as screen-reader keys so they
    never drop controller mode. Cheap, useful with any of the above.
+4. **Game shortcuts over controller mode** (for players who want the game's keys; recommended with 1): the game stays
+   in controller mode (real or in-process pad) and `ControllerModeGuard` keeps it for every key while the option is on,
+   so the game's keyboard bindings act while menus keep their focus and the mod keeps reading them. The mod claims only
+   the keys it needs for menu navigation and movement. Unverified, check first: whether `ButtonInputListener` and
+   Rewired keyboard actions act while `IsControllerActive` (the stubs have no bodies: disassembly, or a test build with
+   the guard widened, played with a real pad), and whether ability keys then aim like the pad (auto-target) or at the
+   cursor. Where the game ignores a key in controller mode, the mod would do that key's action itself.
+
+Rejected: real keyboard/mouse mode. Menus there are pointer-driven with no focus, so every screen's navigation and the
+aiming of abilities would have to be rebuilt by the mod.
 
 Open questions for an in-game test: whether a pad created at runtime is assigned without restarting; which pad wins
 with a real one also connected (and whether the screen keyboard closes on the switch); Steam Input duplicating it;
