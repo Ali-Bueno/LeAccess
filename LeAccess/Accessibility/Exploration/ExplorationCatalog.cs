@@ -11,7 +11,8 @@ namespace LeAccess.Accessibility.Exploration;
 internal enum ExplorationCategory
 {
     Quest = 0, Exit = 1, Waypoint = 2, Npc = 3, Stash = 4, Enemy = 5, UnexploredRoom = 6, Portal = 7, Room = 8,
-    Player = 9, LastDeath = 10, Treasure = 11, Shrine = 12, Interactable = 13, Item = 14, Breakable = 15, Way = 16
+    Player = 9, LastDeath = 10, Treasure = 11, Shrine = 12, Interactable = 13, Item = 14, Breakable = 15, Way = 16,
+    BloodTrail = 17
 }
 
 internal readonly record struct ExplorationEntry(string Key, string Name, ExplorationCategory Category,
@@ -29,10 +30,11 @@ internal readonly record struct ExplorationRoute(float Length, Vector3 Aim, bool
 internal sealed partial class ExplorationCatalog
 {
     // D2R map_survey.cpp CategoryOrder: the ways out, where there is left to go, what the level is for,
-    // who is there, then its scenery. Up/down on the right stick walks it, skipping empty categories.
+    // who is there, then its scenery. Up/down on the right stick walks it, skipping empty categories. Blood trails
+    // exist only during the Morditas hunt, whose goal is reaching monsters, so they lead (rage-of-morditas.md).
     internal static readonly ExplorationCategory[] Order =
     {
-        ExplorationCategory.Exit, ExplorationCategory.Portal, ExplorationCategory.Waypoint,
+        ExplorationCategory.BloodTrail, ExplorationCategory.Exit, ExplorationCategory.Portal, ExplorationCategory.Waypoint,
         ExplorationCategory.UnexploredRoom, ExplorationCategory.Room, ExplorationCategory.Quest,
         ExplorationCategory.Npc, ExplorationCategory.Player, ExplorationCategory.LastDeath, ExplorationCategory.Stash,
         ExplorationCategory.Enemy, ExplorationCategory.Treasure, ExplorationCategory.Shrine,
@@ -201,6 +203,7 @@ internal sealed partial class ExplorationCatalog
         ExplorationCategory.Interactable => "exploration.category.interactable",
         ExplorationCategory.Breakable => "exploration.category.breakable",
         ExplorationCategory.Way => "exploration.category.way",
+        ExplorationCategory.BloodTrail => "exploration.category.blood_trail",
         _ => "exploration.category.item"
     };
 

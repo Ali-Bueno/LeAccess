@@ -100,6 +100,10 @@ internal static class SafetyRegressionTests
         Check(!map.HasAddress(new MethodKey("Game", 0x06000009)), "missing native map entry is unverifiable");
         using var invalid = new MemoryStream(new byte[20]);
         Reject(() => NativeMethodMap.Read(invalid), "unknown map format must not pass");
+        Check(InstalledInterop.GenericArguments("Vector3").SequenceEqual(new[] { "Vector3" }) &&
+            InstalledInterop.GenericArguments("Dictionary<int, List<string>>, Vector3")
+                .SequenceEqual(new[] { "Dictionary<int, List<string>>", "Vector3" }),
+            "generic callback types split only their top-level arguments");
         return checks + InteropFingerprintTests.Run();
     }
 

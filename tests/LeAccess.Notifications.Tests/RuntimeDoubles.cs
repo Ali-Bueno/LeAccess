@@ -145,6 +145,7 @@ internal sealed class Notifications : UnityEngine.Component
 namespace LE.UI.NotificationSystem
 {
     internal class NotificationBase : UnityEngine.Component { }
+    internal sealed class RageOfMorditasHuntProgressNotification : NotificationBase { }
     internal sealed class RageOfMorditasOutOfGauntletNotification : NotificationBase
     {
         internal TMPro.TextMeshProUGUI _countdownText;

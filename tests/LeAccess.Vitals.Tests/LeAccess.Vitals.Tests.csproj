@@ -12,5 +12,6 @@
     <Compile Include="../../LeAccess/Accessibility/Vitals/GoldPickupState.cs" Link="GoldPickupState.cs" />
     <Compile Include="../../LeAccess/Accessibility/Progression/ProgressionState.cs" Link="ProgressionState.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Morditas/MorditasSpeechOwner.cs" Link="MorditasSpeechOwner.cs" />
   </ItemGroup>
 </Project>

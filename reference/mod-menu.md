@@ -81,7 +81,8 @@ from the main menu or gameplay alike.
 Since 2026-10-17 (user request: "split it into sections, Sounds with volume, loop and preview inside") the first page
 holds five groups and Close (`ModMenuCatalog.Groups`, title `menu.group.<id>`), each a page of section pages:
 - **Sounds**: master volume, wall radar, wall tones, object sounds, enemy sounds, NPC sounds, beacon, low life
-  (`[Vitals] LowLife*`, a second page of the Vitals section).
+  (`[Vitals] LowLife*`, a second page of the Vitals section), Rage of Morditas (blood trail drip,
+  [details](rage-of-morditas.md#blood-trails)).
 - **Exploration**: scanner and exploration, points of interest, map zones.
 - **Announcements**: combat speech, life and mana, quests, level and progress, dialogue.
 - **Menus and screens**: menus, tooltips, character sheet.

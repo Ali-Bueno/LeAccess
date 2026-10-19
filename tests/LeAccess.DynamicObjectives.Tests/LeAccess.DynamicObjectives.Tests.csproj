@@ -11,5 +11,6 @@
     <Compile Include="../../LeAccess/Accessibility/Combat/NearestEnemyAnnouncementState.cs" Link="NearestEnemyAnnouncementState.cs" />
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentTracker.cs" Link="ScreenContentTracker.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Morditas/MorditasSpeechOwner.cs" Link="MorditasSpeechOwner.cs" />
   </ItemGroup>
 </Project>

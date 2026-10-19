@@ -79,6 +79,7 @@ public class Plugin : BasePlugin
         LeAccess.Accessibility.Dialogue.NpcLines.Use(() => speakNpcLines.Value);
         LeAccess.Accessibility.Progression.ProgressionAccessibility.Initialize(Config);
         BossLifeAccessibility.Initialize(Config);
+        LeAccess.Accessibility.Morditas.MorditasAccessibility.Initialize(Config);
         LeAccess.Accessibility.CharacterSheet.CharacterSheetSummary.Initialize(Config);
         LandmarkAccessibility.Initialize(Config);
         ShrineEffectAnnouncer.Initialize(Config);
@@ -144,6 +145,7 @@ public class Plugin : BasePlugin
         ControllerBindingLog.Cleanup();
         ExplorationAccessibility.Cleanup();
         BossLifeAccessibility.Cleanup();
+        LeAccess.Accessibility.Morditas.MorditasAccessibility.Cleanup();
         LandmarkAccessibility.Cleanup();
         ShrineEffectAnnouncer.Cleanup();
         MapSectionAccessibility.Cleanup();

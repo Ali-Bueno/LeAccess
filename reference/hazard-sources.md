@@ -4,20 +4,27 @@ Read-only audit of Steam build **25690669**, 2026-10-03. The binary and metadata
 hashes are recorded in [Steam port notes](steam-port.md). Native addresses below
 describe this build only; production code does not use them as offsets.
 
+**Steam 1.5 (2026-10-19).** The Morditas timer, enemies-left and leaving widgets are now created with
+`NotificationSystem.CreateImmediateNotification`, which bypasses `ShowOnChannel`, so the channel hook never sees
+them. The [Rage of Morditas reader](rage-of-morditas.md) announces the hunt, the gauntlet, leaving the circle, the
+abandonment time and returning from the game's own state and hooks; current addresses are in
+[its hook table](rage-of-morditas.md#hooks). The addresses below are of build 25690669.
+
 | Source | Meaning and current coverage |
 |---|---|
 | Vitals | Actual local health, ward and mana changes use the existing critical/band reader. This reports player state, not the shape or timing of an incoming attack. |
 | Native warning/modal text | The [window reader](dungeon-warning-reading.md) reads the focused visible warning. A modal's existence is not proof of a nearby environmental hazard. |
-| Encounter abandonment | `RageOfMorditasOutOfGauntletNotification` renders a localized countdown when all players have left the gauntlet. The [typed notification reader](announcement-lifecycle.md) owns its text and restart lifecycle. |
+| Encounter abandonment | `RageOfMorditasOutOfGauntletNotification` renders a localized countdown when all players have left the gauntlet. The [Rage of Morditas reader](rage-of-morditas.md) says leaving, the abandonment time and returning; the [typed notification reader](announcement-lifecycle.md) reads the widget only when that reader follows no encounter. |
 | Morditas return arrow | The native arrow supplies a guarded local return target for manual and automatic orientation. Automatic guidance still requires a verified route. |
 | Attack telegraphs and dangerous ground | General visual-only damage areas still lack a verified unified player-facing source. Ability object names, visual effects and haptics are insufficient to infer hostility, affected floor, safe direction or time to impact. |
 
 ## Countdown evidence
 
 `RageOfMorditasGauntletVisualController.OnAllPlayersOutOfGauntletChanged`
-(RVA `1514C40`) forwards the native status and encounter configuration duration
-to `Notifications.ToggleRageOfMorditasOutOfGauntletNotification` (`1780B50`).
-That method creates the notice through `NotificationSystem` if needed. For an
+(RVA `1514C40`; 1.5 `151DC90`) forwards the native status and encounter configuration duration
+to `Notifications.ToggleRageOfMorditasOutOfGauntletNotification` (`1780B50`; 1.5 `17848F0`).
+That method creates the notice through `NotificationSystem` if needed (1.5:
+`CreateImmediateNotification`, never through the channel hook). For an
 existing notice, another true status calls `StartCountdown` directly; false
 calls `Hide`. Thus the generic channel-delivery hook alone cannot detect every
 restart of the same visible widget.

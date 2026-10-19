@@ -23,6 +23,9 @@ also appear in `_activeObjectives`. The reader speaks its owned current label
 and optional owned `questHeader.questName`. Old objectives and invisible
 counter widgets are not included. Numeric kill/charge widgets are currently
 omitted because a standalone number does not supply an authored spoken label.
+While the [Rage of Morditas reader](rage-of-morditas.md) follows an encounter
+(2026-10-19), it speaks the instructions, counts and timer itself and this
+reader skips the Morditas tracker.
 
 Only matching text samples settle. Visible changes coalesce while gameplay
 speech is blocked; expired or foreign widgets clear their pending content.

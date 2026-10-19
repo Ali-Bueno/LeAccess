@@ -31,6 +31,7 @@ internal static class Program
             UrgentCountdownPrecedesAmbientContent();
             UrgentCountdownRespectsMenuAndTyping();
             RejectedOutputRetriesOnlyCurrentVisibleSources();
+            MorditasReaderOwnsItsEncounter();
             Console.WriteLine($"Notification tests passed: {_checks} checks.");
             return 0;
         }
@@ -292,6 +293,26 @@ internal static class Program
         Tick(false);
         Check(ScreenReader.Messages.Count == 1, "An unchanged equipment rejection is not repeated every frame");
     }
+    private static void MorditasReaderOwnsItsEncounter()
+    {
+        Reset();
+        LeAccess.Accessibility.Morditas.MorditasSpeechOwner.Begin(new[] { "Derrota a todos los monstruos que puedas." });
+        NotificationAnnouncer.GameplayDelivered(Countdown());
+        var progress = new GameObject();
+        progress.Add(new LE.UI.NotificationSystem.RageOfMorditasHuntProgressNotification());
+        progress.Add(new TMP_Text { text = "Quedan 12 enemigos" });
+        NotificationAnnouncer.GameplayDelivered(progress.GetComponent<LE.UI.NotificationSystem.RageOfMorditasHuntProgressNotification>());
+        NotificationAnnouncer.TrackQuick(Quick("Evento empezado. Derrota a todos los monstruos que puedas."));
+        NotificationAnnouncer.TrackQuick(Quick("Bonificación de Furia sanguinaria obtenida"));
+        Tick(); Tick(); Tick();
+        Check(ScreenReader.Messages.Single().Text == "Bonificación de Furia sanguinaria obtenida",
+            "While the Morditas reader follows an encounter, its widgets and pop-up sentences are left to it");
+        LeAccess.Accessibility.Morditas.MorditasSpeechOwner.End();
+        Tick(); Tick();
+        Check(ScreenReader.Messages.Count == 2 && ScreenReader.Messages.Last().Text.Contains("Abandonando evento en 10s"),
+            "Without the Morditas reader the countdown falls back to the notification reader");
+    }
+
     private static void Tick(bool otherContentActive = false)
     {
         Time.frameCount++;
@@ -581,6 +602,7 @@ internal static class Program
     private static void Reset()
     {
         NotificationAnnouncer.Reset();
+        LeAccess.Accessibility.Morditas.MorditasSpeechOwner.End();
         Time.frameCount = 0;
         Application.isFocused = true;
         LE.UI.LoadingScreen.IsVisible = false;

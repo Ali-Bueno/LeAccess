@@ -182,7 +182,8 @@ internal static class ExplorationAccessibility
     }
 
     // Latest position of the locked entry. A failed refresh keeps the last one; a place that briefly
-    // cannot be interacted with keeps its position; a dead enemy or a completed objective is gone.
+    // cannot be interacted with keeps its position; a dead enemy or a completed objective is gone;
+    // a blood trail follows the game's latest trails while the hunt lasts.
     private static ExplorationTarget? LockedTarget()
     {
         string key = ExplorationBeacon.LockedKey;
@@ -192,6 +193,7 @@ internal static class ExplorationAccessibility
         foreach (var entry in Entries)
             if (entry.Key == key)
                 return _lastTarget = ExplorationTarget.From(entry);
+        if (Morditas.BloodTrails.TryFollow(Entries, key, out var trail)) return _lastTarget = ExplorationTarget.From(trail);
         return key.StartsWith("listener:", StringComparison.Ordinal) ? last : null;
     }
 

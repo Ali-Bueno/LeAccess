@@ -137,6 +137,11 @@ internal static class ExplorationProbe
         catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
         finally { Targets.Clear(); }
 
+        // Where the Rage of Morditas hunt's blood trails last pointed (reference/rage-of-morditas.md#blood-trails).
+        int trails = 0;
+        try { trails = Morditas.MorditasAccessibility.AddTrailEntries(entries); }
+        catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
+
         int enemies = 0;
         try
         {
@@ -187,7 +192,7 @@ internal static class ExplorationProbe
 
         bool death = AddDeathPlace(entries);
 
-        int unexplored = 0, rooms = 0, visited = 0;
+        int unexplored = 0, rooms = 0, visited = 0, areas = 0;
         string source = "none", roomGap = "none";
         bool hasRooms = false;
         // A failed room read falls back to the frontier rather than listing nothing.
@@ -201,6 +206,9 @@ internal static class ExplorationProbe
                 rooms = Rooms.Count;
                 unexplored = Tracker.AddRooms(Rooms, MinimapRoomReader.Layout, player, Seen, explored, RoomName,
                     UnexploredRoomName, entries, Entered, out visited);
+                // The minimap's fog also ends where no room volume reaches (reference/exploration-mode.md#ground-no-room-covers-2026-10-19).
+                areas = Tracker.AddFrontier(explored, Frontier, UnexploredAreaName, entries, Rooms);
+                unexplored += areas;
                 foreach (var room in Rooms)
                     if (!room.Revealed && !Seen.Contains(RoomTracker.VisitKey(MinimapRoomReader.Layout, room.Index)))
                         Unvisited.Add(room);
@@ -218,9 +226,9 @@ internal static class ExplorationProbe
         catch (Exception ex) { LastFailure ??= $"{ex.GetType().Name}: {ex.Message}"; }
         finally { Rooms.Clear(); }
 
-        LastStatus = $"places={places} unseen={unseen} remembered={Seen.Count} quests={quests} enemies={enemies} " +
+        LastStatus = $"places={places} unseen={unseen} remembered={Seen.Count} quests={quests} trails={trails} enemies={enemies} " +
             $"players={players} items={items} breakables={breakables} death={death} unexplored={unexplored} source={source} rooms={rooms} " +
-            $"visited_rooms={visited} room_gap={roomGap} frontier_pending={explored?.FrontierPending ?? 0} origin={hasOrigin} " +
+            $"visited_rooms={visited} unexplored_areas={areas} room_gap={roomGap} frontier_pending={explored?.FrontierPending ?? 0} origin={hasOrigin} " +
             $"came_from={cameFrom ?? "none"} not_yet_seen=[{string.Join("; ", Unseen)}]";
         return true;
     }
@@ -316,6 +324,7 @@ internal static class ExplorationProbe
 
     private static string RoomName(int number) => ModText.Format("exploration.room", number);
     private static string UnexploredRoomName(int number) => ModText.Format("exploration.unexplored_room", number);
+    private static string UnexploredAreaName(int number) => ModText.Format("exploration.unexplored_area", number);
 
     // Seen = within range and in NavMesh line of sight, or right beside the player. Doors and exits may
     // stand off the walkable mesh, so those count only within half the range.

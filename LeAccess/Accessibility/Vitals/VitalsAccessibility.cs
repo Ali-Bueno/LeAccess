@@ -122,7 +122,9 @@ internal static class VitalsAccessibility
                 string healthText = health < 0 ? ModText.Get("vitals.health_unavailable") : HealthText(health);
                 string manaText = snapshot.ManaReplaced ? ModText.Get("vitals.mana_replaced")
                     : mana < 0 ? ModText.Get("vitals.mana_unavailable") : ManaText(mana);
-                if (Speak(Join(Join(Join(Join(healthText, manaText), LevelText()), potionText), EffectsText()), true))
+                // During a Rage of Morditas encounter its standing follows life and mana.
+                string encounter = Morditas.MorditasSpeechOwner.Status;
+                if (Speak(Join(Join(Join(Join(Join(healthText, manaText), encounter), LevelText()), potionText), EffectsText()), true))
                 {
                     Announcements.Acknowledge(health, mana);
                     _potions = potions;

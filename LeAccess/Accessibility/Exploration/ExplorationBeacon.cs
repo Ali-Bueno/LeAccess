@@ -206,7 +206,7 @@ internal static class ExplorationBeacon
         _map.Observe(player, Walkability);
         TownExplored.Update(world, _map, Walkability);
         SeedVisitedRooms(world, now);
-        if (!MinimapRoomReader.HasRooms) _map.UpdateFrontier(Walkability);
+        _map.UpdateFrontier(Walkability);
         if (State.LockedKey == null || !TryAxes(out var forward, out var right)) return null;
         _last = State.Tick(player, target, forward, right, now, Router, Ways);
         string name = _last.Target.Name;

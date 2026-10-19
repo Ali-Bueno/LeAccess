@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using LeAccess.Accessibility.Morditas;
 using LeAccess.Accessibility.Navigation;
 using LeAccess.Accessibility.ScreenContent;
 using UnityEngine;
@@ -166,11 +167,17 @@ internal static class NotificationAnnouncer
         if (!UiVisibility.IsVisible(root)) return;
         int id = root.GetInstanceID();
         if (!Visible.Add(id)) return;
+        if (MorditasWidget(root)) return;
         string text = Countdowns.Read(root, canSpeak, Announcements);
-        if (countdownOnly) return;
+        if (countdownOnly || MorditasSpeechOwner.OwnsText(text)) return;
         Tracker.Observe(id, text, canSpeak, out string announcement, acknowledge: false);
         if (announcement != null) { Announcements.Add(announcement); Attempts[id] = announcement; }
     }
+
+    // The Morditas reader speaks its encounter's timer, enemies-left and leaving widgets (reference/rage-of-morditas.md).
+    private static bool MorditasWidget(GameObject root) => MorditasSpeechOwner.Active &&
+        (IsAlive(root.GetComponentInChildren<LE.UI.NotificationSystem.RageOfMorditasOutOfGauntletNotification>()) ||
+            IsAlive(root.GetComponentInChildren<LE.UI.NotificationSystem.RageOfMorditasHuntProgressNotification>()));
 
     internal static void Reset()
     {

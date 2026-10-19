@@ -9,10 +9,12 @@ internal static class UnexploredTests
     // The test's own names, built from the room number like the catalog's templates.
     private static string RoomName(int number) => $"room-{number}";
     private static string UnexploredName(int number) => $"unexplored-{number}";
+    private static string AreaName(int number) => $"area-{number}";
 
     internal static void Run()
     {
         CorridorFrontier();
+        GroundNoRoomCovers();
         PillarPocket();
         Doorway();
         Budget();
@@ -57,6 +59,42 @@ internal static class UnexploredTests
         var route = MapTests.Router(map, grid);
         Check(route(new Vector3(30.5f, 0, 5f), ExplorationTarget.From(entry), out var path, out _) && path.Count >= 2,
             "the beacon can route to the edge through explored ground");
+    }
+
+    private static void GroundNoRoomCovers()
+    {
+        // The corridor leaves the room the player stands in; which room covers its unseen edge decides what is listed.
+        var grid = new FakeGrid(Rows(60, 12, (x, z) => x < 12 || z is 4 or 5 ? '.' : ' '));
+        var map = new ExploredMap { ExploreRadius = TestRadius };
+        var player = new Vector3(5.5f, 0, 5.5f);
+        Settle(map, grid, player);
+        var edge = Frontier(map, grid).Single().Anchor;
+        float cell = map.CellSize;
+        var memory = new ExplorationSeenMemory();
+        memory.Enter("Z12");
+        var standing = new MinimapRoom(0, new Vector3(5, 0, 5), 6, false);
+        List<ExplorationEntry> Listed(params MinimapRoom[] rooms)
+        {
+            var tracker = new RoomTracker();
+            var entries = new List<ExplorationEntry>();
+            tracker.AddRooms(rooms, "1.2", player, memory, map, RoomName, UnexploredName, entries, null, out _);
+            tracker.AddFrontier(map, new List<FrontierArea>(), AreaName, entries, rooms);
+            return entries.Where(e => e.Category == ExplorationCategory.UnexploredRoom).ToList();
+        }
+        string Names(List<ExplorationEntry> entries) => string.Join(", ", entries.Select(e => e.Name));
+
+        var alone = Listed(standing);
+        Check(alone.Count == 1 && alone[0].Key.StartsWith(RoomTracker.FrontierKeyPrefix, StringComparison.Ordinal) &&
+            alone[0].Name == AreaName(1), $"ground past every room is an unexplored area ({Names(alone)})");
+        var glimpsed = Listed(standing, new MinimapRoom(1, edge, 1.5f * cell, false));
+        Check(glimpsed.Count == 1 && glimpsed[0].Key == RoomTracker.UnexploredKeyPrefix + 1,
+            $"a listed room takes the edge into it ({Names(glimpsed)})");
+        Check(Listed(standing, new MinimapRoom(1, edge, 1.5f * cell, true)).Count == 0,
+            "a revealed room is explored ground, not an edge");
+        var unseen = new MinimapRoom(1, edge + new Vector3(cell, 0, 0), 1.2f * cell, false);
+        Check(!map.AnyExploredWithin(unseen.Centre, unseen.Radius), "precondition: the far room holds no explored ground");
+        var beyond = Listed(standing, unseen);
+        Check(beyond.Count == 1 && beyond[0].Name == AreaName(1), $"an unseen room leaves its edge listed ({Names(beyond)})");
     }
 
     private static void PillarPocket()

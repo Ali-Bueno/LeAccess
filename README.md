@@ -89,6 +89,9 @@ happens on its own, by sound and speech, while you play with the game's normal c
 - Automatic speech for the things a sighted player sees at a glance: life and mana when they drop, potion charges, gold
   you pick up, level ups and new points, quest updates, zone and era names, the names of NPCs and players you walk up
   to, boss and elite life, dialogue and subtitles, notifications and minion orders.
+- The season's Rage of Morditas event: the kills it needs before time runs out, kill counts, time warnings, the circle
+  to stay in and the enemies left, the outcome, and a drip sound from the nearest monster each time the game draws its
+  blood trails (also a scanner category the beacon can follow).
 - Optionally, Diablo IV's low-life warning and heartbeat when your life drops under a chosen percent (40 by default;
   off by default, `Vitals.LowLifeSound`).
 
@@ -179,15 +182,16 @@ everything else.
 | Right stick up / down | Previous / next scanner category (says the category and its nearest entry) |
 | Right stick left / right | Previous / next entry in the category, nearest first |
 | Cross | Start the beacon toward the selected entry; again cancels it. It pings along a route through ground you have explored, faster as you get closer. With no explored route it leads by the best way toward the target, and refuses only when no way leaves the explored ground |
-| Square | Life, mana, level and experience percent, potion charges and debuffs |
+| Square | Life, mana, the Rage of Morditas status during that event, level and experience percent, potion charges and debuffs |
 | Triangle | Gold, unspent passive points, skills that can take a point, and the zone |
 | Circle | Repeat the selected scanner entry with its current distance and direction |
 | L1 | Open or close the settings menu (L3 + L1 also works on every pad) |
 
-The scanner categories, in order: exit, portal, waypoint, unexplored room, room, quest, NPC, player, last death, stash,
+The scanner categories, in order: blood trail (only during the Rage of Morditas hunt), exit, portal, waypoint, unexplored room, room, quest, NPC, player, last death, stash,
 enemy (everything on screen), treasure (chests), shrine, object (levers, notes, the forge and other things you can use),
 breakable (barrels, crates and pots) and item (loot on the ground). Rooms are the game's minimap rooms: "room N" once you have been inside, "unexplored room
-N" when you have seen it but not entered. A target on another floor says "on a higher level" or "on a lower level".
+N" when you have seen it but not entered; "unexplored area N" is ground no minimap room covers, where the
+explored map ends. A target on another floor says "on a higher level" or "on a lower level".
 After an entry with no known route, a "ways to …" category follows its own category.
 
 ### Inventory, merchants and the forge

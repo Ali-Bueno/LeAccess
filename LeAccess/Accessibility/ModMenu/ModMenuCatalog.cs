@@ -93,6 +93,11 @@ internal static class ModMenuCatalog
                 new("LowLifeBelow", "vitals_low_life_below", SettingUnit.Percent, 5, 5, 95),
                 new("LowLifeVolume", "vitals_low_life_volume", SettingUnit.Percent, 5, 0, 100),
             }),
+            new("Rage of Morditas", "morditas", new SettingSpec[]
+            {
+                new("BloodTrailSound", "morditas_trail_sound"),
+                new("BloodTrailVolume", "morditas_trail_volume", SettingUnit.Percent, 5, 0, 100),
+            }),
         }),
         new("exploration", new SectionSpec[]
         {

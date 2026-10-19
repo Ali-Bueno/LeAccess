@@ -118,7 +118,8 @@ internal static class ExplorationFeedback
         return IsAlive(actor) && actor.isDying();
     }
 
-    private static bool TryAxes(out NVector3 forward, out NVector3 right)
+    // Flat, normalised camera axes; the Morditas reader shares them.
+    internal static bool TryAxes(out NVector3 forward, out NVector3 right)
     {
         forward = right = default;
         if (!IsAlive(_camera) || !_camera.isActiveAndEnabled) _camera = Camera.main;

@@ -282,6 +282,12 @@ try
     Check(ScreenReader.Spoken.Last().Text.Contains(T("progression.level", 12)) && ScreenReader.Spoken.Last().Text.Contains(T("progression.experience", 40)),
         "the vitals report says the level and the experience percent");
     Check(!ScreenReader.Spoken.Last().Text.Contains(T("progression.zone", "Ruins")), "the vitals report leaves the zone to the Triangle readout");
+    LeAccess.Accessibility.Morditas.MorditasSpeechOwner.Status = "Rage of Morditas. 12 of 20 kills. 9 seconds left";
+    Tick(.15, keyboard: true);
+    Last(Join(T("vitals.health", 100), T("vitals.mana", 100), "Rage of Morditas. 12 of 20 kills. 9 seconds left",
+        ProgressionState.LevelText(progress), T("vitals.potions", 3, 4), T("vitals.effects", "Chill")), true,
+        "during a Rage of Morditas encounter its standing follows life and mana");
+    LeAccess.Accessibility.Morditas.MorditasSpeechOwner.Status = null;
     VitalsInput.Gold = true; Tick(.2);
     Last(Join(T("gold.amount", 1234), ProgressionState.PointsText(progress)), true, "the gold readout adds passive points, skills and the zone");
     Check(ScreenReader.Spoken.Last().Text.Contains(T("progression.passive_points", 3)) && ScreenReader.Spoken.Last().Text.Contains(T("progression.zone", "Ruins")) &&

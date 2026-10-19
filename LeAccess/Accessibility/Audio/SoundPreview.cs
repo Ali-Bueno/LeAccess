@@ -60,6 +60,7 @@ internal static class SoundPreview
             "BeaconCleared" => Beacon(BeaconSound.Cleared),
             "BeaconArrived" => Beacon(BeaconSound.Arrived),
             "BeaconClick" => BeaconCueSynthesizer.Click(Group("Exploration beacon", "Volume")),
+            "BloodTrail" => BloodTrailSynthesizer.Synthesize(0, 1, Group("Rage of Morditas", "BloodTrailVolume")),
             "SonarAhead" => WallTone(RadarDirection.Up),
             "SonarBehind" => WallTone(RadarDirection.Down),
             "SonarSides" => WallTone(RadarDirection.Right),

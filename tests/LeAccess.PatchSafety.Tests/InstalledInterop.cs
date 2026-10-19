@@ -74,6 +74,13 @@ internal sealed class InstalledInterop : IDisposable
     {
         name = name.Replace("global::", "");
         if (hook.Aliases.TryGetValue(name, out string alias)) name = alias;
+        // A constructed generic such as IReadOnlyList<Vector3>: resolve the definition and each argument.
+        int open = name.IndexOf('<');
+        if (open > 0 && name.EndsWith(">", StringComparison.Ordinal))
+        {
+            var arguments = GenericArguments(name[(open + 1)..^1]).Select(argument => ResolveType(argument, hook)).ToArray();
+            return ResolveType($"{name[..open]}`{arguments.Length}", hook).MakeGenericType(arguments);
+        }
         name = name switch
         {
             "string" => "System.String", "float" => "System.Single", "bool" => "System.Boolean",
@@ -84,6 +91,23 @@ internal sealed class InstalledInterop : IDisposable
             .Where(type => type != null).Distinct().ToArray();
         if (matches.Length != 1) throw new InvalidOperationException($"Type '{name}' resolves to {matches.Length} installed types.");
         return matches[0];
+    }
+
+    // Top-level comma-separated arguments of a generic name, nested generics kept whole.
+    internal static IEnumerable<string> GenericArguments(string arguments)
+    {
+        int depth = 0, start = 0;
+        for (int index = 0; index < arguments.Length; index++)
+        {
+            if (arguments[index] == '<') depth++;
+            else if (arguments[index] == '>') depth--;
+            else if (arguments[index] == ',' && depth == 0)
+            {
+                yield return arguments[start..index].Trim();
+                start = index + 1;
+            }
+        }
+        yield return arguments[start..].Trim();
     }
 
     private static Type FindType(Assembly assembly, string name)

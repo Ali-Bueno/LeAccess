@@ -298,7 +298,7 @@ unknown, so the mod does not rely on the game's flags alone.
 neighbour columns: walkable on the same floor, unexplored, a straight step away, and opening onto
 an unseen region of at least 6 cells (breadth-first over unexplored walkable columns, verdict
 kept), so a pocket behind a crate is not listed. Checks run newest cell first within 24 NavMesh
-queries per beacon tick (a region search may add up to 48), only while the scene has no rooms;
+queries per beacon tick (a region search may add up to 48), in every scene since 2026-10-19 ([ground no room covers](#ground-no-room-covers-2026-10-19));
 saved cells are checked again after loading. Links are grouped into 8x8-cell areas per floor,
 anchored at the edge nearest the group's middle; key `frontier:x,z,floor`, arrival 2 cells.
 
@@ -328,6 +328,7 @@ implement the exploration mode as it is there and you did it halfway." Sources:
 
 | D2R | Spoken | Last Epoch |
 |---|---|---|
+| BloodTrail (LeAccess) | rastro de sangre | where the Rage of Morditas hunt's blood trails point, "rastro de sangre N", only during the hunt ([details](rage-of-morditas.md#blood-trails)) |
 | Exit | salida | zone and dungeon transitions ("Salida hacia X"), same-scene transitions, echo continuations |
 | Portal | portal | portals (`PortalVisualController`) |
 | Waypoint | punto de viaje | `service.waypoint` |
@@ -680,3 +681,23 @@ refresh on large shared maps (each capped at 6000 expansions; uncached edges of 
 whether 1.3 s lets an entered room's onward openings appear (visited rooms are also seeded over several ticks), which
 would show as false dead ends; speech length with route legs at 4; how often the straight line from an opening misleads
 on real campaign maps.
+
+## Ground no room covers (2026-10-19)
+
+Tester report: ways work "in areas that show unexplored rooms"; where the scanner lists none, the quest is again "no
+known route" with nothing to try. In scenes with minimap rooms the frontier was never computed, so openings came only
+from unvisited rooms with seen ground. With every nearby room visited (or revealed by the character's saved minimap),
+ground outside every room sphere (corridors between spheres, parts of a scene no volume reaches) offered nothing, while
+a sighted player still sees the fog's edge there.
+
+Now the beacon drains the frontier in every scene (`ExplorationBeacon`), and in scenes with rooms the probe adds, after
+the rooms, the frontier edges whose unexplored column lies outside every visited or listed room
+(`RoomTracker.AddFrontier(..., rooms)`, `ExploredMap.CollectFrontier(..., covered)`): a visited room is explored ground
+(seeded), a listed room is its own opening, a room with no seen ground covers nothing yet. They are named
+"unexplored area N" (`exploration.unexplored_area`, own numbering) in the same category, so they feed ways, the beacon
+and the radar's unexplored marks like rooms. Scenes without rooms keep "unexplored room N" for their frontier.
+
+Log: the status line's `unexplored_areas=`. Tests: `UnexploredTests.GroundNoRoomCovers` (area past every room; a listed
+room takes the edge; a revealed room is no edge; an unseen room leaves it listed); Exploration 505. Unverified live: the
+first frontier pass over a large saved room map (cheap lookups for interior cells are not budgeted, only NavMesh
+queries) and how many areas campaign maps list.

@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>LeAccess</AssemblyName>
     <Product>Last Epoch Accessibility Mod</Product>
-    <Version>0.2.4</Version>
+    <Version>0.2.5</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
     <RestoreAdditionalProjectSources>
@@ -42,6 +42,11 @@
     </Reference>
     <Reference Include="LE.PCG">
       <HintPath>$(InteropDir)\LE.PCG.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- Base type of the Rage of Morditas network object (reference/rage-of-morditas.md). -->
+    <Reference Include="LE.Networking.Core">
+      <HintPath>$(InteropDir)\LE.Networking.Core.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Unity.Mathematics">

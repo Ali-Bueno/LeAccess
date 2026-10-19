@@ -44,6 +44,10 @@ successfully. `EncounterCountdownReader` now handles only the rendered
 ancestor owner and exact field identity. It speaks that full displayed caption
 once after two observations, then leaves timer ticks silent. Sibling labels keep
 their ordinary text-change behavior; they never repeat an outdated timer.
+Since Steam 1.5 the widget bypasses the channel hook, and while the
+[Rage of Morditas reader](rage-of-morditas.md) follows an encounter the
+notification reader leaves its widgets and pop-up sentences to it; this reader is
+then only the fallback.
 
 Native `StartCountdown` assigns a fresh `_currentCountdownCoroutine` even when
 the same visible widget receives no delivery hook. Its pointer rearms the

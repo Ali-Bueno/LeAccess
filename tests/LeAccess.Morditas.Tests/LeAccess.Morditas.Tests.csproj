@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../LeAccess/Accessibility/Morditas/MorditasEventState.cs" Link="MorditasEventState.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Morditas/MorditasSpeechOwner.cs" Link="MorditasSpeechOwner.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Morditas/BloodTrails.cs" Link="BloodTrails.cs" />
+    <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentTracker.cs" Link="ScreenContentTracker.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/BloodTrailSynthesizer.cs" Link="BloodTrailSynthesizer.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/CuePlacement.cs" Link="CuePlacement.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/RadarCueSynthesizer.cs" Link="RadarCueSynthesizer.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/RadarModel.cs" Link="RadarModel.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationCatalog.cs" Link="ExplorationCatalog.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationCatalogWays.cs" Link="ExplorationCatalogWays.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Exploration/RouteLegs.cs" Link="RouteLegs.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationSeenMemory.cs" Link="ExplorationSeenMemory.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Exploration/ExplorationSight.cs" Link="ExplorationSight.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Exploration/BreakableSelection.cs" Link="BreakableSelection.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Navigation/Guidance/GuidanceGeometry.cs" Link="GuidanceGeometry.cs" />
+  </ItemGroup>
+</Project>

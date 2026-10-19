@@ -14,5 +14,6 @@
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentReader.cs" Link="ScreenContentReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/NavigationObjectLifetime.cs" Link="NavigationObjectLifetime.cs" />
     <Compile Include="../../LeAccess/Accessibility/Utils/TextUtils.cs" Link="TextUtils.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Morditas/MorditasSpeechOwner.cs" Link="MorditasSpeechOwner.cs" />
   </ItemGroup>
 </Project>

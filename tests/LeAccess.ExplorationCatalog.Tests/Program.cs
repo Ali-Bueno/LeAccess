@@ -41,10 +41,11 @@ const float step = 1f;
 ExplorationEntry Entry(string key, string name, ExplorationCategory category, float x, float z, bool boss = false) =>
     new(key, name, category, new Vector3(x, 0, z), 1.5f, boss);
 
-// The D2R order (map_survey.cpp CategoryOrder), every category in it once, each with its own name key.
+// The D2R order (map_survey.cpp CategoryOrder) behind the Morditas hunt's blood trails, every category in it once,
+// each with its own name key.
 Equal(string.Join(",", new[]
     {
-        ExplorationCategory.Exit, ExplorationCategory.Portal, ExplorationCategory.Waypoint, ExplorationCategory.UnexploredRoom,
+        ExplorationCategory.BloodTrail, ExplorationCategory.Exit, ExplorationCategory.Portal, ExplorationCategory.Waypoint, ExplorationCategory.UnexploredRoom,
         ExplorationCategory.Room, ExplorationCategory.Quest, ExplorationCategory.Npc, ExplorationCategory.Player,
         ExplorationCategory.LastDeath, ExplorationCategory.Stash, ExplorationCategory.Enemy, ExplorationCategory.Treasure,
         ExplorationCategory.Shrine, ExplorationCategory.Interactable, ExplorationCategory.Breakable, ExplorationCategory.Item
@@ -419,5 +420,20 @@ gone.StepCategory(-1, wayEntries, player, forward, right, step, text);
 gone.StepCategory(1, new List<ExplorationEntry> { farRoom, nearRoom, wayExit }, player, forward, right, step, text);
 Equal(null, gone.WaysTarget, "ways leave with their target");
 Equal(ExplorationCategory.Exit, gone.Category, "next category after the ways' target left");
+
+// Blood trails lead while the hunt draws them and drop out when it ends.
+var hunt = new List<ExplorationEntry>
+{
+    Entry("bloodtrail:1", "trail 1", ExplorationCategory.BloodTrail, 0, 12),
+    Entry("bloodtrail:2", "trail 2", ExplorationCategory.BloodTrail, 30, 0),
+    Entry("exit-near", "Exit near", ExplorationCategory.Exit, -5, 5),
+};
+var trailWalk = new ExplorationCatalog();
+Equal(Category(ExplorationCategory.BloodTrail) + ". " + Line("trail 1", 12, "up"),
+    trailWalk.StepCategory(1, hunt, player, forward, right, step, text), "blood trails come first during the hunt");
+Equal(Line("trail 2", 30, "right"), trailWalk.StepEntry(1, hunt, player, forward, right, step, text), "next blood trail");
+hunt.RemoveAll(entry => entry.Category == ExplorationCategory.BloodTrail);
+trailWalk.StepCategory(1, hunt, player, forward, right, step, text);
+Equal(ExplorationCategory.Exit, trailWalk.Category, "after the hunt the walk goes on to the exits");
 
 Console.WriteLine($"Exploration catalog tests passed: {checks} checks");

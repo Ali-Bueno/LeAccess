@@ -97,6 +97,8 @@ public class MenuAccessibility : MonoBehaviour
         VisibleSubtitleAnnouncer.Update(ScreenReader.SpokeThisFrame || ZoneAnnouncer.HasPendingContent ||
             InventoryAccessibility.HasActiveContent || ControllerMenuAccessibility.HasActiveContent ||
             SkillAccessibility.HasActiveContent || PassiveAccessibility.HasActiveContent || QuestAccessibility.HasActiveContent);
+        // Before the generic notification and objective readers, which leave the Morditas encounter to it.
+        Morditas.MorditasAccessibility.Update(worldContentActive);
         NotificationAnnouncer.UpdateUrgent(worldContentActive || VisibleSubtitleAnnouncer.HasPendingContent);
         QuestUpdateAccessibility.Update(worldContentActive,
             ZoneAnnouncer.HasPendingContent || VisibleSubtitleAnnouncer.HasPendingContent);

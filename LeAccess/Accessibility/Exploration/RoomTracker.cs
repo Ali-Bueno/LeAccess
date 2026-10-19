@@ -8,7 +8,8 @@ namespace LeAccess.Accessibility.Exploration;
 internal readonly record struct MinimapRoom(int Index, Vector3 Centre, float Radius, bool Revealed);
 
 // The D2R scanner's rooms (docs/entity-scan.md): "sala N" for rooms stood in and "sala inexplorada N" for
-// unvisited rooms whose ground has been seen; in scenes without minimap rooms, explored-ground edges.
+// unvisited rooms whose ground has been seen; explored-ground edges in scenes without minimap rooms and,
+// as unexplored areas, where no room covers the ground.
 // Nothing inside an unexplored room is revealed. See reference/exploration-mode.md#rooms-and-unexplored-rooms.
 internal sealed class RoomTracker
 {
@@ -70,13 +71,14 @@ internal sealed class RoomTracker
         return unexplored;
     }
 
-    // Each frontier area keeps the number it was first given on this map and is reached at its edge.
+    // Each frontier area keeps the number it was first given on this map and is reached at its edge. With rooms
+    // (read by AddRooms first), only edges outside every visited or listed room count.
     internal int AddFrontier(ExploredMap map, List<FrontierArea> areas, Func<int, string> unexploredName,
-        List<ExplorationEntry> entries)
+        List<ExplorationEntry> entries, IReadOnlyList<MinimapRoom> rooms = null)
     {
         if (map is null || areas is null) return 0;
         Begin(map, null);
-        map.CollectFrontier(areas);
+        map.CollectFrontier(areas, rooms is null ? null : point => Covered(rooms, point));
         float arrival = map.CellSize * ExploredMap.FrontierArrivalCells;
         foreach (var area in areas)
         {
@@ -127,6 +129,15 @@ internal sealed class RoomTracker
         _map = map;
         _layout = layout;
         _fullPass = true;
+    }
+
+    // A visited room is explored ground and a glimpsed one is listed itself; an unseen room offers nothing yet.
+    private bool Covered(IReadOnlyList<MinimapRoom> rooms, Vector3 point)
+    {
+        foreach (var room in rooms)
+            if ((!_unvisited.Contains(room.Index) || _glimpsed.Contains(room.Index)) &&
+                Vector3.DistanceSquared(room.Centre, point) <= room.Radius * room.Radius) return true;
+        return false;
     }
 
     private bool Glimpsed(MinimapRoom room, Vector3 player, ExploredMap map, bool fullPass)

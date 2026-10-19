@@ -7,7 +7,7 @@ namespace LeAccess.Accessibility.Exploration;
 internal readonly record struct FrontierArea(int X, int Z, int Floor, Vector3 Anchor, int Links);
 
 // Edges of explored ground where walkable ground continues unseen: the unexplored areas of scenes
-// without minimap rooms (reference/exploration-mode.md#unexplored-areas).
+// without minimap rooms, and of ground no room covers (reference/exploration-mode.md#unexplored-areas).
 internal sealed partial class ExploredMap
 {
     // Navigation tuning, not game constants: an area groups about one room's worth of edge; unseen
@@ -62,8 +62,9 @@ internal sealed partial class ExploredMap
         return queries;
     }
 
-    // Unexplored edges grouped by area, each anchored at its edge nearest the group's middle.
-    internal void CollectFrontier(List<FrontierArea> areas)
+    // Unexplored edges grouped by area, each anchored at its edge nearest the group's middle; edges into
+    // covered ground (a minimap room that already accounts for it) are left out.
+    internal void CollectFrontier(List<FrontierArea> areas, Func<Vector3, bool> covered = null)
     {
         areas.Clear();
         foreach (var group in _frontierGroups.Values) group.Clear();
@@ -79,9 +80,11 @@ internal sealed partial class ExploredMap
                 _staleLinks.Add(link);
                 continue;
             }
+            var edge = new Vector3(CenterOf(column.Item1), point.Y, CenterOf(column.Item2));
+            if (covered?.Invoke(edge) == true) continue;
             var key = (FloorDiv(column.Item1, FrontierAreaCells), FloorDiv(column.Item2, FrontierAreaCells), FloorOf(point.Y));
             if (!_frontierGroups.TryGetValue(key, out var edges)) _frontierGroups[key] = edges = new List<Vector3>();
-            edges.Add(new Vector3(CenterOf(column.Item1), point.Y, CenterOf(column.Item2)));
+            edges.Add(edge);
         }
         foreach (long stale in _staleLinks) _frontierLinks.Remove(stale);
         foreach (var (key, edges) in _frontierGroups)

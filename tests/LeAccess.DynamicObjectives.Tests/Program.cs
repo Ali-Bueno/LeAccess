@@ -41,7 +41,7 @@ internal static class Program
     private static void Reset()
     {
         SceneManager.Active = new() { handle = 1, name = "Echo", isLoaded = true };
-        QuestTrackerUI.instance = null; RageOfMorditasQuestTrackerUI.Instance = null;
+        QuestTrackerUI.instance = null; RageOfMorditasQuestTrackerUI.Instance = null; LeAccess.Accessibility.Morditas.MorditasSpeechOwner.End();
         PlayerFinder.player = new(); PlayerFinder.Character = new();
         EpochInputManager.instance = new(); ScreenKeyboardManager.Instance = new();
         PlayerFinder.Provider=new(); _config=new(); QuestUpdateAccessibility.Initialize(_config);
@@ -102,6 +102,9 @@ internal static class Program
         tracker._currentObjective.text.Culled=true; Read(); Check(Content.Count==0,"Culled encounter warning remains silent"); tracker._currentObjective.text.Culled=false;
         tracker.Enabled=false; Read(); Check(Content.Count==0,"Disabled encounter tracker remains silent"); tracker.Enabled=true;
         tracker._activeObjectives.WasCollected=true; Read(); Check(Content.Count==0,"Collected encounter objective list rejected");
+        Reset(); Morditas(); LeAccess.Accessibility.Morditas.MorditasSpeechOwner.Begin(Array.Empty<string>()); Read();
+        Check(Content.Count==0,"The Morditas reader speaks the encounter instruction while it follows the encounter");
+        LeAccess.Accessibility.Morditas.MorditasSpeechOwner.End(); Read(); Check(Content.Count==1,"Without it the tracker is read again");
     }
     private static void ServiceTests()
     {

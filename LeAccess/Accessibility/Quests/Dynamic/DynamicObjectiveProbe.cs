@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using LeAccess.Accessibility.Announcements;
+using LeAccess.Accessibility.Morditas;
 using LeAccess.Accessibility.ScreenContent;
 using LeAccess.Accessibility.Utils;
 using TMPro;
@@ -17,7 +18,8 @@ internal static class DynamicObjectiveProbe
     {
         content.Clear();
         ReadTracker(scene, content);
-        ReadMorditas(scene, content);
+        // The Morditas reader speaks these instructions itself while it follows the encounter.
+        if (!MorditasSpeechOwner.Active) ReadMorditas(scene, content);
     }
 
     private static void ReadTracker(Scene scene, List<DynamicObjectiveContent> content)
