@@ -3,6 +3,24 @@
 What changed in LeAccess, day by day, newest first. Each heading gives the day and the version that first shipped
 those changes. It is written from the commit history; internal notes, status updates and merges are left out.
 
+## 19 October 2026 — version 0.2.5
+
+New:
+
+- The season's Rage of Morditas event is accessible. Starting the blood crystal says the game's text and what it never
+  shows: how many monsters to kill before time runs out (20) and the time left. Kills are counted ("12 of 20 kills"),
+  time warnings come at 15 and 5 seconds, then charges. In the gauntlet the mod says how far from the spot you must stay,
+  the enemies left, when you leave the circle (with the way back and the abandon countdown) and when you are back, then
+  the reward or the failure. The mod button with Square adds the event's status after life and mana.
+- Each time the game draws its blood trails toward monsters, a drip sounds from the nearest one, quieter when it is far
+  (Sounds → Rage of Morditas: on/off, volume, Listen). The trails are also the scanner's first category while the hunt
+  lasts, and the beacon can follow one.
+
+Fixed:
+
+- In maps with minimap rooms, the scanner now also lists "unexplored area N": edges of the explored map where no room
+  covers the ground. Before, once the nearby rooms were visited, a quest beyond explored ground had no way to try.
+
 ## 17 October 2026 — version 0.2.4
 
 New:

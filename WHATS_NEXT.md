@@ -1,3 +1,20 @@
+# Handoff — 2026-10-19: Rage of Morditas accessible; unexplored areas in room scenes
+
+Two tester reports, both built and installed, unheard; released as `v0.2.5` ([changelog](CHANGELOG.md)):
+- Morditas: the blind tester failed the blood crystal hunt hearing nothing. Cause: the hunt needs 20 kills before its
+  timer ends and nothing told the requirement, the time, the count or where monsters are (the game's blood trails are
+  visual). Now spoken and the trails drip and fill a scanner category (user choice: sound + scanner)
+  ([Morditas](reference/rage-of-morditas.md)). Live checks are listed there: no `[Morditas] blood trail hook unavailable`
+  in the log, one start announcement (no second copy from the pop-up), burst kills coalesced, 15/5 s warnings, drip side
+  and loudness, gauntlet steps and enemies left matching the screen, leave/return/countdown, failing by time, by
+  leaving and by death; also as an online client and as a party member who did not start it. Ask the tester for
+  `BepInEx/LogOutput.log` (`[Morditas]` lines).
+- Ways: "areas without unexplored rooms" had no way toward a quest. In room scenes the frontier was never computed; now
+  edges outside every visited or listed room are "unexplored area N"
+  ([details](reference/exploration-mode.md#ground-no-room-covers-2026-10-19)). Check `unexplored_areas=` in the
+  `[Exploration]` status line on campaign maps, how many areas are listed, and the first frontier pass's frame cost on
+  a large saved room map.
+
 # Handoff — 2026-10-17: sheet life and mana, menu in groups, repeat speed; keyboard parked
 
 Released as `v0.2.4` ([changelog](CHANGELOG.md)); the sheet sections work (user, 2026-10-17). Still to hear:
