@@ -114,7 +114,7 @@ internal static class ExplorationBeacon
             {
                 _wayLog = way.Opening.Key;
                 Plugin.Log.LogInfo(string.Create(CultureInfo.InvariantCulture,
-                    $"[Exploration beacon] locked key={target.Key} name={target.Name} via={way.Opening.Name} route={way.Length:F1} beyond={way.Beyond:F1} preferred={preferredWay ?? "none"} cells={_map.CellCount}"));
+                    $"[Exploration beacon] locked key={target.Key} name={target.Name} via={way.Opening.Name} route={way.Length:F1} beyond={way.Beyond:F1} guided={(way.Guided ? 1 : 0)} preferred={preferredWay ?? "none"} cells={_map.CellCount}"));
                 return ModText.Format("exploration.beacon.locked_via", target.Name, way.Opening.Name);
             }
             bool straight = ExploredMap.StraightClear(player, target.Position, Walkability);
@@ -274,7 +274,7 @@ internal static class ExplorationBeacon
         FindWays(from, target);
         var ways = new List<BeaconWay>(Found.Count);
         foreach (var way in Found)
-            ways.Add(new BeaconWay(ExplorationTarget.From(Openings[way.Opening]), way.Path, way.Length, way.Beyond));
+            ways.Add(new BeaconWay(ExplorationTarget.From(Openings[way.Opening]), way.Path, way.Length, way.Beyond, way.Guided));
         return ways;
     }
 
@@ -294,9 +294,9 @@ internal static class ExplorationBeacon
                     corners && map != null ? map.Corners(way.Path, Walkability) : null)));
             }
             string best = Found.Count > 0
-                ? string.Create(CultureInfo.InvariantCulture, $"best={Openings[Found[0].Opening].Name} route={Found[0].Length:F1} beyond={Found[0].Beyond:F1}")
+                ? string.Create(CultureInfo.InvariantCulture, $"best={Openings[Found[0].Opening].Name} route={Found[0].Length:F1} beyond={Found[0].Beyond:F1} guided={(Found[0].Guided ? 1 : 0)}")
                 : $"failure={map?.LastFailure ?? "no map"}";
-            Plugin.Log.LogInfo($"[Exploration] ways name={target.Name} openings={Openings.Count} found={Found.Count} {best} expansions={map?.LastExpansions ?? 0}");
+            Plugin.Log.LogInfo($"[Exploration] ways name={target.Name} openings={Openings.Count} found={Found.Count} {best} guide={map?.LastGuide ?? "none"} expansions={map?.LastExpansions ?? 0}");
             return ways;
         }
         catch (Exception ex)

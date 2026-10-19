@@ -767,10 +767,25 @@ status. Tests: Exploration 519 (`MapTests.Linked`: a seam crossed by the engine'
 columns; `WayTests.Seam`; `MapTests.Door` updated); they fail with the fake path disabled. Unverified live:
 `mesh_paths=1` (one registered agent type) and the vault itself.
 
-**The Risen Lake (C40), still open.** The target ("Travel west to Thetima") lies off the walkable mesh
+**The Risen Lake (C40).** The target ("Travel west to Thetima") lies off the walkable mesh
 (`goal=Unsampled`, 243.9, 5.3, 94.8). 60 rooms, 20 visited, 9-15 unexplored areas listed, none of them nearer the target
 than the player (each way's straight line on was at least 343 m while the player stood 337-434 m away); the beacon took
 9 dead ends in a row and ended 434 m away with "No ways left". Explored ground there ends at terrain toward the target
 (the lake), so every opening first leads away. The 3x weight picks the opening nearest the target among them but cannot
-make one lead toward it; ranking openings by the engine's path through unexplored ground would, and that reverses the
-2026-10-13 decision (only what the minimap shows). Awaiting the user.
+make one lead toward it.
+
+**User decision (2026-10-19): the engine's path picks the opening.** This revises the 2026-10-13 rule for choosing
+only: the beacon still leads no farther than the edge of explored ground and reveals nothing beyond it, but the way it
+offers first is the one the game's own path to the target takes (`ExploredMap.GuideOpening`). `CalculatePath` runs from
+the player to the target, or to the nearest walkable point within `ExploreRadius` of a marker off the mesh (a point a
+player could see it from); the first half-cell step off explored ground is where it leaves, and the listed opening
+nearest that point within its radius, or within a frontier area's span (8 cells), is the guided way. It is computed by
+the grid or the engine's path over explored ground like any way, then sorted first (`ExploredWay.Guided`,
+`BeaconWay.Guided`). The beacon switches to a guided way at once (no margin), and going on by an opening listed before
+is not announced as a dead end, since the engine's path does not lead into one. Without an engine path, with one that
+never leaves explored ground, or one leaving where no opening is listed, ways rank by the weighted estimate as before.
+Log: `guide=<index>|none|explored|unlisted` and `guided=` on `[Exploration] ways` lines, `guided=` on `locked`.
+Tests: Exploration 524 (`WayTests.Guided`: the far opening leads over a nearer dead-end pocket; an unlisted leaving point
+guides nothing. `WayTests.GuidedLead`: a guided way takes over at once, no dead end on an earlier opening); both fail
+with the guide disabled. Unverified live: the Risen Lake target's distance from the mesh (beyond `ExploreRadius` it
+guides nothing) and whether the engine's path there leaves explored ground by a listed area.

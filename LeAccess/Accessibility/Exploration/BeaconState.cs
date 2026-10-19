@@ -22,7 +22,8 @@ internal delegate bool BeaconRouter(Vector3 from, ExplorationTarget target,
     out IReadOnlyList<Vector3> path, out float length);
 
 // A way the beacon follows toward a target with no explored route: the explored route to an opening.
-internal readonly record struct BeaconWay(ExplorationTarget Opening, IReadOnlyList<Vector3> Path, float Length, float Beyond)
+internal readonly record struct BeaconWay(ExplorationTarget Opening, IReadOnlyList<Vector3> Path, float Length, float Beyond,
+    bool Guided = false)
 {
     internal float Estimate => ExploredMap.WayEstimate(Length, Beyond);
 }
@@ -216,7 +217,9 @@ internal sealed class BeaconState
             if (Find(listed, current.Opening.Key) is { } still)
             {
                 _wayGone = null;
-                if (listed[0].Estimate + WaySwitchMargin < still.Estimate) return Choose(listed, listed[0]);
+                // The way the engine's path takes leads at once; without one, only a clearly better way takes over.
+                if (listed[0].Guided ? !still.Guided : listed[0].Estimate + WaySwitchMargin < still.Estimate)
+                    return Choose(listed, listed[0]);
                 return _way = still;
             }
             _wayGone ??= now;
@@ -224,7 +227,8 @@ internal sealed class BeaconState
             _wayGone = null;
             _way = null;
             if (listed.Count == 0) return null;
-            if (_earlier.Contains(listed[0].Opening.Key)) news = BeaconNews.DeadEnd;
+            // The engine's path never leads into a dead end: going on by an earlier opening is its way through.
+            if (_earlier.Contains(listed[0].Opening.Key) && !listed[0].Guided) news = BeaconNews.DeadEnd;
         }
         return listed.Count > 0 ? Choose(listed, listed[0]) : null;
     }

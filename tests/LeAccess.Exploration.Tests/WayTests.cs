@@ -15,9 +15,11 @@ internal static class WayTests
         Fork();
         Behind();
         Seam();
+        Guided();
         Failures();
         Keeping();
         DeadEnd();
+        GuidedLead();
         Continuation();
         RouteKnown();
         NoWaysLeft();
@@ -83,6 +85,26 @@ internal static class WayTests
             map.MeshRoutes == 1, $"the opening beyond the seam is a way ({map.LastFailure})");
         Check(ExploredMap.Horizontal(ways[0].Path[^1], openings[0].Position) <= OpeningRadius + 0.01f, "it ends where it enters the opening");
         Near(23, ways[0].Beyond, 1, "the way on from the opening");
+    }
+
+    // The Risen Lake log and the user's decision: the opening nearer the target is a dead-end pocket; the engine's path
+    // to the target leaves explored ground by the far one, so that one leads. An unlisted leaving point guides nothing.
+    private static void Guided()
+    {
+        static char Tile(int x, int z) => z >= 10 && z <= 13 && x >= 5 && x <= 54 || x >= 20 && x <= 25 && z >= 14 && z <= 25 ||
+            x >= 50 && x <= 54 && z >= 14 && z <= 50 || z >= 46 && z <= 50 && x >= 20 && x <= 54 ? '.' : '#';
+        var grid = new FakeGrid(Rows(60, 60, Tile));
+        var map = Imported(60, 60, Tile, (_, z) => z <= 13);
+        var openings = new List<ExploredOpening> { new(new Vector3(22.5f, 0, 16), OpeningRadius), new(new Vector3(52, 0, 16), OpeningRadius) };
+        var player = new Vector3(10.5f, 0, 11.5f);
+        var target = new Vector3(22.5f, 0, 48.5f);
+        var ways = new List<ExploredWay>();
+
+        Check(map.FindWays(player, target, openings, BeaconState.MaxWays, grid, ways) == 2 && ways[0].Opening == 1 &&
+            ways[0].Guided && !ways[1].Guided && map.LastGuide == "1", $"the engine's path picks the far opening ({map.LastGuide})");
+        Check(ways[0].Estimate > ways[1].Estimate, "although the pocket promises less");
+        Check(map.FindWays(player, target, new List<ExploredOpening> { openings[0] }, BeaconState.MaxWays, grid, ways) == 1 &&
+            !ways[0].Guided && map.LastGuide == "unlisted", "leaving where no opening is listed guides nothing");
     }
 
     private static void Failures()
@@ -162,6 +184,22 @@ internal static class WayTests
         Check(update.Way.Key == "b" && update.News == BeaconNews.DeadEnd, "back to an earlier opening is a dead end");
         update = state.Tick(Vector3.Zero, Quest, Forward, Right, 2.5, Unrouted, ways);
         Check(update.Way.Key == "b" && update.News == BeaconNews.None, "a dead end is said once");
+    }
+
+    // The guided way leads at once, and going on by an opening listed earlier is its way through, not a dead end.
+    private static void GuidedLead()
+    {
+        IReadOnlyList<BeaconWay> listed = new[] { Way("a", 0, 20, 30), Way("b", 10, 20, 40) };
+        BeaconWays ways = (_, _) => listed;
+        var state = new BeaconState { WaySettleSeconds = 1 };
+        state.Lock(Quest, Vector3.Zero, 0, Unrouted, ways);
+        listed = new[] { Way("b", 10, 20, 40) with { Guided = true }, Way("a", 0, 20, 30) };
+        var update = state.Tick(Vector3.Zero, Quest, Forward, Right, 1, Unrouted, ways);
+        Check(update.Way.Key == "b" && update.News == BeaconNews.None, "the guided way takes over at once");
+        listed = new[] { Way("a", 0, 20, 30) with { Guided = true } };
+        state.Tick(Vector3.Zero, Quest, Forward, Right, 1.5, Unrouted, ways);
+        update = state.Tick(Vector3.Zero, Quest, Forward, Right, 3, Unrouted, ways);
+        Check(update.Way.Key == "a" && update.News == BeaconNews.None, "on by an earlier opening the engine's path takes, no dead end");
     }
 
     // The way entered opened onto new ground: the next opening is new, so nothing is said.

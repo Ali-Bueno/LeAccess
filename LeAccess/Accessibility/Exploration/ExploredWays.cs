@@ -7,8 +7,9 @@ namespace LeAccess.Accessibility.Exploration;
 // An opening of the explored map (an unexplored room or a frontier edge), entered on reaching its radius.
 internal readonly record struct ExploredOpening(Vector3 Position, float Radius);
 
-// The explored route to an opening and the straight distance from it to the target.
-internal readonly record struct ExploredWay(int Opening, IReadOnlyList<Vector3> Path, float Length, float Beyond)
+// The explored route to an opening and the straight distance from it to the target; guided when the engine's path
+// to the target leaves explored ground there.
+internal readonly record struct ExploredWay(int Opening, IReadOnlyList<Vector3> Path, float Length, float Beyond, bool Guided = false)
 {
     internal float Estimate => ExploredMap.WayEstimate(Length, Beyond);
 }
@@ -133,9 +134,21 @@ internal sealed partial class ExploredMap
                 ways.Add(new ExploredWay(index, path, length, Horizontal(goals[index].Point, target)));
             }
         }
+        int guide = GuideOpening(start, target, openings, nav);
+        if (guide >= 0)
+        {
+            int at = ways.FindIndex(way => way.Opening == guide);
+            if (at < 0 && TryMeshRoute(start, goals[guide], reach[guide], nav, out var raw))
+            {
+                Finish(raw, goals[guide].OnMesh, nav, out var path, out float length);
+                ways.Add(new ExploredWay(guide, path, length, Horizontal(goals[guide].Point, target)));
+                at = ways.Count - 1;
+            }
+            if (at >= 0) ways[at] = ways[at] with { Guided = true };
+        }
         if (ways.Count == 0 && LastFailure == null) Fail("no opening reached");
         // Straightening shortens each walk a little, so the spoken order follows the straightened estimates.
-        ways.Sort((a, b) => a.Estimate.CompareTo(b.Estimate));
+        ways.Sort((a, b) => a.Guided != b.Guided ? (a.Guided ? -1 : 1) : a.Estimate.CompareTo(b.Estimate));
         if (ways.Count > limit) ways.RemoveRange(limit, ways.Count - limit);
         return ways.Count;
 

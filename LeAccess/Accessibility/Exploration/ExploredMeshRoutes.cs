@@ -12,6 +12,51 @@ internal sealed partial class ExploredMap
 
     internal long MeshRoutes { get; private set; }
     internal bool LastByMesh { get; private set; }
+    // How the last ways search was guided: an opening's index, or none, explored or unlisted.
+    internal string LastGuide { get; private set; } = "none";
+
+    // The opening nearest where the engine's path to the target first leaves explored ground (user decision
+    // 2026-10-19): the beacon still leads only there, past no dead end. -1 when there is none.
+    private int GuideOpening(Vector3 start, Vector3 target, IReadOnlyList<ExploredOpening> openings, IWalkability nav)
+    {
+        LastGuide = "none";
+        // A marker off the walkable ground is approached from the nearest point a player could see it from.
+        if (!nav.TrySampleWithin(target, ExploreRadius, out var end) || !nav.TryPath(start, end, _meshCorners)) return -1;
+        if (!TryLeaving(out var leaving))
+        {
+            LastGuide = "explored";
+            return -1;
+        }
+        int best = -1;
+        float nearest = float.PositiveInfinity;
+        for (int index = 0; index < openings.Count; index++)
+        {
+            float distance = Horizontal(openings[index].Position, leaving);
+            if (distance <= Math.Max(openings[index].Radius, FrontierAreaCells * CellSize) && distance < nearest)
+            {
+                best = index;
+                nearest = distance;
+            }
+        }
+        LastGuide = best >= 0 ? best.ToString(System.Globalization.CultureInfo.InvariantCulture) : "unlisted";
+        return best;
+    }
+
+    private bool TryLeaving(out Vector3 leaving)
+    {
+        for (int index = 1; index < _meshCorners.Count; index++)
+        {
+            Vector3 from = _meshCorners[index - 1], to = _meshCorners[index];
+            int samples = Math.Max(1, (int)MathF.Ceiling(Vector3.Distance(from, to) / (CellSize / 2)));
+            for (int sample = 1; sample <= samples; sample++)
+            {
+                leaving = Vector3.Lerp(from, to, (float)sample / samples);
+                if (!OnExplored(leaving)) return true;
+            }
+        }
+        leaving = default;
+        return false;
+    }
 
     private bool RouteByMesh(Vector3 start, RouteGoal goal, float reach, IWalkability nav,
         out IReadOnlyList<Vector3> path, out float length)
