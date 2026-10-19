@@ -28,7 +28,7 @@ internal sealed partial class ExploredMap
     private readonly List<Vector3> _points = new();
     private readonly List<(int X, int Z)> _cellColumns = new();
     private readonly Dictionary<(int X, int Z), List<int>> _columns = new();
-    private readonly Dictionary<long, bool> _edges = new();
+    private readonly Dictionary<long, bool> _edges = new(EdgeKeys.Instance);
     private readonly List<(int X, int Z)> _pending = new();
     private int _pendingNext;
     private bool _planned;
@@ -197,5 +197,16 @@ internal sealed partial class ExploredMap
     {
         float x = a.X - b.X, z = a.Z - b.Z;
         return MathF.Sqrt(x * x + z * z);
+    }
+
+    // long's own hash XORs the two cell indices, so neighbouring pairs collide and lookups walk long chains.
+    private sealed class EdgeKeys : IEqualityComparer<long>
+    {
+        internal static readonly EdgeKeys Instance = new();
+        // Fibonacci hashing: 2^64 divided by the golden ratio spreads both halves over the kept high bits.
+        private const ulong GoldenRatio = 0x9E3779B97F4A7C15UL;
+
+        public bool Equals(long x, long y) => x == y;
+        public int GetHashCode(long key) => (int)((ulong)key * GoldenRatio >> 32);
     }
 }

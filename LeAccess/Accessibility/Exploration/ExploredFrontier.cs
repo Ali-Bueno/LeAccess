@@ -100,8 +100,8 @@ internal sealed partial class ExploredMap
         }
     }
 
-    // Whether any explored cell lies within the sphere; bounded by the sphere's columns.
-    internal bool AnyExploredWithin(Vector3 centre, float radius)
+    // Whether any explored cell lies within the sphere (or, flat, the circle on the map); bounded by its columns.
+    internal bool AnyExploredWithin(Vector3 centre, float radius, bool flat = false)
     {
         if (!Finite(centre) || !float.IsFinite(radius) || radius <= 0 || _points.Count == 0) return false;
         int reach = (int)MathF.Ceiling(radius / CellSize);
@@ -112,7 +112,11 @@ internal sealed partial class ExploredMap
             {
                 if (!_columns.TryGetValue((middle.X + dx, middle.Z + dz), out var cells)) continue;
                 foreach (int cell in cells)
-                    if (Vector3.DistanceSquared(_points[cell], centre) <= limit) return true;
+                {
+                    var offset = _points[cell] - centre;
+                    if (flat) offset.Y = 0;
+                    if (offset.LengthSquared() <= limit) return true;
+                }
             }
         return false;
     }

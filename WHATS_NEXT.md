@@ -1,3 +1,15 @@
+# Handoff — 2026-10-19 afternoon: scanner ways toward the quest, complete route searches
+
+Two tester reports on v0.2.5 (Discord, no log): explored areas still give no way to the quest when no unexplored rooms
+are listed; ways lead away from the quest, branch after branch. Built and installed, unheard, not released
+([details](reference/exploration-mode.md#ways-that-lead-toward-the-target-complete-route-searches-2026-10-19-tester-report)).
+- Ask the tester for `BepInEx/LogOutput.log` from a session where it happens: `[Exploration] route … failure=` and
+  `[Exploration] ways … failure= expansions=` lines say whether it was the old 6000-cell cap (fixed) or something else
+  (`no explored route` with explored ground around the quest would point at links cached as blocked, e.g. a gate).
+- Listen: lock a quest beyond explored ground in a large explored map; the first way should head toward the marker
+  (`[Exploration beacon] locked … via= route= beyond=`), and "Dead end. Next way" should not walk branch after branch
+  away from it. Check for hitches on the first lock after loading a large saved map.
+
 # Handoff — 2026-10-19: Rage of Morditas accessible; unexplored areas in room scenes
 
 Two tester reports, both built and installed, unheard; released as `v0.2.5` ([changelog](CHANGELOG.md)):

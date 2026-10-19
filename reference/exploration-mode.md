@@ -639,7 +639,8 @@ the marker. User decisions: use only what the minimap shows (no NavMesh path thr
 "prefer manual exploration"), and share the explored ground between characters like a veteran's memory of the
 campaign maps ([saved exploration](#saved-exploration)).
 
-**Ranking** (`ExploredMap.FindWays`, `ExploredWays.cs`). Openings are the scanner's `UnexploredRoom` entries (unexplored
+**Ranking** (`ExploredMap.FindWays`, `ExploredWays.cs`; the straight line on is weighted since
+[2026-10-19](#ways-that-lead-toward-the-target-complete-route-searches-2026-10-19-tester-report)). Openings are the scanner's `UnexploredRoom` entries (unexplored
 minimap rooms, or frontier edges in scenes without rooms). One A* from the player over explored cells toward the
 target: a cell that reaches an opening (the area-goal rule of routes) may finish there, costing its walk so far, the
 step into the opening and the straight horizontal line from the opening's sampled point to the target. The queue's
@@ -701,3 +702,40 @@ Log: the status line's `unexplored_areas=`. Tests: `UnexploredTests.GroundNoRoom
 room takes the edge; a revealed room is no edge; an unseen room leaves it listed); Exploration 505. Unverified live: the
 first frontier pass over a large saved room map (cheap lookups for interior cells are not budgeted, only NavMesh
 queries) and how many areas campaign maps list.
+
+## Ways that lead toward the target, complete route searches (2026-10-19, tester report)
+
+Report on v0.2.5 (Discord, no log yet): in areas already explored a quest still gets no way when no unexplored rooms
+are listed; and ways "take you in the opposite direction and leave you further away … until it finds nowhere else to
+go". Causes found in the code, not yet confirmed against the tester's log:
+- **Ranking.** A way cost its walk plus the straight line from its opening to the target, both at the same weight. An
+  opening just behind the player beat one toward the target whenever the explored walk there exceeded its straight-line
+  gain plus the backward loss; after walking to it, the next opening farther back won again by the same margin (the
+  walk back is charged to the good opening, never to the next one behind), so the beacon kept going away until that
+  branch ran out.
+- **Search cap.** Route and way searches stopped after 6000 expanded cells (`failure=expansion cap`). With shared
+  exploration and seeded visited rooms a campaign map holds thousands of cells, so a long winding route, or openings far
+  from the explored area the player stands in, could end in no route and no ways.
+- **Cost.** The edge cache keyed each pair of cells by a `long` whose own hash XORs the two indices. Imported and seeded
+  cells have consecutive indices, so neighbouring pairs collided and every cached lookup walked long chains: a
+  7,400-cell search took 66 ms in the test harness (about 9 µs per cell), which is also why the cap had to stay low.
+
+Changes:
+- `ExploredMap.WayEstimate`: walk plus `BeyondWeight` (3) times the straight line on, so a way may walk up to three
+  times the ground it gains before an opening nearer the player, even behind, wins; a sighted player heads for the fog
+  edge nearest the marker. The way search's queue bounds each cell by its least straight line to an opening plus that
+  opening's weighted line on: consistent, so cells expand once, finishes still leave in order, and the search heads for
+  promising openings instead of flooding toward the target.
+- `EdgeKeys`: Fibonacci hashing of the edge key. The same search takes 3.2 ms (0.4 µs per cell), ways 3.7 ms.
+- `DefaultMaxExpansions = MaxCells`: a search may visit every explored cell once.
+- `TryRoute` refuses a target with no explored cell within its reach before searching (`no explored route`, 0
+  expansions), so scanner readouts and beacon refreshes do not flood the map for every target beyond explored ground.
+
+Tests: Exploration 511 (`MapTests.Winding`: a saved map of twenty lanes, over 6000 cells, routed and walkable; a target
+beyond explored ground refused with no expansions. `WayTests.Behind`: an opening behind the player loses to one near
+the target at the end of a winding loop, also once the player stands in it). Both fail with the old weight and cap.
+ExplorationCatalog 126. Unverified live: whether the tester's case was the cap (`[Exploration] route … failure=` and
+`[Exploration] ways … failure=` lines); the first search's NavMesh cost on a large saved map (imported cells prove their
+links lazily, about four raycasts per cell, once per scene session); whether 3 picks the ways a sighted player would.
+Not addressed, if the log points there: a link proven blocked (a closed gate) stays blocked until the player enters
+that cell, and NavMesh raycasts do not cross off-mesh links.

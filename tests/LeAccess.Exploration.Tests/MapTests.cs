@@ -15,6 +15,7 @@ internal static class MapTests
         Door();
         TwoFloors();
         Memory();
+        Winding();
     }
 
     private static void LineOfSight()
@@ -96,6 +97,22 @@ internal static class MapTests
             map.LastFailure == "player off NavMesh", "a player off the walkable ground has no route");
     }
 
+    // A saved map of twenty lanes joined at alternate ends: the route walks them all, past the old 6000-cell cap.
+    private static void Winding()
+    {
+        const int Size = 200, OldCap = 6000;
+        static char Tile(int x, int z) => z % 10 != 9 || (z / 10 % 2 == 0 ? x >= Size - 4 : x < 4) ? '.' : '#';
+        var grid = new FakeGrid(Rows(Size, Size, Tile));
+        var map = Imported(Size, Size, Tile, (_, z) => z < Size - 10);
+        var from = new Vector3(100.5f, 0, 1.5f);
+        var top = new Vector3(100.5f, 0, Size - 12.5f);
+        Check(map.TryRoute(from, top, 1.5f, grid, out var path, out float length) && map.LastExpansions > OldCap,
+            $"a route over the whole saved map is found ({map.LastFailure}, {map.LastExpansions})");
+        Check(length > 17 * Size && Walkable(path, grid), $"it walks every lane ({length})");
+        Check(!map.TryRoute(from, new Vector3(100.5f, 0, Size - 1.5f), 1.5f, grid, out _, out _) &&
+            map.LastFailure == "no explored route" && map.LastExpansions == 0, "a target beyond explored ground is refused without a search");
+    }
+
     private static void Door()
     {
         var grid = new FakeGrid(Rows(20, 20, (x, z) => x != 10 ? '.' : z is 10 or 11 ? 'D' : '#'));
@@ -163,6 +180,18 @@ internal static class MapTests
 
     internal static string[] Rows(int width, int depth, Func<int, int, char> tile) =>
         Enumerable.Range(0, depth).Select(z => new string(Enumerable.Range(0, width).Select(x => tile(x, z)).ToArray())).ToArray();
+
+    // Every walkable column explored, as a saved map restores it.
+    internal static ExploredMap Imported(int width, int depth, Func<int, int, char> tile, Func<int, int, bool> keep = null)
+    {
+        var map = new ExploredMap();
+        var cells = new List<Vector3>();
+        for (float z = map.CellSize / 2; z < depth; z += map.CellSize)
+            for (float x = map.CellSize / 2; x < width; x += map.CellSize)
+                if (tile((int)x, (int)z) == '.' && (keep?.Invoke((int)x, (int)z) ?? true)) cells.Add(new Vector3(x, 0, z));
+        map.Import(cells);
+        return map;
+    }
 
     internal static void Settle(ExploredMap map, FakeGrid grid, Vector3 player)
     {

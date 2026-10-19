@@ -13,6 +13,7 @@ internal static class WayTests
     internal static void Run()
     {
         Fork();
+        Behind();
         Failures();
         Keeping();
         DeadEnd();
@@ -48,6 +49,25 @@ internal static class WayTests
         Check(map.FindWays(player, target, openings, 1, grid, ways) == 1 && ways[0].Opening == 1, "a limit keeps the best");
         Check(map.FindWays(player, target, new List<ExploredOpening> { openings[2] }, BeaconState.MaxWays, grid, ways) == 0 &&
             map.LastFailure == "no opening reached", "an opening off the explored ground is no way");
+    }
+
+    // The tester's report: the way led away from the quest. An opening just behind the player promises less than one
+    // near the target at the end of a winding explored loop, also once the player stands in it.
+    private static void Behind()
+    {
+        static char Tile(int x, int z) => x >= 28 && x <= 31 && z <= 21 || z >= 18 && z <= 21 && x >= 28 && x <= 51 ||
+            x >= 48 && x <= 51 && z >= 18 && z <= 41 || z >= 38 && z <= 41 && x >= 28 && x <= 51 ? '.' : '#';
+        var grid = new FakeGrid(Rows(60, 60, Tile));
+        var map = Imported(60, 60, Tile);
+        var openings = new List<ExploredOpening> { new(new Vector3(30, 0, 1), OpeningRadius), new(new Vector3(30, 0, 40), OpeningRadius) };
+        var target = new Vector3(30, 0, 58);
+        var ways = new List<ExploredWay>();
+
+        Check(map.FindWays(new Vector3(29.5f, 0, 10), target, openings, BeaconState.MaxWays, grid, ways) == 2 && ways[0].Opening == 1,
+            "the opening near the target leads, not the one behind");
+        Check(ways[0].Length > ways[1].Length && ways[0].Beyond < ways[1].Beyond, "although its walk is the longer one");
+        Check(map.FindWays(new Vector3(29.5f, 0, 2), target, openings, BeaconState.MaxWays, grid, ways) == 2 && ways[0].Opening == 1,
+            "standing in the opening behind, the way ahead still leads");
     }
 
     private static void Failures()
@@ -101,7 +121,8 @@ internal static class WayTests
         state.Release();
         state.Lock(Quest, Vector3.Zero, 0, Unrouted, ways);
 
-        listed = new[] { Way("b", 10, 20, 50 - 22.4f - BeaconState.WaySwitchMargin / 2), Way("a", 0, 20, 30) };
+        float within = (Way("a", 0, 20, 30).Estimate - BeaconState.WaySwitchMargin / 2 - 22.4f) / ExploredMap.BeyondWeight;
+        listed = new[] { Way("b", 10, 20, within), Way("a", 0, 20, 30) };
         var update = state.Tick(Vector3.Zero, Quest, Forward, Right, 1, Unrouted, ways);
         Check(update.Routed && update.Way.Key == "a" && update.News == BeaconNews.None, "a way within the margin does not take over");
         Near(20, update.Remaining, 0.01, "the pace follows the opening, not the target beyond it");

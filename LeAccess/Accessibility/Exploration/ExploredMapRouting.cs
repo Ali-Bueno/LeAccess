@@ -7,12 +7,13 @@ namespace LeAccess.Accessibility.Exploration;
 // A* over explored cells along NavMesh-proved links, straightened near the player.
 internal sealed partial class ExploredMap
 {
-    internal const int DefaultMaxExpansions = 6000;
+    // A search may expand every explored cell once, so a long winding route over a large saved map is still found.
+    internal const int DefaultMaxExpansions = MaxCells;
     // Only the first stretch is straightened; it sets the bearing and, until the cadence saturates, the pace.
     private const int PullHorizon = 32;
 
     private readonly PriorityQueue<int, float> _open = new();
-    private float[] _cost = Array.Empty<float>();
+    private float[] _cost = Array.Empty<float>(), _bound = Array.Empty<float>();
     private int[] _parent = Array.Empty<int>(), _seen = Array.Empty<int>(), _closed = Array.Empty<int>();
     private int _search;
 
@@ -43,6 +44,8 @@ internal sealed partial class ExploredMap
         if (!goal.OnMesh) reach = Math.Max(reach, CellSize);
         if (Reaches(start, goal, reach, nav))
             return Finish(new List<Vector3> { start, goal.Point }, goal.OnMesh, nav, out path, out length);
+        // A target beyond explored ground has no cell that could end the search, so the map is not flooded for it.
+        if (!AnyExploredWithin(goal.Point, Math.Max(reach, CellSize * HopCells), flat: true)) return Fail("no explored route");
 
         Prepare();
         float slack = Math.Max(reach, CellSize * HopCells);
@@ -53,7 +56,7 @@ internal sealed partial class ExploredMap
                 if (!_columns.TryGetValue((column.X + dx, column.Z + dz), out var cells)) continue;
                 foreach (int cell in cells)
                     if (nav.Clear(start, _points[cell]))
-                        Offer(cell, -1, Vector3.Distance(start, _points[cell]), goal.Point, slack);
+                        Offer(cell, -1, Vector3.Distance(start, _points[cell]), Toward(cell, goal.Point, slack));
             }
         if (_open.Count == 0) return Fail("player cell unexplored");
 
@@ -72,20 +75,22 @@ internal sealed partial class ExploredMap
                     if (dx == 0 && dz == 0 || !_columns.TryGetValue((x + dx, z + dz), out var cells)) continue;
                     foreach (int next in cells)
                         if (_closed[next] != _search && Edge(cell, next, nav))
-                            Offer(next, cell, _cost[cell] + Vector3.Distance(point, _points[next]), goal.Point, slack);
+                            Offer(next, cell, _cost[cell] + Vector3.Distance(point, _points[next]), Toward(next, goal.Point, slack));
                 }
         }
         return Fail("no explored route");
     }
 
     // Horizontal distance less the goal's slack never overestimates, so the search stays optimal.
-    private void Offer(int cell, int parent, float cost, Vector3 goal, float slack)
+    private float Toward(int cell, Vector3 goal, float slack) => Math.Max(0, Horizontal(_points[cell], goal) - slack);
+
+    private void Offer(int cell, int parent, float cost, float remaining)
     {
         if (_seen[cell] == _search && cost >= _cost[cell]) return;
         _seen[cell] = _search;
         _cost[cell] = cost;
         _parent[cell] = parent;
-        _open.Enqueue(cell, cost + Math.Max(0, Horizontal(_points[cell], goal) - slack));
+        _open.Enqueue(cell, cost + remaining);
     }
 
     private List<Vector3> Trace(Vector3 start, int cell, Vector3 goal)
@@ -142,6 +147,7 @@ internal sealed partial class ExploredMap
         {
             int size = Math.Max(_points.Count, _cost.Length * 2);
             _cost = new float[size];
+            _bound = new float[size];
             _parent = new int[size];
             _seen = new int[size];
             _closed = new int[size];

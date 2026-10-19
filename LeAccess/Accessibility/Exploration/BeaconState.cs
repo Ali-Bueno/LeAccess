@@ -24,7 +24,7 @@ internal delegate bool BeaconRouter(Vector3 from, ExplorationTarget target,
 // A way the beacon follows toward a target with no explored route: the explored route to an opening.
 internal readonly record struct BeaconWay(ExplorationTarget Opening, IReadOnlyList<Vector3> Path, float Length, float Beyond)
 {
-    internal float Estimate => Length + Beyond;
+    internal float Estimate => ExploredMap.WayEstimate(Length, Beyond);
 }
 
 // Ways toward a target with no explored route, best first.

@@ -10,7 +10,7 @@ internal readonly record struct ExploredOpening(Vector3 Position, float Radius);
 // The explored route to an opening and the straight distance from it to the target.
 internal readonly record struct ExploredWay(int Opening, IReadOnlyList<Vector3> Path, float Length, float Beyond)
 {
-    internal float Estimate => Length + Beyond;
+    internal float Estimate => ExploredMap.WayEstimate(Length, Beyond);
 }
 
 // Ways toward a target beyond explored ground, ranked as a sighted player reads the minimap;
@@ -18,13 +18,19 @@ internal readonly record struct ExploredWay(int Opening, IReadOnlyList<Vector3> 
 internal sealed partial class ExploredMap
 {
     private const int FromStart = -1;
+    // Navigation tuning, not a game constant: unseen ground costs this many times its straight line, so a way may
+    // walk up to three times what it gains toward the target before one nearer the player, even behind, wins.
+    internal const float BeyondWeight = 3f;
+
+    // How a way ranks: a sighted player heads for the edge of the fog nearest the marker, not the nearest edge.
+    internal static float WayEstimate(float length, float beyond) => length + BeyondWeight * beyond;
 
     // Seconds a plan of the explore radius takes to drain at this observe cadence: the time to take in new ground.
     internal double PlanSeconds(double observeSeconds) =>
         MathF.PI * _exploreRadius * _exploreRadius / (CellSize * CellSize) / Math.Max(1, QueriesPerObserve) * observeSeconds;
 
     // One search for every opening: a cell that reaches an opening may finish there at its walk so far, the step
-    // into the opening and the straight line on to the target. Finishes leave the queue in order of that estimate.
+    // into the opening and the weighted straight line on to the target. Finishes leave the queue in order of that estimate.
     internal int FindWays(Vector3 from, Vector3 target, IReadOnlyList<ExploredOpening> openings, int limit,
         IWalkability nav, List<ExploredWay> ways)
     {
@@ -46,11 +52,12 @@ internal sealed partial class ExploredMap
         var goals = new RouteGoal[count];
         var reach = new float[count];
         var estimate = new float[count];
+        var beyond = new float[count];
         var via = new int[count];
         var done = new bool[count];
         for (int index = 0; index < count; index++)
         {
-            estimate[index] = float.PositiveInfinity;
+            estimate[index] = beyond[index] = float.PositiveInfinity;
             var opening = openings[index];
             if (!Finite(opening.Position) || !(opening.Radius > 0) || !float.IsFinite(opening.Radius))
             {
@@ -59,6 +66,7 @@ internal sealed partial class ExploredMap
             }
             goals[index] = ResolveGoal(opening.Position, opening.Radius, true, nav);
             reach[index] = goals[index].OnMesh ? opening.Radius : Math.Max(opening.Radius, CellSize);
+            beyond[index] = BeyondWeight * Horizontal(goals[index].Point, target);
         }
 
         Prepare();
@@ -70,7 +78,7 @@ internal sealed partial class ExploredMap
                 if (!_columns.TryGetValue((column.X + dx, column.Z + dz), out var cells)) continue;
                 foreach (int cell in cells)
                     if (nav.Clear(start, _points[cell]))
-                        Offer(cell, -1, Vector3.Distance(start, _points[cell]), target, 0);
+                        Offer(cell, -1, Vector3.Distance(start, _points[cell]), Bound(cell));
             }
         if (_open.Count == 0)
         {
@@ -107,7 +115,7 @@ internal sealed partial class ExploredMap
                     if (dx == 0 && dz == 0 || !_columns.TryGetValue((x + dx, z + dz), out var cells)) continue;
                     foreach (int next in cells)
                         if (_closed[next] != _search && Edge(node, next, nav))
-                            Offer(next, node, _cost[node] + Vector3.Distance(point, _points[next]), target, 0);
+                            Offer(next, node, _cost[node] + Vector3.Distance(point, _points[next]), Bound(next));
                 }
         }
         if (ways.Count == 0 && LastFailure == null) Fail("no opening reached");
@@ -115,14 +123,24 @@ internal sealed partial class ExploredMap
         ways.Sort((a, b) => a.Estimate.CompareTo(b.Estimate));
         return ways.Count;
 
-        // The straight line on is never shorter than the horizontal distance the queue's estimate uses.
+        // No finish through a cell costs less than its straight line to an opening plus that opening's way on; the
+        // bound changes by at most a step's length, so cells are expanded once and finishes leave in order.
+        float Bound(int cell)
+        {
+            if (_seen[cell] == _search) return _bound[cell];
+            float best = float.PositiveInfinity;
+            for (int index = 0; index < count; index++)
+                if (float.IsFinite(beyond[index])) best = Math.Min(best, Horizontal(_points[cell], goals[index].Point) + beyond[index]);
+            return _bound[cell] = best;
+        }
+
         void Finishes(int cell, Vector3 point, float cost)
         {
             for (int index = 0; index < count; index++)
             {
                 if (done[index] || !Reaches(point, goals[index], reach[index], nav)) continue;
                 var goal = goals[index].Point;
-                float total = cost + Vector3.Distance(point, goal) + Horizontal(goal, target);
+                float total = cost + Vector3.Distance(point, goal) + beyond[index];
                 if (!(total < estimate[index])) continue;
                 estimate[index] = total;
                 via[index] = cell;
