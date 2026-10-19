@@ -3,6 +3,20 @@
 What changed in LeAccess, day by day, newest first. Each heading gives the day and the version that first shipped
 those changes. It is written from the commit history; internal notes, status updates and merges are left out.
 
+## 19 October 2026 — version 0.2.6
+
+Fixed:
+
+- Scanner ways toward a quest beyond explored ground now lead toward it. Before, an unexplored area behind you could
+  win because it was nearer, and after each dead end the next way took you farther away. Where the game knows a path to
+  the quest, the area where that path leaves explored ground now comes first; the beacon still leads only to the edge of
+  what you have explored.
+- In explored maps, quests, characters and objects could have no route when the mod failed to link explored ground you
+  walk through (for example at stairs, as in the Keepers' Vault). The beacon now follows the game's own path when every
+  step of it lies on explored ground, and a door that opens gives a route at once.
+- In large explored maps the route search could give up before reaching the target; it now covers the whole explored
+  map and is faster.
+
 ## 19 October 2026 — version 0.2.5
 
 New:

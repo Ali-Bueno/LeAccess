@@ -3,7 +3,7 @@
 The tester's log showed no `expansion cap`: in the Keepers' Vault (Z62) the explored map was split where the player
 walks, so routes and ways fall back to the engine's path when every step of it is explored
 ([vault](reference/exploration-mode.md#explored-ground-the-grid-could-not-link-2026-10-19-tester-log)). Built and
-installed, unheard, not committed. Live checks: `mesh_paths=1` in `[Exploration beacon] status` (0 means the game
+installed, unheard; released as `v0.2.6` with the afternoon's fixes below ([changelog](CHANGELOG.md)). Live checks: `mesh_paths=1` in `[Exploration beacon] status` (0 means the game
 registers several agent types and the fallback is off); in Z62 the quest and Balthas route from the arrival
 (`[Exploration] route … mesh=1`). Risen Lake (C40), user decision: the engine's path to the quest picks the opening
 (`[Exploration] ways … guided=1 guide=<n>`); `guide=none` there would mean the marker lies farther than `ExploreRadius`
@@ -13,7 +13,7 @@ lake without dead ends.
 # Handoff — 2026-10-19 afternoon: scanner ways toward the quest, complete route searches
 
 Two tester reports on v0.2.5 (Discord, no log): explored areas still give no way to the quest when no unexplored rooms
-are listed; ways lead away from the quest, branch after branch. Built and installed, unheard, not released
+are listed; ways lead away from the quest, branch after branch. Built and installed, unheard, released as `v0.2.6`
 ([details](reference/exploration-mode.md#ways-that-lead-toward-the-target-complete-route-searches-2026-10-19-tester-report)).
 - Ask the tester for `BepInEx/LogOutput.log` from a session where it happens: `[Exploration] route … failure=` and
   `[Exploration] ways … failure= expansions=` lines say whether it was the old 6000-cell cap (fixed) or something else
