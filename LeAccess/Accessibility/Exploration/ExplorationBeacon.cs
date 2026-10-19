@@ -351,7 +351,7 @@ internal static class ExplorationBeacon
             var route = BeaconState.Measure(Router, player, target,
                 corners && map != null ? path => map.Corners(path, Walkability) : null);
             string found = route is { } known
-                ? string.Create(CultureInfo.InvariantCulture, $"route={known.Length:F1} direct={(known.Direct ? 1 : 0)} aim={known.Aim.X:F1},{known.Aim.Z:F1} corners={known.Corners?.Count ?? 0}")
+                ? string.Create(CultureInfo.InvariantCulture, $"route={known.Length:F1} direct={(known.Direct ? 1 : 0)} aim={known.Aim.X:F1},{known.Aim.Z:F1} corners={known.Corners?.Count ?? 0} mesh={(map?.LastByMesh == true ? 1 : 0)}")
                 : $"route=none failure={_map?.LastFailure ?? "no map"}";
             string line = string.Create(CultureInfo.InvariantCulture,
                 $"[Exploration] route name={target.Name} straight={ExploredMap.Horizontal(player, target.Position):F1} {found} {GoalText(target)}");
@@ -405,7 +405,7 @@ internal static class ExplorationBeacon
         $"remaining={_last.Remaining:F1} distance={_last.Distance:F1} cells={_map?.CellCount ?? 0} fixed_maps={Memory.FixedCount} " +
         $"refusals={_refusals} route_losses={_routeLosses} failure={_map?.LastFailure ?? "none"} " +
         $"expansions={_map?.LastExpansions ?? 0} edge_checks={_map?.EdgeChecks ?? 0} " +
-        $"unverified_floors={Walkability.UnverifiedFloors} pings={BeaconAudio.Pings} audio={BeaconAudio.Diagnostics}"));
+        $"unverified_floors={Walkability.UnverifiedFloors} mesh_paths={(Walkability.PathsAvailable ? 1 : 0)} mesh_routes={_map?.MeshRoutes ?? 0} pings={BeaconAudio.Pings} audio={BeaconAudio.Diagnostics}"));
 
     private static void ReportFailure(Exception ex)
     {

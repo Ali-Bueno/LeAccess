@@ -739,3 +739,38 @@ ExplorationCatalog 126. Unverified live: whether the tester's case was the cap (
 links lazily, about four raycasts per cell, once per scene session); whether 3 picks the ways a sighted player would.
 Not addressed, if the log points there: a link proven blocked (a closed gate) stays blocked until the player enters
 that cell, and NavMesh raycasts do not cross off-mesh links.
+
+## Explored ground the grid could not link (2026-10-19, tester log)
+
+The tester's `LogOutput.log` (v0.2.5) answered the two reports above. No search ever hit `expansion cap`, so the cap
+was not their cause (the faster, complete search stays).
+
+**The Keepers' Vault (Z62).** 61 rooms, 60 visited, 2716 explored cells; seeding the visited rooms added 0 cells (every
+column already had one). Every route and way search from the arrival reached only 495-742 cells: the quest (290 m),
+Keeper Balthas (71 m) and a breakable 18 m away all read "no known route", the one listed opening was "no opening
+reached", and nothing else was listed (`unexplored_areas=0 frontier_pending=0`): no unexplored column bordered the
+player's part of the map. The player then walked to the breakable in seconds, past `2Rotate/Entrance/StairsCollider`.
+So links between explored cells fail on ground the player walks: the straight NavMesh check (`Clear`, a raycast)
+cannot cross a link or seam between NavMesh pieces at those stairs, or refuses a saved cell's height there; the log
+cannot tell which.
+
+**Fix: the engine's path over explored ground** (`ExploredMeshRoutes.cs`). When the grid's search runs out without
+reaching the goal, `NavMesh.CalculatePath` (mask overload; native-invoked in the Steam interop and called by the game
+itself, 26 callers; used only when one agent type is registered and it is the player's, `mesh_paths=` in the beacon
+status) gives a path, accepted only if every half-cell step lies in an explored column, or a neighbouring one, on its
+floor (seeded maps leave columns along walls empty). An area is entered where the path first comes within its radius;
+the last stretch to a point target is free within the reach the grid's routes end at; an off-mesh target is approached
+at the nearest explored cell within its reach. Ways try it for up to `MaxWays` openings the grid did not reach, most
+promising first, when the grid found fewer. Side effect: a door opened after its links were proven routes at once
+instead of waiting for the player beside it. Log: `mesh=1` on `[Exploration] route` lines, `mesh_routes=` in the
+status. Tests: Exploration 519 (`MapTests.Linked`: a seam crossed by the engine's path, refused over unexplored
+columns; `WayTests.Seam`; `MapTests.Door` updated); they fail with the fake path disabled. Unverified live:
+`mesh_paths=1` (one registered agent type) and the vault itself.
+
+**The Risen Lake (C40), still open.** The target ("Travel west to Thetima") lies off the walkable mesh
+(`goal=Unsampled`, 243.9, 5.3, 94.8). 60 rooms, 20 visited, 9-15 unexplored areas listed, none of them nearer the target
+than the player (each way's straight line on was at least 343 m while the player stood 337-434 m away); the beacon took
+9 dead ends in a row and ended 434 m away with "No ways left". Explored ground there ends at terrain toward the target
+(the lake), so every opening first leads away. The 3x weight picks the opening nearest the target among them but cannot
+make one lead toward it; ranking openings by the engine's path through unexplored ground would, and that reverses the
+2026-10-13 decision (only what the minimap shows). Awaiting the user.

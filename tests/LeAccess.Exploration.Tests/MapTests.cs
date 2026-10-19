@@ -16,6 +16,7 @@ internal static class MapTests
         TwoFloors();
         Memory();
         Winding();
+        Linked();
     }
 
     private static void LineOfSight()
@@ -113,6 +114,27 @@ internal static class MapTests
             map.LastFailure == "no explored route" && map.LastExpansions == 0, "a target beyond explored ground is refused without a search");
     }
 
+    // The Keepers' Vault report: explored ground split by a seam the player walks but a straight NavMesh check cannot
+    // cross; the engine's path is taken while it stays on explored ground, never across unexplored columns.
+    private static void Linked()
+    {
+        static char Tile(int x, int z) => x is 15 or 16 ? 'L' : '.';
+        var grid = new FakeGrid(Rows(40, 10, Tile));
+        var map = Imported(40, 10, Tile);
+        var from = new Vector3(5.5f, 0, 5.5f);
+        var across = new Vector3(33.5f, 0, 5.5f);
+        Check(map.TryRoute(from, across, 1.5f, grid, out var path, out float length) && map.LastByMesh,
+            $"a route across the seam is the engine's path ({map.LastFailure})");
+        Check(length >= 28 && length < 32, $"its length follows the tile walk ({length})");
+        Check(ExploredMap.Horizontal(path[^1], across) <= 1.5f && map.MeshRoutes == 1, "it ends at the target");
+        Check(map.TryRoute(from, new Vector3(10.5f, 0, 5.5f), 1.5f, grid, out _, out _) && !map.LastByMesh,
+            "ground the grid links needs no engine path");
+
+        var gap = Imported(40, 10, Tile, (x, _) => x < 18 || x >= 24);
+        Check(!gap.TryRoute(from, across, 1.5f, grid, out _, out _) && gap.LastFailure == "no explored route" &&
+            gap.MeshRoutes == 0, "an engine path over unexplored columns is refused");
+    }
+
     private static void Door()
     {
         var grid = new FakeGrid(Rows(20, 20, (x, z) => x != 10 ? '.' : z is 10 or 11 ? 'D' : '#'));
@@ -123,9 +145,9 @@ internal static class MapTests
         Settle(map, grid, east);
         Check(!map.TryRoute(east, west, 1.5f, grid, out _, out _), "a closed door refuses");
         grid.DoorOpen = true;
-        Check(!map.TryRoute(east, west, 1.5f, grid, out _, out _), "an opened door is re-proved only beside it");
+        Check(map.TryRoute(east, west, 1.5f, grid, out _, out _) && map.LastByMesh, "an opened door routes at once by the engine's path");
         Settle(map, grid, new Vector3(11.5f, 0, 10.5f));
-        Check(map.TryRoute(east, west, 1.5f, grid, out var path, out _), "the opened door routes once observed beside it");
+        Check(map.TryRoute(east, west, 1.5f, grid, out var path, out _) && !map.LastByMesh, "observed beside it, the grid links it again");
         Check(Walkable(path, grid), "the route passes the door");
         grid.DoorOpen = false;
         Settle(map, grid, new Vector3(12.5f, 0, 12.5f));
@@ -188,7 +210,7 @@ internal static class MapTests
         var cells = new List<Vector3>();
         for (float z = map.CellSize / 2; z < depth; z += map.CellSize)
             for (float x = map.CellSize / 2; x < width; x += map.CellSize)
-                if (tile((int)x, (int)z) == '.' && (keep?.Invoke((int)x, (int)z) ?? true)) cells.Add(new Vector3(x, 0, z));
+                if (tile((int)x, (int)z) is '.' or 'L' && (keep?.Invoke((int)x, (int)z) ?? true)) cells.Add(new Vector3(x, 0, z));
         map.Import(cells);
         return map;
     }

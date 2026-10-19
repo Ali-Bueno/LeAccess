@@ -36,6 +36,7 @@ internal sealed partial class ExploredMap
         LastExpansions = 0;
         LastFailure = null;
         LastGoal = default;
+        LastByMesh = false;
         if (nav is null || !Finite(from) || !Finite(target)) return Fail("invalid");
         if (!nav.TrySample(from, out var start) || !Finite(start)) return Fail("player off NavMesh");
         float reach = float.IsFinite(arrivalRadius) && arrivalRadius > 0 ? arrivalRadius : 0;
@@ -58,7 +59,7 @@ internal sealed partial class ExploredMap
                     if (nav.Clear(start, _points[cell]))
                         Offer(cell, -1, Vector3.Distance(start, _points[cell]), Toward(cell, goal.Point, slack));
             }
-        if (_open.Count == 0) return Fail("player cell unexplored");
+        if (_open.Count == 0) return RouteByMesh(start, goal, reach, nav, out path, out length) || Fail("player cell unexplored");
 
         while (_open.TryDequeue(out int cell, out _))
         {
@@ -78,7 +79,7 @@ internal sealed partial class ExploredMap
                             Offer(next, cell, _cost[cell] + Vector3.Distance(point, _points[next]), Toward(next, goal.Point, slack));
                 }
         }
-        return Fail("no explored route");
+        return RouteByMesh(start, goal, reach, nav, out path, out length) || Fail("no explored route");
     }
 
     // Horizontal distance less the goal's slack never overestimates, so the search stays optimal.

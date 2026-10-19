@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using LeAccess.Accessibility.MapSections;
 using UnityEngine.AI;
 using NVector3 = System.Numerics.Vector3;
@@ -14,10 +15,13 @@ internal sealed class NavMeshWalkability : IWalkability
     private int _agentTypeId, _areaMask;
     private float _agentRadius, _floorTolerance;
     private bool _configured;
+    private NavMeshPath _path;
 
     internal float SampleRadius { get; private set; }
     internal float LevelHeight { get; private set; } = ExploredMap.DefaultLevelHeight;
     internal long UnverifiedFloors { get; private set; }
+    // The mask overload of CalculatePath names no agent type, so it is used only when one is registered and it is the player's.
+    internal bool PathsAvailable { get; private set; }
 
     // Uses the player's owned query agent (MapPlayerFloor, as the guidance probe does).
     internal bool TryConfigure(MapSectionWorldSnapshot world, float cellSize)
@@ -36,6 +40,7 @@ internal sealed class NavMeshWalkability : IWalkability
         _floorTolerance = LevelHeight / 2;
         // Reaches any walkable point of a cell from its centre, and the mesh edge eroded inside walls.
         SampleRadius = Math.Max(cellSize * MathF.Sqrt(2) / 2, bakedRadius + climb);
+        PathsAvailable = NavMesh.GetSettingsCount() == 1 && NavMesh.GetSettingsByIndex(0).agentTypeID == type;
         _session = world.Session;
         _agentTypeId = type;
         _areaMask = mask;
@@ -89,9 +94,24 @@ internal sealed class NavMeshWalkability : IWalkability
         return true;
     }
 
+    public bool TryPath(NVector3 from, NVector3 to, List<NVector3> corners)
+    {
+        corners.Clear();
+        if (!_configured || !PathsAvailable || !ExploredMap.Finite(from) || !ExploredMap.Finite(to)) return false;
+        _path ??= new NavMeshPath();
+        _path.ClearCorners();
+        if (!NavMesh.CalculatePath(Unity(from), Unity(to), _areaMask, _path) ||
+            _path.status != NavMeshPathStatus.PathComplete) return false;
+        var points = _path.corners;
+        if (points is null || points.WasCollected) return false;
+        foreach (var point in points) corners.Add(new NVector3(point.x, point.y, point.z));
+        return corners.Count >= 2 && corners.TrueForAll(ExploredMap.Finite);
+    }
+
     internal void Reset()
     {
         _configured = false;
+        PathsAvailable = false;
         _session = 0;
         UnverifiedFloors = 0;
     }

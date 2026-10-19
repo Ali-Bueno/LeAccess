@@ -118,10 +118,28 @@ internal sealed partial class ExploredMap
                             Offer(next, node, _cost[node] + Vector3.Distance(point, _points[next]), Bound(next));
                 }
         }
+        if (ways.Count < limit && LastFailure == null)
+        {
+            // Openings the grid's links did not reach, most promising first, by the engine's path over explored ground.
+            var rest = new List<int>();
+            for (int index = 0; index < count; index++)
+                if (!done[index] && float.IsFinite(beyond[index])) rest.Add(index);
+            rest.Sort((a, b) => Promise(a).CompareTo(Promise(b)));
+            for (int tried = 0; tried < rest.Count && tried < limit; tried++)
+            {
+                int index = rest[tried];
+                if (!TryMeshRoute(start, goals[index], reach[index], nav, out var raw)) continue;
+                Finish(raw, goals[index].OnMesh, nav, out var path, out float length);
+                ways.Add(new ExploredWay(index, path, length, Horizontal(goals[index].Point, target)));
+            }
+        }
         if (ways.Count == 0 && LastFailure == null) Fail("no opening reached");
         // Straightening shortens each walk a little, so the spoken order follows the straightened estimates.
         ways.Sort((a, b) => a.Estimate.CompareTo(b.Estimate));
+        if (ways.Count > limit) ways.RemoveRange(limit, ways.Count - limit);
         return ways.Count;
+
+        float Promise(int index) => Horizontal(start, goals[index].Point) + beyond[index];
 
         // No finish through a cell costs less than its straight line to an opening plus that opening's way on; the
         // bound changes by at most a step's length, so cells are expanded once and finishes leave in order.

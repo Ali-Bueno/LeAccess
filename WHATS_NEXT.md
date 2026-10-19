@@ -1,3 +1,13 @@
+# Handoff — 2026-10-19 evening: tester log, explored ground the grid could not link
+
+The tester's log showed no `expansion cap`: in the Keepers' Vault (Z62) the explored map was split where the player
+walks, so routes and ways fall back to the engine's path when every step of it is explored
+([vault](reference/exploration-mode.md#explored-ground-the-grid-could-not-link-2026-10-19-tester-log)). Built and
+installed, unheard, not committed. Live checks: `mesh_paths=1` in `[Exploration beacon] status` (0 means the game
+registers several agent types and the fallback is off); in Z62 the quest and Balthas route from the arrival
+(`[Exploration] route … mesh=1`). Open decision: the Risen Lake (C40), where every opening leads away from an off-mesh
+target (same section).
+
 # Handoff — 2026-10-19 afternoon: scanner ways toward the quest, complete route searches
 
 Two tester reports on v0.2.5 (Discord, no log): explored areas still give no way to the quest when no unexplored rooms

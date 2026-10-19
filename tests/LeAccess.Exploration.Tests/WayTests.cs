@@ -14,6 +14,7 @@ internal static class WayTests
     {
         Fork();
         Behind();
+        Seam();
         Failures();
         Keeping();
         DeadEnd();
@@ -68,6 +69,20 @@ internal static class WayTests
         Check(ways[0].Length > ways[1].Length && ways[0].Beyond < ways[1].Beyond, "although its walk is the longer one");
         Check(map.FindWays(new Vector3(29.5f, 0, 2), target, openings, BeaconState.MaxWays, grid, ways) == 2 && ways[0].Opening == 1,
             "standing in the opening behind, the way ahead still leads");
+    }
+
+    // An opening beyond a seam the grid cannot link is reached by the engine's path over explored ground.
+    private static void Seam()
+    {
+        static char Tile(int x, int z) => x is 15 or 16 ? 'L' : '.';
+        var grid = new FakeGrid(Rows(40, 10, Tile));
+        var map = Imported(40, 10, Tile, (x, _) => x < 34);
+        var openings = new List<ExploredOpening> { new(new Vector3(37, 0, 5), OpeningRadius) };
+        var ways = new List<ExploredWay>();
+        Check(map.FindWays(new Vector3(5.5f, 0, 5.5f), new Vector3(60, 0, 5), openings, BeaconState.MaxWays, grid, ways) == 1 &&
+            map.MeshRoutes == 1, $"the opening beyond the seam is a way ({map.LastFailure})");
+        Check(ExploredMap.Horizontal(ways[0].Path[^1], openings[0].Position) <= OpeningRadius + 0.01f, "it ends where it enters the opening");
+        Near(23, ways[0].Beyond, 1, "the way on from the opening");
     }
 
     private static void Failures()
