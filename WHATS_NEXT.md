@@ -3,7 +3,7 @@
 Second tester log (v0.2.6). The tester was in the Risen Lake (C40) on the quest "The Admiral's Dreadnought"; "Travel west
 to Thetima" is the game's own objective text. From the waypoint nothing beyond that part of the map had a route or a
 way, the log said `guide=none`, and no line had `mesh=1`. Since v0.2.6 the engine-path fallback and the guide were off
-in every scene, because the game registers two agent types. Fixed, built and installed, unheard, not released
+in every scene, because the game registers two agent types. Fixed, built and installed, unheard, released as `v0.2.7`
 ([details](reference/exploration-mode.md#engine-paths-never-ran-2026-10-19-second-tester-log)).
 
 Live checks:

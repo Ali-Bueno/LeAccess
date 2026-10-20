@@ -3,6 +3,14 @@
 What changed in LeAccess, day by day, newest first. Each heading gives the day and the version that first shipped
 those changes. It is written from the commit history; internal notes, status updates and merges are left out.
 
+## 19 October 2026 — version 0.2.7
+
+Fixed:
+
+- The two route fixes of 0.2.6 never worked: the mod did not use the game's own path in any area. Now it does. The
+  scanner's ways can lead toward a quest beyond explored ground, as in the Risen Lake on "The Admiral's Dreadnought".
+  Routes also cross explored ground the mod could not link before, such as the stairs in the Keepers' Vault.
+
 ## 19 October 2026 — version 0.2.6
 
 Fixed:
