@@ -1,3 +1,22 @@
+# Handoff — 2026-10-19 night: the engine's path never ran
+
+Second tester log (v0.2.6). The tester was in the Risen Lake (C40) on the quest "The Admiral's Dreadnought"; "Travel west
+to Thetima" is the game's own objective text. From the waypoint nothing beyond that part of the map had a route or a
+way, the log said `guide=none`, and no line had `mesh=1`. Since v0.2.6 the engine-path fallback and the guide were off
+in every scene, because the game registers two agent types. Fixed, built and installed, unheard, not released
+([details](reference/exploration-mode.md#engine-paths-never-ran-2026-10-19-second-tester-log)).
+
+Live checks:
+- In C40 from the waypoint: route lines show `mesh=1` and ways lines show `guide=<n>`.
+- The beacon status shows `off_mesh_paths=0`.
+- In Z62 the vault routes from the arrival.
+- `guide=unlisted` in C40 would mean the path leaves explored ground where no area is listed; that is the next thing to
+  fix.
+
+Not addressed:
+- C40's unexplored area 7 is on an unreachable island of the lake floor, taken in by a seeded visited room.
+- The objective guidance probe keeps the same one-type gate.
+
 # Handoff — 2026-10-19 evening: tester log, explored ground the grid could not link
 
 The tester's log showed no `expansion cap`: in the Keepers' Vault (Z62) the explored map was split where the player

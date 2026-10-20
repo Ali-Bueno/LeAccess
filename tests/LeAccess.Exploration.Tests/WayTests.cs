@@ -16,6 +16,7 @@ internal static class WayTests
         Behind();
         Seam();
         Guided();
+        Unguided();
         Failures();
         Keeping();
         DeadEnd();
@@ -105,6 +106,23 @@ internal static class WayTests
         Check(ways[0].Estimate > ways[1].Estimate, "although the pocket promises less");
         Check(map.FindWays(player, target, new List<ExploredOpening> { openings[0] }, BeaconState.MaxWays, grid, ways) == 1 &&
             !ways[0].Guided && map.LastGuide == "unlisted", "leaving where no opening is listed guides nothing");
+    }
+
+    // The second Risen Lake log said only "guide=none": a marker far off the walkable ground and one the engine's path
+    // cannot reach are told apart.
+    private static void Unguided()
+    {
+        static char Tile(int x, int z) => z >= 10 && z <= 13 && x >= 5 && x <= 30 || x >= 40 && x <= 50 && z >= 40 && z <= 50 ? '.' : '#';
+        var grid = new FakeGrid(Rows(60, 100, Tile));
+        var map = Imported(60, 100, Tile, (_, z) => z <= 13);
+        var openings = new List<ExploredOpening> { new(new Vector3(29.5f, 0, 11.5f), OpeningRadius) };
+        var player = new Vector3(10.5f, 0, 11.5f);
+        var ways = new List<ExploredWay>();
+
+        map.FindWays(player, new Vector3(45.5f, 0, 45.5f), openings, BeaconState.MaxWays, grid, ways);
+        Check(map.LastGuide == "pathless", $"an island the engine's path cannot reach guides nothing ({map.LastGuide})");
+        map.FindWays(player, new Vector3(45.5f, 0, 50 + map.ExploreRadius + 10), openings, BeaconState.MaxWays, grid, ways);
+        Check(map.LastGuide == "far", $"nor does a marker beyond the explore radius from walkable ground ({map.LastGuide})");
     }
 
     private static void Failures()

@@ -405,7 +405,7 @@ internal static class ExplorationBeacon
         $"remaining={_last.Remaining:F1} distance={_last.Distance:F1} cells={_map?.CellCount ?? 0} fixed_maps={Memory.FixedCount} " +
         $"refusals={_refusals} route_losses={_routeLosses} failure={_map?.LastFailure ?? "none"} " +
         $"expansions={_map?.LastExpansions ?? 0} edge_checks={_map?.EdgeChecks ?? 0} " +
-        $"unverified_floors={Walkability.UnverifiedFloors} mesh_paths={(Walkability.PathsAvailable ? 1 : 0)} mesh_routes={_map?.MeshRoutes ?? 0} pings={BeaconAudio.Pings} audio={BeaconAudio.Diagnostics}"));
+        $"unverified_floors={Walkability.UnverifiedFloors} mesh_paths={Walkability.PathsTaken} off_mesh_paths={Walkability.PathsOffMesh} mesh_routes={_map?.MeshRoutes ?? 0} pings={BeaconAudio.Pings} audio={BeaconAudio.Diagnostics}"));
 
     private static void ReportFailure(Exception ex)
     {

@@ -38,6 +38,7 @@ internal sealed partial class ExploredMap
         ways.Clear();
         LastExpansions = 0;
         LastFailure = null;
+        LastGuide = "none";
         if (nav is null || openings is null || limit <= 0 || !Finite(from) || !Finite(target))
         {
             Fail("invalid");

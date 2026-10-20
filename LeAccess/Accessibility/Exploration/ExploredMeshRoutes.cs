@@ -12,16 +12,24 @@ internal sealed partial class ExploredMap
 
     internal long MeshRoutes { get; private set; }
     internal bool LastByMesh { get; private set; }
-    // How the last ways search was guided: an opening's index, or none, explored or unlisted.
+    // How the last ways search was guided: an opening's index, or none, far, pathless, explored or unlisted.
     internal string LastGuide { get; private set; } = "none";
 
     // The opening nearest where the engine's path to the target first leaves explored ground (user decision
     // 2026-10-19): the beacon still leads only there, past no dead end. -1 when there is none.
     private int GuideOpening(Vector3 start, Vector3 target, IReadOnlyList<ExploredOpening> openings, IWalkability nav)
     {
-        LastGuide = "none";
         // A marker off the walkable ground is approached from the nearest point a player could see it from.
-        if (!nav.TrySampleWithin(target, ExploreRadius, out var end) || !nav.TryPath(start, end, _meshCorners)) return -1;
+        if (!nav.TrySampleWithin(target, ExploreRadius, out var end))
+        {
+            LastGuide = "far";
+            return -1;
+        }
+        if (!nav.TryPath(start, end, _meshCorners))
+        {
+            LastGuide = "pathless";
+            return -1;
+        }
         if (!TryLeaving(out var leaving))
         {
             LastGuide = "explored";

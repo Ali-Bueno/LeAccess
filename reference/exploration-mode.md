@@ -756,8 +756,8 @@ cannot tell which.
 
 **Fix: the engine's path over explored ground** (`ExploredMeshRoutes.cs`). When the grid's search runs out without
 reaching the goal, `NavMesh.CalculatePath` (mask overload; native-invoked in the Steam interop and called by the game
-itself, 26 callers; used only when one agent type is registered and it is the player's, `mesh_paths=` in the beacon
-status) gives a path, accepted only if every half-cell step lies in an explored column, or a neighbouring one, on its
+itself, 26 callers; every corner checked on the player's mesh since it
+[never ran in v0.2.6](#engine-paths-never-ran-2026-10-19-second-tester-log)) gives a path, accepted only if every half-cell step lies in an explored column, or a neighbouring one, on its
 floor (seeded maps leave columns along walls empty). An area is entered where the path first comes within its radius;
 the last stretch to a point target is free within the reach the grid's routes end at; an off-mesh target is approached
 at the nearest explored cell within its reach. Ways try it for up to `MaxWays` openings the grid did not reach, most
@@ -765,7 +765,7 @@ promising first, when the grid found fewer. Side effect: a door opened after its
 instead of waiting for the player beside it. Log: `mesh=1` on `[Exploration] route` lines, `mesh_routes=` in the
 status. Tests: Exploration 519 (`MapTests.Linked`: a seam crossed by the engine's path, refused over unexplored
 columns; `WayTests.Seam`; `MapTests.Door` updated); they fail with the fake path disabled. Unverified live:
-`mesh_paths=1` (one registered agent type) and the vault itself.
+the vault itself.
 
 **The Risen Lake (C40).** The target ("Travel west to Thetima") lies off the walkable mesh
 (`goal=Unsampled`, 243.9, 5.3, 94.8). 60 rooms, 20 visited, 9-15 unexplored areas listed, none of them nearer the target
@@ -789,3 +789,47 @@ Tests: Exploration 524 (`WayTests.Guided`: the far opening leads over a nearer d
 guides nothing. `WayTests.GuidedLead`: a guided way takes over at once, no dead end on an earlier opening); both fail
 with the guide disabled. Unverified live: the Risen Lake target's distance from the mesh (beyond `ExploreRadius` it
 guides nothing) and whether the engine's path there leaves explored ground by a listed area.
+
+## Engine paths never ran (2026-10-19, second tester log)
+
+Tester log on v0.2.6: the Risen Lake (C40), quest "The Admiral's Dreadnought" ("Travel west to Thetima" is the game's
+own objective text), arrival by the waypoint (-8.2, 5.6, -125.0) on a shared map of 3071 explored cells. Every search
+from there reached 2122 cells. The quest (334 m), the exit to The Soul Wardens' Road (107 m), the Outcast Seer (246 m)
+and all 7 unexplored areas read "no known route" (`ways … found=0 failure=no opening reached guide=none`), and the
+beacon refused the quest. Only rooms 36 and 38 routed, by the grid. No line had `mesh=1`.
+
+**Cause.** `NavMeshWalkability` took the engine's path only when exactly one NavMesh agent type was registered. The game
+registers two in `globalgamemanagers` (`NavMeshProjectSettings`): Humanoid (0) and Flying (-1372625422). So since v0.2.6
+the engine's path never ran in any scene, for routes, ways or the guide; the Keepers' Vault fix above never ran either.
+An offline sweep of all 26,667 bundles found:
+- 339 scenes bake only type 0, and no scene bakes Flying.
+- 21 scenes have no baked mesh: the PCG scenes build theirs at runtime through `LE.PCG.Level.GenerateNavMesh`, agent type
+  unknown.
+- 7 non-scene bundles hold type-0 data.
+
+The objective guidance probe (`GuidanceRouteProbe`) has the same one-type gate, so it has only given bearings. It is
+left unchanged.
+
+**C40's mesh** (offline, `sceneassets_C40_unity.bundle`) is one NavMeshData of type 0: 49 tiles, no off-mesh links.
+- The waypoint, the Seer, the exit and unexplored area 1 lie in one component of 2043 polygons.
+- The marker is 6.2 m from the mesh: 3.3 m on the map, with the ground at y 0 under its y 5.3. That is within
+  `ExploreRadius`.
+- The engine's path from the waypoint is about 773 m: north, east past area 1 (125, -103), then north along x ≈ 183.
+- Unexplored area 7 (49 m) lies on a 17-polygon island of the lake floor that no path reaches. Visited-room seeding takes
+  every triangle inside a room, islands included. Not addressed.
+
+**Fix.** `TryPath` runs whatever agent types are registered. The mask overload of `CalculatePath` names no agent type,
+so a path counts only when every corner samples onto the player's mesh (`SamplePositionFilter` with the player's type).
+Refused paths are counted.
+
+Log changes:
+- `guide=` adds `far` (no walkable point within `ExploreRadius` of the target) and `pathless` (no complete path on the
+  player's mesh). `none` now means no guide was computed.
+- The beacon status reads `mesh_paths=<taken> off_mesh_paths=<refused>`.
+
+Tests: Exploration 526 (`WayTests.Unguided`). The runtime gate itself cannot be tested offline.
+
+Unverified live:
+- Whether the C40 path leaves explored ground at a listed area (`guide=<n>`) or not (`unlisted`).
+- Whether the openings and the quest route over explored ground (`mesh=1`).
+- `off_mesh_paths=0` in the PCG scenes.
