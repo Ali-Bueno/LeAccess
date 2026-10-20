@@ -11,8 +11,15 @@ internal interface IWalkability
     // The nearest walkable point (3D) within a radius of the caller's choosing.
     bool TrySampleWithin(Vector3 point, float radius, out Vector3 onMesh);
     bool Clear(Vector3 from, Vector3 to);
-    // The engine's own walkable path between two points on the mesh, as corners; false when there is none.
-    bool TryPath(Vector3 from, Vector3 to, List<Vector3> corners);
+    // The engine's own walkable path between two points on the mesh, as corners; a partial one stops short of the target.
+    PathReach FindPath(Vector3 from, Vector3 to, List<Vector3> corners);
+}
+
+internal enum PathReach
+{
+    None,
+    Partial,
+    Complete
 }
 
 // Ground the player has seen in walkable line of sight: XZ cells, one per floor in each column.

@@ -20,9 +20,11 @@ internal sealed class NavMeshWalkability : IWalkability
     internal float SampleRadius { get; private set; }
     internal float LevelHeight { get; private set; } = ExploredMap.DefaultLevelHeight;
     internal long UnverifiedFloors { get; private set; }
-    // Complete engine paths taken, and those refused for a corner off the player's mesh.
-    internal long PathsTaken { get; private set; }
-    internal long PathsOffMesh { get; private set; }
+    private long _pathsComplete, _pathsPartial, _pathsOffMesh, _pathsFailed;
+
+    // Engine path queries this scene: complete, partial, refused for a corner off the player's mesh, failed.
+    internal string PathCounts => string.Create(System.Globalization.CultureInfo.InvariantCulture,
+        $"complete:{_pathsComplete},partial:{_pathsPartial},off_mesh:{_pathsOffMesh},failed:{_pathsFailed}");
 
     // Uses the player's owned query agent (MapPlayerFloor, as the guidance probe does).
     internal bool TryConfigure(MapSectionWorldSnapshot world, float cellSize)
@@ -96,26 +98,35 @@ internal sealed class NavMeshWalkability : IWalkability
 
     // The mask overload of CalculatePath names no agent type and the game registers two (Humanoid, Flying), so a path
     // counts only when every corner lies on the player's mesh.
-    public bool TryPath(NVector3 from, NVector3 to, List<NVector3> corners)
+    public PathReach FindPath(NVector3 from, NVector3 to, List<NVector3> corners)
     {
         corners.Clear();
-        if (!_configured || !ExploredMap.Finite(from) || !ExploredMap.Finite(to)) return false;
+        if (!_configured || !ExploredMap.Finite(from) || !ExploredMap.Finite(to)) return PathReach.None;
         _path ??= new NavMeshPath();
         _path.ClearCorners();
-        if (!NavMesh.CalculatePath(Unity(from), Unity(to), _areaMask, _path) ||
-            _path.status != NavMeshPathStatus.PathComplete) return false;
-        var points = _path.corners;
-        if (points is null || points.WasCollected) return false;
-        foreach (var point in points) corners.Add(new NVector3(point.x, point.y, point.z));
-        if (corners.Count < 2 || !corners.TrueForAll(ExploredMap.Finite)) return false;
+        var status = NavMesh.CalculatePath(Unity(from), Unity(to), _areaMask, _path) ? _path.status : NavMeshPathStatus.PathInvalid;
+        var points = status == NavMeshPathStatus.PathInvalid ? null : _path.corners;
+        if (points is not null && !points.WasCollected)
+            foreach (var point in points) corners.Add(new NVector3(point.x, point.y, point.z));
+        if (corners.Count < 2 || !corners.TrueForAll(ExploredMap.Finite))
+        {
+            _pathsFailed++;
+            corners.Clear();
+            return PathReach.None;
+        }
         if (!corners.TrueForAll(corner => TrySample(corner, out _)))
         {
-            PathsOffMesh++;
+            _pathsOffMesh++;
             corners.Clear();
-            return false;
+            return PathReach.None;
         }
-        PathsTaken++;
-        return true;
+        if (status == NavMeshPathStatus.PathComplete)
+        {
+            _pathsComplete++;
+            return PathReach.Complete;
+        }
+        _pathsPartial++;
+        return PathReach.Partial;
     }
 
     internal void Reset()
@@ -123,7 +134,7 @@ internal sealed class NavMeshWalkability : IWalkability
         _configured = false;
         _session = 0;
         UnverifiedFloors = 0;
-        PathsTaken = PathsOffMesh = 0;
+        _pathsComplete = _pathsPartial = _pathsOffMesh = _pathsFailed = 0;
     }
 
     private static UVector3 Unity(NVector3 point) => new(point.X, point.Y, point.Z);

@@ -1,3 +1,19 @@
+# Handoff — 2026-10-20: long engine paths end short
+
+Third tester log (v0.2.7, the Risen Lake, from the waypoint). Nearby exits routed by the engine's path (`mesh=1`), but
+the Outcast Seer and the quest still had `guide=pathless`. An offline Detour emulation finds all of them reachable; the
+working paths have 56-57 polygons and the failing ones 121 and 295. Likely cause: Unity cuts a long synchronous path and
+reports it partial. Paths now go on leg by leg. Built and installed, unheard, not released
+([details](reference/exploration-mode.md#long-engine-paths-end-short-2026-10-20-third-tester-log)).
+
+Live checks in C40 from the waypoint:
+- `guide=<n>` and `legs=` above 0 on `ways` lines.
+- `paths=…partial:N` with N above 0 confirms the cap.
+- `off_mesh:` above 0 would instead mean the corner check refuses long paths.
+
+If `guide=<n>` appears but `found=0`, the path to that area leaves explored ground before reaching it; that needs a
+separate decision.
+
 # Handoff — 2026-10-19 night: the engine's path never ran
 
 Second tester log (v0.2.6). The tester was in the Risen Lake (C40) on the quest "The Admiral's Dreadnought"; "Travel west

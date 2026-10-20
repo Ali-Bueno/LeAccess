@@ -8,9 +8,15 @@ namespace LeAccess.Accessibility.Exploration;
 // some links the player walks; reference/exploration-mode.md "Explored ground the grid could not link".
 internal sealed partial class ExploredMap
 {
-    private readonly List<Vector3> _meshCorners = new();
+    // Navigation tuning, not a game constant: Unity ends a long path short of a reachable target, so one may take this
+    // many legs (reference/exploration-mode.md "Long engine paths end short").
+    internal const int MaxPathLegs = 16;
+
+    private readonly List<Vector3> _meshCorners = new(), _legCorners = new();
 
     internal long MeshRoutes { get; private set; }
+    // Legs beyond the first that engine paths took to reach their targets.
+    internal long PathLegs { get; private set; }
     internal bool LastByMesh { get; private set; }
     // How the last ways search was guided: an opening's index, or none, far, pathless, explored or unlisted.
     internal string LastGuide { get; private set; } = "none";
@@ -25,7 +31,7 @@ internal sealed partial class ExploredMap
             LastGuide = "far";
             return -1;
         }
-        if (!nav.TryPath(start, end, _meshCorners))
+        if (!TryEnginePath(start, end, nav))
         {
             LastGuide = "pathless";
             return -1;
@@ -84,7 +90,7 @@ internal sealed partial class ExploredMap
         route = null;
         var end = goal.Point;
         if (!goal.OnMesh && !TryNearestExplored(goal.Point, reach, out end)) return false;
-        if (!nav.TryPath(start, end, _meshCorners) || _meshCorners.Count < 2 || !OnExplored(_meshCorners[0])) return false;
+        if (!TryEnginePath(start, end, nav) || !OnExplored(_meshCorners[0])) return false;
         bool area = goal.Kind == RouteGoalKind.Area;
         float free = area ? reach : Math.Max(reach, CellSize * HopCells);
         var steps = new List<Vector3>(_meshCorners.Count + 1) { _meshCorners[0] };
@@ -106,6 +112,30 @@ internal sealed partial class ExploredMap
             steps.Add(to);
         }
         return Accept(steps, goal, out route);
+    }
+
+    // The engine's path into _meshCorners, each leg going on from where the last stopped; false when a leg gets no
+    // nearer (the target is out of reach) or the legs run out.
+    private bool TryEnginePath(Vector3 start, Vector3 end, IWalkability nav)
+    {
+        _meshCorners.Clear();
+        var from = start;
+        for (int leg = 0; leg < MaxPathLegs; leg++)
+        {
+            var reach = nav.FindPath(from, end, _legCorners);
+            if (reach == PathReach.None) break;
+            for (int index = _meshCorners.Count == 0 ? 0 : 1; index < _legCorners.Count; index++) _meshCorners.Add(_legCorners[index]);
+            var stop = _legCorners[^1];
+            if (reach == PathReach.Complete && Vector3.Distance(stop, end) < CellSize / 2)
+            {
+                PathLegs += leg;
+                return true;
+            }
+            if (Vector3.Distance(stop, from) < CellSize / 2) break;
+            from = stop;
+        }
+        _meshCorners.Clear();
+        return false;
     }
 
     private bool Accept(List<Vector3> steps, RouteGoal goal, out List<Vector3> route)

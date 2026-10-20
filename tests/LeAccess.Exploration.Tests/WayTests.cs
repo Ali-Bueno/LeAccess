@@ -106,6 +106,10 @@ internal static class WayTests
         Check(ways[0].Estimate > ways[1].Estimate, "although the pocket promises less");
         Check(map.FindWays(player, target, new List<ExploredOpening> { openings[0] }, BeaconState.MaxWays, grid, ways) == 1 &&
             !ways[0].Guided && map.LastGuide == "unlisted", "leaving where no opening is listed guides nothing");
+        // The third Risen Lake log: Unity ended long paths short (status partial), so the quest had no guide.
+        grid.PathCap = 10;
+        Check(map.FindWays(player, target, openings, BeaconState.MaxWays, grid, ways) == 2 && ways[0].Opening == 1 &&
+            ways[0].Guided && map.PathLegs > 0, $"a path ended short goes on leg by leg ({map.LastGuide}, {map.PathLegs} legs)");
     }
 
     // The second Risen Lake log said only "guide=none": a marker far off the walkable ground and one the engine's path
@@ -119,8 +123,15 @@ internal static class WayTests
         var player = new Vector3(10.5f, 0, 11.5f);
         var ways = new List<ExploredWay>();
 
-        map.FindWays(player, new Vector3(45.5f, 0, 45.5f), openings, BeaconState.MaxWays, grid, ways);
+        var island = new Vector3(45.5f, 0, 45.5f);
+        map.FindWays(player, island, openings, BeaconState.MaxWays, grid, ways);
         Check(map.LastGuide == "pathless", $"an island the engine's path cannot reach guides nothing ({map.LastGuide})");
+        grid.PathCap = 10;
+        grid.ResetCounters();
+        map.FindWays(player, island, openings, BeaconState.MaxWays, grid, ways);
+        Check(map.LastGuide == "pathless" && grid.Paths < ExploredMap.MaxPathLegs,
+            $"legs toward it stop once one gets no nearer ({grid.Paths} queries)");
+        grid.PathCap = null;
         map.FindWays(player, new Vector3(45.5f, 0, 50 + map.ExploreRadius + 10), openings, BeaconState.MaxWays, grid, ways);
         Check(map.LastGuide == "far", $"nor does a marker beyond the explore radius from walkable ground ({map.LastGuide})");
     }

@@ -25,6 +25,8 @@ internal sealed class FakeGrid : IWalkability
     internal int Samples { get; private set; }
     internal int Clears { get; private set; }
     internal int Paths { get; private set; }
+    // Tiles after which a path ends partial, as Unity ends a long one short; none by default.
+    internal int? PathCap { get; set; }
 
     internal void ResetCounters() => Samples = Clears = Paths = 0;
 
@@ -75,28 +77,35 @@ internal sealed class FakeGrid : IWalkability
         return MathF.Abs(height.Value - to.Y) <= FloorTolerance;
     }
 
-    // A breadth-first tile walk standing in for NavMesh.CalculatePath; unlike Clear it crosses links.
-    public bool TryPath(Vector3 from, Vector3 to, List<Vector3> corners)
+    // A breadth-first tile walk standing in for NavMesh.CalculatePath; unlike Clear it crosses links. As Unity's, an
+    // unreachable target gives a partial path to the reachable tile nearest it, and a path longer than PathCap tiles
+    // ends partial after them.
+    public PathReach FindPath(Vector3 from, Vector3 to, List<Vector3> corners)
     {
         Paths++;
         corners.Clear();
         int fx = Tile(from.X), fz = Tile(from.Z), tx = Tile(to.X), tz = Tile(to.Z);
-        if (Continue(fx, fz, from.Y, FloorTolerance) is not { } height) return false;
+        if (Continue(fx, fz, from.Y, FloorTolerance) is not { } height) return PathReach.None;
         var start = (fx, fz, height);
         var parents = new Dictionary<(int X, int Z, float Y), (int X, int Z, float Y)> { [start] = start };
         var queue = new Queue<(int X, int Z, float Y)>();
         queue.Enqueue(start);
+        (int X, int Z, float Y) last = start;
+        float nearest = float.PositiveInfinity;
+        bool reached = false;
         while (queue.TryDequeue(out var node))
         {
             if (node.X == tx && node.Z == tz && MathF.Abs(node.Y - to.Y) <= FloorTolerance)
             {
-                var tiles = new List<Vector3>();
-                for (var at = node; at != start; at = parents[at]) tiles.Add(new Vector3(at.X + 0.5f, at.Y, at.Z + 0.5f));
-                tiles.Reverse();
-                corners.Add(from);
-                if (tiles.Count > 1) corners.AddRange(tiles.GetRange(0, tiles.Count - 1));
-                corners.Add(to);
-                return true;
+                last = node;
+                reached = true;
+                break;
+            }
+            float distance = Vector2.Distance(new Vector2(node.X + 0.5f, node.Z + 0.5f), new Vector2(to.X, to.Z));
+            if (distance < nearest)
+            {
+                nearest = distance;
+                last = node;
             }
             for (int dz = -1; dz <= 1; dz++)
                 for (int dx = -1; dx <= 1; dx++)
@@ -109,7 +118,20 @@ internal sealed class FakeGrid : IWalkability
                     if (parents.TryAdd(step, node)) queue.Enqueue(step);
                 }
         }
-        return false;
+        var tiles = new List<Vector3>();
+        for (var at = last; at != start; at = parents[at]) tiles.Add(new Vector3(at.X + 0.5f, at.Y, at.Z + 0.5f));
+        tiles.Reverse();
+        bool complete = reached && !(tiles.Count > PathCap);
+        if (tiles.Count > PathCap) tiles.RemoveRange(PathCap.Value, tiles.Count - PathCap.Value);
+        corners.Add(from);
+        if (complete)
+        {
+            if (tiles.Count > 1) corners.AddRange(tiles.GetRange(0, tiles.Count - 1));
+            corners.Add(to);
+            return PathReach.Complete;
+        }
+        corners.AddRange(tiles.Count > 0 ? tiles : new List<Vector3> { from });
+        return PathReach.Partial;
     }
 
     private bool Link(int x, int z) => At(_ground, x, z) == 'L';

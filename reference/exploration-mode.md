@@ -825,11 +825,51 @@ Refused paths are counted.
 Log changes:
 - `guide=` adds `far` (no walkable point within `ExploreRadius` of the target) and `pathless` (no complete path on the
   player's mesh). `none` now means no guide was computed.
-- The beacon status reads `mesh_paths=<taken> off_mesh_paths=<refused>`.
+- Path counts on `ways` lines and the beacon status are described in the next section.
 
 Tests: Exploration 526 (`WayTests.Unguided`). The runtime gate itself cannot be tested offline.
 
 Unverified live:
 - Whether the C40 path leaves explored ground at a listed area (`guide=<n>`) or not (`unlisted`).
 - Whether the openings and the quest route over explored ground (`mesh=1`).
-- `off_mesh_paths=0` in the PCG scenes.
+- No `off_mesh` paths in the PCG scenes.
+
+## Long engine paths end short (2026-10-20, third tester log)
+
+Tester log on v0.2.7 in the Risen Lake, from the waypoint again. The engine's path now ran: the exits to The Soul
+Wardens' Road (153 m, 12 corners) and The Ruins of Etendell (137 m, 6 corners) routed by it (`mesh=1`). The Outcast Seer
+and the quest still read "no known route", with `guide=pathless`, and no opening was reached.
+
+An offline emulation of Detour's `findPath` over C40's polygons shows the cause is not the mesh:
+| Target | Polygons in path | Nodes used | In game |
+|---|---|---|---|
+| Etendell exit | 56 | 240 | complete |
+| Soul Wardens' exit | 57 | 297 | complete |
+| Outcast Seer | 121 | 608 | no path |
+| Quest marker's nearest walkable point | 295 | 1913 | no path |
+
+- All four are reachable on the baked mesh.
+- The game runs Unity 6000.4.8f1, whose NavMesh query code is closed. Its public C# shows no cap.
+- The likeliest cause is a cap on the polygons of one synchronous path, somewhere between 58 and 120. When it is hit,
+  Detour keeps the path's first stretch and reports it partial; the previous code took only complete paths.
+- Not confirmed: a node pool that small is ruled out for the Seer, and a corner off the player's mesh is the other
+  candidate.
+
+**Fix.** `IWalkability.FindPath` reports `None`, `Partial` (corners end short of the target) or `Complete`.
+`ExploredMap.TryEnginePath` goes on from where a partial leg stops, up to `MaxPathLegs` (16) legs. It gives up when a leg
+gets no nearer, which is how a target that is truly out of reach (an island) ends, after two queries. A complete leg
+must end within half a cell of the target, so a path cut by a corner limit also goes on. Both the guide and the routes
+over explored ground use it.
+
+Log: `ways` lines and the beacon status add:
+- `paths=complete:N,partial:N,off_mesh:N,failed:N`: queries in this scene.
+- `legs=`: legs beyond the first that paths needed.
+
+`partial` with `legs` above 0 confirms the cap; `off_mesh` above 0 points at the corner check instead.
+
+Tests: Exploration 528. `FakeGrid.PathCap` ends a path partial after N tiles, and an unreachable target gives a partial
+path to the nearest reachable tile, as Unity does. `WayTests.Guided` with a 10-tile cap still guides through the far
+opening; `WayTests.Unguided` stops on an island before the legs run out. With one leg allowed, the guided check fails.
+
+Unverified live: the Seer and the quest in C40 (`guide=<n>`, `legs=` above 0), and whether a way along explored ground
+then leads to the guided area. That needs the whole path to the area to lie on explored ground.

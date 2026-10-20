@@ -296,7 +296,7 @@ internal static class ExplorationBeacon
             string best = Found.Count > 0
                 ? string.Create(CultureInfo.InvariantCulture, $"best={Openings[Found[0].Opening].Name} route={Found[0].Length:F1} beyond={Found[0].Beyond:F1} guided={(Found[0].Guided ? 1 : 0)}")
                 : $"failure={map?.LastFailure ?? "no map"}";
-            Plugin.Log.LogInfo($"[Exploration] ways name={target.Name} openings={Openings.Count} found={Found.Count} {best} guide={map?.LastGuide ?? "none"} expansions={map?.LastExpansions ?? 0}");
+            Plugin.Log.LogInfo($"[Exploration] ways name={target.Name} openings={Openings.Count} found={Found.Count} {best} guide={map?.LastGuide ?? "none"} expansions={map?.LastExpansions ?? 0} paths={Walkability.PathCounts} legs={map?.PathLegs ?? 0}");
             return ways;
         }
         catch (Exception ex)
@@ -405,7 +405,7 @@ internal static class ExplorationBeacon
         $"remaining={_last.Remaining:F1} distance={_last.Distance:F1} cells={_map?.CellCount ?? 0} fixed_maps={Memory.FixedCount} " +
         $"refusals={_refusals} route_losses={_routeLosses} failure={_map?.LastFailure ?? "none"} " +
         $"expansions={_map?.LastExpansions ?? 0} edge_checks={_map?.EdgeChecks ?? 0} " +
-        $"unverified_floors={Walkability.UnverifiedFloors} mesh_paths={Walkability.PathsTaken} off_mesh_paths={Walkability.PathsOffMesh} mesh_routes={_map?.MeshRoutes ?? 0} pings={BeaconAudio.Pings} audio={BeaconAudio.Diagnostics}"));
+        $"unverified_floors={Walkability.UnverifiedFloors} paths={Walkability.PathCounts} legs={_map?.PathLegs ?? 0} mesh_routes={_map?.MeshRoutes ?? 0} pings={BeaconAudio.Pings} audio={BeaconAudio.Diagnostics}"));
 
     private static void ReportFailure(Exception ex)
     {
