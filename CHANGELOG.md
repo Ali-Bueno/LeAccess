@@ -3,6 +3,14 @@
 What changed in LeAccess, day by day, newest first. Each heading gives the day and the version that first shipped
 those changes. It is written from the commit history; internal notes, status updates and merges are left out.
 
+## 20 October 2026 — version 0.2.8
+
+Fixed:
+
+- Quests and characters far away, such as the quest and the Outcast Seer in the Risen Lake, still had "no known route".
+  The game cuts its own path short over long distances, and the mod gave up on those cut paths. It now continues them
+  piece by piece. Nearby targets already worked in 0.2.7.
+
 ## 19 October 2026 — version 0.2.7
 
 Fixed:

@@ -3,7 +3,7 @@
 Third tester log (v0.2.7, the Risen Lake, from the waypoint). Nearby exits routed by the engine's path (`mesh=1`), but
 the Outcast Seer and the quest still had `guide=pathless`. An offline Detour emulation finds all of them reachable; the
 working paths have 56-57 polygons and the failing ones 121 and 295. Likely cause: Unity cuts a long synchronous path and
-reports it partial. Paths now go on leg by leg. Built and installed, unheard, not released
+reports it partial. Paths now go on leg by leg. Built and installed, unheard, released as `v0.2.8`
 ([details](reference/exploration-mode.md#long-engine-paths-end-short-2026-10-20-third-tester-log)).
 
 Live checks in C40 from the waypoint:
