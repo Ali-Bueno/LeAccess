@@ -3,6 +3,23 @@
 What changed in LeAccess, day by day, newest first. Each heading gives the day and the version that first shipped
 those changes. It is written from the commit history; internal notes, status updates and merges are left out.
 
+## 21 October 2026 — not yet released
+
+Fixed:
+
+- A quest a few steps away could have "no known route", and the scanner sent you along ways that led elsewhere. The
+  quest's marker floats past the walkable ground at many exits; it now counts from the nearest walkable point, so the
+  quest gets its route and the beacon arrives.
+- Shrines in the scanner are named by the game (Warpath, Experience, Phoenix...), the cosmetics shop NPC and suitcase
+  chests have names, and invisible event trigger areas are no longer listed.
+- The Rage of Morditas reward panel is readable: each slot says its item, whether it is the target or sacrificed, and the
+  details key reads the item; Claim says the charges and why it is unavailable.
+
+Added:
+
+- Rage of Morditas circle pulse: during the gauntlet a bell from the circle's centre twice a second, then from the
+  reward crystal; lower and dull behind, quieter toward the edge. Mod menu Sounds, Rage of Morditas.
+
 ## 20 October 2026 — version 0.2.8
 
 Fixed:

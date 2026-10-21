@@ -97,6 +97,8 @@ internal static class ModMenuCatalog
             {
                 new("BloodTrailSound", "morditas_trail_sound"),
                 new("BloodTrailVolume", "morditas_trail_volume", SettingUnit.Percent, 5, 0, 100),
+                new("CircleSound", "morditas_circle_sound"),
+                new("CircleVolume", "morditas_circle_volume", SettingUnit.Percent, 5, 0, 100),
             }),
         }),
         new("exploration", new SectionSpec[]

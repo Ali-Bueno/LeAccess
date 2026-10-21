@@ -31,7 +31,23 @@ internal static class InteractableRoles
             Available(listener.GetComponentInParent<MonolithPortal>()) ||
             Available(listener.GetComponentInParent<ShatteredRoadPortalInteractable>())) return InteractableRole.TimeRift;
         if (Available(listener.GetComponentInParent<OneShotCacheInteractableObject>())) return InteractableRole.Cache;
+        if (ShrineObjectName(listener) is not null) return InteractableRole.Shrine;
         return ReadEventObject(listener);
+    }
+
+    // Shrine prefabs are also named "<Effect> Shrine (Clone)"; the listener may sit on a child of that object.
+    private const int ShrineNameDepth = 4;
+
+    private static string ShrineObjectName(WorldObjectClickListener listener)
+    {
+        var current = listener.gameObject;
+        for (int depth = 0; depth < ShrineNameDepth && IsAlive(current); depth++)
+        {
+            if (InteractableNames.IsShrineObject(current.name)) return current.name;
+            var parent = current.transform.parent;
+            current = parent is null ? null : parent.gameObject;
+        }
+        return null;
     }
 
     // Owners of the event roles by listener: the scanner asks for every listener twice a second, and an active
@@ -98,12 +114,17 @@ internal static class InteractableRoles
     }
 
     /// <summary>The name for a listener: shrines also search its ancestors and descendants for the hover tag, enabled or not.</summary>
-    internal static string Name(InteractableRole role, WorldObjectClickListener listener, HoverTagOnMouseOver tag)
+    internal static string Name(InteractableRole role, WorldObjectClickListener listener, HoverTagOnMouseOver tag,
+        Func<string, string> shrineBuffName = null)
     {
         if (!IsAlive(listener)) return Name(role, tag);
         if (role == InteractableRole.Shrine)
-            return ShrineName(new[] { tag, listener.GetComponentInParent<HoverTagOnMouseOver>(true),
-                listener.GetComponentInChildren<HoverTagOnMouseOver>(true) });
+        {
+            string objectName = ShrineObjectName(listener);
+            return GameShrineName(new[] { tag, listener.GetComponentInParent<HoverTagOnMouseOver>(true),
+                listener.GetComponentInChildren<HoverTagOnMouseOver>(true) }) ??
+                (objectName is null ? null : shrineBuffName?.Invoke(objectName)) ?? ModText.Get(NameKey(InteractableRole.Shrine));
+        }
         var label = InteractLabel(role, listener);
         return label is null ? Name(role, tag) : GameShrineName(new[] { tag, label }) ?? ModText.Get(NameKey(role));
     }
@@ -115,10 +136,6 @@ internal static class InteractableRoles
         InteractableRole.MorditasReward => listener.GetComponentInParent<RageOfMorditasRewardVisualController>()?.InteractLabel,
         _ => null
     };
-
-    /// <summary>The first hover text the game gives any of the tags, else the mod's own word for a shrine.</summary>
-    internal static string ShrineName(IEnumerable<HoverTagOnMouseOver> tags) =>
-        GameShrineName(tags) ?? ModText.Get(NameKey(InteractableRole.Shrine));
 
     /// <summary>The game's own shrine name from its tags, or null when none carries one.</summary>
     internal static string GameShrineName(IEnumerable<HoverTagOnMouseOver> tags)

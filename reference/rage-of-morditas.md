@@ -129,6 +129,27 @@ menus, dialogue, pause and loading. Sound: `BloodTrailSynthesizer`, a 160 ms sin
 620 Hz blip), NPC tap and enemy growls are all different shapes. Settings: `[Rage of Morditas] BloodTrailSound` (on),
 `BloodTrailVolume` (100); mod menu Sounds → Rage of Morditas with "Listen"; glossary id `BloodTrail`.
 
+## Circle pulse
+
+User request (2026-10-21, tester log): in the final part the circle and the crystal needed a sound that is a little
+louder, tells front from back better and repeats faster. Before, nothing marked the gauntlet's centre, and the reward
+crystal had the generic shrine recording, whose only rear cue is a 6 % pitch drop (`WorldLoopSelection.RearPitch`).
+
+- **Source.** Gauntlet: the circle's centre (`GauntletLocation`). ReadyForReward: the reward crystal's click listener
+  (`RageOfMorditasRewardVisualController.InteractableClickListener`, found in `WorldObjectClickListener.allListener` at
+  most once a second, `MorditasProbe.TryRewardCrystal`), else the centre. Silent from Finished on, in menus (the reward
+  panel), dialogue, pause and loading.
+- **Sound.** `Audio/MorditasCircleSynthesizer.cs`: a 140 ms bell at 440 Hz with inharmonic partials (1, 2.76, 5.4),
+  every 0.5 s (`MorditasCircleCue.PulseSeconds`, mod choice). Behind it drops a perfect fifth and loses its overtones
+  (dull), fully from 60° either side of straight behind; equal-power pan. Peak 0.3, above the drip's 0.2. Level falls
+  linearly from full at the centre to 50 % at the radius and stays there outside, so the way back is audible.
+- **No double sound.** While it sounds the crystal, the world loops skip that listener (`WorldCueProbe.SoundedElsewhere`, set by `MorditasAccessibility`,
+  checked in `WorldCueProbe.Consider`).
+- **Settings.** `[Rage of Morditas] CircleSound` (on), `CircleVolume` (100); mod menu Sounds → Rage of Morditas;
+  glossary id `MorditasCircle` with "Listen". Reservation source `WorldAudioSource.Circle`.
+- Tests (`LeAccess.Morditas.Tests`, 108 checks): length, silence at zero, louder than the drip, pan, rear lower and
+  without overtones, rear share, distance level. Unheard in game.
+
 ## Hooks
 
 All read-only postfixes; the patch audit (`LeAccess.PatchSafety.Tests`) confirms each target exists with a native body
@@ -163,8 +184,8 @@ at 17847C4, 178369B, 1784A58; V), not through `ShowOnChannel`, which is why noth
 
 ## Tests
 
-`LeAccess.Morditas.Tests` (97 checks): phases, coalescing, warnings with re-arm, requirement and charges, circle
-in/out and countdown, baselines, status, trail order, entries, follow, placement, level, ownership, drip.
+`LeAccess.Morditas.Tests` (108 checks): phases, coalescing, warnings with re-arm, requirement and charges, circle
+in/out and countdown, baselines, status, trail order, entries, follow, placement, level, ownership, drip, circle pulse.
 Also: `ExplorationCatalog.Tests` (order, trail walk), `Notifications.Tests` and `DynamicObjectives.Tests` (deference
 and fallback), `Vitals.Tests` (report), `PatchSafety.Tests`.
 
@@ -177,3 +198,27 @@ and fallback), `Vitals.Tests` (report), `PatchSafety.Tests`.
 4. Gauntlet: circle size in steps, enemies left matches the widget, leaving and returning, the 4 s countdown, failure
    by leaving; online client and party member (non-owner) too.
 5. Reward and success line; failure by time with fewer than 20 kills.
+
+## Reward panel slots (2026-10-21)
+
+Tester report: after the event the "Recompensas del ritual" slots spoke "Item Container UI 0..4" (log: focus on
+`ItemContainerUI` under `RageOfMortidas_RewardPanelRewardUI`; neither the inventory reader nor any endgame reader claimed it).
+Code: `Market/MorditasRewardSlots.cs` (slots), `Market/MorditasReader.cs` (buttons, dispatch), `EndgameText.RewardSlot`.
+Provenance: **I** = inferred from the interop member names (`last epoch code/`), none verified in game yet.
+
+| Class | Members used |
+|---|---|
+| `RageOfMorditasRewardPanel` | `ItemRewards` (list of slots; inactive ones are skipped for "n of m"), `ClaimButton`, `RitualOfBloodButton`, `RitualOfIceButton`, `_description` (status line: "select an item", "not enough Bloodrage"), `_bloodrageChargesRoot` (charges label and number) |
+| `RageOfMorditasRewardPanelRewardUI` | `ItemContainerUI`, `IsSelected` (ritual target), `IsSacrificedForBlood` / `IsSacrificedForFrost`, `CanBeUpgradedByRitual` |
+| `ItemContainerUI` | `Container.GetEntryAt(0,0)` (one-slot `RageOfMorditasItemContainer`) then `entry.data` |
+
+- Slot line: item (`ItemIdentityReader`, the inventory's name plus base type, extracted from `InventoryAccessibility`), then
+  "marked as target", "sacrificed for <game's ritual name>", "can be upgraded by a ritual" (I), then the place among slots.
+  The stop key holds item and state, so selecting a target or a sacrifice is spoken again. The details key reads the game's own
+  item tooltip (`ItemTooltipReader.TryReadForItem`), as in the inventory.
+- `InventoryAccessibility.GetFocusedContainer` leaves these containers to the Morditas reader, so nothing is spoken twice.
+- Claim button: caption, then the charges (`_bloodrageChargesRoot` text); any button that is not interactable adds `_description`,
+  the panel's own reason. Charge changes are also spoken by the window-text reader, which rereads the panel when it changes.
+- Mod strings: `morditas.reward_target`, `morditas.reward_sacrificed`, `morditas.reward_upgradable` (ten catalogs).
+- Unverified in game: that focus on a slot reaches the Morditas reader (the log shows the generic announcer, so the focused
+  object is a child of the slot), the exact meaning of `CanBeUpgradedByRitual`, and the claim cost wording.

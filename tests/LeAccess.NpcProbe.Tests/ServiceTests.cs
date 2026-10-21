@@ -66,7 +66,7 @@ internal static class ServiceTests
         relay.isActiveAndEnabled = false;
         Check(WorldServiceReader.ReadServiceKey(listener) is null, "Disabled relay does not supply service metadata");
         relay.isActiveAndEnabled = true;
-        // Menu objects name the service they open; the no-op Stash and cosmetic shop menus stay unnamed.
+        // Menu objects name the service they open; the no-op Stash menu stays unnamed.
         var menuGo = new GameObject();
         var menuListener = menuGo.Add(new WorldObjectClickListener());
         var menus = menuGo.Add(new OpenMenuInteraction());
@@ -86,8 +86,8 @@ internal static class ServiceTests
         Check(kinds["service.dungeon"].Count == 3 && kinds["service.observatory"].Count == 4 && kinds["service.gambler"].Count == 2,
             "Dungeon, observatory and gambler menus share one key each");
         Check(WorldServiceReader.MenuServiceKey(OpenMenuInteraction.MenuToOpen.Stash) is null &&
-            WorldServiceReader.MenuServiceKey(OpenMenuInteraction.MenuToOpen.MtxShop) is null &&
-            WorldServiceReader.MenuServiceKey(OpenMenuInteraction.MenuToOpen.Map) is null, "Stash, cosmetic shop and map menus have no service name");
+            WorldServiceReader.MenuServiceKey(OpenMenuInteraction.MenuToOpen.MtxShop) == "service.mtx_shop" &&
+            WorldServiceReader.MenuServiceKey(OpenMenuInteraction.MenuToOpen.Map) is null, "The stash and map menus have no service name; the cosmetic shop has its own");
         menus.menu = OpenMenuInteraction.MenuToOpen.SanctuaryOfEterraPanel;
         Check(WorldServiceReader.ReadServiceKey(menuListener) == "service.sanctuary", "A menu object on the listener names its service");
         return checks;

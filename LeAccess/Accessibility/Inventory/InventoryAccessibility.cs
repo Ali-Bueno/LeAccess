@@ -77,21 +77,10 @@ internal static class InventoryAccessibility
                 selectedData = data;
                 key = $"{container.GetInstanceID()}:item:{ItemIdentity(entry, data)}";
                 text = null;
-                if (data is not null && !data.WasCollected)
-                {
-                    var unpacked = data.getAsUnpacked();
-                    if (unpacked is not null && !unpacked.WasCollected &&
-                        (unpacked.Pointer == data.Pointer || unpacked.IdEquals(data)))
-                    {
-                        string identity = ScreenContentTracker.Combine(new[]
-                        {
-                            TextUtils.CleanText(unpacked.FullName), TextUtils.CleanText(unpacked.LocalisedBaseTypeName)
-                        });
-                        if (!string.IsNullOrWhiteSpace(identity))
-                            text = ScreenContentTracker.Combine(new[] { identity, IdolGrid.Describe(container, entry),
-                                InventorySelectionReader.IsEquipmentSlot(container.identifier) ? ModText.Get("inventory.equipped") : null });
-                    }
-                }
+                string identity = ItemIdentityReader.Read(data);
+                if (identity is not null)
+                    text = ScreenContentTracker.Combine(new[] { identity, IdolGrid.Describe(container, entry),
+                        InventorySelectionReader.IsEquipmentSlot(container.identifier) ? ModText.Get("inventory.equipped") : null });
                 if (string.IsNullOrWhiteSpace(text)) text = ModText.Get("inventory.selection_unavailable");
             }
             text = ScreenContentTracker.Combine(new[] { slotName, text });
@@ -248,6 +237,8 @@ internal static class InventoryAccessibility
         if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible || DialogueAnnouncer.HasActiveContent ||
             ControllerMenuAccessibility.HasActiveContent) return null;
         var container = InventorySelectionReader.GetFocusedContainer();
+        // The Rage of Morditas reward panel reads its own slots.
+        if (IsAlive(container) && Market.MorditasRewardSlots.Owns(container)) return null;
         // Endgame windows read as screen content let their item slots speak like inventory slots, after the window text.
         return ScreenContentAnnouncer.HasActiveContent && (ScreenContentAnnouncer.HasPendingContent ||
             !(IsAlive(container) && Endgame.EndgameWindows.AllowsItemReading(container.gameObject))) ? null : container;

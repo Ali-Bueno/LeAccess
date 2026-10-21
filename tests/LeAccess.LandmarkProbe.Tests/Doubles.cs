@@ -24,6 +24,7 @@ namespace UnityEngine
     }
     internal sealed class GameObject : Object
     {
+        internal string name = "";
         internal bool activeInHierarchy = true;
         internal SceneManagement.Scene scene = SceneManagement.SceneManager.Active;
         internal Transform transform;
@@ -242,3 +243,4 @@ namespace LeAccess.Accessibility.Npcs
         internal static string Read(WorldObjectClickListener listener, out string source) { source = "dialogue database"; return listener.DialogueName; }
     }
 }
+namespace LeAccess.Accessibility.Landmarks { internal static class ShrineBuffNames { internal static string Of(string objectName) => null; } }

@@ -873,3 +873,57 @@ opening; `WayTests.Unguided` stops on an island before the legs run out. With on
 
 Unverified live: the Seer and the quest in C40 (`guide=<n>`, `legs=` above 0), and whether a way along explored ground
 then leads to the guided area. That needs the whole path to the area to lie on explored ground.
+
+## 2026-10-21, tester log: interactables still unnamed
+
+The scanner logged `unnamed interactable: <GameObject name> (parent <name>)` for these objects; decisions from the game code and the log:
+
+| Object | What it is | Name source | Decision |
+|---|---|---|---|
+| `<Effect> Shrine (Clone)` (Warpath, Experience, Phoenix, Unique, Ice Beetle, Chaos Bolts, Timeslow Aura, Nature Beam, Rip Blood) | Placed shrine prefab. The scanner never recognised it as a shrine: the role came only from `Shrine`/`ShrineSync`/`ShrineVisualsCreator` or `ShrinesManager.GetAllShrineObjects`, and none matched at scan time; the hover tag has no text. | Object name gives the shrine token; the matching shrine buff (`NonAilmentUIBuffID` `Shrine*`, plus `AilmentList.shrineBuffs`) gives the game's localized name (`NonAilmentUIBuff.getName()` through `Localization.GetText`, `Ailment.getLocalizedName`). | `InteractableRoles.Read` also takes a name ending in ` Shrine` on the listener or up to 3 ancestors as `Shrine` (sound, landmark and scanner share it). `InteractableRoles.Name` tries hover text, then `ShrineBuffNames.Of`, then the mod word. `InteractableNames` holds the pure rules. Prefix match: `Phoenix` finds `ShrinePhoenixFlamethrower`. Shrines with no buff of that name (Ice Beetle, Unique, probably) keep the mod word "shrine". |
+| `MTXShop_NPC Variant` | Cosmetics store NPC; its `OpenMenuInteraction.menu` is `MtxShop`, which had no service key and the NPC has no name tooltip text. | New mod key `service.mtx_shop` (all ten catalogs) through `WorldServiceReader.MenuServiceKey`; `NpcNameReader` falls back to the service. | Named "Cosmetics store" (translated). The landmark probe now names it too (test updated). |
+| `Chest1 - suitcase (Clone)` | Loot container prefab with none of the chest components `WorldCueIdentityReader` knows. | Prefab name starts with `Chest`; text is the hover text or the mod word `exploration.chest`. | Filed as Treasure by name (`InteractableNames.IsChestObject`). |
+| `WorldEventTriggerArea` | Radius trigger (`WorldEventTrigger.triggered`, `radius`, `triggerTags`) that fires when a tagged actor enters. Nothing to click; the Rage of Morditas crystal appears after the player walks in. | None. | Excluded from the scanner when it has no hover text. The crystal is already named (`MorditasCrystal`). |
+| `Logic`, `Clicker`, `Click Target`, `Interactable` | Generic helper prefabs with a click listener; the decompiled code gives no component or text that identifies them (prefab data is not in `last epoch code/`). | None found. | Kept under the generic word. The log line now adds the parent object's name to identify them next session. `Logic` next to a shrine is covered when it sits under the shrine object. |
+
+Unverified live: which components shrines carry at scan time (the fix does not depend on it), that shrine buff names resolve for each prefab token, and what `Clicker`, `Click Target`, `Interactable` and a standalone `Logic` are.
+
+## Quest markers off the walkable ground (2026-10-21, tester log)
+
+Report on v0.2.8: "I was quite close to the quest, sometimes 4 steps away, and the scanner sent me along unrelated
+routes". Evidence in that `LogOutput.log` (line numbers):
+- Imperial Welryn (C30), "Find the outcasts in the Risen Lake": `route … straight=3.5 route=none failure=no explored
+  route goal=Unsampled goal_at=101.1,5.3,130.9` (57605), `ways … best=unexplored room 33 route=34.5 beyond=37.7
+  guide=explored` (57606), spoken "…, 4 steps, up left, no known route. Best of 5 ways: unexplored room 33, 38 steps,
+  down right; from there, 42 steps, up left" (57607). The beacon led by rooms 61 and 33 ("Dead end") 3.7-4.1 m from
+  the marker (status 57413, 57666); the player then walked into the exit beside it.
+- The Soul Wardens' Road (C35): the beacon via unexplored area 24, 3.3 m from the marker (74516).
+- The Risen Lake (C40), "Travel west to Thetima": 3.8 m, `Unsampled` at 243.9,5.3,94.8, best way unexplored area 129,
+  40 steps, `guide=explored` (97136-97138, beacon 97200). Thetima: 26 m, the same (113584-113586).
+
+**Cause.** Every quest goal in the log is `Unsampled`, and no other target's is. The quest entry is the minimap icon;
+`ExplorationProbe.OnGround` put it on the ground only when the NavMesh lay within the sample radius (about 1.4 m).
+Markers for the next zone float 5.3 above the ground and stand past the mesh edge (C40: 6.2 m in 3D, 3.3 m on the map,
+[above](#engine-paths-never-ran-2026-10-19-second-tester-log)), so the entry stayed in the air. `ResolveGoal` found
+nothing walkable within its 1.5 m arrival radius, and an unsampled goal ends a route only at an explored cell within
+2 m on the map (`Reaches`), which no cell can be: the quest was unroutable from anywhere, and 1.5 m flat arrival
+impossible. Scanner and beacon fell back to ways, while the ways' guide, which approaches such a marker from the
+nearest walkable point within `ExploreRadius`, found the engine's path there on explored ground (`guide=explored`:
+all four such lines in the log). The cause predates v0.2.6-v0.2.8; since ways (2026-10-13) it sends the player away
+instead of only saying "no known route".
+
+**Fix.** `ExploredMap.MarkerGround` (`ExploredGoal.cs`), called by `OnGround`: within the sample radius the marker keeps
+its map spot at the ground's height, as before; otherwise the quest entry stands at the nearest walkable point within
+`ExploreRadius`, the guide's point (user decision 2026-10-19); with nothing within sight it stays at the icon. The
+entry is then a target on the mesh: the scanner reads its route ("Quest, 4 steps, up left"), lists no ways, and the
+beacon routes there and arrives within 1.5 m. Log: `[Exploration] quest marker icon_y= ground_y= offset= moved= icon=
+ground=` once per marker moved on the map (the first unmoved one as before).
+
+Tests: Exploration 540 (`RouteTests.QuestMarker`, the C40 geometry: the icon unsampled and unrouted with
+`guide=explored`; its ground point 3.3 m away routes, reads without ways and is arrived at. `RouteTests.MarkerGround`:
+low, high and out-of-sight markers). `QuestMarker` fails with the far sample removed. ExplorationCatalog 126.
+
+Unverified live: the mesh by the C30 and C35 markers (the nearest walkable point in 3D could be a ledge rather than the
+ground the player walks); speech and arrival at the mesh edge; the cost of one `ExploreRadius` sample per moved marker
+per scanner refresh. Not addressed: other point targets off the mesh keep the 2026-10-11 range-only rule (none was
+unsampled in this log), and a target a few steps away behind unexplored ground still reads "no known route" with ways.

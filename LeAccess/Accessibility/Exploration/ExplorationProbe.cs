@@ -38,6 +38,7 @@ internal static class ExplorationProbe
     private static readonly RoomTracker Tracker = new();
     private static readonly ExplorationArrival Arrival = new();
     private static bool _offsetLogged;
+    private static readonly HashSet<int> MovedMarkers = new();
     private const int UnseenLogged = 6;
     private const float MinimumArrival = 1.5f;
     // Right beside the player a place counts as seen even without walkable line of sight: the
@@ -129,7 +130,7 @@ internal static class ExplorationProbe
             foreach (var target in Targets)
             {
                 entries.Add(new ExplorationEntry($"objective:{target.Id}", target.Name, ExplorationCategory.Quest,
-                    OnGround(GuidanceRouteProbe.Convert(target.Position), nav),
+                    OnGround(target.Id, GuidanceRouteProbe.Convert(target.Position), nav),
                     target.ArrivalRadius > MinimumArrival ? target.ArrivalRadius : MinimumArrival));
                 quests++;
             }
@@ -233,17 +234,19 @@ internal static class ExplorationProbe
         return true;
     }
 
-    // A quest marker is the minimap icon, which floats above its floor; its ground point is where one walks.
-    private static Vector3 OnGround(Vector3 marker, IWalkability nav)
+    // A quest marker is the minimap icon, which floats above its floor; its ground point is where one walks. One past
+    // the mesh edge stands at the nearest point within sight, as the ways' guide approaches it.
+    private static Vector3 OnGround(int id, Vector3 marker, IWalkability nav)
     {
-        if (nav is null || !nav.TrySample(marker, out var ground)) return marker;
-        if (!_offsetLogged)
+        var ground = ExploredMap.MarkerGround(marker, ExplorationBeacon.ExploreRadius, nav);
+        float moved = ExploredMap.Horizontal(marker, ground);
+        if (ground != marker && (moved > 0 ? MovedMarkers.Add(id) : !_offsetLogged))
         {
-            _offsetLogged = true;
+            _offsetLogged |= moved <= 0;
             Plugin.Log.LogInfo(string.Create(CultureInfo.InvariantCulture,
-                $"[Exploration] quest marker icon_y={marker.Y:F2} ground_y={ground.Y:F2} offset={marker.Y - ground.Y:F2}"));
+                $"[Exploration] quest marker icon_y={marker.Y:F2} ground_y={ground.Y:F2} offset={marker.Y - ground.Y:F2} moved={moved:F2} icon={marker.X:F1},{marker.Z:F1} ground={ground.X:F1},{ground.Z:F1}"));
         }
-        return new Vector3(marker.X, ground.Y, marker.Z);
+        return ground;
     }
 
     // Kept per scene with the seen places until the next death there (D2R keeps the last death place per map).
@@ -364,5 +367,6 @@ internal static class ExplorationProbe
         Others.Clear();
         LastFailure = LastStatus = null;
         _offsetLogged = false;
+        MovedMarkers.Clear();
     }
 }

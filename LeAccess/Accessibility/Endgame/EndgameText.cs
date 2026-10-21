@@ -12,6 +12,9 @@ internal enum BlessingRole { Option, Current, New }
 
 internal enum IslandState { Available, Completed, Unreachable }
 
+/// <summary>What the Rage of Morditas reward panel shows on one item slot besides the item.</summary>
+internal readonly record struct RewardSlotFacts(bool Target, string SacrificedFor, bool Upgradable);
+
 /// <summary>Mod-authored wording and state diffing for the endgame panels; game text is always passed in.</summary>
 /// <remarks>See reference/endgame-panels.md.</remarks>
 internal static class EndgameText
@@ -88,6 +91,17 @@ internal static class EndgameText
             locked ? ModText.Get("endgame.locked") : tooltip ?? name ?? ModText.Get("endgame.slot_empty"),
             lockReason,
             role == BlessingRole.Option ? ListPosition.Text(position, total) : null
+        });
+
+    /// <summary>A Rage of Morditas reward slot: the item, whether it is the ritual target or was sacrificed, and its place.</summary>
+    internal static string RewardSlot(string item, RewardSlotFacts facts, int position, int total) =>
+        ScreenContentTracker.Combine(new[]
+        {
+            item,
+            facts.Target ? ModText.Get("morditas.reward_target") : null,
+            string.IsNullOrWhiteSpace(facts.SacrificedFor) ? null : ModText.Format("morditas.reward_sacrificed", facts.SacrificedFor),
+            facts.Upgradable ? ModText.Get("morditas.reward_upgradable") : null,
+            ListPosition.Text(position, total)
         });
 
     /// <summary>A dungeon or arena tier tab, which has no text of its own.</summary>

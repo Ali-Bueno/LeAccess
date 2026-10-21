@@ -210,6 +210,30 @@ internal static class LootAndRoleTests
         Check(InteractableRoles.Name(InteractableRole.Shrine, visual, null) == "Altar de luz", "A tag on the listener's own object names the shrine");
         Check(InteractableRoles.GameShrineName(new HoverTagOnMouseOver[] { null, new() }) == null, "No game text means no game name");
         Localization.Texts.Clear();
+
+        // Shrine prefabs without components or hover text: role by object name, name by the matching shrine buff.
+        string[] buffs = { "ShrineWarpath", "ShrineTimeslowAura", "ShrinePhoenixFlamethrower", "ShrinePhoenixAura", "ShrineExperienceBuff", "FireDamage" };
+        Check(InteractableNames.IsShrineObject("Warpath Shrine (Clone)") && InteractableNames.IsShrineObject("Unique Shrine") &&
+            !InteractableNames.IsShrineObject("Shrine Logic") && !InteractableNames.IsShrineObject(null), "Shrine prefab names");
+        Check(InteractableNames.ShrineToken("Timeslow Aura Shrine (Clone)") == "TimeslowAura" && InteractableNames.ShrineToken("Logic") == null,
+            "The shrine token is the id word without spaces");
+        Check(InteractableNames.MatchShrineBuff("Warpath", buffs) == "ShrineWarpath" &&
+            InteractableNames.MatchShrineBuff("TimeslowAura", buffs) == "ShrineTimeslowAura" &&
+            InteractableNames.MatchShrineBuff("Experience", buffs) == "ShrineExperienceBuff", "Exact and suffixed buff ids match");
+        Check(InteractableNames.MatchShrineBuff("Phoenix", buffs) == "ShrinePhoenixAura" && InteractableNames.MatchShrineBuff("Unique", buffs) == null &&
+            InteractableNames.MatchShrineBuff("", buffs) == null && InteractableNames.MatchShrineBuff("Fire", buffs) == null,
+            "The shortest prefix wins; unmatched shrines and non-shrine ids give nothing");
+        Check(InteractableNames.IsChestObject("Chest1 - suitcase (Clone)") && !InteractableNames.IsChestObject("Clicker"), "Chest prefab names");
+        var prefab = new WorldObjectClickListener(); prefab.gameObject.name = "Warpath Shrine (Clone)";
+        var below = new WorldObjectClickListener(); below.gameObject.name = "Logic"; below.gameObject.Parent = prefab.gameObject;
+        var far = new WorldObjectClickListener(); far.gameObject.name = "Logic";
+        Check(InteractableRoles.Read(prefab) == InteractableRole.Shrine && InteractableRoles.Read(below) == InteractableRole.Shrine &&
+            InteractableRoles.Read(far) == InteractableRole.None, "A shrine prefab, or a listener below it, is a shrine by name");
+        Func<string, string> buffName = name => name == "Warpath Shrine (Clone)" ? "Santuario de la senda" : null;
+        Check(InteractableRoles.Name(InteractableRole.Shrine, below, null, buffName) == "Santuario de la senda" &&
+            InteractableRoles.Name(InteractableRole.Shrine, below, null) == "santuario", "The buff name names the shrine; the mod word is the last resort");
+        var tagged = new HoverTagOnMouseOver { hoverText = "Altar" }; tagged.gameObject = prefab.gameObject; prefab.gameObject.Components.Add(tagged);
+        Check(InteractableRoles.Name(InteractableRole.Shrine, prefab, null, buffName) == "Altar", "Hover text beats the buff name");
         foreach (var kind in new[] { NaturalCueKind.Shrine, NaturalCueKind.Nemesis })
             Check(WorldCueReach.IsLandmark(kind), $"{kind} is a landmark: it claims a loop voice first and reaches the loop range");
         return checks;

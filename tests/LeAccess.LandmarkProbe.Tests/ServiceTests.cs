@@ -59,7 +59,7 @@ internal static class ServiceTests
         menu.menu = OpenMenuInteraction.MenuToOpen.CraftingPanel;
         Check(LandmarkProbe.TryRead(out result) && result.Name == LeAccess.I18n.ModText.Get("service.forge"), "Typed crafting interaction announced without tag");
         menu.menu = OpenMenuInteraction.MenuToOpen.MtxShop;
-        Check(!LandmarkProbe.TryRead(out _), "Cosmetic shop is not mistaken for an equipment merchant");
+        Check(LandmarkProbe.TryRead(out result) && result.Name == LeAccess.I18n.ModText.Get("service.mtx_shop"), "Cosmetic shop is named as such, not as an equipment merchant");
         var shop = Add(go, new OpenShop { enabled = false });
         Check(LandmarkProbe.TryRead(out result) && result.Name == LeAccess.I18n.ModText.Get("service.merchant"), "Typed shop without an NPC has one landmark announcement");
         var npc = Add(go, new NPCInteraction());

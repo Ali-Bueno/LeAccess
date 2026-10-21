@@ -101,6 +101,7 @@ internal static class WorldServiceReader
         OpenMenuInteraction.MenuToOpen.HunterVendor => "service.hunter_vendor",
         OpenMenuInteraction.MenuToOpen.TimeglassVendor => "service.timeglass_vendor",
         OpenMenuInteraction.MenuToOpen.WovenEchoExchange => "service.woven_echo_exchange",
+        OpenMenuInteraction.MenuToOpen.MtxShop => "service.mtx_shop",
         _ => null
     };
 

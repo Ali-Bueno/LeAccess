@@ -13,6 +13,7 @@
     <Compile Include="../../LeAccess/Accessibility/Morditas/BloodTrails.cs" Link="BloodTrails.cs" />
     <Compile Include="../../LeAccess/Accessibility/ScreenContent/ScreenContentTracker.cs" Link="ScreenContentTracker.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/BloodTrailSynthesizer.cs" Link="BloodTrailSynthesizer.cs" />
+    <Compile Include="../../LeAccess/Accessibility/Audio/MorditasCircleSynthesizer.cs" Link="MorditasCircleSynthesizer.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/CuePlacement.cs" Link="CuePlacement.cs" />
     <Compile Include="../../LeAccess/Accessibility/Audio/RadarCueSynthesizer.cs" Link="RadarCueSynthesizer.cs" />
     <Compile Include="../../LeAccess/Accessibility/Navigation/RadarModel.cs" Link="RadarModel.cs" />

@@ -491,3 +491,7 @@ namespace LeAccess.Accessibility.Panels
     internal static class ServiceSlotReader { internal static string Read(ItemContainerUI container) => null; }
     internal static class PanelIntro { internal static string LeadFor(UnityEngine.GameObject element) => null; }
 }
+namespace LeAccess.Accessibility.Market
+{
+    internal static class MorditasRewardSlots { internal static bool Owns(ItemContainerUI container) => false; }
+}

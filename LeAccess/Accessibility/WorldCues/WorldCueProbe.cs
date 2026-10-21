@@ -13,6 +13,9 @@ namespace LeAccess.Accessibility.WorldCues;
 
 internal sealed class WorldCueProbe
 {
+    /// <summary>A listener another cue already sounds (the Morditas circle pulse's reward crystal); it takes no world sound.</summary>
+    internal static IntPtr SoundedElsewhere { get; set; }
+
     private readonly HashSet<IntPtr> _lootListeners = new();
     // An item's type and rarity never change; pooled visuals get new data, hence the pair as key.
     private readonly Dictionary<(int, IntPtr), NaturalCueKind> _lootKinds = new();
@@ -174,6 +177,7 @@ internal sealed class WorldCueProbe
         { _unavailable++; return; }
         if (owner.gameObject.scene.handle != SceneManager.GetActiveScene().handle)
         { _unavailable++; return; }
+        if (interactable && listener.Pointer == SoundedElsewhere) { _filtered++; return; }
         float range = interactable ? listener.interactionRange : _lootRange;
         if ((!float.IsFinite(range) || range <= 0) && IsAlive(listener)) range = listener.interactionRange;
         Vector3 offset = owner.transform.position - _position;

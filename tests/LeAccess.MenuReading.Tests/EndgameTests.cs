@@ -51,6 +51,16 @@ internal static class EndgameTests
                 "A selected tier tab");
             Check(EndgameText.Tier(4, false, true, 4, 4) == Speech.Join(Speech.F("endgame.tier", 4), Speech.T("endgame.locked"), Speech.F("list.position", 4, 4)),
                 "A locked tier tab");
+            var plain = new RewardSlotFacts(false, null, false);
+            Check(EndgameText.RewardSlot("Ring, Ring", plain, 2, 5) == Speech.Join("Ring, Ring", Speech.F("list.position", 2, 5)),
+                "A plain reward slot is its item and place");
+            Check(EndgameText.RewardSlot("Ring", plain with { Target = true }, 1, 3) ==
+                Speech.Join("Ring", Speech.T("morditas.reward_target"), Speech.F("list.position", 1, 3)), "The ritual target says so");
+            Check(EndgameText.RewardSlot("Ring", new RewardSlotFacts(false, "Blood ritual", true), 3, 3) == Speech.Join("Ring",
+                Speech.F("morditas.reward_sacrificed", "Blood ritual"), Speech.T("morditas.reward_upgradable"), Speech.F("list.position", 3, 3)),
+                "A sacrificed, upgradable slot names the ritual");
+            Check(EndgameText.RewardSlot("Ring", plain with { SacrificedFor = " " }, 1, 2) == Speech.Join("Ring", Speech.F("list.position", 1, 2)),
+                "A blank ritual name is not spoken");
         }
         ModText.SetLanguage("en");
         return checks;

@@ -36,6 +36,7 @@ internal static class SoundGlossary
         new("BeaconArrived", BeaconSection, "Volume"),
         new("BeaconClick", BeaconSection, "Volume"),
         new("BloodTrail", MorditasSection, "BloodTrailVolume"),
+        new("MorditasCircle", MorditasSection, "CircleVolume"),
         new("SonarAhead", SoundLevels.SonarSection, SoundLevels.SonarKey),
         new("SonarBehind", SoundLevels.SonarSection, SoundLevels.SonarKey),
         new("SonarSides", SoundLevels.SonarSection, SoundLevels.SonarKey),

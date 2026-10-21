@@ -24,6 +24,7 @@ namespace UnityEngine
             get => _parent;
             set { _parent?.Children.Remove(this); _parent = value; value?.Children.Add(this); }
         }
+        internal string name = "";
         internal bool activeInHierarchy = true;
         internal UnityEngine.SceneManagement.Scene scene = new(1);
         internal Transform transform;
@@ -32,6 +33,8 @@ namespace UnityEngine
     internal class Transform : Object
     {
         internal GameObject Owner;
+        internal GameObject gameObject => Owner;
+        internal Transform parent => Owner.Parent?.transform;
         internal bool IsChildOf(Transform parent)
         {
             for (var current = Owner; current is not null; current = current.Parent)

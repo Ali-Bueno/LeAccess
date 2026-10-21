@@ -79,7 +79,7 @@ internal static class EndgameAccessibility
         if (_key != stop.Key) { Tracker.Reset(); _key = stop.Key; }
         // Stable text only: tooltips fill in over a frame or two.
         Tracker.Observe(StopId, stop.Text, free, out string announcement, acknowledge: false);
-        if (readDetails) announcement = stop.Text;
+        if (readDetails) announcement = stop.Details?.Invoke() ?? stop.Text;
         if (string.IsNullOrWhiteSpace(announcement)) return true;
         if (!ScreenReader.TrySpeak(announcement, interrupt: _spokeStop)) return true;
         Tracker.Acknowledge(StopId, stop.Text);

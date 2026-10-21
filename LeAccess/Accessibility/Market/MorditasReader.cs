@@ -14,18 +14,23 @@ namespace LeAccess.Accessibility.Market;
 internal static class MorditasReader
 {
     // Keys of the game's UI string table that its tooltip and rewards window use for these three actions.
-    private const string BloodKey = "RageOfMorditas_BloodyRitual_Name";
-    private const string FrostKey = "RageOfMorditas_FrozenRitual_Name";
+    internal const string BloodKey = "RageOfMorditas_BloodyRitual_Name";
+    internal const string FrostKey = "RageOfMorditas_FrozenRitual_Name";
     private const string ClaimKey = "Reward_Claim";
     private const float TooltipWaitSeconds = 0.6f;
     private static string _waitingKey;
     private static float _waitingSince;
 
-    internal static bool Owns(RageOfMorditasRewardPanel panel, GameObject element) => Which(panel, element, out _, out _);
+    internal static bool Owns(RageOfMorditasRewardPanel panel, GameObject element) =>
+        Which(panel, element, out _, out _) || MorditasRewardSlots.TryFind(panel, element, out _);
+
+    internal static string RitualName(bool blood) =>
+        TextUtils.CleanText(Localization.GetText(blood ? BloodKey : FrostKey, ""));
 
     internal static bool TryRead(RageOfMorditasRewardPanel panel, GameObject element, out EndgameStop stop)
     {
         stop = default;
+        if (MorditasRewardSlots.TryFind(panel, element, out var slot)) { stop = MorditasRewardSlots.Read(slot); return true; }
         if (!Which(panel, element, out var button, out string key)) return false;
         string caption = TextUtils.CleanText(Localization.GetText(key, ""));
         if (string.IsNullOrWhiteSpace(caption)) return false;
@@ -33,7 +38,10 @@ internal static class MorditasReader
         string stopKey = $"{element.GetInstanceID()}:{button.interactable}";
         if (key != ClaimKey && tooltip == null && Waiting(stopKey)) return false;
         string body = tooltip != null && tooltip.Contains(caption) ? tooltip : ScreenContentTracker.Combine(new[] { caption, tooltip });
-        stop = new EndgameStop(stopKey, button.interactable ? body : LeAccess.I18n.ModText.Format("control.disabled", body));
+        string text = button.interactable ? body : LeAccess.I18n.ModText.Format("control.disabled", body);
+        // The claim button also gives the charges; the panel's note says why a button is unavailable.
+        string extra = ScreenContentTracker.Combine(new[] { key == ClaimKey ? Charges(panel) : null, button.interactable ? null : Note(panel) });
+        stop = new EndgameStop(stopKey, ScreenContentTracker.Combine(new[] { text, extra }));
         return true;
     }
 
@@ -57,6 +65,12 @@ internal static class MorditasReader
         if (!IsAlive(tooltip) || !UiVisibility.IsVisible(tooltip.gameObject)) return null;
         return ScreenContentReader.Read(tooltip.gameObject, tooltip._name, tooltip._description);
     }
+
+    private static string Charges(RageOfMorditasRewardPanel panel) =>
+        IsAlive(panel._bloodrageChargesRoot) ? ScreenContentReader.Read(panel._bloodrageChargesRoot, null, null) : null;
+
+    private static string Note(RageOfMorditasRewardPanel panel) =>
+        IsAlive(panel._description) && TextUtils.IsVisibleLabel(panel._description) ? TextUtils.CleanText(panel._description.text) : null;
 
     private static bool Waiting(string key)
     {

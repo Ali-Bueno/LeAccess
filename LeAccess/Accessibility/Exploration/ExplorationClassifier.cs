@@ -32,12 +32,12 @@ internal static class ExplorationClassifier
         if (service == "service.waypoint") return Place(listener, ExplorationCategory.Waypoint, ModText.Get(service), out place);
         var role = InteractableRoles.Read(listener);
         if (role == InteractableRole.Shrine)
-            return Place(listener, ExplorationCategory.Shrine, InteractableRoles.Name(InteractableRole.Shrine, listener, Tag(listener)), out place);
+            return Place(listener, ExplorationCategory.Shrine, InteractableRoles.Name(InteractableRole.Shrine, listener, Tag(listener), ShrineBuffNames.Of), out place);
         // Roled objects are listed when on screen, as shrines are.
         if (role is not (InteractableRole.None or InteractableRole.Cache))
             return Place(listener, InteractableRoles.IsTravel(role) ? ExplorationCategory.Portal : ExplorationCategory.Interactable,
                 InteractableRoles.Name(role, listener, Tag(listener)), out place, onScreen: true);
-        if (WorldCueIdentityReader.ReadKind(listener) == NaturalCueKind.Chest)
+        if (WorldCueIdentityReader.ReadKind(listener) == NaturalCueKind.Chest || InteractableNames.IsChestObject(listener.gameObject.name))
             return Place(listener, ExplorationCategory.Treasure, InteractableRoles.Name(InteractableRole.Cache, Tag(listener)), out place);
         if (WorldServiceReader.IsNpc(listener))
             return Place(listener, IsCharacter(listener) ? ExplorationCategory.Npc : ExplorationCategory.Interactable,
@@ -58,6 +58,8 @@ internal static class ExplorationClassifier
             return true;
         }
         if (portal) return Place(listener, ExplorationCategory.Portal, label, out place);
+        // A world-event trigger area is a radius the player walks into, not something to click.
+        if (IsAlive(listener.GetComponentInParent<WorldEventTriggerArea>()) && string.IsNullOrWhiteSpace(HoverName(listener))) return false;
         var tag = Tag(listener);
         var category = IsAlive(tag) && tag.hoverTargetType is HoverTagOnMouseOver.HoverTargetType.SAME_SCENE_TRANSITION or
             HoverTagOnMouseOver.HoverTargetType.CONTINUE_ECHO_CHAIN ? ExplorationCategory.Exit : ExplorationCategory.Interactable;
@@ -74,7 +76,7 @@ internal static class ExplorationClassifier
         if (string.IsNullOrWhiteSpace(name) && category == ExplorationCategory.Interactable)
         {
             if (LoggedUnnamed.Add(listener.gameObject.name))
-                Plugin.Log.LogInfo($"[Exploration] unnamed interactable: {listener.gameObject.name}");
+                Plugin.Log.LogInfo($"[Exploration] unnamed interactable: {listener.gameObject.name} (parent {listener.transform.parent?.name})");
             name = ModText.Get("exploration.interactable");
         }
         place = new ExplorationPlace(category, name, name, null, onScreen);

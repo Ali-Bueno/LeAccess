@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../LeAccess/Accessibility/Inventory/*.cs" Link="%(Filename)%(Extension)" />
+    <Compile Include="../../LeAccess/Accessibility/Items/ItemIdentityReader.cs" Link="ItemIdentityReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Items/ItemTooltipReader.cs" Link="ItemTooltipReader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Items/ItemTooltipV2Reader.cs" Link="ItemTooltipV2Reader.cs" />
     <Compile Include="../../LeAccess/Accessibility/Items/ItemComparisonReader.cs" Link="ItemComparisonReader.cs" />

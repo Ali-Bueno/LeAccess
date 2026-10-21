@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using LeAccess.Accessibility.Utils;
 using LE.UI.PanelSystem;
@@ -8,7 +9,8 @@ using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
 
 namespace LeAccess.Accessibility.Endgame;
 
-internal readonly record struct EndgameStop(string Key, string Text);
+/// <summary>A focused control's spoken line; <paramref name="Details"/> builds the longer reading on request.</summary>
+internal readonly record struct EndgameStop(string Key, string Text, Func<string> Details = null);
 
 /// <summary>Reads the option rows of the Sanctuary of Eterra and echo reward panels: label, picked state, place, confirm.</summary>
 /// <remarks>See reference/endgame-panels.md#choice-panels.</remarks>

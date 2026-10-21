@@ -22,6 +22,8 @@ internal static class RouteTests
         ["exploration.route_leg_up"] = "{0} <climbing>", ["exploration.route_leg_down"] = "{0} <descending>",
         ["exploration.route_legs_more_one"] = "{0} <+1 leg>", ["exploration.route_legs_more_many"] = "{0} <+{1} legs>",
         ["exploration.category.exit"] = "<exits>",
+        ["exploration.way_only"] = "{0} <way> {1}", ["exploration.way_best"] = "{0} <best of {1}> {2}",
+        ["exploration.way_beyond"] = "{0} <beyond> {1} {2}",
         ["guidance.direction.up"] = "<up>", ["guidance.direction.up_right"] = "<up-right>",
         ["guidance.direction.right"] = "<right>", ["guidance.direction.down_right"] = "<down-right>",
         ["guidance.direction.down"] = "<down>", ["guidance.direction.down_left"] = "<down-left>",
@@ -35,6 +37,8 @@ internal static class RouteTests
         Storerooms();
         Wall();
         Areas();
+        QuestMarker();
+        MarkerGround();
     }
 
     // Burning Forest, Grael: the exit is straight to the right, but the walkable way runs down, right and up.
@@ -182,6 +186,69 @@ internal static class RouteTests
         var map = new ExploredMap();
         Check(map.AtHand(new Vector3(5.5f, 0, 8.5f), new Vector3(5.5f, 0, 11.5f), 4, true, grid, out _),
             "an area is entered across its radius");
+    }
+
+    // The 2026-10-21 tester log (Welryn, the Risen Lake): a quest marker for the next zone floats 5.3 above the ground
+    // and 3.3 past the mesh edge. Four steps from it the icon had no route and the scanner sent the player away by a
+    // way, though the engine's path to it ran on explored ground; its ground point routes and is arrived at.
+    private static void QuestMarker()
+    {
+        var grid = new FakeGrid(Rows(30, 30, (_, z) => z <= 11 ? '.' : '#'));
+        var icon = new Vector3(20.5f, 5.3f, 15.25f);
+        var edge = new Vector3(20.5f, 0, 11.5f);
+        var back = new Vector3(20.5f, 0, 8.5f);
+        var map = new ExploredMap { ExploreRadius = TestRadius };
+        Settle(map, grid, edge);
+        Settle(map, grid, back);
+        var openings = new List<ExploredOpening> { new(new Vector3(14, 0, 4), 4) };
+        var ways = new List<ExploredWay>();
+
+        Check(map.ResolveGoal(icon, BeaconState.MinimumArrival, false, grid).Kind == RouteGoalKind.Unsampled &&
+            !map.TryRoute(edge, icon, BeaconState.MinimumArrival, grid, out _, out _), "the icon itself has no explored route");
+        Check(map.FindWays(edge, icon, openings, BeaconState.MaxWays, grid, ways) == 1 && map.LastGuide == "explored",
+            $"while the engine's path to it stays on explored ground ({map.LastGuide})");
+
+        var ground = ExploredMap.MarkerGround(icon, TestRadius, grid);
+        Check(grid.TrySample(ground, out _) && MathF.Abs(ground.Y) < 0.01f, $"the marker stands on the walkable edge ({ground})");
+        Near(3.3, ExploredMap.Horizontal(icon, ground), 0.1, "the edge point is the nearest on the map");
+        Check(map.TryRoute(back, ground, BeaconState.MinimumArrival, grid, out var path, out float length) &&
+            map.LastGoal.Kind == RouteGoalKind.OnMesh && Walkable(path, grid) && length < 5,
+            $"its ground point routes straight ({map.LastFailure}, {length})");
+
+        // The scanner reads the route and lists no ways; the icon read the unrouted line and a way.
+        var catalog = new ExplorationCatalog
+        {
+            Route = Scanner(map, grid),
+            Ways = (entry, player) => map.FindWays(player, entry.Position, openings, BeaconState.MaxWays, grid, ways) > 0
+                ? new[] { new ExplorationWay(new ExplorationEntry("unexplored:1", "Room", ExplorationCategory.UnexploredRoom,
+                    openings[0].Position, openings[0].Radius), new ExplorationRoute(ways[0].Length, openings[0].Position, true, null)) }
+                : Array.Empty<ExplorationWay>()
+        };
+        var quest = new ExplorationEntry("objective:1", "Quest", ExplorationCategory.Quest, icon, BeaconState.MinimumArrival);
+        Check(catalog.DescribeEntry(quest, edge, Forward, Right, Step, Text).Contains("<way>"), "the icon sends the player by a way");
+        Check(catalog.DescribeEntry(quest with { Position = ground }, back, Forward, Right, Step, Text) ==
+            Text("exploration.entry", "Quest", Text("exploration.steps_many", 3), Text("guidance.direction.up")) &&
+            catalog.WaysTarget == null, "its ground point reads three steps up, no ways");
+
+        // The beacon locks the route, not a way, and arrives at the edge.
+        var target = ExplorationTarget.From(quest with { Position = ground });
+        var state = new BeaconState { AtHand = (player, locked) => map.AtHand(player, locked.Position,
+            BeaconState.ArrivalRadius(locked), locked.Area, grid, out _) };
+        Check(state.Lock(target, back, 0, Router(map, grid)) == BeaconLock.Locked && state.Way is null, "locked by the route");
+        Check(state.Tick(edge, target, Forward, Right, 0.1, Router(map, grid)).Release == BeaconRelease.Arrived, "arrival at the edge");
+    }
+
+    // A marker within the sample radius keeps its map spot; one high over the floor stands below it; none within sight stays.
+    private static void MarkerGround()
+    {
+        var grid = new FakeGrid(Rows(30, 30, (_, z) => z <= 11 ? '.' : '#'));
+        var low = new Vector3(10.3f, 1, 5.7f);
+        Check(ExploredMap.MarkerGround(low, TestRadius, grid) == new Vector3(low.X, 0, low.Z), "a low marker keeps its spot");
+        var high = new Vector3(10.3f, 5.3f, 5.7f);
+        Check(ExploredMap.MarkerGround(high, TestRadius, grid) == new Vector3(high.X, 0, high.Z), "a high marker stands below");
+        var far = new Vector3(10.5f, 0, 25);
+        Check(ExploredMap.MarkerGround(far, TestRadius, grid) == far && ExploredMap.MarkerGround(high, TestRadius, null) == high,
+            "out of sight, or without a mesh, the marker stays");
     }
 
     private static Func<ExplorationEntry, Vector3, ExplorationRoute?> Scanner(ExploredMap map, IWalkability nav, bool corners = false) =>

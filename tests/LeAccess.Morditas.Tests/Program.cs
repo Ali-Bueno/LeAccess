@@ -211,4 +211,20 @@ Equal(true, Channel(rightDrip, 0) < 0.001f && Channel(rightDrip, 1) > 0.05f, "a 
 int Crossings(float[] samples) => Enumerable.Range(1, samples.Length / 2 - 1).Count(frame => samples[frame * 2] * samples[frame * 2 - 2] < 0);
 Equal(true, Crossings(BloodTrailSynthesizer.Synthesize(0, -1, 1)) < Crossings(drip), "a drip behind is lower");
 
+// The circle pulse: louder than the drip, a fifth lower and without overtones behind, quieter toward the edge.
+var bell = MorditasCircleSynthesizer.Synthesize(0, 1, 1);
+Equal((int)(MorditasCircleSynthesizer.DurationSeconds * MorditasCircleSynthesizer.SampleRate) * 2, bell.Length, "pulse length");
+Equal(0f, MorditasCircleSynthesizer.Synthesize(0, 1, 0).Max(Math.Abs), "pulse silent at zero volume");
+Equal(true, Channel(bell, 0) > Channel(drip, 0), "the pulse is louder than the drip");
+var rightBell = MorditasCircleSynthesizer.Synthesize(1, 0, 1);
+Equal(true, Channel(rightBell, 0) < 0.001f && Channel(rightBell, 1) > 0.05f, "a pulse to the right sounds right");
+var rearBell = MorditasCircleSynthesizer.Synthesize(0, -1, 1);
+Equal(true, Crossings(rearBell) * 2 < Crossings(bell), "behind: lower and without overtones");
+Equal(1.0, MorditasCircleSynthesizer.Rear(-MorditasCircleSynthesizer.RearFullAhead), "fully rear from 60 degrees off straight behind");
+Equal(0.0, MorditasCircleSynthesizer.Rear(0), "sides keep the front sound");
+Equal(1f, MorditasCircleSynthesizer.Gain(0, 22), "full level at the centre");
+Equal(MorditasCircleSynthesizer.EdgeGain, MorditasCircleSynthesizer.Gain(22, 22), "edge level at the radius");
+Equal(MorditasCircleSynthesizer.EdgeGain, MorditasCircleSynthesizer.Gain(40, 22), "edge level outside the circle");
+Equal(1f, MorditasCircleSynthesizer.Gain(5, 0), "full level without a radius");
+
 Console.WriteLine($"Morditas tests passed: {checks} checks");

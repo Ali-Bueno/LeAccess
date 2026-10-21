@@ -35,6 +35,16 @@ internal sealed partial class ExploredMap
         return new RouteGoal(target, area ? RouteGoalKind.Area : RouteGoalKind.Unsampled, false);
     }
 
+    /// <summary>Where a quest marker stands on walkable ground: its own spot at the ground's height, else the nearest walkable point within sight.</summary>
+    // reference/exploration-mode.md "Quest markers off the walkable ground (2026-10-21, tester log)".
+    internal static Vector3 MarkerGround(Vector3 marker, float sight, IWalkability nav)
+    {
+        if (nav is null || !Finite(marker)) return marker;
+        if (nav.TrySample(marker, out var ground) && Finite(ground)) return new Vector3(marker.X, ground.Y, marker.Z);
+        return float.IsFinite(sight) && sight > 0 && nav.TrySampleWithin(marker, sight, out ground) && Finite(ground)
+            ? ground : marker;
+    }
+
     // A point target needs its goal's level and a clear walkable line; an area or an unsampled target its radius.
     private bool Reaches(Vector3 point, RouteGoal goal, float reach, IWalkability nav)
     {

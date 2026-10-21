@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using BepInEx.Configuration;
+using LeAccess.Accessibility.Audio;
 using LeAccess.Accessibility.Dialogue;
 using LeAccess.Accessibility.Exploration;
 using LeAccess.Accessibility.MapSections;
@@ -9,6 +10,7 @@ using LeAccess.Accessibility.Navigation.Guidance;
 using LeAccess.Accessibility.Players;
 using LeAccess.Accessibility.Quests;
 using LeAccess.Accessibility.ScreenContent;
+using LeAccess.Accessibility.WorldCues;
 using LeAccess.I18n;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -32,9 +34,15 @@ internal static class MorditasAccessibility
     private static int _scene, _heardRefresh, _dataEncounter;
     // One step is the body width, as in the scanner; kept from the last living reading.
     private static float _step = 1;
+    // Where the circle pulse comes from: the gauntlet's centre, then the reward crystal.
+    private static NVector3? _pulse;
     private static string _lastFailure;
 
-    internal static void Initialize(ConfigFile config) => BloodTrailCue.Initialize(config);
+    internal static void Initialize(ConfigFile config)
+    {
+        BloodTrailCue.Initialize(config);
+        MorditasCircleCue.Initialize(config);
+    }
 
     internal static void Update(bool otherContentActive)
     {
@@ -46,6 +54,7 @@ internal static class MorditasAccessibility
             if (!Application.isFocused) return;
             double now = Time.unscaledTimeAsDouble;
             Drip(now);
+            Pulse(now);
             if (now < _nextPoll) return;
             _nextPoll = now + PollSeconds;
             if (!MorditasProbe.TryRead(out var reading)) { Stop(); return; }
@@ -55,6 +64,7 @@ internal static class MorditasAccessibility
             if (alive && world.BodyRadius > 0) _step = (float)world.BodyRadius * 2;
             if (reading.Encounter != _dataEncounter || !Complete(_data)) Begin(reading);
             if (reading.Phase != MorditasPhase.Hunt) MorditasProbe.Trails.Clear();
+            Aim(reading, now);
             var sample = Sample(reading, alive ? world : null);
             if (_loggedPhase != reading.Phase)
             {
@@ -138,6 +148,40 @@ internal static class MorditasAccessibility
         BloodTrailCue.Play(now, pan, ahead, BloodTrails.Gain(distance, _data.TrailNear, _data.TrailFar));
     }
 
+    private static void Aim(in MorditasReading reading, double now)
+    {
+        WorldCueProbe.SoundedElsewhere = IntPtr.Zero;
+        _pulse = reading.Phase switch
+        {
+            MorditasPhase.Gauntlet => reading.Centre,
+            MorditasPhase.ReadyForReward when MorditasProbe.TryRewardCrystal(now, out var crystal, out var listener) =>
+                Owned(crystal, listener),
+            MorditasPhase.ReadyForReward => reading.Centre,
+            _ => null
+        };
+    }
+
+    private static NVector3 Owned(NVector3 crystal, IntPtr listener)
+    {
+        // The world loops leave the crystal to the pulse.
+        if (MorditasCircleCue.Enabled) WorldCueProbe.SoundedElsewhere = listener;
+        return crystal;
+    }
+
+    // The circle pulse, placed from where the player stands when it plays.
+    private static void Pulse(double now)
+    {
+        if (_pulse is not { } source || NavigationAudioState.IsSuspended || !GameplayInputState.OwnsInput() ||
+            ScreenContentAnnouncer.HasActiveContent || DialogueAnnouncer.HasActiveContent)
+        { MorditasCircleCue.Drop(); return; }
+        var player = LocalPlayerSource.Player;
+        if (!IsAlive(player) || !ExplorationFeedback.TryAxes(out var forward, out var right)) return;
+        var delta = source - GuidanceRouteProbe.Convert(player.transform.position);
+        GuidanceGeometry.Bearing(delta, forward, right, out float pan, out float ahead);
+        MorditasCircleCue.Play(now, pan, ahead,
+            MorditasCircleSynthesizer.Gain(new System.Numerics.Vector2(delta.X, delta.Z).Length(), _data.Radius));
+    }
+
     private static bool Typing()
     {
         var input = EpochInputManager.instance;
@@ -161,6 +205,9 @@ internal static class MorditasAccessibility
         State.Reset();
         MorditasProbe.Trails.Clear();
         BloodTrailCue.Drop();
+        MorditasCircleCue.Drop();
+        _pulse = null;
+        WorldCueProbe.SoundedElsewhere = IntPtr.Zero;
         MorditasSpeechOwner.Status = null;
         _data = default;
         _rules = default;
@@ -181,6 +228,7 @@ internal static class MorditasAccessibility
         End();
         MorditasProbe.Reset();
         BloodTrailCue.Cleanup();
+        MorditasCircleCue.Cleanup();
         _scene = _heardRefresh = 0;
         _nextPoll = 0;
         _step = 1;

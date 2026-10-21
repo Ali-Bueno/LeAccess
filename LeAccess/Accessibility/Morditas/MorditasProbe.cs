@@ -23,11 +23,15 @@ internal static class MorditasProbe
 {
     // Keys of the game's UI string table (reference/rage-of-morditas.md#game-texts).
     private const string Prefix = "RageOfMorditas_Hunt_";
+    // The reward crystal has a network object of its own; its listener is looked up at this pace until found.
+    private const double RewardLookupSeconds = 1;
     private static readonly List<NVector3> Copied = new();
     private static RageOfMorditasSync _sync;
+    private static RageOfMorditasRewardVisualController _reward;
     private static int _encounter;
     private static bool? _inside;
     private static bool _allOut;
+    private static double _nextRewardLookup;
     private static string _lastFailure;
 
     internal static BloodTrails Trails { get; } = new();
@@ -111,6 +115,42 @@ internal static class MorditasProbe
         return true;
     }
 
+    /// <summary>The reward crystal's click listener in the player's scene: where it stands and its pointer.</summary>
+    internal static bool TryRewardCrystal(double now, out NVector3 position, out IntPtr listener)
+    {
+        position = default;
+        listener = IntPtr.Zero;
+        try
+        {
+            if (!Usable(_reward))
+            {
+                _reward = null;
+                if (now < _nextRewardLookup) return false;
+                _nextRewardLookup = now + RewardLookupSeconds;
+                var listeners = WorldObjectClickListener.allListener;
+                if (listeners is null || listeners.WasCollected) return false;
+                for (int index = 0; index < listeners.Count && _reward == null; index++)
+                {
+                    var candidate = listeners[index];
+                    if (!IsAlive(candidate) || !candidate.isActiveAndEnabled) continue;
+                    var reward = candidate.GetComponentInParent<RageOfMorditasRewardVisualController>();
+                    if (Usable(reward)) _reward = reward;
+                }
+                if (_reward == null) return false;
+            }
+            var click = _reward.InteractableClickListener;
+            position = GuidanceRouteProbe.Convert(click.transform.position);
+            listener = click.Pointer;
+            return true;
+        }
+        catch (Exception ex) { _reward = null; Fail(ex); return false; }
+    }
+
+    private static bool Usable(RageOfMorditasRewardVisualController reward) => IsAlive(reward) &&
+        reward.isActiveAndEnabled && !reward._isBeingDestroyed && IsAlive(reward.InteractableClickListener) &&
+        reward.InteractableClickListener.isActiveAndEnabled &&
+        reward.gameObject.scene.handle == UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle;
+
     internal static MorditasData ReadData(RageOfMorditasSync sync)
     {
         var data = RageOfMorditasData.Instance;
@@ -136,6 +176,8 @@ internal static class MorditasProbe
         _encounter = 0;
         _inside = null;
         _allOut = false;
+        _reward = null;
+        _nextRewardLookup = 0;
         Trails.Clear();
         Copied.Clear();
     }
