@@ -555,6 +555,7 @@
   "panels.reward_unlocked": "odblokowana",
   "panels.reward_locked": "zablokowana",
   "panels.chosen": "wybrane",
+  "panels.evolution_none": "nie wybrano ewolucji",
   "panels.rule": "Reguła {0} z {1}",
   "panels.rule_on": "włączona",
   "panels.rule_off": "wyłączona",

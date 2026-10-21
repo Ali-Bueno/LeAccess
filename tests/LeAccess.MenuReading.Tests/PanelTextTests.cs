@@ -33,6 +33,9 @@ internal static class PanelTextTests
 
             Check(PanelText.Evolution("Cuerno. Carga", true, 2, 3) == $"Cuerno. Carga. {Get("panels.chosen")}. {Position(2, 3)}", language + ": chosen evolution with place");
             Check(PanelText.Evolution("Cuerno", false, 0, 0) == "Cuerno", language + ": unplaced evolution");
+            Check(PanelText.EvolutionChosen("Cuerno") == $"Cuerno. {Get("panels.chosen")}", language + ": choosing an evolution names it");
+            Check(PanelText.EvolutionConfirm("Evolucionar", "Cuerno") == "Evolucionar. Cuerno", language + ": confirm names the chosen evolution");
+            Check(PanelText.EvolutionConfirm("Evolucionar", null) == $"Evolucionar. {Get("panels.evolution_none")}", language + ": confirm without a choice says so");
             Check(PanelText.Rule(2, 9, "Ocultar cascos", true) == $"{ModText.Format("panels.rule", 2, 9)}. Ocultar cascos", language + ": enabled rule");
             Check(PanelText.Rule(2, 9, "Ocultar cascos", false) == $"{ModText.Format("panels.rule", 2, 9)}. Ocultar cascos. {Get("panels.rule_off")}", language + ": disabled rule says so");
             Check(PanelText.RuleSwitch("Ocultar cascos", true) == $"Ocultar cascos. {Get("panels.rule_on")}", language + ": rule switch on");

@@ -14,6 +14,8 @@ Fixed:
   chests have names, and invisible event trigger areas are no longer listed.
 - The Rage of Morditas reward panel is readable: each slot says its item, whether it is the target or sacrificed, and the
   details key reads the item; Claim says the charges and why it is unavailable.
+- The rift beast evolution panel says which evolution is chosen, announces a new choice, and the Evolve button says
+  which evolution it will take or that none is chosen.
 
 Added:
 

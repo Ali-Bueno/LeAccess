@@ -10,6 +10,11 @@ namespace LeAccess.Accessibility.Panels
     {
         internal static string LeadFor(UnityEngine.GameObject element) => null;
     }
+
+    internal static class ListItemReader
+    {
+        internal static bool TryReadEvolutionChoice(UnityEngine.UI.Toggle toggle, bool value, out string text) { text = null; return false; }
+    }
 }
 
 namespace LeAccess.Accessibility.Market

@@ -555,6 +555,7 @@
   "panels.reward_unlocked": "открыто",
   "panels.reward_locked": "заблокировано",
   "panels.chosen": "выбрано",
+  "panels.evolution_none": "эволюция не выбрана",
   "panels.rule": "Правило {0} из {1}",
   "panels.rule_on": "включено",
   "panels.rule_off": "выключено",

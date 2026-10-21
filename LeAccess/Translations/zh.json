@@ -555,6 +555,7 @@
   "panels.reward_unlocked": "已解锁",
   "panels.reward_locked": "未解锁",
   "panels.chosen": "已选择",
+  "panels.evolution_none": "未选择进化",
   "panels.rule": "第{0}条规则，共{1}条",
   "panels.rule_on": "开",
   "panels.rule_off": "关",

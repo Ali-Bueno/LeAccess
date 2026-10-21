@@ -555,6 +555,7 @@
   "panels.reward_unlocked": "déverrouillée",
   "panels.reward_locked": "verrouillée",
   "panels.chosen": "choisie",
+  "panels.evolution_none": "aucune évolution choisie",
   "panels.rule": "Règle {0} sur {1}",
   "panels.rule_on": "activée",
   "panels.rule_off": "désactivée",

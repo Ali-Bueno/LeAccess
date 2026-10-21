@@ -30,6 +30,11 @@ internal static class PanelText
     internal static string Evolution(string content, bool chosen, int position, int count) =>
         Combine(content, chosen ? ModText.Get("panels.chosen") : null, Position(position, count));
 
+    internal static string EvolutionChosen(string title) => Combine(title, ModText.Get("panels.chosen"));
+
+    internal static string EvolutionConfirm(string caption, string chosen) =>
+        Combine(caption, chosen ?? ModText.Get("panels.evolution_none"));
+
     internal static string Rule(int position, int count, string description, bool enabled) =>
         Combine(ModText.Format("panels.rule", position, count), description, enabled ? null : ModText.Get("panels.rule_off"));
 

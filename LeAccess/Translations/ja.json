@@ -555,6 +555,7 @@
   "panels.reward_unlocked": "解放済み",
   "panels.reward_locked": "ロック中",
   "panels.chosen": "選択済み",
+  "panels.evolution_none": "進化が選ばれていません",
   "panels.rule": "ルール{0}／{1}",
   "panels.rule_on": "オン",
   "panels.rule_off": "オフ",

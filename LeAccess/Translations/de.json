@@ -555,6 +555,7 @@
   "panels.reward_unlocked": "freigeschaltet",
   "panels.reward_locked": "gesperrt",
   "panels.chosen": "gewählt",
+  "panels.evolution_none": "keine Entwicklung gewählt",
   "panels.rule": "Regel {0} von {1}",
   "panels.rule_on": "an",
   "panels.rule_off": "aus",

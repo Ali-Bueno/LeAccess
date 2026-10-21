@@ -105,6 +105,15 @@ that text; the Reroll panel's two slots are named by the label beside each ("Sac
 "desactivada" when off; the rule's switch reads description and on/off (`Rule.isEnabled`). The rule editor modal and the
 other buttons stay generic.
 
+2026-10-21 (user report: the tiles never said which evolution was chosen; log: no "elegida" ever spoken). The tile's
+state came from `tile.GetComponent<Toggle>()`, but the panel keeps its toggles in `_evolutionToggles`, beside
+`_evolutionOptions` in the same order (`GetSelectedEvolutionOption`/`ChooseOption` take that index), so the tile's own
+object may hold none (**I**, from the interop members). Now: the state comes from `_evolutionToggles[index]` (fallback:
+a toggle under or above the tile); an evolution toggle turning on speaks "<header>, chosen" wherever focus is, and its
+other changes stay silent (`ListItemReader.TryReadEvolutionChoice`, from `ElementAnnouncer.HandleToggleValueChange`);
+the confirm button (`_confirmEvolutionButton`) adds the chosen evolution's header (`_headerText`) or "no evolution
+chosen". Unheard.
+
 ## Bazaar purchase confirmation
 
 `BazaarPurchaseConfirmationModal` shows gold, favor and token amounts as bare numbers. `CostModalReader` (through

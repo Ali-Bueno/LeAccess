@@ -555,6 +555,7 @@
   "panels.reward_unlocked": "해금됨",
   "panels.reward_locked": "잠김",
   "panels.chosen": "선택됨",
+  "panels.evolution_none": "선택한 진화 없음",
   "panels.rule": "규칙 {1}개 중 {0}",
   "panels.rule_on": "켜짐",
   "panels.rule_off": "꺼짐",

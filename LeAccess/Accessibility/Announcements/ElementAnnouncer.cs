@@ -187,6 +187,13 @@ public static class ElementAnnouncer
 
             TogglePreviousStates[instanceId] = value;
 
+            // A time beast evolution is chosen with focus on its tile, which may not hold the toggle.
+            if (Panels.ListItemReader.TryReadEvolutionChoice(toggle, value, out string chosen))
+            {
+                if (chosen != null) ScreenReader.Speak(chosen, true);
+                return;
+            }
+
             // Only announce if this toggle is related to the currently focused element
             var toggleGo = toggle.gameObject;
             bool isCurrentlyFocused = IsRelatedToFocusedElement(toggleGo);
