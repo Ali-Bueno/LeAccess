@@ -112,6 +112,27 @@ ItemTooltipContentBuilder.BuildAction = null;
 container.currentlySelectedItem = new ItemContainerEntry { data = item };
 ItemTooltipContentBuilder.Result = null;
 Check(!ItemTooltipModelReader.TryRead(item, container, out _), "missing native result handled");
+Check(!ItemTooltipModelReader.TryReadShown(item, TooltipItemManager.SlotType.INVENTORY, out text) && text is null,
+    "panel slot without native result has no details");
+ItemTooltipContentBuilder.Result = info;
+NavigationManager.currentlySelected = null;
+Check(ItemTooltipModelReader.TryReadShown(item, TooltipItemManager.SlotType.INVENTORY, out text) && text.Contains("+5 de fuerza") &&
+    info.SlotType == TooltipItemManager.SlotType.INVENTORY && info.TooltipMode == TooltipMode.DefaultInfo,
+    "panel slot details need no inventory focus and use default details");
+Check(ItemTooltipModelReader.TryReadShown(item, TooltipItemManager.SlotType.MORDITAS, out _) &&
+    info.SlotType == TooltipItemManager.SlotType.MORDITAS, "panel slot keeps the game's slot type");
+calls = ItemTooltipContentBuilder.Calls;
+Check(!ItemTooltipModelReader.TryReadShown(null, TooltipItemManager.SlotType.INVENTORY, out _) &&
+    ItemTooltipContentBuilder.Calls == calls, "empty panel slot builds nothing");
+ItemTooltipContentBuilder.WrongItem = true;
+Check(!ItemTooltipModelReader.TryReadShown(item, TooltipItemManager.SlotType.INVENTORY, out text) && text is null,
+    "panel slot rejects another item");
+ItemTooltipContentBuilder.WrongItem = false;
+prefix.Modifier1.Throw = true;
+Check(!ItemTooltipModelReader.TryReadShown(item, TooltipItemManager.SlotType.INVENTORY, out text) && text is null &&
+    ItemTooltipModelReader.LastFailure is not null, "panel slot exception returns no partial details");
+prefix.Modifier1.Throw = false;
+NavigationManager.currentlySelected = container;
 MerchantTests.Run(Check);
 MerchantMenuTests.Run(Check);
 EquippedModelTests.Run(Check);

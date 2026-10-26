@@ -3,6 +3,15 @@
 What changed in LeAccess, day by day, newest first. Each heading gives the day and the version that first shipped
 those changes. It is written from the commit history; internal notes, status updates and merges are left out.
 
+## 26 October 2026 — not yet released
+
+Fixed:
+
+- Nemesis items now give their stats: push the right stick up on an item slot to hear the whole item (affixes,
+  implicits, unique effects, requirements). Before, it only repeated the name, because the game's tooltip was not there
+  to read. The details are now built from the item, as the game builds its tooltip. Rage of Morditas reward slots do
+  the same.
+
 ## 26 October 2026 — version 0.2.10
 
 Fixed:

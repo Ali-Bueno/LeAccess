@@ -51,7 +51,8 @@ internal static class NemesisItemSlots
         string item = ItemSlotReader.Identity(entry);
         string text = EndgameText.RewardSlot(item, default, slot.Position, slot.Total);
         var root = slot.Root;
-        return new EndgameStop($"{root.GetInstanceID()}:{item}", text, () => ItemSlotReader.Details(data, root));
+        return new EndgameStop($"{root.GetInstanceID()}:{item}", text,
+            () => ItemSlotReader.Details(data, root, TooltipItemManager.SlotType.INVENTORY));
     }
 
     // Each holder shows one of its layouts: a plain item, a unique that can be swapped, or the one swapped in.

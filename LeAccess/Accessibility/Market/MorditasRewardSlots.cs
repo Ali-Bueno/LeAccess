@@ -47,7 +47,8 @@ internal static class MorditasRewardSlots
         var facts = new RewardSlotFacts(ui.IsSelected, SacrificedFor(ui), ui.CanBeUpgradedByRitual);
         string text = EndgameText.RewardSlot(item, facts, slot.Position, slot.Total);
         string key = $"{ui.GetInstanceID()}:{item}:{facts.Target}:{facts.SacrificedFor}:{facts.Upgradable}";
-        return new EndgameStop(key, text, () => IsAlive(container) ? ItemSlotReader.Details(data, container.gameObject) : null);
+        return new EndgameStop(key, text, () => IsAlive(container)
+            ? ItemSlotReader.Details(data, container.gameObject, TooltipItemManager.SlotType.MORDITAS) : null);
     }
 
     private static string SacrificedFor(RageOfMorditasRewardPanelRewardUI ui)

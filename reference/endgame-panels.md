@@ -92,7 +92,14 @@ Code: `Market/NemesisItemSlots.cs`, shared single-slot helpers `Endgame/ItemSlot
 - A focused object inside the active layout of a holder is that holder's slot; swap buttons keep their own caption.
 - Item: the `ItemContainerUI` under the holder (cell 0,0), else the panel's `NemesisItemContainer` with the holder's
   `containerID`. Spoken as the inventory does (name, base type), then "N of M" over the holders that show an item
-  layout. The details key reads the game's item tooltip for that item (as Morditas); without one it repeats the line.
+  layout. The details key reads the game's item tooltip for that item (as Morditas); without a readable one it builds
+  the same details from the item (`ItemTooltipModelReader.TryReadShown`, default mode).
+- Details follow-up (player report, same day: "shows the name of items in a nemesis but no stats"). The fallback uses
+  the slot type the game's hover gives the container: `TooltipSystem.OnItemHovered` (RVA `0x202FA80`, current build)
+  sends ContainerType NEMESIS through the inventory case, slot `INVENTORY`, and RAGEOFMORDITAS to slot `MORDITAS`.
+  Controller focus raises the same `ItemContainerUI.OnItemHovered` event. No Nemesis type opens a tooltip of its own.
+  Neither slot type changes the tooltip content of ordinary equipment: the builder's slot checks are for soul
+  gambling, gambling, faction and hunter vendors, and prices only. Why the visible tooltip was not readable is unknown.
 - `InventoryAccessibility` leaves these containers to this reader, so nothing is spoken twice. The swap slot of the
   replacement window (`NemesisSwapSlotContainerUI`, `NEMESIS_SWAP`) is not in a holder and still reads as an inventory slot.
 - Unverified: that focus lands inside a holder layout (log `[Endgame] <item>, 1 of 2`); that the holder holds an

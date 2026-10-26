@@ -21,8 +21,14 @@ internal static class ItemSlotReader
         entry is null ? ModText.Get("endgame.slot_empty")
             : ItemIdentityReader.Read(Data(entry)) ?? ModText.Get("inventory.selection_unavailable");
 
-    /// <summary>The item tooltip the game shows beside the focused slot, as the inventory reads it on request.</summary>
-    internal static string Details(ItemData data, GameObject slot) =>
-        data is not null && !data.WasCollected && IsAlive(slot) &&
-        ItemTooltipReader.TryReadForItem(data, slot, out string text) ? text : null;
+    /// <summary>The item tooltip the game shows beside the focused slot, else the same details built from the item.</summary>
+    /// <remarks>tooltipSlot is the slot type the game's hover opens this container's tooltip with; see reference/endgame-panels.md.</remarks>
+    internal static string Details(ItemData data, GameObject slot, TooltipItemManager.SlotType tooltipSlot)
+    {
+        if (data is null || data.WasCollected || !IsAlive(slot)) return null;
+        if (ItemTooltipReader.TryReadForItem(data, slot, out string text) ||
+            ItemTooltipModelReader.TryReadShown(data, tooltipSlot, out text)) return text;
+        if (ItemTooltipModelReader.LastFailure is { } failure) Plugin.Log.LogWarning($"[Endgame] item details unavailable: {failure}");
+        return null;
+    }
 }

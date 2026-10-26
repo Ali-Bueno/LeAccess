@@ -22,19 +22,41 @@ internal static class ItemTooltipModelReader
         {
             if (!OwnsSelection(expectedItem, container)) return false;
             if (!TryGetParameters(expectedItem, container, out var slot, out var mode)) return false;
-            var unpacked = expectedItem.getAsUnpacked();
-            if (!Matches(unpacked, expectedItem)) return false;
-            // The native builder creates presentation data; it does not open a tooltip
-            // or modify the item. See reference/item-tooltip-model.md.
-            var info = ItemTooltipContentBuilder.GetItemTooltipInfo(unpacked, slot, mode);
-            if (info is null || info.WasCollected || !Matches(info.Item, expectedItem) ||
-                info.SlotType != slot || info.TooltipMode != mode) return false;
+            var info = Build(expectedItem, slot, mode);
+            if (info is null) return false;
             string result = ScreenContentTracker.Combine(new[] { Read(info), MerchantItemReader.ReadContext(expectedItem, container) });
             if (string.IsNullOrWhiteSpace(result) || !OwnsSelection(expectedItem, container)) return false;
             text = result;
             return true;
         }
         catch (Exception ex) { LastFailure = $"{ex.GetType().Name}: {ex.Message}"; return false; }
+    }
+
+    /// <summary>Default details of an item a panel shows in its own slot, built with the slot type the game's hover gives it.</summary>
+    internal static bool TryReadShown(ItemData item, TooltipItemManager.SlotType slot, out string text)
+    {
+        text = null;
+        LastFailure = null;
+        try
+        {
+            var info = item is null || item.WasCollected ? null : Build(item, slot, TooltipMode.DefaultInfo);
+            string result = info is null ? null : Read(info);
+            if (string.IsNullOrWhiteSpace(result)) return false;
+            text = result;
+            return true;
+        }
+        catch (Exception ex) { LastFailure = $"{ex.GetType().Name}: {ex.Message}"; return false; }
+    }
+
+    private static ItemTooltipInfo Build(ItemData item, TooltipItemManager.SlotType slot, TooltipMode mode)
+    {
+        var unpacked = item.getAsUnpacked();
+        if (!Matches(unpacked, item)) return null;
+        // The native builder creates presentation data; it does not open a tooltip
+        // or modify the item. See reference/item-tooltip-model.md.
+        var info = ItemTooltipContentBuilder.GetItemTooltipInfo(unpacked, slot, mode);
+        return info is null || info.WasCollected || !Matches(info.Item, item) ||
+            info.SlotType != slot || info.TooltipMode != mode ? null : info;
     }
 
     internal static bool OwnsSelection(ItemData item, ItemContainerUI container)

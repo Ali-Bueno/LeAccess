@@ -120,7 +120,7 @@ internal enum TooltipMode { None, DefaultInfo, DefaultModRanges, Explanation, Co
 internal class TooltipItemManager
 {
     internal static string ReqFaction(ItemDataUnpacked item, SlotType slot) => item.FactionRequirement;
-    internal enum SlotType { INVENTORY, EQUIPPED, GROUND, CRAFTING, STASH, SHOP, UNDEFINED }
+    internal enum SlotType { INVENTORY, EQUIPPED, GROUND, CRAFTING, STASH, SHOP, UNDEFINED, MORDITAS }
     internal class ItemTooltipParameters : Il2CppSystem.Object
     {
         internal ItemData _Item_k__BackingField;

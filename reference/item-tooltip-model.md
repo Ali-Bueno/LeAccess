@@ -26,6 +26,12 @@ additional context. Ground, undefined and foreign parameters cannot supply
 that context. The never-opened fallback intentionally reads default details,
 without assuming an Alt/Ctrl or comparison mode.
 
+`TryReadShown(item, slot)` serves panels that read their own one-slot containers
+(Nemesis, Rage of Morditas; `Endgame/ItemSlotReader`). It skips inventory
+ownership, and the panel passes the slot type the game's hover gives that container.
+It uses the same builder and checks with `DefaultInfo`; see
+[Nemesis item slots](endgame-panels.md#nemesis-item-slots-2026-10-26).
+
 Output uses native name/type/rarity strings, description, potential, weapon range
 and attack rate, implicits, both modifiers of each prefix/suffix/sealed affix,
 unique modifiers, set items and required set counts, added affixes, eligible item
@@ -81,7 +87,7 @@ native mapping/disassembly helpers are in
 ## Validation
 
 `dotnet run --project tests/LeAccess.ItemTooltipModel.Tests/LeAccess.ItemTooltipModel.Tests.csproj`
-passes **92 checks** against source-linked production logic, including the
+passes **117 checks** against source-linked production logic, including the
 [merchant item and tab regressions](merchant-reading.md). Coverage includes
 game-formatted sections and both affix modifiers, lore/faction text, native slot
 mapping, exact owned parameters, unknown/foreign context rejection, unidentified
