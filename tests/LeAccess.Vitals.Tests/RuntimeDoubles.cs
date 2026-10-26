@@ -86,7 +86,15 @@ namespace LeAccess.Accessibility.Vitals
         }
         internal static bool Gold;
         internal static bool GoldPressed() => Gold;
-        internal static void Reset() { KeyboardPressed = ControllerPressed = Gold = false; }
+        internal static bool Minions;
+        internal static bool MinionsPressed() => Minions;
+        internal static void Reset() { KeyboardPressed = ControllerPressed = Gold = Minions = false; }
+    }
+    internal static class MinionHealthReport
+    {
+        internal const string Text = "Skeleton: life 80 percent";
+        internal static int Calls;
+        internal static string Next() { Calls++; return Text; }
     }
     internal static class GoldReport
     {

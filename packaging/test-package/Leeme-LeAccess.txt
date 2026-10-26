@@ -100,6 +100,10 @@ se dicen al subir de nivel y al tener un punto nuevo.
 Oro: manten Create y pulsa Triangulo (teclado: Ctrl+G). Tambien se dice al abrir
 el inventario o un vendedor y despues de comprar o vender, y al recoger oro se
 dice la cantidad, por ejemplo "50 de oro".
+Esbirros: manten Create y pulsa R1 (teclado: Ctrl+M). Cada pulsacion lee una
+tarjeta de esbirro del juego con su vida, por ejemplo "Esqueleto 2: vida 80 por
+ciento, 2 de 5"; una tarjeta de grupo dice cuantos hay. Tras la ultima vuelve a la
+primera, y tras 10 segundos sin pulsar empieza otra vez por la primera.
 Radar de paredes: un golpe cuando una pared queda a unos 2 metros y un soplo
 cuando pasas el borde de una pared y detras el espacio sigue (desde unos 3 metros,
 tambien pasajes estrechos o que tuercen; los nichos no suenan). Al alejarte de una

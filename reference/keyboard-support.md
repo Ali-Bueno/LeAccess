@@ -22,8 +22,8 @@ and want the game's own keyboard shortcuts (inventory, character, ability keys, 
 
 ## Current mod keys
 
-Ctrl+F1 menu (configurable), arrows/Enter/Escape inside it, Ctrl+Numpad 8/2/4/6/5 scanner, Ctrl+B/G/L lock, gold,
-status, R vitals report (`[Vitals] ReportKey`). All read with `UnityEngine.Input`, not consumed, so the game hears them
+Ctrl+F1 menu (configurable), arrows/Enter/Escape inside it, Ctrl+Numpad 8/2/4/6/5 scanner, Ctrl+B/G/L/M lock, gold,
+status, next minion's life ([minions](minion-health.md)), R vitals report (`[Vitals] ReportKey`). All read with `UnityEngine.Input`, not consumed, so the game hears them
 too. No key for menu details (right stick up) or minion commands. Untested: whether these keys drop controller mode
 while a pad is in use, since they are not screen-reader keys.
 

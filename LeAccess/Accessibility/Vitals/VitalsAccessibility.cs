@@ -83,6 +83,8 @@ internal static class VitalsAccessibility
                 VitalsInput.ReportPressed(gameplayInput ? _reportKey.Value : KeyCode.None, _controllerReport.Value);
             if (!typing && (gameplayInput || _previousGameplayInput) && VitalsInput.GoldPressed())
                 Speak(GoldAndPointsText(), true);
+            if (!typing && (gameplayInput || _previousGameplayInput) && VitalsInput.MinionsPressed())
+                Speak(MinionHealthReport.Next(), true);
             _previousGameplayInput = gameplayInput;
 
             // The low-life sound needs readings even with spoken announcements off.

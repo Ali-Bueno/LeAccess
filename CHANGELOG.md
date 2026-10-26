@@ -3,6 +3,20 @@
 What changed in LeAccess, day by day, newest first. Each heading gives the day and the version that first shipped
 those changes. It is written from the commit history; internal notes, status updates and merges are left out.
 
+## 26 October 2026 — not yet released
+
+Fixed:
+
+- The Nemesis panel says its items: each item slot says the item's name and type and its place ("1 of 2"), and the
+  details key reads the whole item. Before, it only said "nemesis item". This works wherever the Nemesis appears, the
+  campaign included.
+
+Added:
+
+- Minion life: hold the mod button and press R1 (keyboard Ctrl+M) to hear the next minion card of the game's HUD,
+  such as "Skeleton 2: life 80 percent, 2 of 5"; a card for a group of minions gives how many there are. After the last
+  card it goes back to the first, and after 10 seconds without a press it starts again at the first, as in D2R Access.
+
 ## 21 October 2026 — version 0.2.9
 
 Fixed:

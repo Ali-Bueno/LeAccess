@@ -269,6 +269,15 @@ try
     EpochInputManager.instance.isInputFieldActive = true; VitalsInput.Gold = true; int spokenGold = ScreenReader.Spoken.Count; Tick(.07);
     Check(ScreenReader.Spoken.Count == spokenGold, "Typing never reads gold");
     EpochInputManager.instance.isInputFieldActive = false;
+    // Minions: Create+R1 or Ctrl+M reads the next minion card, on its own.
+    Start(); Tick(0);
+    int minionCalls = MinionHealthReport.Calls;
+    VitalsInput.Minions = true; Tick(.05);
+    Last(MinionHealthReport.Text, true, "The minion command reads the next minion card, interrupting");
+    Check(ScreenReader.Spoken.Count == 1 && MinionHealthReport.Calls == minionCalls + 1, "One press reads one card, without the vitals report");
+    EpochInputManager.instance.isInputFieldActive = true; VitalsInput.Minions = true; int spokenMinions = ScreenReader.Spoken.Count; Tick(.06);
+    Check(ScreenReader.Spoken.Count == spokenMinions, "Typing never reads minions");
+    EpochInputManager.instance.isInputFieldActive = false;
 
     // Square: life, mana, level and experience, potions, effects. Triangle: gold, passive points, skills, zone.
     var progress = new ProgressionSnapshot(1, 12, 100, 40, 100, 3, new List<SkillPoint> { new("a", "Fireball") }, false, "Ruins");
@@ -376,6 +385,18 @@ try
     Check(pickups.Observe(2, null, false) == 0 && pickups.Observe(2, 9100, false) == 0,
         "An unreadable counter resets the baseline");
     Check(pickups.Observe(2, 9150, false) == 50, "Pickups resume after the new baseline");
+    // Minion cards: one per press, wrapping, starting over after a pause; repeated names numbered.
+    var stepper = new MinionHealthStepper();
+    Check(stepper.Step(0, 0) == -1, "Without cards a press has nothing to read");
+    Check(stepper.Step(3, 1) == 0 && stepper.Step(3, 2) == 1 && stepper.Step(3, 3) == 2, "Each press reads the next card");
+    Check(stepper.Step(3, 4) == 0, "After the last card the next press wraps to the first");
+    Check(stepper.Step(3, 5) == 1 && stepper.Step(3, 5 + MinionHealthStepper.RestartSeconds) == 0, "A long pause starts over at the first card");
+    Check(stepper.Step(3, 16) == 1 && stepper.Step(1, 17) == 0, "A list that shrank under the cursor wraps to the first card");
+    var cards = new List<MinionCardInfo> { new("Skeleton", 80, 0), new("Golem", 100, 0), new("Skeleton", 35, 0), new("Summon Wraith", 0, 5) };
+    Check(MinionHealthStepper.Describe(cards, 0) == T("minions.life", T("minions.numbered", "Skeleton", 1), 80), "Repeated names are numbered");
+    Check(MinionHealthStepper.Describe(cards, 2) == T("minions.life", T("minions.numbered", "Skeleton", 2), 35), "Numbers follow card order");
+    Check(MinionHealthStepper.Describe(cards, 1) == T("minions.life", "Golem", 100), "A unique name stays plain");
+    Check(MinionHealthStepper.Describe(cards, 3) == T("minions.count", "Summon Wraith", 5), "A group card gives its count, not life");
     Console.WriteLine($"Passed {checks} vitals service checks.");
 }
 finally { VitalsAccessibility.Cleanup(); }

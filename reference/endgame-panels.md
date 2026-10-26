@@ -28,7 +28,7 @@ line from these panels, so there was no raw-name speech to grep.
 | Choose echo reward | new reader | Same `ChoiceReader` over `EchoRewardPanelManager.rewardOptions[].rewardText`, `chosenOption`, confirm. |
 | Choose blessing | new reader | Window text (static labels). `BlessingReader`: option item name or the game's visible item tooltip (waits up to 0.6 s for it), lock reason from `lockTooltip` keys through `Localization`, role (current / new) from the manager fields, N of M. |
 | Monolith (echo web) | new reader | Window text: title, corruption and gaze text. `MonolithReader`: when `_echoTooltipOpen`, the echo tooltip's visible title, subtitle, description, modifiers and rewards plus completed / out of reach (`EchoWeb.islandCanBeRun`) / reward waiting. Difficulty selection, search and filter use the generic path. |
-| Nemesis | fixed (small) | Window text (title, lore). Buttons have captions and `NemesisTooltip` (generic layers); item slots read as inventory slots. |
+| Nemesis | new reader | Window text (title, lore). Buttons have captions and `NemesisTooltip` (generic layers); item slots: see [Nemesis item slots](#nemesis-item-slots-2026-10-26). |
 | Nemesis replacement, Start quest echo | fine | `IModal`: template title/message read once by `GenericModalText`; the Harbinger Crest checkbox is a `Toggle` (state patch). Swap slot reads as an inventory slot. |
 | Observatory | new reader | Slot summary and picker options; see [Observatory](#observatory). |
 | Ladder | new reader | Rows, top places, tabs, empty list; see [Ladder](#ladder). |
@@ -76,6 +76,28 @@ through `Localization.GetText` ("Ritual sangriento", "Ritual gélido", "Reclamar
 game's `MortidasTooltip` text (description, marked item, Bloodrage cost) once it is visible (waits up to 0.6 s); unavailable
 buttons say so.
 
+## Nemesis item slots (2026-10-26)
+
+Player report: the encounter "just says nemesis item with no description of it". No log; same shape as the Morditas
+reward slots (an item holder no reader claimed, so the generic announcer spoke its object name).
+Code: `Market/NemesisItemSlots.cs`, shared single-slot helpers `Endgame/ItemSlotReader.cs` (also used by Morditas).
+
+| Class | Members used |
+|---|---|
+| `NemesisPanel` | `_manager` (`NemesisPanelManager`) |
+| `NemesisPanelManager` | `itemHolders` (`NemesisItemHolderUI`: `containerID`, `nonSwappableHolder`, `swappableHolder`, `swappedItemHolder`), `swapButtons`, `containers.Containers` (`NemesisItemContainer`, one slot each) |
+
+- The encounter also appears in the campaign (the user meets it at level 30); the reader keys on `NemesisPanel` alone,
+  never on the zone or level, like every panel in this file.
+- A focused object inside the active layout of a holder is that holder's slot; swap buttons keep their own caption.
+- Item: the `ItemContainerUI` under the holder (cell 0,0), else the panel's `NemesisItemContainer` with the holder's
+  `containerID`. Spoken as the inventory does (name, base type), then "N of M" over the holders that show an item
+  layout. The details key reads the game's item tooltip for that item (as Morditas); without one it repeats the line.
+- `InventoryAccessibility` leaves these containers to this reader, so nothing is spoken twice. The swap slot of the
+  replacement window (`NemesisSwapSlotContainerUI`, `NEMESIS_SWAP`) is not in a holder and still reads as an inventory slot.
+- Unverified: that focus lands inside a holder layout (log `[Endgame] <item>, 1 of 2`); that the holder holds an
+  `ItemContainerUI`; whether the game shows the item tooltip on controller focus (details); online.
+
 ## Limits and first in-game checks
 
 1. Tier tab wording and numbering (dungeon and arena), and that the tier description still rereads when the tab changes.
@@ -83,6 +105,6 @@ buttons say so.
 3. Monolith: stick over an echo speaks tooltip then state; `_echoTooltipOpen` must be true while the stick rests on it.
 4. Sanctuary and echo reward: option, "chosen" after Cross, confirm becoming available.
 5. Boss vote and Pinnacle voting: roster once, then one short line per change; no repeats from the countdown.
-6. Item slots (key, nemesis, rage reward) speak after the window text, not over it.
+6. Item slots (key, nemesis, rage reward) speak after the window text, not over it; Nemesis slots say the item.
 7. Observatory: slot summary on opening and after switching region, picker options, region buttons; Ladder rows and tabs
    (class/mode dropdown title, value, list and new value); Morditas buttons name and tooltip text.

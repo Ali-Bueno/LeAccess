@@ -1,7 +1,4 @@
 using LeAccess.Accessibility.Endgame;
-using LeAccess.Accessibility.Items;
-using LeAccess.Accessibility.Utils;
-using LeAccess.I18n;
 using LE.UI.PanelSystem;
 using UnityEngine;
 using static LeAccess.Accessibility.Navigation.NavigationObjectLifetime;
@@ -44,14 +41,13 @@ internal static class MorditasRewardSlots
     {
         var ui = slot.Ui;
         var container = ui.ItemContainerUI;
-        var entry = IsAlive(container) ? Entry(container) : null;
-        var data = entry is not null && !entry.WasCollected ? entry.data : null;
-        string item = entry is null ? ModText.Get("endgame.slot_empty")
-            : ItemIdentityReader.Read(data) ?? ModText.Get("inventory.selection_unavailable");
+        var entry = ItemSlotReader.Entry(container);
+        var data = ItemSlotReader.Data(entry);
+        string item = ItemSlotReader.Identity(entry);
         var facts = new RewardSlotFacts(ui.IsSelected, SacrificedFor(ui), ui.CanBeUpgradedByRitual);
         string text = EndgameText.RewardSlot(item, facts, slot.Position, slot.Total);
         string key = $"{ui.GetInstanceID()}:{item}:{facts.Target}:{facts.SacrificedFor}:{facts.Upgradable}";
-        return new EndgameStop(key, text, () => Details(data, container));
+        return new EndgameStop(key, text, () => IsAlive(container) ? ItemSlotReader.Details(data, container.gameObject) : null);
     }
 
     private static string SacrificedFor(RageOfMorditasRewardPanelRewardUI ui)
@@ -59,16 +55,4 @@ internal static class MorditasRewardSlots
         if (ui.IsSacrificedForBlood) return MorditasReader.RitualName(blood: true);
         return ui.IsSacrificedForFrost ? MorditasReader.RitualName(blood: false) : null;
     }
-
-    // The item entry the game keeps in the slot's single-cell container.
-    private static ItemContainerEntry Entry(ItemContainerUI container)
-    {
-        var source = container.Container;
-        return source is null || source.WasCollected ? null : source.GetEntryAt(Vector2Int.zero);
-    }
-
-    // The item tooltip the game shows beside the focused slot, as the inventory reads it on request.
-    private static string Details(ItemData data, ItemContainerUI container) =>
-        data is not null && !data.WasCollected && IsAlive(container) &&
-        ItemTooltipReader.TryReadForItem(data, container.gameObject, out string text) ? text : null;
 }

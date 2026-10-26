@@ -237,8 +237,8 @@ internal static class InventoryAccessibility
         if (!Application.isFocused || LE.UI.LoadingScreen.IsVisible || DialogueAnnouncer.HasActiveContent ||
             ControllerMenuAccessibility.HasActiveContent) return null;
         var container = InventorySelectionReader.GetFocusedContainer();
-        // The Rage of Morditas reward panel reads its own slots.
-        if (IsAlive(container) && Market.MorditasRewardSlots.Owns(container)) return null;
+        // The Rage of Morditas reward panel and the Nemesis panel read their own slots.
+        if (IsAlive(container) && (Market.MorditasRewardSlots.Owns(container) || Market.NemesisItemSlots.Owns(container))) return null;
         // Endgame windows read as screen content let their item slots speak like inventory slots, after the window text.
         return ScreenContentAnnouncer.HasActiveContent && (ScreenContentAnnouncer.HasPendingContent ||
             !(IsAlive(container) && Endgame.EndgameWindows.AllowsItemReading(container.gameObject))) ? null : container;

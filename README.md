@@ -185,6 +185,7 @@ everything else.
 | Square | Life, mana, the Rage of Morditas status during that event, level and experience percent, potion charges and debuffs |
 | Triangle | Gold, unspent passive points, skills that can take a point, and the zone |
 | Circle | Repeat the selected scanner entry with its current distance and direction |
+| R1 | Next minion: its name and life percent, or the count on a group card; after a 10-second pause it starts again at the first |
 | L1 | Open or close the settings menu (L3 + L1 also works on every pad) |
 
 The scanner categories, in order: blood trail (only during the Rage of Morditas hunt), exit, portal, waypoint, unexplored room, room, quest, NPC, player, last death, stash,
@@ -239,6 +240,7 @@ affix, its tier and your shards; right stick up adds the preview and forging pot
 | R | Life, mana, level and experience, potions and debuffs (configurable, `Vitals.ReportKey`) |
 | Ctrl+G | Gold, passive points, skills and the zone |
 | Ctrl+L | Level and progress |
+| Ctrl+M | Next minion's life |
 | Ctrl+Numpad 8 / 2 | Previous / next scanner category |
 | Ctrl+Numpad 4 / 6 | Previous / next scanner entry |
 | Ctrl+Numpad 5 | Repeat the selected scanner entry |

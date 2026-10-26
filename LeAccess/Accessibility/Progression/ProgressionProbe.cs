@@ -79,22 +79,11 @@ internal static class ProgressionProbe
         for (int index = 0; index < count; index++)
         {
             var ability = abilities[index];
-            if (IsAlive(ability)) skills.Add(new SkillPoint(ability.Pointer.ToString(), AbilityName(ability)));
+            if (IsAlive(ability)) skills.Add(new SkillPoint(ability.Pointer.ToString(), AbilityNames.Read(ability)));
         }
         var unlock = buttons.newUnlockButton;
         newSkill = IsAlive(unlock) && unlock.activeSelf;
         return true;
-    }
-
-    private static string AbilityName(Ability ability)
-    {
-        string raw = ability.abilityName;
-        try
-        {
-            string key = LocalizationSystem.Conventions.GetAbilityNameKey(raw);
-            return TextUtils.CleanText(string.IsNullOrWhiteSpace(key) ? raw : Localization.GetText(key, raw));
-        }
-        catch (Exception) { return TextUtils.CleanText(raw); }
     }
 
     // Same scene lookup as the zone announcement.

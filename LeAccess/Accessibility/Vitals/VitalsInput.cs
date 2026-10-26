@@ -23,6 +23,9 @@ internal static class VitalsInput
     // Create+Triangle or Ctrl+G, both read by ExplorationInput earlier this frame.
     internal static bool GoldPressed() => ExplorationInput.Command == ExplorationCommand.Gold;
 
+    // Create+R1 or Ctrl+M, both read by ExplorationInput earlier this frame.
+    internal static bool MinionsPressed() => ExplorationInput.Command == ExplorationCommand.Minions;
+
     private static void ReportFailure(string source, Exception exception, ref string previous)
     {
         string failure = $"{exception.GetType().Name}: {exception.Message}";

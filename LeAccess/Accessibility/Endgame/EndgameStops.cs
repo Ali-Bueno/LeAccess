@@ -19,6 +19,8 @@ internal static class EndgameStops
         if (IsAlive(morditas)) return MorditasReader.TryRead(morditas, selected, out stop);
         var blessing = panel.TryCast<ChooseBlessingPanel>();
         if (IsAlive(blessing)) return BlessingReader.Owns(selected) && BlessingReader.TryRead(blessing, selected, out stop);
+        var nemesis = panel.TryCast<NemesisPanel>();
+        if (IsAlive(nemesis) && NemesisItemSlots.TryFind(nemesis, selected, out var slot)) { stop = NemesisItemSlots.Read(slot); return true; }
         return TierTabReader.TryRead(panel, selected, out stop) || ChoiceReader.TryRead(panel, selected, out stop);
     }
 
@@ -32,6 +34,8 @@ internal static class EndgameStops
         var morditas = panel.TryCast<RageOfMorditasRewardPanel>();
         if (IsAlive(morditas)) return MorditasReader.Owns(morditas, element);
         if (IsAlive(panel.TryCast<ChooseBlessingPanel>())) return BlessingReader.Owns(element);
+        var nemesis = panel.TryCast<NemesisPanel>();
+        if (IsAlive(nemesis) && NemesisItemSlots.TryFind(nemesis, element, out _)) return true;
         return IsAlive(panel.TryCast<SanctuaryOfEterraPanel>()) || IsAlive(panel.TryCast<ChooseEchoRewardPanel>()) ||
             TierTabReader.Owns(panel, element);
     }

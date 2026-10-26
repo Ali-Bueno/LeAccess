@@ -494,4 +494,5 @@ namespace LeAccess.Accessibility.Panels
 namespace LeAccess.Accessibility.Market
 {
     internal static class MorditasRewardSlots { internal static bool Owns(ItemContainerUI container) => false; }
+    internal static class NemesisItemSlots { internal static bool Owns(ItemContainerUI container) => false; }
 }

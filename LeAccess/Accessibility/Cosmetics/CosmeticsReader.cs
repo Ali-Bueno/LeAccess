@@ -35,7 +35,7 @@ internal static class CosmeticsReader
 
     private static string SkillRow(CosmeticSkillSlot slot)
     {
-        string name = AbilityName(slot.ability);
+        string name = AbilityNames.Read(slot.ability);
         return CosmeticsText.Slot(string.IsNullOrWhiteSpace(name) ? SlotName(slot) : name, Equipped(slot), slot.locked);
     }
 
@@ -53,14 +53,6 @@ internal static class CosmeticsReader
     {
         var cosmetic = slot._storedCosmetic;
         return IsAlive(cosmetic) ? TextUtils.CleanText(cosmetic.DisplayName) : null;
-    }
-
-    private static string AbilityName(Ability ability)
-    {
-        if (!IsAlive(ability)) return null;
-        string raw = ability.abilityName;
-        string key = LocalizationSystem.Conventions.GetAbilityNameKey(raw);
-        return TextUtils.CleanText(string.IsNullOrWhiteSpace(key) ? raw : Localization.GetText(key, raw));
     }
 
     // The game localizes classes by their enum name.
